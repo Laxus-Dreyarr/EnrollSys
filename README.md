@@ -16,15 +16,14 @@ A web-based online enrollment system designed specifically for the Computer Stud
 
 ### For Students
 -   **User Authentication** - Secure login and registration for students.
--   **Course Catalog** - View available courses and subjects for the semester.
+-   **Course Catalog** - View available courses/subjects for the semester.
 -   **Online Enrollment** - Select and enroll in desired subjects.
 -   **Class Schedule** - View and manage personal class schedule.
--   **Assessment Form** - View and print assessment forms.
 
 ### For Administrators/Faculty
 -   **Dashboard** - Overview of enrollment statistics.
 -   **Student Management** - View, add, edit, and manage student records.
--   **Course/Subject Management** - CRUD operations for courses and subjects.
+-   **Course/Subject Management** - CRUD operations for courses/subjects.
 -   **Section Management** - Create and assign class sections.
 -   **Enrollment Approval** - Process and approve student enrollment requests.
 -   **Report Generation** - Generate reports for enrollment data.
@@ -36,7 +35,7 @@ A web-based online enrollment system designed specifically for the Computer Stud
 ## 🏗️ System Architecture & Technology Stack
 
 -   **Frontend:** HTML, CSS, JavaScript, Bootstrap
--   **Backend:** PHP (Native/OOP)
+-   **Backend:** PHP Laravel
 -   **Database:** MySQL
 -   **Web Server:** XAMPP / WAMP / LAMP
 -   **Version Control:** Git & GitHub
