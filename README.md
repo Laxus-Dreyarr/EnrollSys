@@ -92,9 +92,7 @@ This is an ongoing project for academic purposes. Contributions, suggestions, an
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [![License: Non-Commercial](https://img.shields.io/badge/License-Non--Commercial-blue.svg)](LICENSE) file for details. It is developed as an academic requirement for Eastern Visayas State University.
-This project is licensed under a **Non-Commercial Use License**.  
-See the [`LICENSE`](LICENSE) file for full details. In short:
+This project is licensed under a **Non-Commercial Use License** - see the [![License: Non-Commercial](https://img.shields.io/badge/License-Non--Commercial-blue.svg)](LICENSE) file for details. It is developed as an academic requirement for Eastern Visayas State University.
 - **You may:** Use, copy, modify, and distribute the software for **non-commercial purposes** (like learning and development).
 - **You may not:** Sell or distribute the software for **commercial purposes** without the express written permission of the copyright holder (Carl James P. Duallo).
 
