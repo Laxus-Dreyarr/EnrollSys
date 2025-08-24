@@ -125,9 +125,10 @@
             flex: 1;
             margin-left: 250px;
             transition: all 0.3s ease;
+            padding-top: 80px; /* Added padding to account for fixed header */
         }
 
-        /* Topbar */
+        /* Topbar - Fixed position */
         .topbar {
             display: flex;
             justify-content: space-between;
@@ -135,9 +136,12 @@
             padding: 15px 20px;
             background-color: var(--bg-light);
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            position: sticky;
+            position: fixed;
             top: 0;
+            left: 250px;
+            right: 0;
             z-index: 999;
+            transition: all 0.3s ease;
         }
 
         .dark-theme .topbar {
@@ -590,6 +594,38 @@
             color: var(--text-muted-dark);
         }
 
+        /* Prerequisite Tags */
+        .prerequisite-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .prerequisite-tag {
+            background-color: rgba(67, 97, 238, 0.1);
+            color: var(--primary-color);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+
+        .prerequisite-tag .remove-tag {
+            margin-left: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .prerequisite-tag .remove-tag:hover {
+            color: var(--error-color);
+        }
+
+        .dark-theme .prerequisite-tag {
+            background-color: rgba(67, 97, 238, 0.2);
+        }
+
         /* Hide button */
         .mobile-menu-btn {
             display: none;
@@ -626,6 +662,10 @@
             
             .main-content {
                 margin-left: 70px;
+            }
+
+            .topbar {
+                left: 70px;
             }
         }
 
@@ -671,6 +711,10 @@
             .main-content {
                 margin-left: 0;
                 overflow-x: scroll;
+            }
+
+            .topbar {
+                left: 0;
             }
             
             .mobile-menu-btn {
@@ -751,6 +795,15 @@
                 font-size: 14px;
             }
             
+            #statsCards {
+                padding: 5px;
+                flex-direction: column;
+            }
+
+            .col-md-3.col-6 {
+                width: 100% !important;
+            }
+
             .card-header {
                 padding: 12px 15px;
             }
