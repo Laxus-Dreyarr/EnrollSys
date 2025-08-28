@@ -5,12 +5,15 @@ include('Class/Db.php');
 include('Class/Admin.php');
 // if not logged in
 if (!isset($_SESSION['admin_id'])) {
-    header('Location: index-admin.php');
-    exit();
+    if($_SESSION['user_type'] !== 'admin'){
+        header('Location: index-admin.php');
+        exit();
+    }
 }
 
 // get admin id from session
 $user = $_SESSION['admin_id'];
+$user_type = $_SESSION['user_type'];
 // create admin object
 $a =  new Admin($user, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 // get admin data
@@ -232,10 +235,8 @@ $stats = $b->get_statistics();
                                             <tr>
                                                 <th>Code</th>
                                                 <th>Subject Name</th>
-                                                <th>Section</th>
                                                 <th>Units</th>
                                                 <th>Year/Semester</th>
-                                                <th>Schedule</th>
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
@@ -662,7 +663,7 @@ $stats = $b->get_statistics();
                                 </div>
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="checkbox" id="editLaboratoryCheck" name="subjectType[]" value="Laboratory">
-                                    <label class="form-check-label" for="editLaboratoryCheck">Laboratory</label>
+                                    <label class="form-check-label" for editLaboratoryCheck">Laboratory</label>
                                 </div>
                             </div>
                         </div>
@@ -745,6 +746,104 @@ $stats = $b->get_statistics();
         </div>
     </div>
 
+    <!-- View Subject Modal -->
+    <div class="modal fade" id="viewSubjectModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Subject Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="subject-detail-row">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <span class="subject-detail-label">Subject Code:</span>
+                                <span id="viewSubjectCode"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="subject-detail-label">Subject Name:</span>
+                                <span id="viewSubjectName"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="subject-detail-row">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <span class="subject-detail-label">Units:</span>
+                                <span id="viewSubjectUnits"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="subject-detail-label">Year Level:</span>
+                                <span id="viewSubjectYearLevel"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="subject-detail-row">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <span class="subject-detail-label">Semester:</span>
+                                <span id="viewSubjectSemester"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="subject-detail-label">Max Students:</span>
+                                <span id="viewSubjectMaxStudents"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="subject-detail-row">
+                        <div class="row">
+                            <div class="col-12">
+                                <span class="subject-detail-label">Description:</span>
+                                <p id="viewSubjectDescription" class="mt-2"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="subject-detail-row">
+                        <div class="row">
+                            <div class="col-12">
+                                <span class="subject-detail-label">Prerequisites:</span>
+                                <div id="viewSubjectPrerequisites" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="subject-detail-row">
+                        <div class="row">
+                            <div class="col-12">
+                                <span class="subject-detail-label">Schedule:</span>
+                                <div class="table-responsive mt-2">
+                                    <table class="schedule-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Section</th>
+                                                <th>Type</th>
+                                                <th>Day</th>
+                                                <th>Start Time</th>
+                                                <th>End Time</th>
+                                                <th>Room</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="viewSubjectSchedules">
+                                            <!-- Schedules will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Passkey Generator Modal -->
     <div class="modal fade" id="passkeyModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
@@ -822,6 +921,7 @@ $stats = $b->get_statistics();
     <script src="javaScript/jquery.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        
         // Theme Toggle
         const themeToggleBtn = document.getElementById('themeToggle');
         const body = document.body;
@@ -1261,8 +1361,6 @@ $stats = $b->get_statistics();
         });
     });
 
-    
-    
     function loadSubjects() {
         $.post('exe/admin_ajax.php', {action: 'get_subjects'}, function(response) {
             if (response.success) {
@@ -1270,33 +1368,17 @@ $stats = $b->get_statistics();
                 tbody.empty();
                 
                 response.subjects.forEach(function(subject) {
-                    // Format the schedules
-                    let scheduleHtml = '';
-                    if (subject.schedules && subject.schedules.length > 0) {
-                        subject.schedules.forEach(function(schedule) {
-                            const startTime = formatTime(schedule.start_time);
-                            const endTime = formatTime(schedule.end_time);
-                            scheduleHtml += `${schedule.section_name}: ${schedule.day} ${startTime}-${endTime} ${schedule.room ? '(Room ' + schedule.room + ')' : ''}<br>`;
-                        });
-                    } else {
-                        scheduleHtml = 'No schedule';
-                    }
-                    
-                    // Get unique sections
-                    const sections = subject.schedules && subject.schedules.length > 0 
-                        ? [...new Set(subject.schedules.map(s => s.section_name))].join(', ') 
-                        : 'N/A';
-                    
                     const row = `
                         <tr>
                             <td>${subject.code}</td>
                             <td>${subject.name}</td>
-                            <td>${sections}</td>
                             <td>${subject.units}</td>
                             <td>${subject.year_level} / ${subject.semester}</td>
-                            <td>${scheduleHtml}</td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary" onclick="editSubject(${subject.id})">
+                                <button class="btn btn-sm btn-outline-info" onclick="viewSubject(${subject.id})">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary ms-1" onclick="editSubject(${subject.id})">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteSubject(${subject.id})">
@@ -1386,6 +1468,66 @@ $stats = $b->get_statistics();
         }
     }
 
+    function viewSubject(subjectId) {
+        $.post('exe/admin_ajax.php', {action: 'get_subject', subject_id: subjectId}, function(response) {
+            if (response.success) {
+                const subject = response.subject;
+                
+                // Populate the view modal
+                $('#viewSubjectCode').text(subject.code);
+                $('#viewSubjectName').text(subject.name);
+                $('#viewSubjectUnits').text(subject.units);
+                $('#viewSubjectYearLevel').text(subject.year_level);
+                $('#viewSubjectSemester').text(subject.semester);
+                $('#viewSubjectMaxStudents').text(subject.max_students);
+                $('#viewSubjectDescription').text(subject.description || 'No description available');
+                
+                // Populate prerequisites
+                const prerequisitesContainer = $('#viewSubjectPrerequisites');
+                prerequisitesContainer.empty();
+                
+                if (subject.prerequisites && subject.prerequisites.length > 0) {
+                    subject.prerequisites.forEach(prereq => {
+                        prerequisitesContainer.append(`<span class="badge bg-primary me-1">${prereq.code}</span>`);
+                    });
+                } else {
+                    prerequisitesContainer.text('No prerequisites');
+                }
+                
+                // Populate schedules
+                const schedulesContainer = $('#viewSubjectSchedules');
+                schedulesContainer.empty();
+                
+                if (subject.schedules && subject.schedules.length > 0) {
+                    subject.schedules.forEach(schedule => {
+                        const startTime = formatTime(schedule.start_time);
+                        const endTime = formatTime(schedule.end_time);
+                        
+                        schedulesContainer.append(`
+                            <tr>
+                                <td>${schedule.Section || 'N/A'}</td>
+                                <td>${schedule.Type || 'N/A'}</td>
+                                <td>${schedule.day || 'N/A'}</td>
+                                <td>${startTime}</td>
+                                <td>${endTime}</td>
+                                <td>${schedule.room || 'N/A'}</td>
+                            </tr>
+                        `);
+                    });
+                } else {
+                    schedulesContainer.append('<tr><td colspan="6" class="text-center">No schedules available</td></tr>');
+                }
+                
+                // Open the view modal
+                $('#viewSubjectModal').modal('show');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        }, 'json').fail(function(xhr, status, error) {
+            console.error('Error loading subject:', error);
+            alert('Failed to load subject data. Please check console for details.');
+        });
+    }
 
     function editSubject(subjectId) {
         $.post('exe/admin_ajax.php', {action: 'get_subject', subject_id: subjectId}, function(response) {
