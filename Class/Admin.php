@@ -61,5 +61,353 @@ Class Admin extends Database{
     }
     
 
+    public function fetch_admin_data(){
+        $x = $this->connect()->prepare("SELECT * FROM users WHERE id = ?");
+        $x->execute([$this->x1]);
+        if($x->rowCount() > 0){
+            $data = $x->fetchAll(PDO::FETCH_ASSOC);
+            $x = null;
+            return $data;
+        }
+    }
+
+    // The 1 commit
+    public function get_statistics() {
+        $db = $this->connect();
+        
+        // Get student count
+        $students = $db->query("SELECT COUNT(*) FROM students")->fetchColumn();
+        
+        // Get instructor count
+        $instructors = $db->query("SELECT COUNT(*) FROM instructors")->fetchColumn();
+        
+        // Get subject count
+        $subjects = $db->query("SELECT COUNT(*) FROM subjects WHERE is_active = 1")->fetchColumn();
+        
+        // Get enrollment count
+        $enrollments = $db->query("SELECT COUNT(*) FROM enrollments WHERE status = 'Enrolled'")->fetchColumn();
+        
+        return [
+            'students' => $students,
+            'instructors' => $instructors,
+            'subjects' => $subjects,
+            'enrollments' => $enrollments
+        ];
+    }
+
+    public function create_subject($code, $name, $units, $year_level, $semester, $max_students, $types, $prerequisites = [], $schedules = [], $description = '') {
+        $db = $this->connect();
+        
+        try {
+            $db->beginTransaction();
+            
+            // Check if subject code already exists
+            $checkStmt = $db->prepare("SELECT id FROM subjects WHERE code = ?");
+            $checkStmt->execute([$code]);
+            
+            if ($checkStmt->rowCount() > 0) {
+                $db->rollBack();
+                return false;
+            }
+            
+            // Check for duplicate schedules
+            $uniqueSchedules = [];
+            foreach ($schedules as $schedule) {
+                $key = $schedule['section'] . '-' . $schedule['day'] . '-' . $schedule['start_time'] . '-' . $schedule['end_time'];
+                if (!isset($uniqueSchedules[$key])) {
+                    $uniqueSchedules[$key] = $schedule;
+                }
+            }
+            $schedules = array_values($uniqueSchedules);
+            
+            // Insert subject
+            $stmt = $db->prepare("INSERT INTO subjects (code, name, description, units, year_level, semester, max_students, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$code, $name, $description, $units, $year_level, $semester, $max_students, $this->x1]);
+            $subject_id = $db->lastInsertId();
+            
+            // Insert prerequisites
+            if (!empty($prerequisites)) {
+                $stmt = $db->prepare("INSERT INTO subjectprerequisites (subject_id, prerequisite_id) VALUES (?, ?)");
+                foreach ($prerequisites as $prereq_id) {
+                    $stmt->execute([$subject_id, $prereq_id]);
+                }
+            }
+            
+            // Insert schedules
+            if (!empty($schedules)) {
+                $stmt = $db->prepare("INSERT INTO subjectschedules (subject_id, Section, day, start_time, end_time, room, Type) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                foreach ($schedules as $schedule) {
+                    $stmt->execute([
+                        $subject_id, 
+                        $schedule['section'],
+                        $schedule['day'], 
+                        $schedule['start_time'], 
+                        $schedule['end_time'], 
+                        $schedule['room'],
+                        $schedule['type'],
+                    ]);
+                }
+            }
+            
+            $db->commit();
+            return true;
+        } catch (PDOException $e) {
+            $db->rollBack();
+            error_log("Subject creation failed: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function generate_passkey($email, $user_type) {
+        $db = $this->connect();
+        
+        // Generate a random passkey
+        $passkey = bin2hex(random_bytes(8));
+        
+        // Set expiration date (7 days from now)
+        $expiration_date = date('Y-m-d H:i:s', strtotime('+7 days'));
+        
+        $stmt = $db->prepare("INSERT INTO passkeys (passkey, email, created_by, expiration_date, user_type) 
+                              VALUES (?, ?, ?, ?, ?)");
+        return $stmt->execute([$passkey, $email, $this->x1, $expiration_date, $user_type]);
+    }
+
+    public function get_all_subjects() {
+        $db = $this->connect();
+        
+        $stmt = $db->prepare("SELECT s.*, GROUP_CONCAT(DISTINCT p.code) as prerequisites 
+                              FROM subjects s 
+                              LEFT JOIN subjectprerequisites sp ON s.id = sp.subject_id 
+                              LEFT JOIN subjects p ON sp.prerequisite_id = p.id 
+                              WHERE s.is_active = 1 
+                              GROUP BY s.id 
+                              ORDER BY s.code");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function get_subject_with_schedules($subject_id) {
+        $db = $this->connect();
+        
+        $stmt = $db->prepare("SELECT s.*, ss.day, ss.start_time, ss.end_time, ss.room 
+                              FROM subjects s 
+                              LEFT JOIN subjectschedules ss ON s.id = ss.subject_id 
+                              WHERE s.id = ?");
+        $stmt->execute([$subject_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function get_prerequisite_options() {
+        $db = $this->connect();
+        
+        $stmt = $db->prepare("SELECT id, code, name FROM subjects WHERE is_active = 1 ORDER BY code");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    
+    
+    public function get_all_subjects_with_schedules() {
+        $db = $this->connect();
+        
+        // First get all subjects
+        $stmt = $db->prepare("
+            SELECT 
+                s.id, 
+                s.code, 
+                s.name, 
+                s.units, 
+                s.year_level, 
+                s.semester
+            FROM subjects s
+            WHERE s.is_active = 1
+            ORDER BY s.code
+        ");
+        $stmt->execute();
+        $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Then get all schedules
+        $stmt = $db->prepare("
+            SELECT 
+                ss.subject_id,
+                ss.Section as section_name,
+                ss.day,
+                ss.start_time,
+                ss.end_time,
+                ss.room,
+                ss.Type as schedule_type
+            FROM subjectschedules ss
+            INNER JOIN subjects s ON ss.subject_id = s.id
+            WHERE s.is_active = 1
+            ORDER BY ss.subject_id, ss.Section
+        ");
+        $stmt->execute();
+        $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Group schedules by subject_id
+        $groupedSchedules = [];
+        foreach ($schedules as $schedule) {
+            $subjectId = $schedule['subject_id'];
+            if (!isset($groupedSchedules[$subjectId])) {
+                $groupedSchedules[$subjectId] = [];
+            }
+            $groupedSchedules[$subjectId][] = $schedule;
+        }
+        
+        // Add schedules to subjects
+        foreach ($subjects as &$subject) {
+            $subjectId = $subject['id'];
+            $subject['schedules'] = isset($groupedSchedules[$subjectId]) ? $groupedSchedules[$subjectId] : [];
+        }
+        
+        return $subjects;
+    }
+
+    public function get_audit_logs() {
+        $db = $this->connect();
+        
+        $stmt = $db->prepare("
+            SELECT 
+                a.*,
+                u.firstname,
+                u.lastname
+            FROM auditlogs a
+            LEFT JOIN users u ON a.user_id = u.id
+            ORDER BY a.timestamp DESC
+            LIMIT 100
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function delete_subject($subject_id) {
+        $db = $this->connect();
+        
+        try {
+            $db->beginTransaction();
+            
+            // First delete schedules
+            $stmt = $db->prepare("DELETE FROM subjectschedules WHERE subject_id = ?");
+            $stmt->execute([$subject_id]);
+            
+            // Delete prerequisites
+            $stmt = $db->prepare("DELETE FROM subjectprerequisites WHERE subject_id = ? OR prerequisite_id = ?");
+            $stmt->execute([$subject_id, $subject_id]);
+            
+            // Delete the subject
+            $stmt = $db->prepare("DELETE FROM subjects WHERE id = ?");
+            $stmt->execute([$subject_id]);
+            
+            $db->commit();
+            return true;
+        } catch (PDOException $e) {
+            $db->rollBack();
+            error_log("Subject deletion failed: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Add these methods to your Admin class
+
+    public function get_subject_by_id($subject_id) {
+        $db = $this->connect();
+        
+        // Get subject basic info
+        $stmt = $db->prepare("SELECT * FROM subjects WHERE id = ?");
+        $stmt->execute([$subject_id]);
+        $subject = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$subject) {
+            return false;
+        }
+        
+        // Get prerequisites
+        $stmt = $db->prepare("
+            SELECT p.id, p.code, p.name 
+            FROM subjectprerequisites sp 
+            JOIN subjects p ON sp.prerequisite_id = p.id 
+            WHERE sp.subject_id = ?
+        ");
+        $stmt->execute([$subject_id]);
+        $subject['prerequisites'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Get schedules
+        $stmt = $db->prepare("SELECT * FROM subjectschedules WHERE subject_id = ?");
+        $stmt->execute([$subject_id]);
+        $subject['schedules'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        return $subject;
+    }
+
+    public function update_subject($subject_id, $code, $name, $units, $year_level, $semester, $max_students, $types, $prerequisites = [], $schedules = [], $description = '') {
+        $db = $this->connect();
+        
+        try {
+            $db->beginTransaction();
+            
+            // Check if subject code already exists (excluding current subject)
+            $checkStmt = $db->prepare("SELECT id FROM subjects WHERE code = ? AND id != ?");
+            $checkStmt->execute([$code, $subject_id]);
+            
+            if ($checkStmt->rowCount() > 0) {
+                $db->rollBack();
+                return false;
+            }
+            
+            // Check for duplicate schedules
+            $uniqueSchedules = [];
+            foreach ($schedules as $schedule) {
+                $key = $schedule['section'] . '-' . $schedule['day'] . '-' . $schedule['start_time'] . '-' . $schedule['end_time'];
+                if (!isset($uniqueSchedules[$key])) {
+                    $uniqueSchedules[$key] = $schedule;
+                }
+            }
+            $schedules = array_values($uniqueSchedules);
+            
+            // Update subject
+            $stmt = $db->prepare("UPDATE subjects SET code = ?, name = ?, description = ?, units = ?, year_level = ?, semester = ?, max_students = ? WHERE id = ?");
+            $stmt->execute([$code, $name, $description, $units, $year_level, $semester, $max_students, $subject_id]);
+            
+            // Delete old prerequisites
+            $stmt = $db->prepare("DELETE FROM subjectprerequisites WHERE subject_id = ?");
+            $stmt->execute([$subject_id]);
+            
+            // Insert new prerequisites
+            if (!empty($prerequisites)) {
+                $stmt = $db->prepare("INSERT INTO subjectprerequisites (subject_id, prerequisite_id) VALUES (?, ?)");
+                foreach ($prerequisites as $prereq_id) {
+                    $stmt->execute([$subject_id, $prereq_id]);
+                }
+            }
+            
+            // Delete old schedules
+            $stmt = $db->prepare("DELETE FROM subjectschedules WHERE subject_id = ?");
+            $stmt->execute([$subject_id]);
+            
+            // Insert new schedules
+            if (!empty($schedules)) {
+                $stmt = $db->prepare("INSERT INTO subjectschedules (subject_id, Section, day, start_time, end_time, room, Type) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                foreach ($schedules as $schedule) {
+                    $stmt->execute([
+                        $subject_id, 
+                        $schedule['section'],
+                        $schedule['day'], 
+                        $schedule['start_time'], 
+                        $schedule['end_time'], 
+                        $schedule['room'],
+                        $schedule['type'],
+                    ]);
+                }
+            }
+            
+            $db->commit();
+            return true;
+        } catch (PDOException $e) {
+            $db->rollBack();
+            error_log("Subject update failed: " . $e->getMessage());
+            return false;
+        }
+    }
+
 
 }##End of Class
