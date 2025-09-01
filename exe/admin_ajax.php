@@ -4,9 +4,11 @@ include('../Class/Db.php');
 include('../Class/Admin.php');
 
 if (!isset($_SESSION['admin_id'])) {
-    header('HTTP/1.1 401 Unauthorized');
-    echo json_encode(['error' => 'Unauthorized']);
-    exit();
+    if($_SESSION['user_type'] !== 'admin'){
+        header('HTTP/1.1 401 Unauthorized');
+        echo json_encode(['error' => 'Unauthorized']);
+        exit();
+    }
 }
 
 $admin_id = $_SESSION['admin_id'];

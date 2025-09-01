@@ -30,7 +30,7 @@ Class Admin extends Database{
 
     // Login Admin
     public function login_admin(){
-        $x = $this->connect()->prepare("SELECT * FROM users WHERE email = ?");
+        $x = $this->connect()->prepare("SELECT * FROM admin WHERE email = ?");
         $x->execute([$this->x1]);
         // if login it should be a greater than
         if($x->rowCount() > 0){
@@ -40,14 +40,15 @@ Class Admin extends Database{
                     $x = null;
                     echo '0';
                 }else{
-                    $_SESSION['admin_id'] = $data[0]['id'];
+                    $_SESSION['admin_id'] = $data[0]['admin_id'];
+                    $_SESSION['user_type'] = $data[0]['user_type'];
                     // Update last login
                     date_default_timezone_set('Asia/Manila');
                     $todays_date=date("Y-m-d h:i:sa");
                     $today=strtotime($todays_date);
                     $date=date("Y-m-d h:i:sa", $today);
-                    $update = $this->connect()->prepare("UPDATE users SET last_login = ? WHERE id = ?");
-                    $update->execute([$date, $data[0]['id']]);
+                    $update = $this->connect()->prepare("UPDATE admin SET last_login = ? WHERE admin_id = ?");
+                    $update->execute([$date, $data[0]['admin_id']]);
                     echo '3';
                 }
             }else{
@@ -62,7 +63,7 @@ Class Admin extends Database{
     
 
     public function fetch_admin_data(){
-        $x = $this->connect()->prepare("SELECT * FROM users WHERE id = ?");
+        $x = $this->connect()->prepare("SELECT * FROM admin a JOIN admin_info ai ON a.admin_id = ai.admin_id WHERE a.admin_id = ?");
         $x->execute([$this->x1]);
         if($x->rowCount() > 0){
             $data = $x->fetchAll(PDO::FETCH_ASSOC);
@@ -79,7 +80,7 @@ Class Admin extends Database{
         $students = $db->query("SELECT COUNT(*) FROM students")->fetchColumn();
         
         // Get instructor count
-        $instructors = $db->query("SELECT COUNT(*) FROM instructors")->fetchColumn();
+        $instructors = $db->query("SELECT COUNT(*) FROM instructor")->fetchColumn();
         
         // Get subject count
         $subjects = $db->query("SELECT COUNT(*) FROM subjects WHERE is_active = 1")->fetchColumn();
