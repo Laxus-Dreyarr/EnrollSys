@@ -341,7 +341,7 @@
                         <div class="mb-3success-message" id="successMessage"></div>
                     </form>
                     <div class="text-center mt-3">
-                        <a href="#" class="text-muted">Forgot password?</a>
+                        <a href="#" class="text-muted" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" data-bs-dismiss="modal">Forgot password?</a>
                     </div>
                 </div>
             </div>
@@ -403,6 +403,93 @@
                 </div>
                 <div class="modal-footer justify-content-center">
                     <p>Already have an account? <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">Login</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Forgot Password Modal -->
+    <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reset Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="forgotPasswordForm">
+                        <div class="mb-3">
+                            <label for="resetEmail" class="form-label">EVSUmail</label>
+                            <input type="email" class="form-control" id="resetEmail" placeholder="username@evsu.edu.ph" required>
+                            <div class="invalid-feedback">Please enter a valid EVSUmail address</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="newPassword" required>
+                            <div class="password-requirements">
+                                <p>Password must contain:</p>
+                                <ul>
+                                    <li id="reset-req-length"><i class="fas fa-circle"></i> At least 8 characters</li>
+                                    <li id="reset-req-uppercase"><i class="fas fa-circle"></i> At least one uppercase letter</li>
+                                    <li id="reset-req-lowercase"><i class="fas fa-circle"></i> At least one lowercase letter</li>
+                                    <li id="reset-req-number"><i class="fas fa-circle"></i> At least one number</li>
+                                    <li id="reset-req-special"><i class="fas fa-circle"></i> At least one special character</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                            <div class="invalid-feedback">Passwords do not match</div>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="showPassword2">
+                            <label class="form-check-label" for="showPassword2">Show Password</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="sendCodeBtn">Send Verification Code</button>
+                    </form>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <p>Remember your password? <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">Login</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Verification Code Modal -->
+    <div class="modal fade" id="verificationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Verify Your Email</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <div class="verification-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <p>We've sent a verification code to <span id="emailSentTo" class="fw-bold">user@evsu.edu.ph</span></p>
+                    </div>
+                    <form id="verificationForm">
+                        <div class="mb-4">
+                            <label for="verificationCode" class="form-label">Verification Code</label>
+                            <div class="verification-inputs d-flex justify-content-between">
+                                <input type="text" class="form-control verification-code" maxlength="1" required>
+                                <input type="text" class="form-control verification-code" maxlength="1" required>
+                                <input type="text" class="form-control verification-code" maxlength="1" required>
+                                <input type="text" class="form-control verification-code" maxlength="1" required>
+                                <input type="text" class="form-control verification-code" maxlength="1" required>
+                                <input type="text" class="form-control verification-code" maxlength="1" required>
+                            </div>
+                            <div class="invalid-feedback">Please enter the 6-digit code</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mb-3" id="verifyCodeBtn">Verify Code</button>
+                        <div class="text-center">
+                            <p class="mb-0">Didn't receive the code? <a href="#" id="resendCode">Resend</a></p>
+                            <small class="text-muted" id="countdown">(60s)</small>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

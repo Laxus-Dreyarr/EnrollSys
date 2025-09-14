@@ -46,6 +46,7 @@ $stats = $b->get_statistics();
     <!-- Google Fonts -->
     <link rel="stylesheet" href="style/google-fonts.css">
     <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body class="light-theme">
     <div class="dashboard-container">
@@ -175,6 +176,25 @@ $stats = $b->get_statistics();
                             </div>
                         </div>
                     </div>
+                   <!-- <div class="col-md-3 col-6">
+                        <div class="card stats-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="card-title">Notification</h5>
+                                        <h2 class="mb-0" id="notificationCount">0</h2>
+                                    </div>
+                                    <div class="bg-info p-3 rounded">
+                                        <i class="fas fa-bell fa-2x text-white" id="notificationCount"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <span class="text-success"><i class="fas fa-arrow-up"></i> 8.3%</span>
+                                    <span class="text-muted ms-2">Since last month</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div> -->
                     <div class="col-md-3 col-6">
                         <div class="card stats-card">
                             <div class="card-body">
@@ -247,7 +267,11 @@ $stats = $b->get_statistics();
                                 </div>
                             </div>
                         </div>
+                        <div class="Space">
+                            <!-- Space -->
+                        </div>
                     </div>
+
 
                     <!-- Students Tab -->
                     <div class="tab-pane fade" id="students">
@@ -279,7 +303,7 @@ $stats = $b->get_statistics();
                                                 <td>BS Information Technology</td>
                                                 <td>3rd Year</td>
                                                 <td><span class="badge badge-success">Active</span></td>
-                                                <td>
+                                                <td id="_student_btn">
                                                     <button class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></button>
                                                     <button class="btn btn-sm btn-outline-warning ms-1"><i class="fas fa-edit"></i></button>
                                                     <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></button>
@@ -291,7 +315,7 @@ $stats = $b->get_statistics();
                                                 <td>BS Information Technology</td>
                                                 <td>2nd Year</td>
                                                 <td><span class="badge badge-success">Active</span></td>
-                                                <td>
+                                                <td id="_student_btn">
                                                     <button class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></button>
                                                     <button class="btn btn-sm btn-outline-warning ms-1"><i class="fas fa-edit"></i></button>
                                                     <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></button>
@@ -303,7 +327,7 @@ $stats = $b->get_statistics();
                                                 <td>BS Information Technology</td>
                                                 <td>4th Year</td>
                                                 <td><span class="badge badge-warning">Probation</span></td>
-                                                <td>
+                                                <td id="_student_btn">
                                                     <button class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></button>
                                                     <button class="btn btn-sm btn-outline-warning ms-1"><i class="fas fa-edit"></i></button>
                                                     <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></button>
@@ -313,6 +337,9 @@ $stats = $b->get_statistics();
                                     </table>
                                 </div>
                             </div>
+                        </div>
+                        <div class="Space">
+                            <!-- Space -->
                         </div>
                     </div>
 
@@ -920,7 +947,167 @@ $stats = $b->get_statistics();
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="javaScript/jquery.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Supabase at the very top of your script
+        const supabaseUrl = "https://dfvapjrkotprotpbpeju.supabase.co";
+        const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmdmFwanJrb3Rwcm90cGJwZWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNDg1OTMsImV4cCI6MjA3MjcyNDU5M30.Hou-GtB-P8qJ4fxXbC-VtyaCkDpf5Kr01DD9aSckhiU";
+
+        // Create Supabase client
+        const { createClient } = supabase;
+        const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+
+        // Function to fetch notification count
+        // async function fetchNotificationCount() {
+        //     try {
+        //         const { count, error } = await supabaseClient
+        //             .from('notifications')
+        //             .select('*', { count: 'exact', head: true });
+
+        //         if (error) {
+        //             console.error('Error fetching notification count:', error);
+        //             // Try fallback method
+        //             fetchNotificationCountFallback();
+        //             return;
+        //         }
+
+        //         // Update the notification count using the ID
+        //         const notificationElement = document.getElementById('notificationCount');
+        //         if (notificationElement) {
+        //             notificationElement.textContent = count;
+        //         }
+        //     } catch (err) {
+        //         console.error('Error in fetchNotificationCount:', err);
+        //         // Try fallback method
+        //         fetchNotificationCountFallback();
+        //     }
+        // }
+
+        // Alternative method using fetch if Supabase JS isn't working
+        // async function fetchNotificationCountFallback() {
+        //     try {
+        //         const response = await fetch(`https://dfvapjrkotprotpbpeju.supabase.co/rest/v1/notifications?select=*`, {
+        //             headers: {
+        //                 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmdmFwanJrb3Rwcm90cGJwZWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNDg1OTMsImV4cCI6MjA3MjcyNDU5M30.Hou-GtB-P8qJ4fxXbC-VtyaCkDpf5Kr01DD9aSckhiU',
+        //                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmdmFwanJrb3Rwcm90cGJwZWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNDg1OTMsImV4cCI6MjA3MjcyNDU5M30.Hou-GtB-P8qJ4fxXbC-VtyaCkDpf5Kr01DD9aSckhiU'
+        //             }
+        //         });
+                
+        //         if (!response.ok) {
+        //             throw new Error('Network response was not ok');
+        //         }
+                
+        //         const data = await response.json();
+        //         const count = data.length;
+                
+        //         const notificationElement = document.getElementById('notificationCount');
+        //         if (notificationElement) {
+        //             notificationElement.textContent = count;
+        //         }
+        //     } catch (err) {
+        //         console.error('Error in fetchNotificationCountFallback:', err);
+        //         // Set a default value if both methods fail
+        //         const notificationElement = document.getElementById('notificationCount');
+        //         if (notificationElement) {
+        //             notificationElement.textContent = '0';
+        //         }
+        //     }
+        // }
+
+        async function insertsupabase(){
+            const data = {
+                table_name: 'subject',  // make sure these variables are defined
+                operation: 'INSERT',
+                record_id: 'ID'
+            };
+            // Create AbortController for timeout (similar to PHP's 10s timeout)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            try {
+            const response = await fetch(`${supabaseUrl}/rest/v1/notifications`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseAnonKey,
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify(data),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData = await response.json();
+            console.log(responseData);
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                console.error('Request timed out');
+            } else {
+                console.error('Error:', error);
+            }
+        }
+        }
+
+        // Function to set up real-time subscription
+        function setupRealtimeSubscription() {
+            const subscription = supabaseClient
+                .channel('notifications-changes')
+                .on('postgres_changes', 
+                    { 
+                        event: '*',  // Listen for all changes (INSERT, UPDATE, DELETE)
+                        schema: 'public', 
+                        table: 'notifications' 
+                    }, 
+                    (payload) => {
+                        console.log('Change received!', payload);
+                        // Refresh the notification count when changes occur
+                        // fetchNotificationCount();
+                        loadSubjects();
+                        loadStatistics();
+                                        
+                        // Show notification to user
+                        showNotification('New subject has been added!');
+                    }
+                )
+                .subscribe((status) => {
+                    console.log('Subscription status:', status);
+                    if (status === 'SUBSCRIBED') {
+                        console.log('Real-time subscription established');
+                    }
+                });
+            
+            return subscription;
+        }
+
+
+        // Function to show notification
+        function showNotification(message) {
+        // Create notification element if it doesn't exist
+            if (!$('#realtime-notification').length) {
+                $('body').append(`
+                <div id="realtime-notification" class="alert alert-info alert-dismissible fade show" 
+                    style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: none;">
+                    <span id="notification-message"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                `);
+            }
+            
+            // Show notification
+            $('#notification-message').text(message);
+            $('#realtime-notification').fadeIn();
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                $('#realtime-notification').fadeOut();
+            }, 5000);
+        }
+
+    document.addEventListener('DOMContentLoaded', function() {        
         
         // Theme Toggle
         const themeToggleBtn = document.getElementById('themeToggle');
@@ -948,7 +1135,18 @@ $stats = $b->get_statistics();
                 themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
             }
         });
+
+
+        // fetchNotificationCount();
+        setupRealtimeSubscription();
+
+        loadSubjects();
+        loadStatistics();
+                                
+        // Show notification to user
+        showNotification('New subject has been added!');
         
+
         // Passkey Generator
         const generatePasskeyBtn = document.getElementById('generatePasskeyBtn');
         const sendPasskeyBtn = document.getElementById('sendPasskeyBtn');
@@ -1198,7 +1396,10 @@ $stats = $b->get_statistics();
         $('a[href="#audit"]').on('shown.bs.tab', function(e) {
             loadAuditLogs();
         });
-    });
+
+
+        
+}); //END OF DocumentcontentLoad
     
     // Function to generate a random passkey
     function generatePasskey(length) {
@@ -1315,6 +1516,9 @@ $stats = $b->get_statistics();
                 loadStatistics();
                 // loadSubjects2();
                 loadSubjects();
+                // supabase insert notifications
+                insertsupabase();
+                // END
             } else if (response == 1){
                 alert("Section Already exist!")
             } else {
@@ -1374,8 +1578,8 @@ $stats = $b->get_statistics();
                             <td>${subject.name}</td>
                             <td>${subject.units}</td>
                             <td>${subject.year_level} / ${subject.semester}</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-info" onclick="viewSubject(${subject.id})">
+                            <td id="_student_btn">
+                                <button id="_view" class="btn btn-sm btn-outline-info" onclick="viewSubject(${subject.id})">
                                     <i class="fas fa-eye"></i> View
                                 </button>
                                 <button class="btn btn-sm btn-outline-primary ms-1" onclick="editSubject(${subject.id})">
@@ -1388,6 +1592,7 @@ $stats = $b->get_statistics();
                         </tr>
                     `;
                     tbody.append(row);
+                    console.log('Loading subjects...');
                 });
             }
         }, 'json').fail(function(xhr, status, error) {
@@ -1439,6 +1644,7 @@ $stats = $b->get_statistics();
             console.error('Error loading audit logs:', error);
         });
     }
+
 
     function formatTime(timeString) {
         if (!timeString) return '';

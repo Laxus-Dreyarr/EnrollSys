@@ -328,19 +328,26 @@
                     <form id="loginForm">
                         <div class="mb-3">
                             <label for="loginEmail" class="form-label">EVSUmail</label>
-                            <input type="email" class="form-control" id="loginEmail" placeholder="username@evsu.edu.ph" required>
-                            <div class="invalid-feedback">Please enter a valid EVSUmail address</div>
+                            <input type="email" class="form-control" id="email" placeholder="username@evsu.edu.ph" required>
+                            <div class="invalid-feedback"></div>
+                            <!-- Add error message container -->
+                            <div id="loginEmailError" class="text-danger mt-1 small" style="display: none;"></div>
                         </div>
                         <div class="mb-3">
                             <label for="loginPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="loginPassword" required>
-                            <div class="invalid-feedback">Please enter your password</div>
+                            <input type="password" class="form-control" id="password" required>
+                            <div class="invalid-feedback"></div>
+                            <!-- Add error message container -->
+                            <div id="loginPasswordError" class="text-danger mt-1 small" style="display: none;"></div>
                         </div>
                         <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="rememberMe">
-                            <label class="form-check-label" for="rememberMe">Remember me</label>
+                            <input type="checkbox" class="form-check-input" id="show_login_password">
+                            <label class="form-check-label" for="show_login_password">Show Password</label>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Login</button>
+                        <button type="submit" class="btn btn-primary w-100" id="loginBtn">Login
+                        <span class="spinner-border spinner-border-sm" style="display: none;" id="loginSpinner"></span>
+                        </button>
+                        <div class="mb-3success-message" id="successMessage"></div>
                     </form>
                     <div class="text-center mt-3">
                         <a href="#" class="text-muted">Forgot password?</a>
@@ -349,6 +356,7 @@
                 <div class="modal-footer justify-content-center">
                     <p>Don't have an account? <a href="#" data-bs-toggle="modal" data-bs-target="#registerModal" data-bs-dismiss="modal">Register</a></p>
                 </div>
+                <div class="alert-container" id="alertContainer"></div>
             </div>
         </div>
     </div>
@@ -388,7 +396,7 @@
                             <label for="registerPassword" class="form-label">Password</label>
                             <input type="password" class="form-control" id="registerPassword" required>
                             <div class="password-requirements">
-                                <p>Password must contain:</p>
+                                <p>(Optional)Password must contain:</p>
                                 <ul>
                                     <li id="req-length"><i class="fas fa-circle"></i> At least 8 characters</li>
                                     <li id="req-uppercase"><i class="fas fa-circle"></i> At least one uppercase letter</li>
@@ -402,6 +410,10 @@
                             <label for="repeatPassword" class="form-label">Repeat Password</label>
                             <input type="password" class="form-control" id="repeatPassword" required>
                             <div class="invalid-feedback">Passwords do not match</div>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="register_show_password">
+                            <label class="form-check-label" for="register_show_password">Show Password</label>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Register</button>
                     </form>
@@ -421,329 +433,8 @@
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Custom JS -->
+     <script src="javascript/jquery.js"></script>
     <!-- <script src="script.js"></script> -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-
-
-    // Theme Toggle Functionality
-    const themeToggleBtn = document.getElementById('themeToggle');
-    const body = document.body;
-    
-    // Check for saved theme preference or use preferred color scheme
-    const savedTheme = localStorage.getItem('theme') || 
-                      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    
-    // Apply the saved theme
-    if (savedTheme === 'dark') {
-        body.classList.add('dark-theme');
-        themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-    }
-    
-    // Theme toggle button click event
-    themeToggleBtn.addEventListener('click', function() {
-        body.classList.toggle('dark-theme');
-        
-        if (body.classList.contains('dark-theme')) {
-            localStorage.setItem('theme', 'dark');
-            themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-        } else {
-            localStorage.setItem('theme', 'light');
-            themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
-        }
-    });
-    
-    // Navbar scroll effect
-    window.addEventListener('scroll', function() {
-        const navbar = document.querySelector('.navbar');
-        if (window.scrollY > 50) {
-            navbar.classList.add('scrolled');
-        } else {
-            navbar.classList.remove('scrolled');
-        }
-    });
-    
-    // Back to top button
-    const backToTopBtn = document.querySelector('.back-to-top');
-    
-    window.addEventListener('scroll', function() {
-        if (window.scrollY > 300) {
-            backToTopBtn.classList.add('active');
-        } else {
-            backToTopBtn.classList.remove('active');
-        }
-    });
-    
-    backToTopBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-    });
-    
-    // Counter animation for stats
-    const counters = document.querySelectorAll('.counter');
-    const speed = 200;
-    
-    function animateCounters() {
-        counters.forEach(counter => {
-            const target = +counter.getAttribute('data-target');
-            const count = +counter.innerText;
-            const increment = target / speed;
-            
-            if (count < target) {
-                counter.innerText = Math.ceil(count + increment);
-                setTimeout(animateCounters, 1);
-            } else {
-                counter.innerText = target;
-            }
-        });
-    }
-    
-    // Start counter animation when stats section is in view
-    const statsSection = document.querySelector('.stats-section');
-    const observer = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-            animateCounters();
-            observer.unobserve(statsSection);
-        }
-    }, { threshold: 0.5 });
-    
-    observer.observe(statsSection);
-    
-    // Form validation for registration
-    const registerForm = document.getElementById('registerForm');
-    const registerEmail = document.getElementById('registerEmail');
-    const registerPassword = document.getElementById('registerPassword');
-    const repeatPassword = document.getElementById('repeatPassword');
-    
-    if (registerForm) {
-        // EVSUmail validation
-        registerEmail.addEventListener('input', function() {
-            if (!this.value.endsWith('@evsu.edu.ph')) {
-                this.classList.add('is-invalid');
-            } else {
-                this.classList.remove('is-invalid');
-            }
-        });
-        
-        // Password validation
-        registerPassword.addEventListener('input', function() {
-            const password = this.value;
-            const requirements = {
-                length: password.length >= 8,
-                uppercase: /[A-Z]/.test(password),
-                lowercase: /[a-z]/.test(password),
-                number: /[0-9]/.test(password),
-                special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-            };
-            
-            // Update requirement indicators
-            document.getElementById('req-length').classList.toggle('valid', requirements.length);
-            document.getElementById('req-uppercase').classList.toggle('valid', requirements.uppercase);
-            document.getElementById('req-lowercase').classList.toggle('valid', requirements.lowercase);
-            document.getElementById('req-number').classList.toggle('valid', requirements.number);
-            document.getElementById('req-special').classList.toggle('valid', requirements.special);
-        });
-        
-        // Repeat password validation
-        repeatPassword.addEventListener('input', function() {
-            if (this.value !== registerPassword.value) {
-                this.classList.add('is-invalid');
-            } else {
-                this.classList.remove('is-invalid');
-            }
-        });
-        
-        // Form submission
-        registerForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Validate all fields
-            let isValid = true;
-            
-            // Check EVSUmail
-            if (!registerEmail.value.endsWith('@evsu.edu.ph')) {
-                registerEmail.classList.add('is-invalid');
-                isValid = false;
-            }
-            
-            // Check password match
-            if (registerPassword.value !== repeatPassword.value) {
-                repeatPassword.classList.add('is-invalid');
-                isValid = false;
-            }
-            
-            // Check required fields
-            const requiredFields = this.querySelectorAll('[required]');
-            requiredFields.forEach(field => {
-                if (!field.value.trim()) {
-                    field.classList.add('is-invalid');
-                    isValid = false;
-                }
-            });
-            
-            if (isValid) {
-                // Simulate form submission
-                const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
-                modal.hide();
-                
-                // Show success message
-                alert('Registration successful! Please check your EVSUmail for verification.');
-                this.reset();
-            }
-        });
-    }
-    
-    // Form validation for login
-    const loginForm = document.getElementById('loginForm');
-    
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            let isValid = true;
-            const email = document.getElementById('loginEmail');
-            const password = document.getElementById('loginPassword');
-            
-            if (!email.value.endsWith('@evsu.edu.ph')) {
-                email.classList.add('is-invalid');
-                isValid = false;
-            }
-            
-            if (!password.value.trim()) {
-                password.classList.add('is-invalid');
-                isValid = false;
-            }
-            
-            if (isValid) {
-                // Simulate login process
-                const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
-                modal.hide();
-                
-                // Show welcome message
-                alert('Welcome back! Redirecting to your dashboard...');
-                this.reset();
-            }
-        });
-    }
-    
-    // Modal animation
-    const modals = document.querySelectorAll('.modal');
-    
-    modals.forEach(modal => {
-        modal.addEventListener('show.bs.modal', function() {
-            const modalDialog = this.querySelector('.modal-dialog');
-            modalDialog.style.opacity = '50';
-            modalDialog.style.transform = 'translateY(0px)';
-            
-            setTimeout(() => {
-                modalDialog.style.transition = 'all 0.3s ease';
-                modalDialog.style.opacity = '50';
-                modalDialog.style.transform = 'translateY(20px)';
-            }, 10);
-        });
-    });
-    
-    // Switch between login and register modals
-    const loginModalLinks = document.querySelectorAll('[data-bs-target="#loginModal"]');
-    const registerModalLinks = document.querySelectorAll('[data-bs-target="#registerModal"]');
-    
-    loginModalLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            if (this.hasAttribute('data-bs-dismiss')) {
-                const currentModal = bootstrap.Modal.getInstance(document.querySelector('.modal.show'));
-                currentModal.hide();
-            }
-        });
-    });
-    
-    registerModalLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            if (this.hasAttribute('data-bs-dismiss')) {
-                const currentModal = bootstrap.Modal.getInstance(document.querySelector('.modal.show'));
-                currentModal.hide();
-            }
-        });
-    });
-    
-    // Initialize Bootstrap tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-    
-    // Editable content box functions
-    window.copyBox = function(boxId) {
-        const box = document.querySelector(`.editable-box[data-box-id="${boxId}"]`);
-        if (box) {
-            const boxContent = box.innerHTML;
-            navigator.clipboard.writeText(box.outerHTML)
-                .then(() => {
-                    // Show copied feedback
-                    const originalText = box.querySelector('.btn-copy i').className;
-                    box.querySelector('.btn-copy i').className = 'fas fa-check';
-                    setTimeout(() => {
-                        box.querySelector('.btn-copy i').className = originalText;
-                    }, 2000);
-                })
-                .catch(err => {
-                    console.error('Failed to copy box: ', err);
-                });
-        }
-    };
-    
-    window.deleteBox = function(boxId) {
-        if (confirm('Are you sure you want to delete this content box?')) {
-            const box = document.querySelector(`.editable-box[data-box-id="${boxId}"]`);
-            if (box) {
-                box.style.transform = 'scale(0)';
-                setTimeout(() => {
-                    box.remove();
-                }, 300);
-            }
-        }
-    };
-    
-    // Animate elements on scroll
-    const animateOnScroll = function() {
-        const elements = document.querySelectorAll('.feature-card, .about-image, .contact-form, .contact-info');
-        
-        elements.forEach(element => {
-            const elementPosition = element.getBoundingClientRect().top;
-            const screenPosition = window.innerHeight / 1.2;
-            
-            if (elementPosition < screenPosition) {
-                element.classList.add('fade-in-up');
-            }
-        });
-    };
-    
-    window.addEventListener('scroll', animateOnScroll);
-    animateOnScroll(); // Run once on page load
-    
-    // Parallax effect
-    window.addEventListener('scroll', function() {
-        const scrollPosition = window.pageYOffset;
-        // First background picture
-        const parallaxElements = document.querySelectorAll('.parallax');
-
-        // Second background picture
-        const parallaxElements2 = document.querySelectorAll('.parallax2');
-        
-        // parallaxElements.forEach(element => {
-        //     // First background picture
-        //     element.style.backgroundPositionX = scrollPosition * 1.5 + 'px';
-        // });
-        
-        // Second background picture
-        parallaxElements2.forEach(element => {
-            // First background picture
-            element.style.backgroundPositionY = scrollPosition * 0.5 + 'px';
-        });
-    });
-});
-    </script>
+    <script src="javaScript/function/index_student.js"></script>
 </body>
 </html>

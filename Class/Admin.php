@@ -151,6 +151,8 @@ Class Admin extends Database{
             }
             
             $db->commit();
+            // Notify Supabase about the new subject
+            // $this->notify_supabase('subjects', 'INSERT', $subject_id);
             return true;
         } catch (PDOException $e) {
             $db->rollBack();
@@ -408,6 +410,116 @@ Class Admin extends Database{
             error_log("Subject update failed: " . $e->getMessage());
             return false;
         }
+    }
+
+
+
+
+    // private function notify_supabase($table_name, $operation, $record_id) {
+    // // Supabase configuration
+    //     $supabase_url = 'https://dfvapjrkotprotpbpeju.supabase.co';
+    //     $supabase_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmdmFwanJrb3Rwcm90cGJwZWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNDg1OTMsImV4cCI6MjA3MjcyNDU5M30.Hou-GtB-P8qJ4fxXbC-VtyaCkDpf5Kr01DD9aSckhiU';
+        
+    //     $data = [
+    //         'table_name' => $table_name,
+    //         'operation' => $operation,
+    //         'record_id' => $record_id
+    //     ];
+        
+    //     $ch = curl_init($supabase_url . '/rest/v1/notifications');
+    //     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    //     curl_setopt($ch, CURLOPT_POST, true);
+    //     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    //     curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    //         'Content-Type: application/json',
+    //         'apikey: ' . $supabase_key,
+    //         'Authorization: Bearer ' . $supabase_key
+    //     ]);
+        
+    //     $response = curl_exec($ch);
+    //     curl_close($ch);
+        
+    //     return $response;
+    // }
+
+    // private function notify_supabase($table_name, $operation, $record_id) {
+    // // Supabase configuration
+    // $supabase_url = 'https://dfvapjrkotprotpbpeju.supabase.co';
+    // $supabase_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmdmFwanJrb3Rwcm90cGJwZWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNDg1OTMsImV4cCI6MjA3MjcyNDU5M30.Hou-GtB-P8qJ4fxXbC-VtyaCkDpf5Kr01DD9aSckhiU';
+    
+    // $data = [
+    //     'table_name' => $table_name,
+    //     'operation' => $operation,
+    //     'record_id' => $record_id
+    // ];
+    
+    // $ch = curl_init($supabase_url . '/rest/v1/notifications');
+    // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    // curl_setopt($ch, CURLOPT_POST, true);
+    // curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    // curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    //     'Content-Type: application/json',
+    //     'apikey: ' . $supabase_key,
+    //     'Authorization: Bearer ' . $supabase_key,
+    //     'Prefer: return=minimal'
+    // ]);
+    
+    // $response = curl_exec($ch);
+    // $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    
+    // if (curl_errno($ch)) {
+    //     error_log('Curl error: ' . curl_error($ch));
+    // }
+    
+    // curl_close($ch);
+    
+    // error_log("Supabase notification sent. HTTP Code: $http_code, Response: $response");
+    
+    // return $response;
+    // }
+
+
+    private function notify_supabase($table_name, $operation, $record_id) {
+        // Supabase configuration
+        $supabase_url = 'https://dfvapjrkotprotpbpeju.supabase.co';
+        $supabase_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmdmFwanJrb3Rwcm90cGJwZWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNDg1OTMsImV4cCI6MjA3MjcyNDU5M30.Hou-GtB-P8qJ4fxXbC-VtyaCkDpf5Kr01DD9aSckhiU';
+        
+        $data = [
+            'table_name' => $table_name,
+            'operation' => $operation,
+            'record_id' => $record_id
+        ];
+        
+        $ch = curl_init($supabase_url . '/rest/v1/notifications');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'apikey: ' . $supabase_key,
+            'Authorization: Bearer ' . $supabase_key,
+            'Prefer: return=minimal'
+        ]);
+        
+        // Additional options for better debugging
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        
+        curl_close($ch);
+        
+        // Log the results
+        error_log("Supabase notification - Table: $table_name, Operation: $operation, Record ID: $record_id");
+        error_log("HTTP Code: $http_code");
+        error_log("Response: " . print_r($response, true));
+        if ($error) {
+            error_log("CURL Error: $error");
+        }
+        
+        return $response;
     }
 
 
