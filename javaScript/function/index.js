@@ -454,7 +454,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const resendCodeLink = document.getElementById('resendCode');
     const countdownElement = document.getElementById('countdown');
 
-        if (forgotPasswordForm) {
+    if (forgotPasswordForm) {
         // Email validation
         const resetEmail = document.getElementById('resetEmail');
         resetEmail.addEventListener('input', function() {
@@ -528,37 +528,56 @@ document.addEventListener('DOMContentLoaded', function() {
                 newPassword.classList.add('is-invalid');
                 isValid = false;
             }
+
             
             if (isValid) {
-                const sendCodeBtn = document.getElementById('sendCodeBtn');
-                sendCodeBtn.disabled = true;
-                sendCodeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+                $.ajax({
+                    url: 'exe/forgot_password.php',
+                    method: 'POST',
+                    data: {email: resetEmail.value, password: newPassword.value, confirmPassword: confirmPassword.value},
+                    success: function(response) {
+                        if(response == '1'){
+                            resetEmail.classList.add('is-invalid', 'shake');
+                            setTimeout(() => resetEmail.classList.remove('shake'), 500);
+                        }else if(response == '2'){
+                            newPassword.classList.remove('is-invalid', 'shake');
+                            setTimeout(() => newPassword.classList.remove('shake'), 500);
+                        }else if(response == '3'){
+                            newPassword.classList.remove('is-invalid', 'shake');
+                            const sendCodeBtn = document.getElementById('sendCodeBtn');
+                            sendCodeBtn.disabled = true;
+                            sendCodeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+                            // Simulate sending verification code
+                            setTimeout(() => {
+                                // // Update email in verification modal
+                                // document.getElementById('emailSentTo').textContent = resetEmail.value;
+                                
+                                // // Switch to verification modal
+                                // const forgotModal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
+                                // forgotModal.hide();
+                                
+                                // const verificationModal = new bootstrap.Modal(document.getElementById('verificationModal'));
+                                // verificationModal.show();
+                                
+                                // // Start countdown for resend
+                                // startCountdown();
+                                
+                                // // Reset button
+                                // sendCodeBtn.disabled = false;
+                                // sendCodeBtn.innerHTML = 'Send Verification Code';
+                                window.location.replace('index-admin-reset.php');
+
+                            }, 1500);
+                        }
+                    }
+                });
                 
-                // Simulate sending verification code
-                setTimeout(() => {
-                    // Update email in verification modal
-                    document.getElementById('emailSentTo').textContent = resetEmail.value;
-                    
-                    // Switch to verification modal
-                    const forgotModal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
-                    forgotModal.hide();
-                    
-                    const verificationModal = new bootstrap.Modal(document.getElementById('verificationModal'));
-                    verificationModal.show();
-                    
-                    // Start countdown for resend
-                    startCountdown();
-                    
-                    // Reset button
-                    sendCodeBtn.disabled = false;
-                    sendCodeBtn.innerHTML = 'Send Verification Code';
-                }, 1500);
+                
             }
         });
     }
-
-
-        // Verification code input handling
+    
+    // Verification code input handling
     const verificationInputs = document.querySelectorAll('.verification-code');
     if (verificationInputs.length) {
         verificationInputs.forEach((input, index) => {
@@ -579,8 +598,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-
-        // Verification form submission
+    
+    // Verification form submission
     if (verificationForm) {
         verificationForm.addEventListener('submit', function(e) {
             e.preventDefault();

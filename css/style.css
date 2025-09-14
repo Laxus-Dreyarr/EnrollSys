@@ -950,6 +950,7 @@ ul {
     color: var(--text-dark);
 }
 
+
 .form-control:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
@@ -1123,6 +1124,34 @@ ul {
 
 @keyframes fill {
     100% { box-shadow: 0 0 30px rgba(75, 181, 67, 0.5); }
+}
+
+/* Verification modal specific styles */
+.verification-digit {
+    width: 50px;
+    height: 60px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0 5px;
+}
+
+#timerBadge {
+    font-size: 0.9rem;
+}
+
+#redirectButton {
+    transition: all 0.3s ease;
+}
+
+#redirectButton:hover {
+    background-color: #6c757d;
+    transform: translateY(-2px);
+}
+
+/* Progress bar animation */
+.progress-bar {
+    transition: width 1s linear;
 }
 
 /* Back to Top Button */
@@ -1624,5 +1653,12 @@ ul {
         width: 60px;
         height: 60px;
         font-size: 1.5rem;
+    }
+
+    .verification-digit {
+        width: 40px;
+        height: 50px;
+        font-size: 1.2rem;
+        margin: 0 2px;
     }
 }

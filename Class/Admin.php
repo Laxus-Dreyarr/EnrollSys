@@ -522,5 +522,21 @@ Class Admin extends Database{
         return $response;
     }
 
+    public function forgotPassword(){
+        $x = $this->connect()->prepare("SELECT * FROM admin WHERE email = ?");
+        $x->execute([$this->x1]);
+        if($x->rowCount() > 0){
+            if($this->x2 === $this->x3){
+                echo '3';
+            }else{
+                $x = null;
+                echo '2';
+            }
+        }else{
+            $x = null;
+            echo '1';
+        }
+    }
+
 
 }##End of Class
