@@ -1,4 +1,5 @@
 <?php
+session_start();
 include("../Class/Db.php");
 include("../Class/Admin.php");
 

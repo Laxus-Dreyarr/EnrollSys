@@ -495,6 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
+        
         // Form submission
         forgotPasswordForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -542,32 +543,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         }else if(response == '2'){
                             newPassword.classList.remove('is-invalid', 'shake');
                             setTimeout(() => newPassword.classList.remove('shake'), 500);
-                        }else if(response == '3'){
-                            newPassword.classList.remove('is-invalid', 'shake');
+                        }else if(response == 'err'){
+                            Swal.fire(
+                                'Failed!',
+                                "Something went wrong",
+                                'error'
+                            );
+                        }else if(response == '5'){
+                            // Show loading state
                             const sendCodeBtn = document.getElementById('sendCodeBtn');
                             sendCodeBtn.disabled = true;
-                            sendCodeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
-                            // Simulate sending verification code
-                            setTimeout(() => {
-                                // // Update email in verification modal
-                                // document.getElementById('emailSentTo').textContent = resetEmail.value;
-                                
-                                // // Switch to verification modal
-                                // const forgotModal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
-                                // forgotModal.hide();
-                                
-                                // const verificationModal = new bootstrap.Modal(document.getElementById('verificationModal'));
-                                // verificationModal.show();
-                                
-                                // // Start countdown for resend
-                                // startCountdown();
-                                
-                                // // Reset button
-                                // sendCodeBtn.disabled = false;
-                                // sendCodeBtn.innerHTML = 'Send Verification Code';
-                                window.location.replace('index-admin-reset.php');
-
-                            }, 1500);
+                            sendCodeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Resetting...';
+                            newPassword.classList.remove('is-invalid', 'shake');
+                            window.location.href = 'index-admin-reset.php';
                         }
                     }
                 });
@@ -577,140 +565,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Verification code input handling
-    const verificationInputs = document.querySelectorAll('.verification-code');
-    if (verificationInputs.length) {
-        verificationInputs.forEach((input, index) => {
-            input.addEventListener('input', function() {
-                if (this.value.length === 1) {
-                    if (index < verificationInputs.length - 1) {
-                        verificationInputs[index + 1].focus();
-                    }
-                }
-            });
-            
-            input.addEventListener('keydown', function(e) {
-                if (e.key === 'Backspace' && this.value === '') {
-                    if (index > 0) {
-                        verificationInputs[index - 1].focus();
-                    }
-                }
-            });
-        });
-    }
-    
-    // Verification form submission
-    if (verificationForm) {
-        verificationForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const verifyCodeBtn = document.getElementById('verifyCodeBtn');
-            verifyCodeBtn.disabled = true;
-            verifyCodeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verifying...';
-            
-            // Get the full code
-            let code = '';
-            verificationInputs.forEach(input => {
-                code += input.value;
-            });
-            
-            // Simulate verification
-            setTimeout(() => {
-                // In a real application, you would verify the code with your backend
-                // For demo purposes, we'll assume any 6-digit code is valid
-                if (code.length === 6) {
-                    // Show success state
-                    verificationForm.innerHTML = `
-                        <div class="success-animation">
-                            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
-                                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                            </svg>
-                            <div class="success-message">Password reset successfully!</div>
-                        </div>
-                    `;
-                    
-                    // Redirect to login after delay
-                    setTimeout(() => {
-                        const verificationModal = bootstrap.Modal.getInstance(document.getElementById('verificationModal'));
-                        verificationModal.hide();
-                        
-                        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-                        loginModal.show();
-                    }, 2000);
-                } else {
-                    verificationForm.classList.add('shake');
-                    setTimeout(() => {
-                        verificationForm.classList.remove('shake');
-                    }, 500);
-                    
-                    verifyCodeBtn.disabled = false;
-                    verifyCodeBtn.innerHTML = 'Verify Code';
-                }
-            }, 1500);
-        });
-    }
 
 
-        // Resend code functionality
-    if (resendCodeLink) {
-        resendCodeLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Only allow resend if countdown is complete
-            if (!resendCodeLink.classList.contains('disabled')) {
-                startCountdown();
-                
-                // Simulate resending code
-                const sendCodeBtn = document.getElementById('sendCodeBtn');
-                sendCodeBtn.disabled = true;
-                sendCodeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Resending...';
-                
-                setTimeout(() => {
-                    sendCodeBtn.disabled = false;
-                    sendCodeBtn.innerHTML = 'Send Verification Code';
-                    
-                    // Show brief feedback
-                    const originalHtml = resendCodeLink.innerHTML;
-                    resendCodeLink.innerHTML = '<i class="fas fa-check"></i> Code sent!';
-                    
-                    setTimeout(() => {
-                        resendCodeLink.innerHTML = originalHtml;
-                    }, 2000);
-                }, 1000);
-            }
-        });
-    }
-
-
-        // Countdown timer function
-    function startCountdown() {
-        let timeLeft = 60;
-        resendCodeLink.classList.add('disabled');
-        countdownElement.style.display = 'inline';
-        
-        const countdownInterval = setInterval(() => {
-            countdownElement.textContent = `(${timeLeft}s)`;
-            
-            if (timeLeft <= 0) {
-                clearInterval(countdownInterval);
-                resendCodeLink.classList.remove('disabled');
-                countdownElement.style.display = 'none';
-            }
-            
-            timeLeft--;
-        }, 1000);
-    }
-
-        // Clear form when modal is closed
-    $('#forgotPasswordModal').on('hidden.bs.modal', function () {
-        forgotPasswordForm.reset();
-        $('.is-invalid').removeClass('is-invalid');
-    });
-    
-    $('#verificationModal').on('hidden.bs.modal', function () {
-        verificationInputs.forEach(input => {
-            input.value = '';
-        });
-        verificationForm.reset();
-    });

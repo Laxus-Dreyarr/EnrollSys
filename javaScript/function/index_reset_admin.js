@@ -285,28 +285,122 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'index-admin.php';
     });
     
-    // Verification code input automation
-    const digitInputs = document.querySelectorAll('.verification-digit');
+
+        // Code input automation
+    const codeInputs = document.querySelectorAll('.verification-digit');
+    const hiddenCodeInput = document.getElementById('verificationCode');
     
-    digitInputs.forEach((input, index) => {
+    // Function to update the hidden input with the complete code
+    function updateCodeValue() {
+        let code = '';
+        codeInputs.forEach(input => {
+            code += input.value;
+        });
+        hiddenCodeInput.value = code;
+    }
+    
+    // Add event listeners to code inputs
+    codeInputs.forEach((input, index) => {
         // Move to next input on digit entry
         input.addEventListener('input', function() {
-            if (this.value.length === 1 && index < digitInputs.length - 1) {
-                digitInputs[index + 1].focus();
+            updateCodeValue();
+            
+            if (this.value.length === 1 && index < codeInputs.length - 1) {
+                codeInputs[index + 1].focus();
             }
         });
         
         // Move to previous input on backspace
         input.addEventListener('keydown', function(e) {
             if (e.key === 'Backspace' && this.value === '' && index > 0) {
-                digitInputs[index - 1].focus();
+                codeInputs[index - 1].focus();
             }
         });
     });
     
-    // Auto-focus first digit input
-    if (digitInputs.length > 0) {
-        digitInputs[0].focus();
+    // Auto-focus first code input
+    if (codeInputs.length > 0) {
+        codeInputs[0].focus();
     }
+    
+    // Form submission handler
+    const resetBtn = document.getElementById('verifyButton');
+    const statusMessage = document.getElementById('statusMessage');
+    
+    verifyButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Get form values
+        const verificationCode = hiddenCodeInput.value;
+        const newPassword = document.getElementById('password').value;
+        const vcode = document.getElementById('code').value;
+        const nemail = document.getElementById('email').value;
+        
+        // Validate form
+        if (verificationCode.length !== 6) {
+            showStatus('Please enter the complete 6-digit verification code', 'error');
+            return;
+        }
+        
+        // Verify the code
+        if (verificationCode !== vcode) {
+            showStatus('Invalid verification code. Please try again.', 'error');
+            return;
+        }
+        
+        // If code is correct, update password
+        updatePassword(newPassword, nemail);
+    });
+    
+    // Function to update password via AJAX
+    function updatePassword(newPassword, nemail) {
+        // Show loading state
+        resetBtn.disabled = true;
+        resetBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Resetting...';
+        
+        // Simulate AJAX call (replace with actual API call)
+        setTimeout(() => {
+            $.ajax({
+                url: 'exe/update_admin_password.php',
+                method: 'POST',
+                data: {
+                    email: nemail,
+                    password: newPassword
+                },
+                success: function(response) {
+                    if(response == '0'){
+                        showStatus('Not Updated Something went wrong!', 'error');
+                        resetBtn.disabled = false;
+                    }else if (response == '1') {
+                        showStatus('Password updated successfully! Redirecting to login...', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'index-admin.php';
+                        }, 2000);
+                    }
+                },
+                error: function() {
+                    showStatus('An error occurred. Please try again.', 'error');
+                    resetBtn.disabled = false;
+                    resetBtn.innerHTML = 'Reset Password';
+                }
+            });
+            
+        }, 1500);
+    }
+
+        // Function to show status messages
+    function showStatus(message, type) {
+        statusMessage.textContent = message;
+        statusMessage.className = 'status-message ' + type;
+        statusMessage.style.display = 'block';
+        
+        // Auto hide success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 5000);
+        }
+    }
+    
     
 });// End of DOMContentLoaded event listener

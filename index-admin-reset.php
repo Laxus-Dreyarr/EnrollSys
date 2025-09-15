@@ -1,3 +1,15 @@
+<?php
+session_start();
+include("Class/Db.php");
+include("Class/Admin.php");
+if(!isset($_SESSION['code']) && !isset($_SESSION['Email']) && !isset($_SESSION['newPassword'])){
+    header("Location: index-admin.php");
+    exit();
+}
+$email = $_SESSION['Email'];
+$code = $_SESSION['code'];
+$password = $_SESSION['newPassword'];
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -471,12 +483,13 @@
                         </span>
                     </div>
                 </div>
+                <div id="statusMessage" class="status-message"></div>
                 <div class="modal-body">
                     <div class="text-center mb-4">
                         <i class="fas fa-envelope-circle-check fa-4x text-primary"></i>
                     </div>
                     <h4 class="text-center mb-3">Please verify your email</h4>
-                    <p>We've sent a verification code to <strong id="userEmail">user@example.com</strong>. </p>
+                    <p>We've sent a verification code to <strong id="userEmail"><?=$email?></strong>. </p>
                     <p>Please check your inbox and enter the code below to verify your account.</p>
                     
                     <div class="alert alert-info">
@@ -492,6 +505,7 @@
                             <input type="text" class="form-control verification-digit" maxlength="1" data-index="5" placeholder="_">
                             <input type="text" class="form-control verification-digit" maxlength="1" data-index="6" placeholder="_">
                         </div>
+                        <input type="hidden" id="verificationCode" name="verificationCode">
                         <div class="text-center">
                             <small class="text-muted">Enter the 6-digit code sent to your email</small>
                         </div>
@@ -501,14 +515,14 @@
                         <div id="timerProgress" class="progress-bar bg-danger" role="progressbar" style="width: 100%"></div>
                     </div>
                 </div>
+                <input style="display: none;" type="text" id="email" value="<?=$email?>">
+                <input style="display: none;" type="text" id="code" value="<?=$code?>">
+                <input style="display: none;" type="text" id="password" value="<?=$password?>">
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="redirectButton">
                         <i class="fas fa-sign-in-alt me-2"></i>Go to Login
                     </button>
-                    <button type="button" class="btn btn-primary">
-                        <i class="fas fa-paper-plane me-2"></i>Resend Code
-                    </button>
-                    <button type="button" class="btn btn-success">
+                    <button type="button" class="btn btn-success" id="verifyButton">
                         <i class="fas fa-check me-2"></i>Verify
                     </button>
                 </div>

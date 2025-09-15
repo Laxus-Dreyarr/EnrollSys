@@ -527,7 +527,184 @@ Class Admin extends Database{
         $x->execute([$this->x1]);
         if($x->rowCount() > 0){
             if($this->x2 === $this->x3){
-                echo '3';
+                $hashedPassword = password_hash($this->x2, PASSWORD_DEFAULT);
+                $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+                $_SESSION['Email'] = $this->x1;
+                $_SESSION['code'] = $otp;
+                $_SESSION['newPassword'] = $hashedPassword;
+                // Start the PHPmailer
+                require "../Mail/phpmailer/PHPMailerAutoload.php";
+                $mail = new PHPMailer;
+
+                $mail->isSMTP();
+                $mail->Host='smtp.gmail.com';
+                $mail->Port=587;
+                $mail->SMTPAuth=true;
+                $mail->SMTPSecure='tls';
+
+                $mail->Username='ur@gmail.com';
+                $mail->Password='ur_password';
+
+                $mail->setFrom('enrollsys@evsu.ormoc.ph', 'EnrollSys');
+                $mail->addAddress($this->x1);
+
+                $mail->isHTML(true);
+                $mail->Subject="Reset Password Code";
+
+                // The HTML email body with logo
+                $mail->Body='<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Password Reset Code</title>
+                    <style>
+                        body {
+                            font-family: \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif;
+                            line-height: 1.6;
+                            color: #333333;
+                            margin: 0;
+                            padding: 0;
+                            background-color: #f7f7f7;
+                        }
+                        .email-container {
+                            max-width: 600px;
+                            margin: 0 auto;
+                            background-color: #ffffff;
+                            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                            border-radius: 8px;
+                            overflow: hidden;
+                        }
+                        .email-header {
+                            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+                            padding: 25px;
+                            text-align: center;
+                        }
+                        .logo-container {
+                            background-color: white;
+                            border-radius: 8px;
+                            padding: 15px;
+                            display: inline-block;
+                            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+                        }
+                        .logo {
+                            max-width: 180px;
+                            height: auto;
+                        }
+                        .email-body {
+                            padding: 30px;
+                        }
+                        .email-footer {
+                            background-color: #f2f2f2;
+                            padding: 20px;
+                            text-align: center;
+                            font-size: 12px;
+                            color: #666666;
+                        }
+                        .code-container {
+                            background-color: #f8f9fa;
+                            border-left: 4px solid #3498db;
+                            padding: 20px;
+                            margin: 25px 0;
+                            text-align: center;
+                            border-radius: 4px;
+                        }
+                        .reset-code {
+                            font-size: 32px;
+                            font-weight: bold;
+                            letter-spacing: 5px;
+                            color: #2c3e50;
+                            padding: 15px;
+                            margin: 20px 0;
+                            background: #ffffff;
+                            border: 2px dashed #3498db;
+                            border-radius: 8px;
+                            display: inline-block;
+                        }
+                        .button {
+                            display: inline-block;
+                            padding: 12px 24px;
+                            background-color: #3498db;
+                            color: white;
+                            text-decoration: none;
+                            border-radius: 4px;
+                            margin: 15px 0;
+                            font-weight: bold;
+                        }
+                        .signature {
+                            margin-top: 30px;
+                            border-top: 1px solid #eeeeee;
+                            padding-top: 20px;
+                        }
+                        .warning {
+                            background-color: #fff3e0;
+                            border-left: 4px solid #ff9800;
+                            padding: 15px;
+                            margin: 20px 0;
+                            border-radius: 4px;
+                            font-size: 14px;
+                        }
+                        @media screen and (max-width: 600px) {
+                            .email-body {
+                                padding: 20px;
+                            }
+                            .reset-code {
+                                font-size: 24px;
+                                letter-spacing: 3px;
+                                padding: 10px;
+                            }
+                            .logo {
+                                max-width: 140px;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="email-container">
+                        <div class="email-header">
+                            <div class="logo-container">
+                                <img src="https://enrollsys.great-site.net/log1.png" alt="EnrollSys Logo" class="logo">
+                            </div>
+                        </div>
+                        
+                        <div class="email-body">
+                            <p>Dear user,</p>
+                            
+                            <p>You recently requested to reset your password for your EnrollSys account. Use the verification code below to complete the process.</p>
+                            
+                            <div class="code-container">
+                                <h3 style="margin-top: 0; color: #2c3e50;">Your Password Reset Code</h3>
+                                <div class="reset-code">'.$otp.'</div>
+                            </div>
+                            
+                            <div class="warning">
+                                <strong>Security Note:</strong> If you didn\'t request this password reset, please ignore this email or contact support if you have concerns about your account\'s security.
+                            </div>
+                            
+                            <p>For assistance, please contact the EnrollSys support team at <a href="mailto:support@evsu.ormoc.ph">support@evsu.ormoc.ph</a>.</p>
+                            
+                            <div class="signature">
+                                <p>Best regards,<br>
+                                <strong>Team CyberNexus (EnrollSys)</strong><br>
+                                EVSU Ormoc Campus</p>
+                            </div>
+                        </div>
+                        
+                        <div class="email-footer">
+                            <p>© '.date('Y').' EnrollSys - EVSU Ormoc Campus. All rights reserved.</p>
+                            <p>This is an automated message, please do not reply directly to this email.</p>
+                            <p><a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+                        </div>
+                    </div>
+                </body>
+                </html>';
+
+                if(!$mail->send()){
+                    echo 'err';
+                }else{
+                    echo '5';
+                }
+                // echo 'success';
             }else{
                 $x = null;
                 echo '2';
@@ -535,6 +712,18 @@ Class Admin extends Database{
         }else{
             $x = null;
             echo '1';
+        }
+    }
+
+    function updateAdminPassword(){
+        $x = $this->connect()->prepare("UPDATE admin SET password = ? WHERE email = ?");
+        $x->execute([$this->x2, $this->x1]);
+        if($x){
+            $x = null;
+            echo '1';
+        }else{
+            $x = null;
+            echo '0';
         }
     }
 
