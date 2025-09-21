@@ -534,7 +534,6 @@ Class Admin extends Database{
                 $_SESSION['newPassword'] = $hashedPassword;
                 // Start the PHPmailer
                 require "../Mail/phpmailer/PHPMailerAutoload.php";
-<<<<<<< HEAD
 
                 // Create a new PHPMailer instance
                 $mail = new PHPMailer;
@@ -561,27 +560,6 @@ Class Admin extends Database{
 
                 // The HTML email body with embedded image
                 $mail->Body = '<!DOCTYPE html>
-=======
-                $mail = new PHPMailer;
-
-                $mail->isSMTP();
-                $mail->Host='smtp.gmail.com';
-                $mail->Port=587;
-                $mail->SMTPAuth=true;
-                $mail->SMTPSecure='tls';
-
-                $mail->Username='ur@gmail.com';
-                $mail->Password='ur_password';
-
-                $mail->setFrom('enrollsys@evsu.ormoc.ph', 'EnrollSys');
-                $mail->addAddress($this->x1);
-
-                $mail->isHTML(true);
-                $mail->Subject="Reset Password Code";
-
-                // The HTML email body with logo
-                $mail->Body='<!DOCTYPE html>
->>>>>>> 46079b4813286226fca0d319370fcef513f5231b
                 <html lang="en">
                 <head>
                     <meta charset="UTF-8">
