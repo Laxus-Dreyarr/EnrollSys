@@ -1,0 +1,114 @@
+function loginP(){
+    var myInput = document.getElementById("pwd2");
+    var letter = document.getElementById("letter");
+    var capital = document.getElementById("capital");
+    var number = document.getElementById("number");
+    var sc = document.getElementById("sc");
+    var length = document.getElementById("length");
+
+    $(".inputBox_label").css("display", "flex")
+
+    myInput.onblur = function(){
+        $(".inputBox_label").css("display", "none")
+    }
+
+    myInput.onkeyup = function(){
+        var lowerCaseLetters = /[a-z]/g;
+        if(myInput.value.match(lowerCaseLetters)){
+            letter.classList.remove('invalid');
+            letter.classList.add('valid');
+        }else{
+            letter.classList.remove('valid');
+            letter.classList.add('invalid');
+        }
+
+        var upperCaseLetters = /[A-Z]/g;
+        if(myInput.value.match(upperCaseLetters)){
+            capital.classList.remove('invalid');
+            capital.classList.add('valid');
+        }else{
+            capital.classList.remove('valid');
+            capital.classList.add('invalid');
+        }
+
+        var numbers = /[0-9]/g;
+        if(myInput.value.match(numbers)){
+            number.classList.remove('invalid');
+            number.classList.add('valid');
+        }else{
+            number.classList.remove('valid');
+            number.classList.add('invalid');
+        }
+
+        var special_character = /[*!@#$%^&+<>]/g;
+        if(myInput.value.match(special_character)){
+            sc.classList.remove('invalid');
+            sc.classList.add('valid');
+        }else{
+            sc.classList.remove('valid');
+            sc.classList.add('invalid');
+        }
+
+        if(myInput.value.length>=6){
+            length.classList.remove('invalid');
+            length.classList.add('valid');
+        }else{
+            length.classList.remove('valid');
+            length.classList.add('invalid');
+        }
+    }
+}
+
+function login()
+{
+    let email2 = $("#email2").val()
+    let pwd2 = $("#pwd2").val()
+
+    $.ajax({
+        url: '../exe/index_exe.php',
+        method: 'POST',
+        data: {email2: email2, pwd2: pwd2},
+        success: function(x){
+            if(x == 1){
+                Swal.fire(
+                    'Failed',
+                    "Empty form!",
+                    'error'
+                    )
+            }else if(x == 2){
+                Swal.fire(
+                    'Failed',
+                    "You don't have an account!",
+                    'error'
+                    )
+            }else if(x == 3){
+                Swal.fire(
+                    'Failed',
+                    "Wrong Password!",
+                    'error'
+                    )
+            }else{
+                Swal.fire(
+                    'Great',
+                    "Login Successfully",
+                    'success'
+                    )
+                alert("Welcome "+x)
+                // window.location.replace("dashboard.php")
+            }
+        }
+    })
+}// End of login() function
+
+
+function logout(){
+    $.ajax({
+        url: '../exe/logout_exe.php',
+        success: function(y){
+            if(y == 0){
+                window.location.replace("view.php")
+            }
+        }
+    })
+}
+

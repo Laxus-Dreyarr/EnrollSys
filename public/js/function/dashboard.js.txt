@@ -1,0 +1,215 @@
+function con1_b1(){
+    // $(".con1_b1").css("width", "20%")
+    // $(".con1_b1").css("transition", "0.5s ease-in-out")
+    $("#dashboard").css("justify-content", "flex-start")
+    $("#box").css("justify-content", "flex-start")
+    $("#box2").css("justify-content", "flex-start")
+    $("#box3").css("justify-content", "flex-start")
+    $(".con1_b1_c2_icon").css("margin-left", "20px")
+    $(".con1_b1_c2_name").show(1000)
+    
+    $(".con1_b1_c3_d1").css("justify-content", "flex-start")
+    $(".con1_b1_c3_d1_icon").css("margin-left", "20px")
+    $(".con1_b1_c3_d1_name").show(1000)
+
+    $(".con1_b2").css("width", "80%")
+    $(".con1_b2_b1").css("width", "80%")
+    $(".con1_b2_b1_c2_d1").css("width", "50%")
+    $(".con1_b2_b1_c2_d2").css("width", "5%")
+}
+
+function Exitcon1_b1(){
+    // $(".con1_b1").css("width", "10%")
+    $(".con1_b1").css("transition", "1s ease-out;")
+    $("#dashboard").css("justify-content", "center")
+    $("#box").css("justify-content", "center")
+    $("#box2").css("justify-content", "center")
+    $("#box3").css("justify-content", "center")
+    $(".con1_b1_c2_icon").css("margin-left", "0px")
+    $(".con1_b1_c2_name").css("display", "none")
+
+    $(".con1_b1_c3_d1").css("justify-content", "center")
+    $(".con1_b1_c3_d1_icon").css("margin-left", "0px")
+    $(".con1_b1_c3_d1_name").css("display", "none")
+
+    $(".con1_b2").css("width", "100%")
+    $(".con1_b2_b1").css("width", "100%")
+    $(".con1_b2_b1").css("transition", "-0.5s ease-in-out")
+    $(".con1_b2_b1_c2_d1").css("width", "40%")
+    $(".con1_b2_b1_c2_d2").css("width", "12%")
+}
+
+function con1_b11(){
+    $(".con1_b1").css("width", "50%")
+}
+
+
+function box(){
+    $("#dashboard").css("border", "none")
+    $("#dashboard").css("box-shadow", "none")
+    $("#dashboard").css("border-radius", "none")
+    
+    $("#box").css("border", "1px solid white")
+    $("#box").css("border-radius", "15px")
+    $("#box").css("box-shadow", "0px 0px 10px black")
+}
+
+function Exitbox(){
+    $("#box").css("border", "none")
+    $("#box").css("box-shadow", "none")
+    $("#box").css("border-radius", "none")
+    
+    $("#dashboard").css("border", "1px solid white")
+    $("#dashboard").css("border-radius", "15px")
+    $("#dashboard").css("box-shadow", "0px 0px 10px black")
+}
+
+
+function box2(){
+    $("#dashboard").css("border", "none")
+    $("#dashboard").css("box-shadow", "none")
+    $("#dashboard").css("border-radius", "none")
+    
+    $("#box2").css("border", "1px solid white")
+    $("#box2").css("border-radius", "15px")
+    $("#box2").css("box-shadow", "0px 0px 10px black")
+}
+
+function Exitbox2(){
+    $("#box2").css("border", "none")
+    $("#box2").css("box-shadow", "none")
+    $("#box2").css("border-radius", "none")
+    
+    $("#dashboard").css("border", "1px solid white")
+    $("#dashboard").css("border-radius", "15px")
+    $("#dashboard").css("box-shadow", "0px 0px 10px black")
+}
+
+
+
+function box3(){
+    $("#dashboard").css("border", "none")
+    $("#dashboard").css("box-shadow", "none")
+    $("#dashboard").css("border-radius", "none")
+    
+    $("#box3").css("border", "1px solid white")
+    $("#box3").css("border-radius", "15px")
+    $("#box3").css("box-shadow", "0px 0px 10px black")
+}
+
+function Exitbox3(){
+    $("#box3").css("border", "none")
+    $("#box3").css("box-shadow", "none")
+    $("#box3").css("border-radius", "none")
+    
+    $("#dashboard").css("border", "1px solid white")
+    $("#dashboard").css("border-radius", "15px")
+    $("#dashboard").css("box-shadow", "0px 0px 10px black")
+}
+
+
+function con1_b1_c3_d1(){
+    $("#dashboard").css("border", "none")
+    $("#dashboard").css("box-shadow", "none")
+    $("#dashboard").css("border-radius", "none")
+    
+    $(".con1_b1_c3_d1").css("border", "1px solid white")
+    $(".con1_b1_c3_d1").css("border-radius", "15px")
+    $(".con1_b1_c3_d1").css("box-shadow", "0px 0px 10px black")
+}
+
+function Exitcon1_b1_c3_d1(){
+    $(".con1_b1_c3_d1").css("border", "none")
+    $(".con1_b1_c3_d1").css("box-shadow", "none")
+    $(".con1_b1_c3_d1").css("border-radius", "none")
+    
+    $("#dashboard").css("border", "1px solid white")
+    $("#dashboard").css("border-radius", "15px")
+    $("#dashboard").css("box-shadow", "0px 0px 10px black")
+}
+
+
+function enrollmentStsOpt(){
+    $(".con1_b2_b2_c1_d1 h3").css("display", "flex")
+    $(".con1_b2_b2_c1_d1 h3").show(1000)
+
+    $(".con1_b2_b2_c1_d1 h2").hide(1000)
+    $(".con1_b2_b2_c1_d1 h2").css("display", "none")
+}
+
+
+// Mobile
+
+function opt(){
+    $(".mheader_box3").css("display", "flex")
+    $(".mheader_box3_b1").show(1000)
+    $(".mheader_box3_b1").css("display", "flex")
+}
+
+function hide(){
+    $(".mheader_box3_b1").hide(1000)
+    $(".mheader_box3").slideToggle(1000)
+}
+
+function mbox(){
+    $("#mbox").css("border", "1px solid var(--text-color)")
+    $("#mbox1").css("border", "none")
+    $("#mbox2").css("border", "none")
+    $("#mbox3").css("border", "none")
+    $("#mbox4").css("border", "none")
+}
+
+function mbox1(){
+    $("#mbox").css("border", "none")
+    $("#mbox4").css("border", "none")
+    $("#mbox3").css("border", "none")
+    $("#mbox2").css("border", "none")
+    $("#mbox1").css("border", "1px solid var(--text-color)")
+}
+
+function mbox2(){
+    $("#mbox").css("border", "none")
+    $("#mbox1").css("border", "none")
+    $("#mbox4").css("border", "none")
+    $("#mbox3").css("border", "none")
+    $("#mbox2").css("border", "1px solid var(--text-color)")
+}
+
+function mbox3(){
+    $("#mbox").css("border", "none")
+    $("#mbox1").css("border", "none")
+    $("#mbox2").css("border", "none")
+    $("#mbox4").css("border", "none")
+    $("#mbox3").css("border", "1px solid var(--text-color)")
+}
+
+function mbox4(){
+    $("#mbox").css("border", "none")
+    $("#mbox1").css("border", "none")
+    $("#mbox2").css("border", "none")
+    $("#mbox3").css("border", "none")
+    $("#mbox4").css("border", "1px solid var(--text-color)")
+}
+
+// Tablet
+function tCon_footer_b1_circle(){
+    $(".tCon_cover").slideToggle(1000)
+    $(".tCon_cover").css("display", "flex")
+    $(".tCon_cover_b1_c1").show(1000)
+    $(".tCon_cover_b1_c1").css("display", "flex")
+
+    // circle
+    $(".tCon_footer_b1_circle2").show(1000)
+    $(".tCon_footer_b1_circle2").css("display", "flex")
+    $(".tCon_footer_b1_circle").css("display", "none")
+}
+
+function tCon_footer_b1_circle2(){
+    $(".tCon_cover").slideToggle(1000)
+    $(".tCon_cover_b1_c1").hide(1000)
+
+    // circle
+    $(".tCon_footer_b1_circle2").hide(1000)
+    $(".tCon_footer_b1_circle2").css("display", "none")
+    $(".tCon_footer_b1_circle").css("display", "flex")
+}

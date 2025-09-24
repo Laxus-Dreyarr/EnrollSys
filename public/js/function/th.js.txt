@@ -1,0 +1,42 @@
+let darkmode = localStorage.getItem('darkmode')
+
+const enableDarkmode = () => {
+    document.body.classList.add('darkmode')
+    localStorage.setItem('darkmode', 'active')
+    $("#dmode").css("display", "none")
+    $("#lmode").css("display", "flex")
+    $("#dmode2").css("display", "none")
+    $("#lmode2").css("display", "flex")
+    $("#dmText").css("display", "none")
+    $("#dmText2").css("display", "flex")
+    $("#st").css("display", "none")
+    $("#st2").css("display", "flex")
+    $("#tr").css("display", "none")
+    $("#tr2").css("display", "flex")
+    $("#con").css("display", "none")
+    $("#con2").css("display", "flex")
+}
+
+const disableDarkmode = () => {
+    document.body.classList.remove('darkmode')
+    localStorage.setItem('darkmode', null)
+    $("#dmode").css("display", "flex")
+    $("#lmode").css("display", "none")
+    $("#dmode2").css("display", "flex")
+    $("#lmode2").css("display", "none")
+    $("#dmText").css("display", "flex")
+    $("#dmText2").css("display", "none")
+    $("#st").css("display", "flex")
+    $("#st2").css("display", "none")
+    $("#tr").css("display", "flex")
+    $("#tr2").css("display", "none")
+    $("#con").css("display", "flex")
+    $("#con2").css("display", "none")
+}
+
+if(darkmode === "active") enableDarkmode()
+
+function dmode(){
+    darkmode = localStorage.getItem('darkmode')
+    darkmode !== "active" ? enableDarkmode() : disableDarkmode()
+}
