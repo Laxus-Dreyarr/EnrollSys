@@ -5,6 +5,7 @@
     <meta name="bingbot" content="noarchive">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="application-title" content="EnrollSys">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="color-scheme" content="#101126">
     <meta name="theme-color" content="#101126">
     <title>EnrollSys - Student Enrollment System</title>
@@ -18,7 +19,6 @@
     <!-- <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"> -->
      <link href="{{ asset('style/google-fonts.css') }}" rel="stylesheet">
     <!-- Custom CSS -->
-    <!-- <link rel="stylesheet" href="../css/style.css"> -->
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 
 </head>
@@ -58,9 +58,6 @@
                     <li class="nav-item ms-lg-3">
                         <button class="btn btn-primary btn-login" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
                     </li>
-                    <li class="nav-item ms-lg-2">
-                        <button class="btn btn-outline-primary btn-register" data-bs-toggle="modal" data-bs-target="#registerModal">Register</button>
-                    </li>
                 </ul>
             </div>
         </div>
@@ -75,7 +72,7 @@
                     <h1 class="hero-title">Welcome to <span>EnrollSys</span></h1>
                     <p class="hero-subtitle">Your seamless gateway to academic enrollment and management</p>
                     <div class="hero-buttons">
-                        <button class="btn btn-primary btn-lg me-3" data-bs-toggle="modal" data-bs-target="#registerModal">Get Started</button>
+                        <button class="btn btn-primary btn-lg me-3" data-bs-toggle="modal" data-bs-target="#loginModal">Get Started</button>
                         <button class="btn btn-outline-light btn-lg">Learn More</button>
                     </div>
                 </div>
@@ -322,42 +319,33 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Student Login</h5>
+                    <h5 class="modal-title">Admin Login</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="loginForm">
+                        @csrf
                         <div class="mb-3">
                             <label for="loginEmail" class="form-label">EVSUmail</label>
-                            <input type="email" class="form-control" id="email" placeholder="username@evsu.edu.ph" required>
-                            <div class="invalid-feedback"></div>
-                            <!-- Add error message container -->
-                            <div id="loginEmailError" class="text-danger mt-1 small" style="display: none;"></div>
+                            <input type="email" class="form-control" id="loginEmail" name="loginEmail" placeholder="username@evsu.edu.ph" required>
+                            <div class="invalid-feedback">You don't have an account</div>
                         </div>
                         <div class="mb-3">
                             <label for="loginPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" required>
-                            <div class="invalid-feedback"></div>
-                            <!-- Add error message container -->
-                            <div id="loginPasswordError" class="text-danger mt-1 small" style="display: none;"></div>
+                            <input type="password" class="form-control" id="loginPassword" name="loginPassword" required>
+                            <div class="invalid-feedback">Wrong password</div>
                         </div>
                         <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="show_login_password">
-                            <label class="form-check-label" for="show_login_password">Show Password</label>
+                            <input type="checkbox" class="form-check-input" id="showPassword">
+                            <label class="form-check-label" for="showPassword">Show Password</label>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100" id="loginBtn">Login
-                        <span class="spinner-border spinner-border-sm" style="display: none;" id="loginSpinner"></span>
-                        </button>
+                        <button type="submit" class="btn btn-primary w-100" id="submitBtn">Login</button>
                         <div class="mb-3success-message" id="successMessage"></div>
                     </form>
                     <div class="text-center mt-3">
-                        <a href="#" class="text-muted">Forgot password?</a>
+                        <a href="#" class="text-muted" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" data-bs-dismiss="modal">Forgot password?</a>
                     </div>
                 </div>
-                <div class="modal-footer justify-content-center">
-                    <p>Don't have an account? <a href="#" data-bs-toggle="modal" data-bs-target="#registerModal" data-bs-dismiss="modal">Register</a></p>
-                </div>
-                <div class="alert-container" id="alertContainer"></div>
             </div>
         </div>
     </div>
@@ -397,7 +385,7 @@
                             <label for="registerPassword" class="form-label">Password</label>
                             <input type="password" class="form-control" id="registerPassword" required>
                             <div class="password-requirements">
-                                <p>(Optional)Password must contain:</p>
+                                <p>Password must contain:</p>
                                 <ul>
                                     <li id="req-length"><i class="fas fa-circle"></i> At least 8 characters</li>
                                     <li id="req-uppercase"><i class="fas fa-circle"></i> At least one uppercase letter</li>
@@ -412,15 +400,99 @@
                             <input type="password" class="form-control" id="repeatPassword" required>
                             <div class="invalid-feedback">Passwords do not match</div>
                         </div>
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="register_show_password">
-                            <label class="form-check-label" for="register_show_password">Show Password</label>
-                        </div>
                         <button type="submit" class="btn btn-primary w-100">Register</button>
                     </form>
                 </div>
                 <div class="modal-footer justify-content-center">
                     <p>Already have an account? <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">Login</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Forgot Password Modal -->
+    <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reset Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="forgotPasswordForm">
+                        @csrf
+                        <div class="mb-3">
+                            <label for="resetEmail" class="form-label">EVSUmail</label>
+                            <input type="email" class="form-control" id="resetEmail" placeholder="username@evsu.edu.ph" required>
+                            <div class="invalid-feedback">Please enter a valid EVSUmail address</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="newPassword" required>
+                            <div class="password-requirements">
+                                <p>Password must contain:</p>
+                                <ul>
+                                    <li id="reset-req-length"><i class="fas fa-circle"></i> At least 8 characters</li>
+                                    <li id="reset-req-uppercase"><i class="fas fa-circle"></i> At least one uppercase letter</li>
+                                    <li id="reset-req-lowercase"><i class="fas fa-circle"></i> At least one lowercase letter</li>
+                                    <li id="reset-req-number"><i class="fas fa-circle"></i> At least one number</li>
+                                    <li id="reset-req-special"><i class="fas fa-circle"></i> At least one special character</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                            <div class="invalid-feedback">Passwords do not match</div>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="showPassword2">
+                            <label class="form-check-label" for="showPassword2">Show Password</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="sendCodeBtn">Send Verification Code</button>
+                    </form>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <p>Remember your password? <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">Login</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Verification Code Modal -->
+    <div class="modal fade" id="verificationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Verify Your Email</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <div class="verification-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <p>We've sent a verification code to <span id="emailSentTo" class="fw-bold">user@evsu.edu.ph</span></p>
+                    </div>
+                    <form id="verificationForm">
+                        <div class="mb-4">
+                            <label for="verificationCode" class="form-label">Verification Code</label>
+                            <div class="verification-inputs d-flex justify-content-between">
+                                <input type="text" class="form-control verification-code" maxlength="1" required>
+                                <input type="text" class="form-control verification-code" maxlength="1" required>
+                                <input type="text" class="form-control verification-code" maxlength="1" required>
+                                <input type="text" class="form-control verification-code" maxlength="1" required>
+                                <input type="text" class="form-control verification-code" maxlength="1" required>
+                                <input type="text" class="form-control verification-code" maxlength="1" required>
+                            </div>
+                            <div class="invalid-feedback">Please enter the 6-digit code</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mb-3" id="verifyCodeBtn">Verify Code</button>
+                        <div class="text-center">
+                            <p class="mb-0">Didn't receive the code? <a href="#" id="resendCode">Resend</a></p>
+                            <small class="text-muted" id="countdown">(60s)</small>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -433,9 +505,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Custom JS -->
+     <!-- <script src="javaScript/jquery-3.6.0.min.js"></script> -->
      <script src="{{asset('js/jquery.js')}}"></script>
-    <!-- <script src="script.js"></script> -->
-    <script src="{{asset('js/function/index_student.js')}}"></script>
+    <!-- Custom JS -->
+     <script src="{{asset('js/function/index.js')}}"></script>
 </body>
 </html>

@@ -40,6 +40,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        'admin' => [ // Add admin guard
+            'driver' => 'session',
+            'provider' => 'admins',
+        ],
     ],
 
     /*
@@ -71,9 +76,14 @@ return [
     //     // ],
     // ],
     'providers' => [
-        'users' => [
+        // 'users' => [
+        //     'driver' => 'eloquent',
+        //     'model' => App\Models\Human::class,
+        // ],
+
+        'admins' => [ // Add admin provider
             'driver' => 'eloquent',
-            'model' => App\Models\Human::class,
+            'model' => App\Models\Admin::class,
         ],
     ],
 

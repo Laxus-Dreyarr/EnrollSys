@@ -173,6 +173,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Login Form Submission
             $('#loginForm').on('submit', function(e) {
                 e.preventDefault();
+
+                // let form = document.getElementById('loginForm');
+                // let url = form.getAttribute('data-login-url');
+
                 
                 // Get DOM elements correctly
                 const emailEl = document.getElementById('loginEmail');
@@ -192,10 +196,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Logging in...';
 
 
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                });
                             
                 // Your actual AJAX code should look like this:
                 $.ajax({
-                    url: 'exe/login.php',
+                    url: '/log',
                     method: 'POST',
                     data: {email: email, password: password},
                     success: function(response) {
@@ -221,18 +230,19 @@ document.addEventListener('DOMContentLoaded', function() {
                              submitBtn.classList.add('pulse');
                             // Redirect or close modal after success
                             setTimeout(() => {
-                                 window.location.href = 'dashboard.php';
+                                //  window.location.href = 'dashboard.php';
+                                window.location.href = '/';
                             }, 2000);
                             
                                     
                         }
                     },
-                    error: function() {
-                        // Re-enable the button on error too
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = 'Login';
-                        alert('An error occurred during login. Please try again.');
-                    }
+                    // error: function() {
+                    //     // Re-enable the button on error too
+                    //     submitBtn.disabled = false;
+                    //     submitBtn.innerHTML = 'Login';
+                    //     alert('An error occurred during login. Please try again.');
+                    // }
                 });
                 
             });
