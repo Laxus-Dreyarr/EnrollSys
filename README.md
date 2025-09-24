@@ -1,64 +1,109 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# EnrollSys - EVSU Online Enrollment System
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+<div align="center">
 
-## About Laravel
+[![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4?logo=php)](https://www.php.net/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql)](https://www.mysql.com/)
+![Status](https://img.shields.io/badge/Status-In%20Development-orange)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+</div>
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+A web-based online enrollment system designed specifically for the Computer Studies Department of Eastern Visayas State University (EVSU) - Ormoc City Campus. This project aims to digitize and streamline the enrollment process for students and administrators.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## ✨ Features
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### For Students
+-   **User Authentication** - Secure login and registration for students.
+-   **Course Catalog** - View available courses/subjects for the semester.
+-   **Online Enrollment** - Select and enroll in desired subjects.
+-   **Class Schedule** - View and manage personal class schedule.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### For Administrators/Faculty
+-   **Dashboard** - Overview of enrollment statistics.
+-   **Student Management** - View, add, edit, and manage student records.
+-   **Course/Subject Management** - CRUD operations for courses/subjects.
+-   **Section Management** - Create and assign class sections.
+-   **Enrollment Approval** - Process and approve student enrollment requests.
+-   **Report Generation** - Generate reports for enrollment data.
 
-## Laravel Sponsors
+*(More features to be added as development progresses)*
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+---
 
-### Premium Partners
+## 🏗️ System Architecture & Technology Stack
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+-   **Frontend:** HTML, CSS, JavaScript, Bootstrap
+-   **Backend:** PHP Laravel
+-   **Database:** MySQL
+-   **Web Server:** XAMPP / WAMP / LAMP
+-   **Version Control:** Git & GitHub
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 🚀 Installation & Setup
 
-## Code of Conduct
+To run this project locally, follow these steps:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1.  **Prerequisites:**
+    -   Install [XAMPP](https://www.apachefriends.org/) or similar (WAMP, LAMP).
 
-## Security Vulnerabilities
+2.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/Laxus-Dreyarr/EnrollSys.git
+    ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+3.  **Setup:**
+    -   Move the cloned folder to your server's root directory (e.g., `xampp/htdocs/`).
+    -   Start Apache and MySQL modules from your XAMPP Control Panel.
 
-## License
+4.  **Database:**
+    -   Open phpMyAdmin (`http://localhost/phpmyadmin`).
+    -   Create a new database named `enrollsys_db`.
+    -   Import the SQL file located in the project's `database/` folder (if provided).
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+5.  **Configuration:**
+    -   Update the database connection settings in `/includes/config.php` with your credentials.
+
+6.  **Run:**
+    -   Open your browser and go to `http://localhost/EnrollSys`.
+
+---
+
+## 📁 Project Structure
+
+
+
+---
+
+## 🤝 Contributing
+
+This is an ongoing project for academic purposes. Contributions, suggestions, and bug reports are welcome! Feel free to fork this project and submit a pull request.
+
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
+
+---
+
+## 📜 License
+
+This project is licensed under a **Non-Commercial Use License** - see the [![License: Non-Commercial](https://img.shields.io/badge/License-Non--Commercial-blue.svg)](LICENSE) file for details. It is developed as an academic requirement for Eastern Visayas State University.
+- **You may:** Use, copy, modify, and distribute the software for **non-commercial purposes** (like learning and development).
+- **You may not:** Sell or distribute the software for **commercial purposes** without the express written permission of the copyright holder (Carl James P. Duallo).
+
+---
+
+## 👨‍💻 Developer
+
+**Carl James P. Duallo**
+-   GitHub: [@Laxus-Dreyarr](https://github.com/Laxus-Dreyarr)
+-   Institution: Eastern Visayas State University - Ormoc City Campus
+-   Course: Bachelor of Science in Information Technology (BSIT)
+
+---
+
+> **Note:** This system is a capstone project and is currently under development. Features and structure are subject to change.
