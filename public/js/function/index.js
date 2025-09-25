@@ -540,10 +540,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 isValid = false;
             }
 
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
             
             if (isValid) {
                 $.ajax({
-                    url: 'exe/forgot_password.php',
+                    url: '/forgot',
                     method: 'POST',
                     data: {email: resetEmail.value, password: newPassword.value, confirmPassword: confirmPassword.value},
                     success: function(response) {

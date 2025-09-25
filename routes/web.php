@@ -45,11 +45,13 @@ Route::get('/', function () {
 
 
 // New
-Route::get('///', function () {
+Route::get('/welcome_admin', function () {
     return view('welcome_admin');
 });
 
 Route::post('/log', [AdminController::class, 'login']);
+
+Route::post('/forgot', [AdminController::class, 'forgotPassword']);
 
 // Route::get('///', function () {
 //     return view('welcome_admin');
