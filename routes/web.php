@@ -53,6 +53,8 @@ Route::post('/log', [AdminController::class, 'login']);
 
 Route::post('/forgot', [AdminController::class, 'forgotPassword']);
 
+Route::post('/reset_admin_password', [AdminController::class, 'resetPassword']);
+
 // Route::get('///', function () {
 //     return view('welcome_admin');
 // })->middleware('auth');

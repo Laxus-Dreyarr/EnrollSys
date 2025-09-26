@@ -571,7 +571,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             sendCodeBtn.disabled = true;
                             sendCodeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Resetting...';
                             newPassword.classList.remove('is-invalid', 'shake');
-                            window.location.href = 'index-admin-reset.php';
+                            window.location.href = '/reset_admin_password';
                         }
                     }
                 });

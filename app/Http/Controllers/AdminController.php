@@ -83,11 +83,8 @@ class AdminController extends Controller
         try {
             // Send email using Laravel Mail
             Mail::to($request->email)->send(new PasswordResetOtp($otp));
-            
-            return response()->json([
-                'message' => 'OTP sent successfully',
-                'email' => $request->email
-            ], 5);
+            $x = 5;
+            return $x;
         
         } catch (\Exception $e) {
             return response()->json([
@@ -119,6 +116,38 @@ class AdminController extends Controller
         Cache::forget('password_reset_' . $request->email);
 
         return response()->json(['message' => 'Password reset successfully']);
+    }
+
+
+    public function resetPassword(Request $request){
+        $credentials = $request->only('email', 'password', 'confirmPassword', 'otp');
+        $user = Admin::where('email', $credentials['email'])->first();
+        if(!$user) {
+            $x = 1;
+            return $x;
+        }
+
+        if($credentials['password'] !== $credentials['confirmPassword']){
+            $x = 2;
+            return $x;
+        }
+
+        $cachedData = Cache::get('password_reset_' . $request->email);
+        
+        if (!$cachedData || $cachedData['otp'] !== $request->otp) {
+            $x = 3;
+            return $x;
+        }
+
+        // Update password
+        $user->update(['password' => Hash::make($credentials['password'])]);
+        
+        // Clear OTP from cache
+        Cache::forget('password_reset_' . $request->email);
+
+        $x = 4;
+        return $x;
+
     }
 
 

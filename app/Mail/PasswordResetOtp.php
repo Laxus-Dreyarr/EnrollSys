@@ -11,23 +11,22 @@ class PasswordResetOtp extends Mailable
     use Queueable, SerializesModels;
 
     public $otp;
+    public $cid;
 
     public function __construct($otp)
     {
         $this->otp = $otp;
+        $this->cid = uniqid(); // Generate unique Content-ID
     }
-
-    use TijsVerkoyen\CssToInlineStyles\CssToInlineStyles;
 
     public function build()
     {
-        $css = file_get_contents(public_path('css/email.css')); // Your CSS file
-        $html = view('emails.password-reset', ['otp' => $this->otp])->render();
-        
-        $inliner = new CssToInlineStyles();
-        $html = $inliner->convert($html, $css);
-        
-        return $this->html($html)
-                    ->subject('Password Reset Code - EnrollSys');
+        return $this->subject('Password Reset Code - EnrollSys')
+                    ->view('emails.password-reset')
+                    ->with(['cid' => $this->cid])
+                    ->attach(public_path('logo.png'), [
+                        'as' => 'logo.png',
+                        'mime' => 'image/png',
+                    ]);
     }
 }

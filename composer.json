@@ -11,8 +11,8 @@
         "laravel/framework": "^8.75",
         "laravel/sanctum": "^2.11",
         "laravel/tinker": "^2.5",
-        "tijsverkoyen/css-to-inline-styles": "^2.2",
-        "tymon/jwt-auth": "^1.0"
+        "php-open-source-saver/jwt-auth": "^2.2",
+        "tijsverkoyen/css-to-inline-styles": "^2.3"
     },
     "require-dev": {
         "facade/ignition": "^2.5",
