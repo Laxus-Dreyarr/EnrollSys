@@ -132,30 +132,6 @@ class AdminController extends Controller
     }
 
 
-    public function verifyOtp(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'otp' => 'required|digits:6'
-        ]);
-
-        $cachedData = Cache::get('password_reset_' . $request->email);
-        
-        if (!$cachedData) {
-            return response()->json(['error' => 'OTP expired or not found'], 400);
-        }
-
-        if ($cachedData['otp'] !== $request->otp) {
-            return response()->json(['error' => 'Invalid OTP'], 400);
-        }
-
-        // OTP is valid - store verification in cache
-        Cache::put('password_verified_' . $request->email, true, now()->addMinutes(10));
-        
-        return response()->json(['message' => 'OTP verified successfully']);
-    }
-
-
     public function resetPassword(Request $request){
         $credentials = $request->only('email', 'password', 'otp');
         $user = Admin::where('email', $credentials['email'])->first();

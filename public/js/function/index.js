@@ -548,6 +548,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             
             if (isValid) {
+                const sendCodeBtn = document.getElementById('sendCodeBtn');
+                            sendCodeBtn.disabled = true;
+                            sendCodeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Resetting...';
+                            newPassword.classList.remove('is-invalid', 'shake');
                 $.ajax({
                     url: '/forgot',
                     method: 'POST',
@@ -556,15 +560,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         if(response == '1'){
                             resetEmail.classList.add('is-invalid', 'shake');
                             setTimeout(() => resetEmail.classList.remove('shake'), 500);
+                            sendCodeBtn.disabled = false;
+                            sendCodeBtn.innerHTML = '<button type="submit" class="btn btn-primary w-100" id="sendCodeBtn">Send Verification Code</button>';
                         }else if(response == '2'){
                             newPassword.classList.remove('is-invalid', 'shake');
                             setTimeout(() => newPassword.classList.remove('shake'), 500);
+                            sendCodeBtn.disabled = false;
+                            sendCodeBtn.innerHTML = '<button type="submit" class="btn btn-primary w-100" id="sendCodeBtn">Send Verification Code</button>';
                         }else if(response == 'err'){
                             Swal.fire(
                                 'Failed!',
                                 "Something went wrong",
                                 'error'
                             );
+                            sendCodeBtn.disabled = false;
+                            sendCodeBtn.innerHTML = '<button type="submit" class="btn btn-primary w-100" id="sendCodeBtn">Send Verification Code</button>';
                         }else if(response == '5'){
                             // Show loading state
                             const sendCodeBtn = document.getElementById('sendCodeBtn');
