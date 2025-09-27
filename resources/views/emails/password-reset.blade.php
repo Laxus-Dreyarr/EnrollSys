@@ -16,7 +16,7 @@
           
           <!-- Header -->
           <tr>
-            <td align="center" style="background:linear-gradient(135deg, #1f3a93 0%, #3498db 100%); padding:30px;">
+            <td align="center" style="background:linear-gradient(135deg, #1f3a93 0%, #3498db 100%); height:100px; padding:0px;">
               <img src="{{ $message->embed(public_path('logo.png')) }}" alt="EnrollSys Logo" style="height:200px; display:block; margin:0 auto;">
             </td>
           </tr>

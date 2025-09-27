@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
         // Timer functionality with localStorage persistence
-    const timerDuration = 1 * 60; // 5 minutes in seconds
+    const timerDuration = 1 * 120; // 5 minutes in seconds
     const countdownElement = document.getElementById('countdown');
     const timerProgress = document.getElementById('timerProgress');
     const redirectButton = document.getElementById('redirectButton');
@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const secondsLeft = Math.floor(timeLeft / 1000);
         
         // Calculate minutes and seconds
-        const minutes = Math.floor(secondsLeft / 120);
+        const minutes = Math.floor(secondsLeft / 60);
         const seconds = secondsLeft % 60;
         
         // Update display
