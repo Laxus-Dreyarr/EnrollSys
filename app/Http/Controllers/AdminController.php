@@ -58,41 +58,16 @@ class AdminController extends Controller
 
     }
 
+    public function dashboard(){
 
-    // public function forgotPassword(Request $request){
-    //     $credentials = $request->only('email', 'password', 'confirmPassword');
-    //     $user = Admin::where('email', $credentials['email'])->first();
-    //     if(!$user) {
-    //         $x = 1;
-    //         return $x;
-    //     }
+        if (!Auth::guard('admin')->check()) {
+            return redirect('/welcome_admin')->with('error', 'Please login first.');
+        }
 
-    //     if($credentials['password'] !== $credentials['confirmPassword']){
-    //         $x = 2;
-    //         return $x;
-    //     }
-    //     $thePassword = $user->password = Hash::make($credentials['password']);
-    //     $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+        $user = Auth::guard('admin')->user();
+        return view('dashboard', compact('user'));
         
-    //     // Store in cache instead of session
-    //     Cache::put('password_reset_' . $request->email, [
-    //         'otp' => $otp,
-    //         'password' => Hash::make($request->password)
-    //     ], now()->addMinutes(10));
-
-    //     try {
-    //         // Send email using Laravel Mail
-    //         Mail::to($request->email)->send(new PasswordResetOtp($otp));
-    //         $x = 5;
-    //         return $x;
-        
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'error' => 'Failed to send email'
-    //         ], 500);
-    //     }
-
-    // }
+    }
 
 
     public function forgotPassword(Request $request){

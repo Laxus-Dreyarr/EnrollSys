@@ -1,3 +1,8 @@
+<?php
+if (!$user || $user->user_type !== 'admin') {
+    return redirect()->route('/welcome_admin');
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,12 +12,9 @@
 </head>
 <body>
     <h1>Welcome, {{ $user->email }}!</h1>
-    <p>Your name: {{ $user->name }}</p>
+    <!-- <p>Your name: {{ $user->name }}</p> -->
 
-    <!-- Logout Form -->
-    <form action="{{ route('logout') }}" method="POST" style="display: inline;">
-        @csrf
-        <button type="submit">Logout</button>
-    </form>
+    Logout Form
+    
 </body>
 </html>

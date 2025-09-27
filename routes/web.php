@@ -22,27 +22,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Route::get('/index', [HomeController::class, 'index']);
-// Route::get('/register', [HomeController::class, 'register']);
-// // Route::post('/reg', [HomeController::class, 'form'])->name('x.form');
-// Route::post('/reg', [HomeController::class, 'form']);
-// // Route::get('/login', [HomeController::class, 'login']);
-// Route::get('/login', [HomeController::class, 'login'])->name('login');
-// Route::post('/log', [HomeController::class, 'log']);
-// // Route::get('/dashboard', [HomeController::class, 'dashboard'])->middleware('auth');
-// // Route::get('/dashboard', [HomeController::class, 'dashboard']);
-// Route::get('/dashboard', [HomeController::class, 'dashboard'])->middleware('auth');
 
-// // Route::post('/logout', [HomeController::class, 'logout'])->name('logout');
-// Route::post('/logout', function () {
-//     Auth::logout();
-//     return redirect('/login')->with('success', 'You have been logged out.');
-// })->name('logout');
 
-// Route::middleware(['auth'])->group(function () {
-//     Route::get('/dashboard', [HomeController::class, 'dashboard']);
-//     // Add other protected routes here
-// });
 
 
 // New
@@ -68,7 +49,8 @@ Route::get('/reset_admin_password', function () {
 });
 Route::post('/reset', [AdminController::class, 'resetPassword']);
 
-// Route::get('///', function () {
-//     return view('welcome_admin');
-// })->middleware('auth');
+Route::get('/ad-dashboard', [AdminController::class, 'dashboard'])->middleware('admin.auth');
+
+
+
 

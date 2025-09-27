@@ -44,6 +44,7 @@ return [
         'admin' => [ // Add admin guard
             'driver' => 'session',
             'provider' => 'admins',
+            'login' => '/welcome_admin', // Add this line
         ],
     ],
 
@@ -76,10 +77,10 @@ return [
     //     // ],
     // ],
     'providers' => [
-        // 'users' => [
-        //     'driver' => 'eloquent',
-        //     'model' => App\Models\Human::class,
-        // ],
+        'users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\User::class,
+        ],
 
         'admins' => [ // Add admin provider
             'driver' => 'eloquent',
@@ -88,7 +89,7 @@ return [
     ],
 
     'redirects' => [
-        'unauthenticated' => '/login',
+        'unauthenticated' => 'welcome',
     ],
 
     /*

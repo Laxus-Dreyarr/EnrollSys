@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Redirect or close modal after success
                             setTimeout(() => {
                                 //  window.location.href = 'dashboard.php';
-                                window.location.href = '/';
+                                window.location.href = '/ad-dashboard';
                             }, 2000);
                             
                                     
