@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const secondsLeft = Math.floor(timeLeft / 1000);
         
         // Calculate minutes and seconds
-        const minutes = Math.floor(secondsLeft / 60);
+        const minutes = Math.floor(secondsLeft / 120);
         const seconds = secondsLeft % 60;
         
         // Update display
@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Redirect when timer completes
         if (secondsLeft === 0) {
             localStorage.removeItem('verificationTimerEnd');
-            window.location.href = 'index-admin.php';
+            window.location.href = '/welcome_admin';
         }
     }
 
@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
     redirectButton.addEventListener('click', function() {
         localStorage.removeItem('verificationTimerEnd');
         clearInterval(timerInterval);
-        window.location.href = 'index-admin.php';
+        window.location.href = '/welcome_admin';
     });
     
 
@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const verificationCode = hiddenCodeInput.value;
         const newPassword = document.getElementById('password').value;
         const vcode = document.getElementById('code').value;
-        const nemail = document.getElementById('email').value;
+        const nemail = document.getElementById('resetEmail').value;
         
         // Validate form
         if (verificationCode.length !== 6) {
@@ -349,11 +349,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // If code is correct, update password
-        updatePassword(newPassword, nemail);
+        updatePassword(newPassword, nemail, verificationCode);
     });
     
     // Function to update password via AJAX
-    function updatePassword(newPassword, nemail) {
+    function updatePassword(newPassword, nemail, vcode) {
         // Show loading state
         resetBtn.disabled = true;
         resetBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Resetting...';
@@ -361,11 +361,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Simulate AJAX call (replace with actual API call)
         setTimeout(() => {
             $.ajax({
-                url: 'exe/update_admin_password.php',
+                url: '/reset',
                 method: 'POST',
                 data: {
                     email: nemail,
-                    password: newPassword
+                    password: newPassword,
+                    otp: vcode,
+                    _token: $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function(response) {
                     if(response == '0'){
@@ -374,7 +376,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }else if (response == '1') {
                         showStatus('Password updated successfully! Redirecting to login...', 'success');
                         setTimeout(() => {
-                            window.location.href = 'index-admin.php';
+                            window.location.href = '/welcome_admin';
                         }, 2000);
                     }
                 },

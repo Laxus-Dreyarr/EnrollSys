@@ -1,14 +1,15 @@
 <?php
-session_start();
-include("Class/Db.php");
-include("Class/Admin.php");
-if(!isset($_SESSION['code']) && !isset($_SESSION['Email']) && !isset($_SESSION['newPassword'])){
-    header("Location: index-admin.php");
-    exit();
+use Illuminate\Support\Facades\Cache;
+if (!session('password_reset_email')) {
+    return redirect()->route('/welcome_admin');
+    // header("Location: " . route('welcome_admin')); exit;
 }
-$email = $_SESSION['Email'];
-$code = $_SESSION['code'];
-$password = $_SESSION['newPassword'];
+
+$email = session('password_reset_email');
+$resetData = $email ? Cache::get('password_reset_' . $email) : null;
+
+$otp = $resetData['otp'] ?? null;
+$password = $resetData['password'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -420,54 +421,7 @@ $password = $_SESSION['newPassword'];
             </div>
         </div>
     </div>
-
-        <!-- Forgot Password Modal -->
-    <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Reset Password</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="forgotPasswordForm">
-                        <div class="mb-3">
-                            <label for="resetEmail" class="form-label">EVSUmail</label>
-                            <input type="email" class="form-control" id="resetEmail" placeholder="username@evsu.edu.ph" required>
-                            <div class="invalid-feedback">Please enter a valid EVSUmail address</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="newPassword" class="form-label">New Password</label>
-                            <input type="password" class="form-control" id="newPassword" required>
-                            <div class="password-requirements">
-                                <p>Password must contain:</p>
-                                <ul>
-                                    <li id="reset-req-length"><i class="fas fa-circle"></i> At least 8 characters</li>
-                                    <li id="reset-req-uppercase"><i class="fas fa-circle"></i> At least one uppercase letter</li>
-                                    <li id="reset-req-lowercase"><i class="fas fa-circle"></i> At least one lowercase letter</li>
-                                    <li id="reset-req-number"><i class="fas fa-circle"></i> At least one number</li>
-                                    <li id="reset-req-special"><i class="fas fa-circle"></i> At least one special character</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="confirmPassword" class="form-label">Confirm New Password</label>
-                            <input type="password" class="form-control" id="confirmPassword" required>
-                            <div class="invalid-feedback">Passwords do not match</div>
-                        </div>
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="showPassword2">
-                            <label class="form-check-label" for="showPassword2">Show Password</label>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100" id="sendCodeBtn">Send Verification Code</button>
-                    </form>
-                </div>
-                <div class="modal-footer justify-content-center">
-                    <p>Remember your password? <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">Login</a></p>
-                </div>
-            </div>
-        </div>
-    </div>
+     
 
     <!-- Verification Modal -->
     <div class="modal fade" id="verificationModal" tabindex="-1" aria-labelledby="verificationModalLabel" 
@@ -516,9 +470,9 @@ $password = $_SESSION['newPassword'];
                         <div id="timerProgress" class="progress-bar bg-danger" role="progressbar" style="width: 100%"></div>
                     </div>
                 </div>
-                <input style="display: none;" type="text" id="email" value="<?=$email?>">
-                <input style="display: none;" type="text" id="code" value="<?=$code?>">
-                <input style="display: none;" type="text" id="password" value="<?=$password?>">
+                <input type="hidden" id="resetEmail" value="{{ $email ?? '' }}">
+                <input type="hidden" id="code" value="{{ $otp }}">
+                <input style="display: none;" type="text" id="password" value="{{ $password }}">
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="redirectButton">
                         <i class="fas fa-sign-in-alt me-2"></i>Go to Login
@@ -541,6 +495,6 @@ $password = $_SESSION['newPassword'];
      <!-- <script src="javaScript/jquery-3.6.0.min.js"></script> -->
      <script src="{{asset('js/jquery.js')}}"></script>
     <!-- Custom JS -->
-     <script src="{{asset('js/function/index_reset_admin.js)}}"></script>
+    <script src="{{ asset('js/function/index_reset_admin.js') }}"></script>
 </body>
 </html>

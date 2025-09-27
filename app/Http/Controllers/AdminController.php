@@ -59,6 +59,42 @@ class AdminController extends Controller
     }
 
 
+    // public function forgotPassword(Request $request){
+    //     $credentials = $request->only('email', 'password', 'confirmPassword');
+    //     $user = Admin::where('email', $credentials['email'])->first();
+    //     if(!$user) {
+    //         $x = 1;
+    //         return $x;
+    //     }
+
+    //     if($credentials['password'] !== $credentials['confirmPassword']){
+    //         $x = 2;
+    //         return $x;
+    //     }
+    //     $thePassword = $user->password = Hash::make($credentials['password']);
+    //     $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+        
+    //     // Store in cache instead of session
+    //     Cache::put('password_reset_' . $request->email, [
+    //         'otp' => $otp,
+    //         'password' => Hash::make($request->password)
+    //     ], now()->addMinutes(10));
+
+    //     try {
+    //         // Send email using Laravel Mail
+    //         Mail::to($request->email)->send(new PasswordResetOtp($otp));
+    //         $x = 5;
+    //         return $x;
+        
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'error' => 'Failed to send email'
+    //         ], 500);
+    //     }
+
+    // }
+
+
     public function forgotPassword(Request $request){
         $credentials = $request->only('email', 'password', 'confirmPassword');
         $user = Admin::where('email', $credentials['email'])->first();
@@ -72,24 +108,25 @@ class AdminController extends Controller
             return $x;
         }
         $thePassword = $user->password = Hash::make($credentials['password']);
+        // $thePassword = Hash::make($credentials['password']);
         $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
         
-        // Store in cache instead of session
+        // Store in cache with email
         Cache::put('password_reset_' . $request->email, [
             'otp' => $otp,
-            'password' => Hash::make($request->password)
+            'password' => Hash::make($request->password),
+            'email' => $request->email
         ], now()->addMinutes(10));
 
+        // Store email in Laravel session for the reset page
+        session(['password_reset_email' => $request->email]);
+
         try {
-            // Send email using Laravel Mail
             Mail::to($request->email)->send(new PasswordResetOtp($otp));
             $x = 5;
             return $x;
-        
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Failed to send email'
-            ], 500);
+            return response()->json(['error' => 'Failed to send email'], 500);
         }
 
     }
@@ -104,51 +141,51 @@ class AdminController extends Controller
 
         $cachedData = Cache::get('password_reset_' . $request->email);
         
-        if (!$cachedData || $cachedData['otp'] !== $request->otp) {
-            return response()->json(['error' => 'Invalid or expired OTP'], 400);
+        if (!$cachedData) {
+            return response()->json(['error' => 'OTP expired or not found'], 400);
         }
 
-        // Update password
-        $user = Admin::where('email', $request->email)->first();
-        $user->update(['password' => $cachedData['password']]);
-        
-        // Clear OTP from cache
-        Cache::forget('password_reset_' . $request->email);
+        if ($cachedData['otp'] !== $request->otp) {
+            return response()->json(['error' => 'Invalid OTP'], 400);
+        }
 
-        return response()->json(['message' => 'Password reset successfully']);
+        // OTP is valid - store verification in cache
+        Cache::put('password_verified_' . $request->email, true, now()->addMinutes(10));
+        
+        return response()->json(['message' => 'OTP verified successfully']);
     }
 
 
     public function resetPassword(Request $request){
-        $credentials = $request->only('email', 'password', 'confirmPassword', 'otp');
+        $credentials = $request->only('email', 'password', 'otp');
         $user = Admin::where('email', $credentials['email'])->first();
         if(!$user) {
-            $x = 1;
+            $x = 0;
             return $x;
         }
-
-        if($credentials['password'] !== $credentials['confirmPassword']){
-            $x = 2;
-            return $x;
-        }
-
+        
         $cachedData = Cache::get('password_reset_' . $request->email);
         
         if (!$cachedData || $cachedData['otp'] !== $request->otp) {
-            $x = 3;
+            $x = 0;
             return $x;
         }
 
         // Update password
-        $user->update(['password' => Hash::make($credentials['password'])]);
+        // $user->update(['password' => Hash::make($credentials['password'])]);
+        $user->update([
+            'password' => $credentials['password']
+        ]);
         
         // Clear OTP from cache
         Cache::forget('password_reset_' . $request->email);
 
-        $x = 4;
+        $x = 1;
         return $x;
 
     }
+
+    
 
 
     

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\Admin;
@@ -53,7 +54,19 @@ Route::post('/log', [AdminController::class, 'login']);
 
 Route::post('/forgot', [AdminController::class, 'forgotPassword']);
 
-Route::post('/reset_admin_password', [AdminController::class, 'resetPassword']);
+Route::get('/reset_admin_password', function () {
+    $email = session('password_reset_email');
+    $resetData = $email ? Cache::get('password_reset_' . $email) : null;
+    if (!$resetData) {
+        return redirect('/welcome_admin');
+    }
+
+    return view('index-admin-reset', [
+        'email' => $email,
+        'resetData' => $resetData
+    ]);
+});
+Route::post('/reset', [AdminController::class, 'resetPassword']);
 
 // Route::get('///', function () {
 //     return view('welcome_admin');

@@ -21,7 +21,7 @@
                 <tr>
                   <td align="center" style="background-color:#ffffff; border-radius:8px; padding:15px; box-shadow:0 3px 10px rgba(0,0,0,0.1);">
                     <!-- CORRECTED: Use Blade syntax for image embedding -->
-                    <img src="{{ $message->embed(public_path('logo.png')) }}" alt="EnrollSys Logo">
+                    <img src="{{ $message->embed(public_path('logo.png')) }}" alt="EnrollSys Logo" style="height:100px; display:block; margin:0 auto; ">
                   </td>
                 </tr>
               </table>
