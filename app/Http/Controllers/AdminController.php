@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
 use App\Mail\PasswordResetOtp;
 use App\Models\Admin;
+use App\Models\Student;
+use App\Models\Instructor;
+use App\Models\Subject;
+use App\Models\Enrollment;
 use Illuminate\Auth\SessionGuard;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
@@ -65,8 +69,26 @@ class AdminController extends Controller
         }
 
         $user = Auth::guard('admin')->user();
-        return view('dashboard', compact('user'));
+        $stats = $this->get_statistics();
+        return view('admin.dashboard', compact('user', 'stats'));
         
+    }
+
+
+    public function get_statistics() 
+    {
+        // Use Eloquent instead of raw SQL
+        $students = Student::count();
+        $instructors = Instructor::count();
+        $subjects = Subject::where('is_active', 1)->count();
+        $enrollments = Enrollment::where('status', 'Enrolled')->count();
+        
+        return [
+            'students' => $students,
+            'instructors' => $instructors,
+            'subjects' => $subjects,
+            'enrollments' => $enrollments
+        ];
     }
 
 
@@ -134,6 +156,19 @@ class AdminController extends Controller
         $x = 1;
         return $x;
 
+    }
+
+    public function logout(Request $request){
+        Auth::guard('admin')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect('/welcome_admin');
+    }
+
+    public function fetch_admin_data(){
+        $user = Auth::guard('admin')->user();
+        $admin_data = Admin::where('id', $user->id)->get();
+        return $admin_data;
     }
 
     

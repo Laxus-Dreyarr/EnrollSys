@@ -18,6 +18,13 @@ class AdminInfo extends Model
         'birthdate', 'age', 'address'
     ];
 
+    protected $hidden = [
+        'password', 'remember_token',
+    ];
+
+    // Specify the guard for this model
+    protected $guard = 'admin';
+
     public function admin()
     {
         return $this->belongsTo(Admin::class, 'admin_id', 'admin_id');

@@ -1,22 +1,6 @@
 <?php
-
-// get admin id from session
-$user = $_SESSION['admin_id'];
-$user_type = $_SESSION['user_type'];
-// create admin object
-$a =  new Admin($user, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-// get admin data
-$admin_data = $a->fetch_admin_data();
-
-$firstname = $admin_data[0]['firstname'];
-$profile_picture = $admin_data[0]['profile'];
-
-
-// commit 1
-$b = new Admin($user, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-$stats = $b->get_statistics();
-
-
+$firstname = $user->info->firstname;
+$profile_picture = $user->profile;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -24,17 +8,18 @@ $stats = $b->get_statistics();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="application-title" content="EnrollSys">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="color-scheme" content="#101126">
     <meta name="theme-color" content="#101126">
     <title>Admin Dashboard - EnrollSys</title>
-    <link rel="website icon" href="logo.png">
+    <link rel="website icon" href="{{ asset('img/logo.png') }}">
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="style/bootstrap5.min.css">
+    <link rel="stylesheet" href="{{ asset('style/bootstrap5.min.css') }}">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link rel="stylesheet" href="style/google-fonts.css">
-    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="{{ asset('style/google-fonts.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body class="light-theme">
@@ -84,10 +69,10 @@ $stats = $b->get_statistics();
                     </button>
                     <div class="user-profile">
                         <div class="user-avatar">
-                            <img src="profile/<?=$profile_picture?>" alt="user_avatar" class="rounded-circle">
+                            <img src="profile/{{ $profile_picture }}" alt="user_avatar" class="rounded-circle">
                         </div>
                         <div class="user-info d-none d-md-block">
-                            <div class="user-name"><?=$firstname?></div>
+                            <div class="user-name">{{ $firstname }}</div>
                             <div class="user-role">Administrator</div>
                         </div>
                     </div>
@@ -114,7 +99,7 @@ $stats = $b->get_statistics();
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h5 class="card-title">Students</h5>
-                                        <h2 class="mb-0"><?php echo $stats['students']; ?></h2>
+                                        <h2 class="mb-0">{{ $stats['students'] }}</h2>
                                     </div>
                                     <div class="bg-primary p-3 rounded">
                                         <i class="fas fa-users fa-2x text-white"></i>
@@ -133,7 +118,7 @@ $stats = $b->get_statistics();
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h5 class="card-title">Instructors</h5>
-                                        <h2 class="mb-0"><?php echo $stats['instructors']; ?></h2>
+                                        <h2 class="mb-0">{{ $stats['instructors'] }}</h2>
                                     </div>
                                     <div class="bg-success p-3 rounded">
                                         <i class="fas fa-chalkboard-teacher fa-2x text-white"></i>
@@ -190,7 +175,7 @@ $stats = $b->get_statistics();
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h5 class="card-title">Enrollments</h5>
-                                        <h2 class="mb-0"><?php echo $stats['enrollments']; ?></h2>
+                                        <h2 class="mb-0">{{ $stats['enrollments'] }}</h2>
                                     </div>
                                     <div class="bg-info p-3 rounded">
                                         <i class="fas fa-file-alt fa-2x text-white"></i>
