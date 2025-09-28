@@ -45,7 +45,13 @@ $profile_picture = $user->profile;
                     <li><a href="#audit" data-bs-toggle="tab"><i class="fas fa-history"></i> <span class="menu-text">Audit Logs</span></a></li>
                     <li><a href="#files" data-bs-toggle="tab"><i class="fas fa-file-alt"></i> <span class="menu-text">Files</span></a></li>
                     <li><a href="#"><i class="fas fa-cog"></i> <span class="menu-text">Settings</span></a></li>
-                    <li><a href="#"><i class="fas fa-sign-out-alt"></i> <span class="menu-text">Logout</span></a></li>
+                    <li>
+                        <form id="logout-form" action="{{ route('admin.logout') }}" method="POST" style="display: none;">
+                            @csrf
+                        </form>
+                        <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i class="fas fa-sign-out-alt"></i> <span class="menu-text">Logout</span>
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>

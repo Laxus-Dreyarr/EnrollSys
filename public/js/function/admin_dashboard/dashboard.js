@@ -94,13 +94,13 @@
 
             const responseData = await response.json();
             console.log(responseData);
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                console.error('Request timed out');
-            } else {
-                console.error('Error:', error);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.error('Request timed out');
+                } else {
+                    console.error('Error:', error);
+                }
             }
-        }
         }
 
         // Function to set up real-time subscription
@@ -421,7 +421,7 @@
 
         // Function to load edit prerequisites
         function loadEditPrerequisiteOptions() {
-            $.post('exe/admin_ajax.php', {action: 'get_prerequisites'}, function(response) {
+            $.post('/admin/ajax/get-stats', {action: 'get_prerequisites'}, function(response) {
                 if (response.success) {
                     const dropdown = $('#editPrerequisitesDropdown');
                     dropdown.empty().append('<option value="">Select prerequisite subject</option>');
@@ -466,7 +466,7 @@
     }
 
     function loadStatistics() {
-        $.post('exe/admin_ajax.php', {action: 'get_stats'}, function(response) {
+        $.post('/admin/ajax/get-stats', {action: 'get_stats'}, function(response) {
             if (response.success) {
                 $('#statsCards .col-md-3:eq(0) h2').text(response.stats.students);
                 $('#statsCards .col-md-3:eq(1) h2').text(response.stats.instructors);
@@ -479,7 +479,7 @@
     }
 
     function loadPrerequisiteOptions() {
-        $.post('exe/admin_ajax.php', {action: 'get_prerequisites'}, function(response) {
+        $.post('/admin/ajax/get-stats', {action: 'get_prerequisites'}, function(response) {
             if (response.success) {
                 const dropdown = $('#prerequisitesDropdown');
                 dropdown.empty().append('<option value="">Select prerequisite subject</option>');
@@ -553,7 +553,7 @@
         console.log('Sending data:', formData);
         
         // Send AJAX request
-        $.post('exe/admin_ajax.php', formData, function(response) {
+        $.post('/admin/ajax/get-stats', formData, function(response) {
             if (response.success) {
                 alert('Subject created successfully!');
                 $('#createSubjectModal').modal('hide');
@@ -596,7 +596,7 @@
             return;
         }
         
-        $.post('exe/admin_ajax.php', {
+        $.post('/admin/ajax/get-stats', {
             action: 'generate_passkey', 
             email: email, 
             user_type: userType
@@ -617,7 +617,7 @@
     });
 
     function loadSubjects() {
-        $.post('exe/admin_ajax.php', {action: 'get_subjects'}, function(response) {
+        $.post('/admin/ajax/get-stats', {action: 'get_subjects'}, function(response) {
             if (response.success) {
                 const tbody = $('#subjectsTableBody');
                 tbody.empty();
@@ -653,7 +653,7 @@
 
     // The load subjects for the top dashboard
     function loadSubjects2() {
-        $.post('exe/admin_ajax.php', {action: 'get_stats'}, function(response) {
+        $.post('/admin/ajax/get-stats', {action: 'get_stats'}, function(response) {
             if (response.success) {
                 const tbody2 = $('#subjects_stats');
                  const row2 = `
@@ -668,7 +668,7 @@
     }
 
     function loadAuditLogs() {
-        $.post('exe/admin_ajax.php', {action: 'get_audit_logs'}, function(response) {
+        $.post('/admin/ajax/get-stats', {action: 'get_audit_logs'}, function(response) {
             if (response.success) {
                 const tbody = $('#auditTableBody');
                 tbody.empty();
@@ -706,7 +706,7 @@
 
     function deleteSubject(subjectId) {
         if (confirm('Are you sure you want to delete this subject? This action cannot be undone.')) {
-            $.post('exe/admin_ajax.php', {
+            $.post('/admin/ajax/get-stats', {
                 action: 'delete_subject',
                 subject_id: subjectId
             }, function(response) {
@@ -726,7 +726,7 @@
     }
 
     function viewSubject(subjectId) {
-        $.post('exe/admin_ajax.php', {action: 'get_subject', subject_id: subjectId}, function(response) {
+        $.post('/admin/ajax/get-stats', {action: 'get_subject', subject_id: subjectId}, function(response) {
             if (response.success) {
                 const subject = response.subject;
                 
@@ -787,7 +787,7 @@
     }
 
     function editSubject(subjectId) {
-        $.post('exe/admin_ajax.php', {action: 'get_subject', subject_id: subjectId}, function(response) {
+        $.post('/admin/ajax/get-stats', {action: 'get_subject', subject_id: subjectId}, function(response) {
             if (response.success) {
                 const subject = response.subject;
                 
@@ -948,7 +948,7 @@
         }
         
         // Send AJAX request
-        $.post('exe/admin_ajax.php', formData, function(response) {
+        $.post('/admin/ajax/get-stats', formData, function(response) {
             if (response.success) {
                 alert('Subject updated successfully!');
                 $('#editSubjectModal').modal('hide');

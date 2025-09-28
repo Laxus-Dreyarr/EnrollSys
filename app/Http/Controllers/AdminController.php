@@ -18,10 +18,17 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
+use App\Services\AdminService;
 
 
 class AdminController extends Controller
 {
+    protected $adminService;
+
+    public function __construct(AdminService $adminService)
+    {
+        $this->adminService = $adminService;
+    }
 
     public function login(Request $request)
     {   
@@ -90,6 +97,100 @@ class AdminController extends Controller
             'enrollments' => $enrollments
         ];
     }
+
+    // AJAX endpoints
+    public function getStats(Request $request)
+    {
+        $stats = $this->getStatistics();
+        return response()->json(['success' => true, 'stats' => $stats]);
+    }
+
+    public function getPrerequisites(Request $request)
+    {
+        $prerequisites = $this->adminService->getPrerequisiteOptions();
+        return response()->json(['success' => true, 'prerequisites' => $prerequisites]);
+    }
+
+    public function getSubjects(Request $request)
+    {
+        $subjects = $this->adminService->getAllSubjectsWithSchedules();
+        return response()->json(['success' => true, 'subjects' => $subjects]);
+    }
+
+    // public function getSubject(Request $request, $id)
+    // {
+    //     $subject = $this->adminService->getSubjectWithDetails($id);
+        
+    //     if (!$subject) {
+    //         return response()->json(['success' => false, 'message' => 'Subject not found']);
+    //     }
+
+    //     return response()->json(['success' => true, 'subject' => $subject]);
+    // }
+
+     public function createSubject(Request $request)
+    {
+        $success = $this->adminService->createSubject($request->all());
+
+        if ($success) {
+            return response()->json(['success' => true, 'message' => 'Subject created successfully']);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Failed to create subject']);
+    }
+
+    // public function updateSubject(Request $request, $id)
+    // {
+    //     $success = $this->adminService->updateSubject($id, $request->all());
+
+    //     if ($success) {
+    //         return response()->json(['success' => true, 'message' => 'Subject updated successfully']);
+    //     }
+
+    //     return response()->json(['success' => false, 'message' => 'Failed to update subject']);
+    // }
+
+    // public function deleteSubject(Request $request, $id)
+    // {
+    //     $success = $this->adminService->deleteSubject($id);
+
+    //     if ($success) {
+    //         return response()->json(['success' => true, 'message' => 'Subject deleted successfully']);
+    //     }
+
+    //     return response()->json(['success' => false, 'message' => 'Failed to delete subject']);
+    // }
+
+    // public function generatePasskey(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'email' => 'required|email',
+    //         'user_type' => 'required|in:instructor,organization'
+    //     ]);
+
+    //     $passkey = $this->adminService->generatePasskey(
+    //         $validated['email'],
+    //         $validated['user_type'],
+    //         Auth::guard('admin')->id()
+    //     );
+
+    //     if ($passkey) {
+    //         return response()->json([
+    //             'success' => true, 
+    //             'message' => 'Passkey generated and sent',
+    //             'passkey' => $passkey->passkey
+    //         ]);
+    //     }
+
+    //     return response()->json(['success' => false, 'message' => 'Failed to generate passkey']);
+    // }
+
+
+    // public function getAuditLogs(Request $request)
+    // {
+    //     $logs = $this->adminService->getAuditLogs();
+    //     return response()->json(['success' => true, 'logs' => $logs]);
+    // }
 
 
     public function forgotPassword(Request $request){
@@ -165,11 +266,6 @@ class AdminController extends Controller
         return redirect('/welcome_admin');
     }
 
-    public function fetch_admin_data(){
-        $user = Auth::guard('admin')->user();
-        $admin_data = Admin::where('id', $user->id)->get();
-        return $admin_data;
-    }
 
     
 
