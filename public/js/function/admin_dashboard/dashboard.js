@@ -680,7 +680,7 @@
     }
 
     function loadAuditLogs() {
-        $.post('/admin/ajax/get-stats', {action: 'get_audit_logs'}, function(response) {
+        $.post('/admin/ajax/get-stats', {action: 'get_audit_logs', _token: $('meta[name="csrf-token"]').attr('content')}, function(response) {
             if (response.success) {
                 const tbody = $('#auditTableBody');
                 tbody.empty();
@@ -720,7 +720,8 @@
         if (confirm('Are you sure you want to delete this subject? This action cannot be undone.')) {
             $.post('/admin/ajax/get-stats', {
                 action: 'delete_subject',
-                subject_id: subjectId
+                subject_id: subjectId,
+                _token: $('meta[name="csrf-token"]').attr('content')
             }, function(response) {
                 if (response.success) {
                     alert('Subject deleted successfully');
