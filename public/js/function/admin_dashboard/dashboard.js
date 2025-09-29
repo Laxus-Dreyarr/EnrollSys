@@ -540,7 +540,8 @@
             prerequisites: $('input[name="prerequisites[]"]').map(function() {
                 return this.value;
             }).get(),
-            schedules: schedules
+            schedules: schedules,
+            _token: $('meta[name="csrf-token"]').attr('content')
         };
         
         // Validate required fields
@@ -550,7 +551,6 @@
             return;
         }
         
-        console.log('Sending data:', formData);
         
         // Send AJAX request
         $.post('/admin/ajax/get-stats', formData, function(response) {
@@ -738,7 +738,7 @@
     }
 
     function viewSubject(subjectId) {
-        $.post('/admin/ajax/get-stats', {action: 'get_subject', subject_id: subjectId}, function(response) {
+        $.post('/admin/ajax/get-stats', {action: 'get_subject', subject_id: subjectId, _token: $('meta[name="csrf-token"]').attr('content')}, function(response) {
             if (response.success) {
                 const subject = response.subject;
                 
@@ -799,7 +799,7 @@
     }
 
     function editSubject(subjectId) {
-        $.post('/admin/ajax/get-stats', {action: 'get_subject', subject_id: subjectId}, function(response) {
+        $.post('/admin/ajax/get-stats', {action: 'get_subject', subject_id: subjectId, _token: $('meta[name="csrf-token"]').attr('content')}, function(response) {
             if (response.success) {
                 const subject = response.subject;
                 
@@ -949,7 +949,8 @@
             prerequisites: $('#editSubjectForm input[name="prerequisites[]"]').map(function() {
                 return this.value;
             }).get(),
-            schedules: schedules
+            schedules: schedules,
+            _token: $('meta[name="csrf-token"]').attr('content')
         };
         
         // Validate required fields

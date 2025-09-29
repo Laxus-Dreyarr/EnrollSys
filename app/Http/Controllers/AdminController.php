@@ -204,8 +204,8 @@ class AdminController extends Controller
                 return response()->json(['success' => false, 'message' => 'Subject code already exists']);
             }
 
-            // Check for duplicate schedules
-            $schedules = json_decode($request->schedules, true);
+            // Check for duplicate schedules - NO json_decode needed
+            $schedules = $request->schedules; // ✅ Already an array
             $uniqueSchedules = [];
             foreach ($schedules as $schedule) {
                 $key = $schedule['section'] . '-' . $schedule['day'] . '-' . $schedule['start_time'] . '-' . $schedule['end_time'];
@@ -231,9 +231,9 @@ class AdminController extends Controller
                 'is_active' => 1
             ]);
 
-            // Add prerequisites
+            // Add prerequisites - NO json_decode needed
             if (!empty($request->prerequisites)) {
-                $prerequisites = json_decode($request->prerequisites, true);
+                $prerequisites = $request->prerequisites; // ✅ Already an array
                 foreach ($prerequisites as $prereqId) {
                     SubjectPrerequisite::create([
                         'subject_id' => $subject->id,
@@ -265,6 +265,78 @@ class AdminController extends Controller
         }
     }
 
+    // public function createSubject(Request $request)
+    // {
+    //     DB::beginTransaction();
+        
+    //     try {
+    //         // Check if subject code already exists
+    //         if (Subject::where('code', $request->code)->exists()) {
+    //             return response()->json(['success' => false, 'message' => 'Subject code already exists']);
+    //         }
+
+    //         // Check for duplicate schedules
+    //         $schedules = json_decode($request->schedules, true);
+    //         $uniqueSchedules = [];
+    //         foreach ($schedules as $schedule) {
+    //             $key = $schedule['section'] . '-' . $schedule['day'] . '-' . $schedule['start_time'] . '-' . $schedule['end_time'];
+    //             if (!isset($uniqueSchedules[$key])) {
+    //                 $uniqueSchedules[$key] = $schedule;
+    //             } else {
+    //                 // Duplicate schedule found
+    //                 DB::rollBack();
+    //                 return response()->json(1); // This matches your JavaScript check for response == 1
+    //             }
+    //         }
+
+    //         // Create subject
+    //         $subject = Subject::create([
+    //             'code' => $request->code,
+    //             'name' => $request->name,
+    //             'description' => $request->description ?? '',
+    //             'units' => $request->units,
+    //             'year_level' => $request->year_level,
+    //             'semester' => $request->semester,
+    //             'max_students' => $request->max_students,
+    //             'created_by' => Auth::guard('admin')->id(),
+    //             'is_active' => 1
+    //         ]);
+
+    //         // Add prerequisites
+    //         if (!empty($request->prerequisites)) {
+    //             $prerequisites = json_decode($request->prerequisites, true);
+    //             foreach ($prerequisites as $prereqId) {
+    //                 SubjectPrerequisite::create([
+    //                     'subject_id' => $subject->id,
+    //                     'prerequisite_id' => $prereqId
+    //                 ]);
+    //             }
+    //         }
+
+    //         // Add schedules
+    //         foreach ($uniqueSchedules as $schedule) {
+    //             SubjectSchedule::create([
+    //                 'subject_id' => $subject->id,
+    //                 'Section' => $schedule['section'],
+    //                 'day' => $schedule['day'],
+    //                 'start_time' => $schedule['start_time'],
+    //                 'end_time' => $schedule['end_time'],
+    //                 'room' => $schedule['room'] ?? null,
+    //                 'Type' => $schedule['type']
+    //             ]);
+    //         }
+
+    //         DB::commit();
+    //         return response()->json(['success' => true, 'message' => 'Subject created successfully']);
+            
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         Log::error('Subject creation failed: ' . $e->getMessage());
+    //         return response()->json(['success' => false, 'message' => 'Failed to create subject: ' . $e->getMessage()]);
+    //     }
+    // }
+
+
     public function updateSubject(Request $request)
     {
         DB::beginTransaction();
@@ -280,8 +352,13 @@ class AdminController extends Controller
                 return response()->json(['success' => false, 'message' => 'Subject code already exists']);
             }
 
-            // Check for duplicate schedules
-            $schedules = json_decode($request->schedules, true);
+            // Check if subject name exists (excluding current subject)
+            if (Subject::where('name', $request->name)->where('id', '!=', $request->subject_id)->exists()) {
+                return response()->json(['success' => false, 'message' => 'Subject name already exists']);
+            }
+
+            // Check for duplicate schedules - NO json_decode needed
+            $schedules = $request->schedules; // ✅ Already an array
             $uniqueSchedules = [];
             foreach ($schedules as $schedule) {
                 $key = $schedule['section'] . '-' . $schedule['day'] . '-' . $schedule['start_time'] . '-' . $schedule['end_time'];
@@ -305,10 +382,10 @@ class AdminController extends Controller
                 'max_students' => $request->max_students,
             ]);
 
-            // Update prerequisites
+            // Update prerequisites - NO json_decode needed
             SubjectPrerequisite::where('subject_id', $subject->id)->delete();
             if (!empty($request->prerequisites)) {
-                $prerequisites = json_decode($request->prerequisites, true);
+                $prerequisites = $request->prerequisites; // ✅ Already an array
                 foreach ($prerequisites as $prereqId) {
                     SubjectPrerequisite::create([
                         'subject_id' => $subject->id,
@@ -340,6 +417,82 @@ class AdminController extends Controller
             return response()->json(['success' => false, 'message' => 'Failed to update subject: ' . $e->getMessage()]);
         }
     }
+
+    // public function updateSubject(Request $request)
+    // {
+    //     DB::beginTransaction();
+        
+    //     try {
+    //         $subject = Subject::find($request->subject_id);
+    //         if (!$subject) {
+    //             return response()->json(['success' => false, 'message' => 'Subject not found']);
+    //         }
+
+    //         // Check if subject code exists (excluding current subject)
+    //         if (Subject::where('code', $request->code)->where('id', '!=', $request->subject_id)->exists()) {
+    //             return response()->json(['success' => false, 'message' => 'Subject code already exists']);
+    //         }
+
+    //         // Check for duplicate schedules
+    //         $schedules = $request->schedules;
+    //         $uniqueSchedules = [];
+    //         foreach ($schedules as $schedule) {
+    //             $key = $schedule['section'] . '-' . $schedule['day'] . '-' . $schedule['start_time'] . '-' . $schedule['end_time'];
+    //             if (!isset($uniqueSchedules[$key])) {
+    //                 $uniqueSchedules[$key] = $schedule;
+    //             } else {
+    //                 // Duplicate schedule found
+    //                 DB::rollBack();
+    //                 return response()->json(1);
+    //             }
+    //         }
+
+    //         // Update subject
+    //         $subject->update([
+    //             'code' => $request->code,
+    //             'name' => $request->name,
+    //             'description' => $request->description ?? '',
+    //             'units' => $request->units,
+    //             'year_level' => $request->year_level,
+    //             'semester' => $request->semester,
+    //             'max_students' => $request->max_students,
+    //         ]);
+
+    //         // Update prerequisites
+    //         SubjectPrerequisite::where('subject_id', $subject->id)->delete();
+    //         if (!empty($request->prerequisites)) {
+    //             $prerequisites = json_decode($request->prerequisites, true);
+    //             foreach ($prerequisites as $prereqId) {
+    //                 SubjectPrerequisite::create([
+    //                     'subject_id' => $subject->id,
+    //                     'prerequisite_id' => $prereqId
+    //                 ]);
+    //             }
+    //         }
+
+    //         // Update schedules
+    //         SubjectSchedule::where('subject_id', $subject->id)->delete();
+    //         foreach ($uniqueSchedules as $schedule) {
+    //             SubjectSchedule::create([
+    //                 'subject_id' => $subject->id,
+    //                 'Section' => $schedule['section'],
+    //                 'day' => $schedule['day'],
+    //                 'start_time' => $schedule['start_time'],
+    //                 'end_time' => $schedule['end_time'],
+    //                 'room' => $schedule['room'] ?? null,
+    //                 'Type' => $schedule['type']
+    //             ]);
+    //         }
+
+    //         DB::commit();
+    //         return response()->json(['success' => true, 'message' => 'Subject updated successfully']);
+            
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         Log::error('Subject update failed: ' . $e->getMessage());
+    //         return response()->json(['success' => false, 'message' => 'Failed to update subject: ' . $e->getMessage()]);
+    //     }
+    // }
 
     public function deleteSubject(Request $request)
     {
