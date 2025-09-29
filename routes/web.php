@@ -39,7 +39,7 @@ Route::middleware(['admin.auth'])->group(function () {
     Route::post('/logout', [AdminController::class, 'logout'])->name('admin.logout');
     
     // AJAX endpoints
-        Route::prefix('admin/ajax')->group(function () {
+    Route::prefix('admin/ajax')->group(function () {
         Route::post('/get-stats', [AdminController::class, 'getStats']);
         Route::post('/get-prerequisites', [AdminController::class, 'getPrerequisites']);
         Route::post('/get-subjects', [AdminController::class, 'getSubjects']);

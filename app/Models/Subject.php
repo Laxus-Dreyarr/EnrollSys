@@ -42,4 +42,10 @@ class Subject extends Model
     {
         return $this->belongsTo(Admin::class, 'created_by', 'admin_id');
     }
+
+    // Add this to check if model is working
+    public function getTable()
+    {
+        return 'subjects';
+    }
 }

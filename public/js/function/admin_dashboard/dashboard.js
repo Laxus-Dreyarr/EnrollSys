@@ -466,7 +466,7 @@
     }
 
     function loadStatistics() {
-        $.post('/admin/ajax/get-stats', {action: 'get_stats'}, function(response) {
+        $.post('/admin/ajax/get-stats', {action: 'get_stats', _token: $('meta[name="csrf-token"]').attr('content')}, function(response) {
             if (response.success) {
                 $('#statsCards .col-md-3:eq(0) h2').text(response.stats.students);
                 $('#statsCards .col-md-3:eq(1) h2').text(response.stats.instructors);
@@ -617,10 +617,17 @@
     });
 
     function loadSubjects() {
-        $.post('/admin/ajax/get-stats', {action: 'get_subjects'}, function(response) {
+        
+        $.post('/admin/ajax/get-stats', {action: 'get_subjects', _token: $('meta[name="csrf-token"]').attr('content')}, function(response) {
+            
             if (response.success) {
                 const tbody = $('#subjectsTableBody');
                 tbody.empty();
+                
+                if (response.subjects.length === 0) {
+                    tbody.append('<tr><td colspan="5" class="text-center">No subjects found</td></tr>');
+                    return;
+                }
                 
                 response.subjects.forEach(function(subject) {
                     const row = `
@@ -643,22 +650,27 @@
                         </tr>
                     `;
                     tbody.append(row);
-                    console.log('Loading subjects...');
                 });
+            } else {
+                console.error('Server returned error:', response.message);
+                $('#subjectsTableBody').html('<tr><td colspan="5" class="text-center text-danger">Error loading subjects</td></tr>');
             }
         }, 'json').fail(function(xhr, status, error) {
-            console.error('Error loading subjects:', error);
+            console.error('AJAX Error:', error);
+            console.error('Status:', status);
+            console.error('Response:', xhr.responseText);
+            $('#subjectsTableBody').html('<tr><td colspan="5" class="text-center text-danger">Failed to load subjects</td></tr>');
         });
     }
 
     // The load subjects for the top dashboard
     function loadSubjects2() {
-        $.post('/admin/ajax/get-stats', {action: 'get_stats'}, function(response) {
+        $.post('/admin/ajax/get-stats', {action: 'get_stats', _token: $('meta[name="csrf-token"]').attr('content')}, function(response) {
             if (response.success) {
                 const tbody2 = $('#subjects_stats');
                  const row2 = `
-                        <h5 class="card-title">Subjects</h5>
-                        <h2 class="mb-0">${stats.subjects}</h2>
+                        
+                        <h2 class="mb-0">${response.stats.subjects}</h2>
                     `;
                 tbody2.append(row2)
             }
