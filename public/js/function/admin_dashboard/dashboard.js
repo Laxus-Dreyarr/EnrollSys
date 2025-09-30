@@ -103,6 +103,87 @@
             }
         }
 
+        async function updateSupabase(recordId) {
+            const data = {
+                table_name: 'subject',
+                operation: 'UPDATE',
+                record_id: recordId,
+            };
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+            try {
+                const response = await fetch(`${supabaseUrl}/rest/v1/notifications`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': supabaseAnonKey,
+                        'Authorization': `Bearer ${supabaseAnonKey}`,
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const responseData = await response.json();
+                console.log('Update notification sent:', responseData);
+                return true;
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.error('Update request timed out');
+                } else {
+                    console.error('Error updating Supabase:', error);
+                }
+                return false;
+            }
+        }
+
+        async function deletesupabase(){
+            const data = {
+                table_name: 'subject',  // make sure these variables are defined
+                operation: 'DELETE',
+                record_id: 'ID'
+            };
+            // Create AbortController for timeout (similar to PHP's 10s timeout)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            try {
+            const response = await fetch(`${supabaseUrl}/rest/v1/notifications`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseAnonKey,
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify(data),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData = await response.json();
+            console.log(responseData);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.error('Request timed out');
+                } else {
+                    console.error('Error:', error);
+                }
+            }
+        }
+
         // Function to set up real-time subscription
         function setupRealtimeSubscription() {
             const subscription = supabaseClient
@@ -114,14 +195,22 @@
                         table: 'notifications' 
                     }, 
                     (payload) => {
-                        console.log('Change received!', payload);
-                        // Refresh the notification count when changes occur
-                        // fetchNotificationCount();
-                        loadSubjects();
-                        loadStatistics();
-                                        
-                        // Show notification to user
-                        showNotification('New subject has been added!');
+                        // Refresh data based on the operation type
+                        if (payload.new && payload.new.table_name === 'subject') {
+                            if (payload.new.operation === 'INSERT') {
+                                showNotification('New subject has been added!');
+                            } else if (payload.new.operation === 'DELETE') {
+                                showNotification('Subject has been deleted!');
+                            } else if (payload.new.operation === 'UPDATE') {
+                                showNotification('Subject has been updated!');
+                            }
+                            // Refresh the notification count when changes occur
+                            // fetchNotificationCount();
+                            loadSubjects();
+                            loadStatistics();
+                        }
+                        
+                        
                     }
                 )
                 .subscribe((status) => {
@@ -421,7 +510,7 @@
 
         // Function to load edit prerequisites
         function loadEditPrerequisiteOptions() {
-            $.post('/admin/ajax/get-stats', {action: 'get_prerequisites'}, function(response) {
+            $.post('/admin/ajax/get-stats', {action: 'get_prerequisites',  _token: $('meta[name="csrf-token"]').attr('content')}, function(response) {
                 if (response.success) {
                     const dropdown = $('#editPrerequisitesDropdown');
                     dropdown.empty().append('<option value="">Select prerequisite subject</option>');
@@ -479,7 +568,7 @@
     }
 
     function loadPrerequisiteOptions() {
-        $.post('/admin/ajax/get-stats', {action: 'get_prerequisites'}, function(response) {
+        $.post('/admin/ajax/get-stats', {action: 'get_prerequisites',  _token: $('meta[name="csrf-token"]').attr('content')}, function(response) {
             if (response.success) {
                 const dropdown = $('#prerequisitesDropdown');
                 dropdown.empty().append('<option value="">Select prerequisite subject</option>');
@@ -728,6 +817,7 @@
                     loadStatistics();
                     // loadSubjects2();
                     loadSubjects(); // Reload the subjects
+                    deletesupabase();
                 } else {
                     alert('Error: ' + response.message);
                 }
@@ -850,6 +940,8 @@
                         );
                     });
                 }
+
+                updateSupabase("recordId");
                 
                 // Open the modal
                 $('#editSubjectModal').modal('show');

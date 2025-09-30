@@ -508,7 +508,10 @@ class AdminController extends Controller
             }
 
             // Soft delete by setting is_active to 0
-            $subject->update(['is_active' => 0]);
+            // $subject->update(['is_active' => 0]);
+
+            // Hard delete
+            Subject::where('id', $request->subject_id)->delete();
 
             return response()->json(['success' => true, 'message' => 'Subject deleted successfully']);
             
