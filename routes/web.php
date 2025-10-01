@@ -1,5 +1,6 @@
 <?php
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
@@ -41,13 +42,18 @@ Route::middleware(['admin.auth'])->group(function () {
     // AJAX endpoints
     Route::prefix('admin/ajax')->group(function () {
         Route::post('/get-stats', [AdminController::class, 'getStats']);
-        Route::post('/get-prerequisites', [AdminController::class, 'getPrerequisites']);
-        Route::post('/get-subjects', [AdminController::class, 'getSubjects']);
-        Route::post('/get-subject/{id}', [AdminController::class, 'getSubject']);
-        Route::post('/create-subject', [AdminController::class, 'createSubject']);
-        Route::post('/update-subject/{id}', [AdminController::class, 'updateSubject']);
-        Route::post('/delete-subject/{id}', [AdminController::class, 'deleteSubject']);
-        Route::post('/generate-passkey', [AdminController::class, 'generatePasskey']);
-        Route::post('/get-audit-logs', [AdminController::class, 'getAuditLogs']);
+        // Route::post('/get-prerequisites', [AdminController::class, 'getPrerequisites']);
+        // Route::post('/get-subjects', [AdminController::class, 'getSubjects']);
+        // Route::post('/get-subject/{id}', [AdminController::class, 'getSubject']);
+        // Route::post('/create-subject', [AdminController::class, 'createSubject']);
+        // Route::post('/update-subject/{id}', [AdminController::class, 'updateSubject']);
+        // Route::post('/delete-subject/{id}', [AdminController::class, 'deleteSubject']);
+        // Route::post('/generate-passkey', [AdminController::class, 'generatePasskey']);
+        // Route::post('/get-audit-logs', [AdminController::class, 'getAuditLogs']);
     });
+});
+
+
+Route::prefix('/exe')->group(function (){
+    Route::post('/student', [StudentController::class, 'register']);
 });

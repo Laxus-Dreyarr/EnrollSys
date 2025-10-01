@@ -5,6 +5,7 @@
     <meta name="bingbot" content="noarchive">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="application-title" content="EnrollSys">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="color-scheme" content="#101126">
     <meta name="theme-color" content="#101126">
     <title>EnrollSys - Student Enrollment System</title>

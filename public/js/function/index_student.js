@@ -144,9 +144,10 @@ function attachRegistrationEventListeners() {
             formData.append('email', emailVal);
             formData.append('password', passwordVal);
             
-            fetch('exe/student_index.php', {
+            fetch('/exe/student', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                _token: $('meta[name="csrf-token"]').attr('content')
             })
             .then(response => response.json())
             .then(data => {
@@ -164,29 +165,46 @@ function attachRegistrationEventListeners() {
     }
 }
 
+let emailTimeout;
 // Check if email exists
 function checkEmailExists(email) {
-    const formData = new FormData();
-    formData.append('action', 'check_email');
-    formData.append('email', email);
+
+    // Clear previous timeout
+    clearTimeout(emailTimeout);
+
+    // Debounce the API call
+    emailTimeout = setTimeout(() => {
+        const formData = new FormData();
+        formData.append('action', 'check_email');
+        formData.append('email', email);
+        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+
+        fetch('/exe/student', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            const emailField = document.getElementById('registerEmail');
+            if (data.exists) {
+                emailField.classList.add('is-invalid');
+                emailField.nextElementSibling.textContent = 'This email is already registered!';
+            } else {
+                emailField.classList.remove('is-invalid');
+            }
+        })
+        .catch(error => {
+            console.error('Error checking email:', error);
+        });
+        
+    }, 500); // 500ms debounce delay
     
-    fetch('exe/student_index.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        const emailField = document.getElementById('registerEmail');
-        if (data.exists) {
-            emailField.classList.add('is-invalid');
-            emailField.nextElementSibling.textContent = 'This email is already registered!';
-        } else {
-            emailField.classList.remove('is-invalid');
-        }
-    })
-    .catch(error => {
-        console.error('Error checking email:', error);
-    });
+    
+
+    clearTimeout(emailTimeout);
+    emailTimeout = setTimeout(() => {
+        // Your fetch code here
+    }, 500);
 }
 
 
