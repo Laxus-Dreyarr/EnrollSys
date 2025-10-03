@@ -17,6 +17,79 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
+// Password strength checker
+function checkPasswordStrength(password) {
+    let strength = 0;
+    const feedback = {
+        weak: { text: 'Weak', class: 'strength-weak', width: '33%' },
+        medium: { text: 'Medium', class: 'strength-medium', width: '66%' },
+        strong: { text: 'Strong', class: 'strength-strong', width: '100%' }
+    };
+
+    // Check password length
+    if (password.length >= 8) strength++;
+    
+    // Check for uppercase letters
+    if (/[A-Z]/.test(password)) strength++;
+    
+    // Check for lowercase letters
+    if (/[a-z]/.test(password)) strength++;
+    
+    // Check for numbers
+    if (/[0-9]/.test(password)) strength++;
+    
+    // Check for special characters
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
+
+    // Determine strength level
+    if (password.length === 0) {
+        return { level: 0, text: 'Password strength', class: '', width: '0%' };
+    } else if (strength <= 2) {
+        return feedback.weak;
+    } else if (strength <= 4) {
+        return feedback.medium;
+    } else {
+        return feedback.strong;
+    }
+}
+
+// Update password strength indicator
+function updatePasswordStrength(password) {
+    const strengthBar = document.getElementById('passwordStrengthBar');
+    const strengthText = document.getElementById('passwordStrengthText');
+    
+    if (!strengthBar || !strengthText) return;
+    
+    const strength = checkPasswordStrength(password);
+    
+    // Update strength bar
+    strengthBar.className = 'strength-meter-fill ' + strength.class;
+    strengthBar.style.width = strength.width;
+    
+    // Update strength text
+    strengthText.textContent = strength.text;
+    strengthText.className = 'strength-text ' + strength.class + '-text';
+}
+
+// Update password requirements
+function updatePasswordRequirements(password) {
+    const requirements = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number: /[0-9]/.test(password),
+        special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+    
+    // Update requirement indicators
+    Object.keys(requirements).forEach(req => {
+        const element = document.getElementById(`req-${req}`);
+        if (element) {
+            element.classList.toggle('valid', requirements[req]);
+        }
+    });
+}
+
 // Show success animation
 function showSuccessAnimation() {
     const modalBody = document.querySelector('#registerModal .modal-body');
@@ -56,6 +129,7 @@ function attachRegistrationEventListeners() {
     const lastName = document.getElementById('lastName');
     const middleName = document.getElementById('middleName');
     const registerEmail = document.getElementById('registerEmail');
+    const registerPassword = document.getElementById('registerPassword');
     
     // Real-time name validation
     [givenName, lastName, middleName].forEach(field => {
@@ -76,10 +150,45 @@ function attachRegistrationEventListeners() {
         registerEmail.addEventListener('blur', function() {
             if (!isValidEmail(this.value)) {
                 this.classList.add('is-invalid');
-                this.nextElementSibling.textContent = 'Please enter a valid EVSUmail address (username@evsu.edu.ph).';
             } else {
                 // Check if email exists
                 checkEmailExists(this.value);
+            }
+        });
+    }
+    
+    // Real-time password strength and requirements
+    if (registerPassword) {
+        registerPassword.addEventListener('input', function() {
+            const password = this.value;
+            
+            // Update password strength indicator
+            updatePasswordStrength(password);
+            
+            // Update password requirements
+            updatePasswordRequirements(password);
+            
+            // Validate password match in real-time
+            const repeatPassword = document.getElementById('repeatPassword');
+            if (repeatPassword && repeatPassword.value) {
+                if (password !== repeatPassword.value) {
+                    repeatPassword.classList.add('is-invalid');
+                } else {
+                    repeatPassword.classList.remove('is-invalid');
+                }
+            }
+        });
+    }
+    
+    // Real-time password confirmation validation
+    const repeatPassword = document.getElementById('repeatPassword');
+    if (repeatPassword) {
+        repeatPassword.addEventListener('input', function() {
+            const password = registerPassword.value;
+            if (this.value !== password) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
             }
         });
     }
@@ -94,7 +203,8 @@ function attachRegistrationEventListeners() {
             const lastNameVal = lastName.value.trim();
             const middleNameVal = middleName.value.trim();
             const emailVal = registerEmail.value.trim();
-            const passwordVal = document.getElementById('registerPassword').value;
+            const passwordVal = registerPassword.value;
+            const repeatPasswordVal = repeatPassword.value;
             
             // Validate names
             let isValid = true;
@@ -120,18 +230,30 @@ function attachRegistrationEventListeners() {
             // Validate email
             if (!isValidEmail(emailVal)) {
                 registerEmail.classList.add('is-invalid');
-                registerEmail.nextElementSibling.textContent = 'Please enter a valid EVSUmail address (username@evsu.edu.ph).';
+                registerEmail.nextElementSibling.textContent = '';
+                isValid = false;
+            }
+            
+            // Check password strength
+            const strength = checkPasswordStrength(passwordVal);
+            if (strength.level <= 2 && passwordVal.length > 0) {
+                registerPassword.classList.add('is-invalid');
                 isValid = false;
             }
             
             // Check password match
-            const repeatPassword = document.getElementById('repeatPassword');
-            if (passwordVal !== repeatPassword.value) {
+            if (passwordVal !== repeatPasswordVal) {
                 repeatPassword.classList.add('is-invalid');
                 isValid = false;
             }
             
             if (!isValid) {
+                // Add shake animation to invalid fields
+                const invalidFields = registerForm.querySelectorAll('.is-invalid');
+                invalidFields.forEach(field => {
+                    field.classList.add('shake');
+                    setTimeout(() => field.classList.remove('shake'), 500);
+                });
                 return;
             }
             
@@ -143,23 +265,40 @@ function attachRegistrationEventListeners() {
             formData.append('middleName', middleNameVal);
             formData.append('email', emailVal);
             formData.append('password', passwordVal);
+            formData.append('repeatPassword', repeatPasswordVal);
+            
+            // Show loading state
+            const submitBtn = registerForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creating Account...';
+            submitBtn.disabled = true;
             
             fetch('/exe/student', {
                 method: 'POST',
                 body: formData,
-                _token: $('meta[name="csrf-token"]').attr('content')
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     showSuccessAnimation();
                 } else {
-                    // alert('Registration failed: ' + data.message);
+                    // Show error message
+                    if (data.message) {
+                        alert('Registration failed: ' + data.message);
+                    }
                 }
             })
             .catch(error => {
-                // console.error('Error:', error);
-                // alert('Registration failed. Please try again.');
+                console.error('Error:', error);
+                alert('Registration failed. Please try again.');
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
             });
         });
     }
@@ -168,7 +307,6 @@ function attachRegistrationEventListeners() {
 let emailTimeout;
 // Check if email exists
 function checkEmailExists(email) {
-
     // Clear previous timeout
     clearTimeout(emailTimeout);
 
@@ -177,7 +315,7 @@ function checkEmailExists(email) {
         const formData = new FormData();
         formData.append('action', 'check_email');
         formData.append('email', email);
-        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
         fetch('/exe/student', {
             method: 'POST',
@@ -188,7 +326,7 @@ function checkEmailExists(email) {
             const emailField = document.getElementById('registerEmail');
             if (data.exists) {
                 emailField.classList.add('is-invalid');
-                emailField.nextElementSibling.textContent = 'This email is already registered!';
+                emailField.nextElementSibling.textContent = '';
             } else {
                 emailField.classList.remove('is-invalid');
             }
@@ -196,78 +334,7 @@ function checkEmailExists(email) {
         .catch(error => {
             console.error('Error checking email:', error);
         });
-        
     }, 500); // 500ms debounce delay
-    
-    
-
-    clearTimeout(emailTimeout);
-    emailTimeout = setTimeout(() => {
-        // Your fetch code here
-    }, 500);
-}
-
-
-// Login form handling
-function handleLogin() {
-    const loginForm = document.getElementById('loginForm');
-    
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            // Get DOM elements correctly
-                const emailEl = document.getElementById('loginEmail');
-                const passwordEl = document.getElementById('loginPassword');
-                const submitBtn = document.getElementById('submitBtn');
-                
-                // Reset previous states
-                $('.is-invalid').removeClass('is-invalid');
-                $('#successMessage').text('');
-                
-                // Get values
-                let email = $("#loginEmail").val();
-                let password = $("#loginPassword").val();
-                
-                // Disable submit button during AJAX call
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Logging in...';
-
-                // Your actual AJAX code should look like this:
-                $.ajax({
-                    url: 'exe/student_login.php',
-                    method: 'POST',
-                    data: {email: email, password: password},
-                    success: function(response) {
-                        // Re-enable the button
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = 'Login';
-                        
-                        if(response == '1'){
-                            emailEl.classList.add('is-invalid', 'shake');
-                            setTimeout(() => emailEl.classList.remove('shake'), 500);
-                        } else if(response == '2'){
-                            passwordEl.classList.add('is-invalid', 'shake');
-                            setTimeout(() => passwordEl.classList.remove('shake'), 500);
-                        } else if(response == '0'){
-                            alert('Your account has been suspended. Please contact the administrator for assistance.');
-                        } else if(response == '3'){
-                            showLoginSuccess();                            
-                                    
-                        }
-                    },
-                    error: function() {
-                        // Re-enable the button on error too
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = 'Login';
-                        alert('An error occurred during login. Please try again.');
-                    }
-                });
-            
-            
-            
-        });
-    }
-    
 }
 
 // Show login success animation
@@ -297,47 +364,59 @@ function showLoginSuccess(user) {
     }, 3000);
 }
 
-
 function showSuccessAlert() {
-            const alertContainer = document.getElementById('alertContainer');
-            
-            const alertEl = document.createElement('div');
-            alertEl.className = 'alert-success-custom';
-            alertEl.innerHTML = `
-                <div class="alert-icon">
-                    <i class="fas fa-check"></i>
-                </div>
-                <div class="alert-content">
-                    <h4>Login Successful!</h4>
-                    <p>Welcome back! You've successfully signed in to your account.</p>
-                </div>
-                <div class="alert-progress">
-                    <div class="alert-progress-bar"></div>
-                </div>
-            `;
-            
-            alertContainer.appendChild(alertEl);
-            
-            // Trigger animation
-            setTimeout(() => {
-                alertEl.classList.add('show');
-            }, 10);
-            
-            // Remove alert after 3 seconds
-            setTimeout(() => {
-                alertEl.classList.remove('show');
-                
-                // Remove element after transition
-                setTimeout(() => {
-                    alertContainer.removeChild(alertEl);
-                }, 500);
-            window.location.href = 'st_dashboard.php';
-        }, 1000);
+    const alertContainer = document.getElementById('alertContainer');
+    
+    const alertEl = document.createElement('div');
+    alertEl.className = 'alert-success-custom';
+    alertEl.innerHTML = `
+        <div class="alert-icon">
+            <i class="fas fa-check"></i>
+        </div>
+        <div class="alert-content">
+            <h4>Login Successful!</h4>
+            <p>Welcome back! You've successfully signed in to your account.</p>
+        </div>
+        <div class="alert-progress">
+            <div class="alert-progress-bar"></div>
+        </div>
+    `;
+    
+    alertContainer.appendChild(alertEl);
+    
+    // Trigger animation
+    setTimeout(() => {
+        alertEl.classList.add('show');
+    }, 10);
+    
+    // Remove alert after 3 seconds
+    setTimeout(() => {
+        alertEl.classList.remove('show');
+        
+        // Remove element after transition
+        setTimeout(() => {
+            if (alertContainer.contains(alertEl)) {
+                alertContainer.removeChild(alertEl);
+            }
+        }, 500);
+        
+        window.location.href = 'st_dashboard.php';
+    }, 1000);
 }
 
+// Initialize password strength indicator on page load
+function initializePasswordStrengthIndicator() {
+    const passwordInput = document.getElementById('registerPassword');
+    if (passwordInput) {
+        // Initialize with empty state
+        updatePasswordStrength('');
+        updatePasswordRequirements('');
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function() {
-
+    // Initialize password strength indicator
+    initializePasswordStrengthIndicator();
 
     // Theme Toggle Functionality
     const themeToggleBtn = document.getElementById('themeToggle');
@@ -428,167 +507,71 @@ document.addEventListener('DOMContentLoaded', function() {
     // Line to attach registration event listeners
     attachRegistrationEventListeners();
     
-    // Form validation for registration
-    const registerForm = document.getElementById('registerForm');
-    const registerEmail = document.getElementById('registerEmail');
-    const registerPassword = document.getElementById('registerPassword');
-    const repeatPassword = document.getElementById('repeatPassword');
-    
-    if (registerForm) {
-        // EVSUmail validation
-        registerEmail.addEventListener('input', function() {
-            if (!this.value.endsWith('@evsu.edu.ph')) {
-                this.classList.add('is-invalid');
-            } else {
-                this.classList.remove('is-invalid');
-            }
-        });
-        
-        // Password validation
-        registerPassword.addEventListener('input', function() {
-            const password = this.value;
-            const requirements = {
-                length: password.length >= 8,
-                uppercase: /[A-Z]/.test(password),
-                lowercase: /[a-z]/.test(password),
-                number: /[0-9]/.test(password),
-                special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-            };
-            
-            // Update requirement indicators
-            document.getElementById('req-length').classList.toggle('valid', requirements.length);
-            document.getElementById('req-uppercase').classList.toggle('valid', requirements.uppercase);
-            document.getElementById('req-lowercase').classList.toggle('valid', requirements.lowercase);
-            document.getElementById('req-number').classList.toggle('valid', requirements.number);
-            document.getElementById('req-special').classList.toggle('valid', requirements.special);
-        });
-        
-        // Repeat password validation
-        repeatPassword.addEventListener('input', function() {
-            if (this.value !== registerPassword.value) {
-                this.classList.add('is-invalid');
-            } else {
-                this.classList.remove('is-invalid');
-            }
-        });
-        
-        // Form submission
-        registerForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Validate all fields
-            let isValid = true;
-            
-            // Check EVSUmail
-            if (!registerEmail.value.endsWith('@evsu.edu.ph')) {
-                registerEmail.classList.add('is-invalid');
-                isValid = false;
-            }
-            
-            // Check password match
-            if (registerPassword.value !== repeatPassword.value) {
-                repeatPassword.classList.add('is-invalid');
-                isValid = false;
-            }
-            
-            // Check required fields
-            const requiredFields = this.querySelectorAll('[required]');
-            requiredFields.forEach(field => {
-                if (!field.value.trim()) {
-                    field.classList.add('is-invalid');
-                    isValid = false;
-                }
-            });
-            
-        });
-    }
-    
-
-    // Add login handling
-    // handleLogin(); this is the past function
+    // Login form handling
     const loginForm = document.getElementById('loginForm');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
     const loginBtn = document.getElementById('loginBtn');
-    const loginSpinner = document.getElementById('loginSpinner');
-    const errorAlert = document.getElementById('errorAlert');
-    const successAlert = document.getElementById('successAlert');
 
-    // Handle form submission
-            loginForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Get form values
-                const email = emailInput.value.trim();
-                const password = passwordInput.value;
-
-                // Reset previous states
-                $('.is-invalid').removeClass('is-invalid');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
             
-                
-                // Show loading state
-                loginBtn.disabled = true;
-                loginSpinner.style.display = 'none';
-                loginBtn.querySelector('span').textContent = 'Logging in...';
-                
-                // Create FormData
-                const formData = new FormData();
-                formData.append('email', email);
-                formData.append('password', password);
-                
-                // Send login request
-                fetch('exe/student_login.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.text())
-                .then(data => {
-                    if (data === '3') {
-                       showSuccessAlert();
-                    } else if (data === '2') {
-                        passwordInput.nextElementSibling.textContent = 'Incorrect password. Please try again.';
-                        passwordInput.classList.add('is-invalid', 'shake');
-                        setTimeout(() => passwordInput.classList.remove('shake'), 500);
-                    } else if (data === '1') {
-                        emailInput.nextElementSibling.textContent = 'Email not found. Please check your EVSUmail address.';
-                        emailInput.classList.add('is-invalid', 'shake');
-                        setTimeout(() => emailInput.classList.remove('shake'), 500);
-                    } else if (data === '0') {
-                        showError('Your account has been suspended. Please contact support.');
-                    } else {
-                        showError('An unexpected error occurred. Please try again.');
-                    }
-                })
-                .catch(error => {
-                    showError('Network error. Please check your connection and try again.');
-                    console.error('Login error:', error);
-                })
-                .finally(() => {
-                    // Reset button state
-                    loginBtn.disabled = false;
-                    loginSpinner.style.display = 'none';
-                    loginBtn.querySelector('span').textContent = 'Login';
-                });
+            // Get form values
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            // Reset previous states
+            const invalidFields = loginForm.querySelectorAll('.is-invalid');
+            invalidFields.forEach(field => field.classList.remove('is-invalid'));
+            
+            // Show loading state
+            loginBtn.disabled = true;
+            const loginSpinner = document.getElementById('loginSpinner');
+            if (loginSpinner) loginSpinner.style.display = 'inline-block';
+            loginBtn.querySelector('span').textContent = 'Logging in...';
+            
+            // Create FormData
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('password', password);
+            
+            // Send login request
+            fetch('exe/student_login.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                if (data === '3') {
+                   showSuccessAlert();
+                } else if (data === '2') {
+                    passwordInput.nextElementSibling.textContent = 'Incorrect password. Please try again.';
+                    passwordInput.classList.add('is-invalid', 'shake');
+                    setTimeout(() => passwordInput.classList.remove('shake'), 500);
+                } else if (data === '1') {
+                    emailInput.nextElementSibling.textContent = 'Email not found. Please check your EVSUmail address.';
+                    emailInput.classList.add('is-invalid', 'shake');
+                    setTimeout(() => emailInput.classList.remove('shake'), 500);
+                } else if (data === '0') {
+                    alert('Your account has been suspended. Please contact support.');
+                } else {
+                    alert('An unexpected error occurred. Please try again.');
+                }
+            })
+            .catch(error => {
+                alert('Network error. Please check your connection and try again.');
+                console.error('Login error:', error);
+            })
+            .finally(() => {
+                // Reset button state
+                loginBtn.disabled = false;
+                const loginSpinner = document.getElementById('loginSpinner');
+                if (loginSpinner) loginSpinner.style.display = 'none';
+                loginBtn.querySelector('span').textContent = 'Login';
             });
-            
-            // Helper functions
-            function showError(message) {
-                errorAlert.textContent = message;
-                errorAlert.style.display = 'block';
-                successAlert.style.display = 'none';
-                
-                // Auto-hide after 5 seconds
-                setTimeout(() => {
-                    errorAlert.style.display = 'none';
-                }, 5000);
-            }
-            
-            function showSuccess(message) {
-                successAlert.textContent = message;
-                successAlert.style.display = 'block';
-                errorAlert.style.display = 'none';
-            }
-        
+        });
+    }
     
     // Modal animation
     const modals = document.querySelectorAll('.modal');
@@ -596,13 +579,13 @@ document.addEventListener('DOMContentLoaded', function() {
     modals.forEach(modal => {
         modal.addEventListener('show.bs.modal', function() {
             const modalDialog = this.querySelector('.modal-dialog');
-            modalDialog.style.opacity = '50';
-            modalDialog.style.transform = 'translateY(0px)';
+            modalDialog.style.transform = 'translateY(-50px)';
+            modalDialog.style.opacity = '0';
             
             setTimeout(() => {
                 modalDialog.style.transition = 'all 0.3s ease';
-                modalDialog.style.opacity = '50';
-                modalDialog.style.transform = 'translateY(20px)';
+                modalDialog.style.transform = 'translateY(0)';
+                modalDialog.style.opacity = '1';
             }, 10);
         });
     });
@@ -615,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function(e) {
             if (this.hasAttribute('data-bs-dismiss')) {
                 const currentModal = bootstrap.Modal.getInstance(document.querySelector('.modal.show'));
-                currentModal.hide();
+                if (currentModal) currentModal.hide();
             }
         });
     });
@@ -624,7 +607,7 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function(e) {
             if (this.hasAttribute('data-bs-dismiss')) {
                 const currentModal = bootstrap.Modal.getInstance(document.querySelector('.modal.show'));
-                currentModal.hide();
+                if (currentModal) currentModal.hide();
             }
         });
     });
@@ -687,53 +670,42 @@ document.addEventListener('DOMContentLoaded', function() {
     // Parallax effect
     window.addEventListener('scroll', function() {
         const scrollPosition = window.pageYOffset;
-        // First background picture
-        const parallaxElements = document.querySelectorAll('.parallax');
-
-        // Second background picture
         const parallaxElements2 = document.querySelectorAll('.parallax2');
-        
-        // parallaxElements.forEach(element => {
-        //     // First background picture
-        //     element.style.backgroundPositionX = scrollPosition * 1.5 + 'px';
-        // });
         
         // Second background picture
         parallaxElements2.forEach(element => {
-            // First background picture
             element.style.backgroundPositionY = scrollPosition * 0.5 + 'px';
         });
     });
-
 
     // Show/Hide password functionality for registration form
     const passwordInput_reg = document.getElementById('registerPassword');
     const passwordInput_reg_rep = document.getElementById('repeatPassword');
     const showPasswordCheckbox = document.getElementById('register_show_password');
-    // Toggle password visibility when checkbox is clicked
-    showPasswordCheckbox.addEventListener('change', function() {
-        if (this.checked) {
-            passwordInput_reg.type = 'text';
-            passwordInput_reg_rep.type = 'text';
-        } else {
-            passwordInput_reg.type = 'password';
-            passwordInput_reg_rep.type = 'password';
-        }
-    });
-
+    
+    if (showPasswordCheckbox) {
+        showPasswordCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                passwordInput_reg.type = 'text';
+                passwordInput_reg_rep.type = 'text';
+            } else {
+                passwordInput_reg.type = 'password';
+                passwordInput_reg_rep.type = 'password';
+            }
+        });
+    }
 
     // Show/Hide password functionality for login form
     const passwordInput_log = document.getElementById('password');
     const showPasswordCheck = document.getElementById('show_login_password');
-    // Toggle password visibility when checkbox is clicked
-    showPasswordCheck.addEventListener('change', function() {
-        if (this.checked) {
-            passwordInput_log.type = 'text';
-        } else {
-            passwordInput_log.type = 'password';
-        }
-    });
-
-
-
+    
+    if (showPasswordCheck) {
+        showPasswordCheck.addEventListener('change', function() {
+            if (this.checked) {
+                passwordInput_log.type = 'text';
+            } else {
+                passwordInput_log.type = 'password';
+            }
+        });
+    }
 });
