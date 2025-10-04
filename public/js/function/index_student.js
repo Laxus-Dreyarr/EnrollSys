@@ -192,6 +192,10 @@ function attachRegistrationEventListeners() {
             }
         });
     }
+
+
+    let verificationTimer;
+    let countdownTime = 600; // 10 minutes in seconds
     
     // Form submission handler
     if (registerForm) {
@@ -248,7 +252,6 @@ function attachRegistrationEventListeners() {
             }
             
             if (!isValid) {
-                // Add shake animation to invalid fields
                 const invalidFields = registerForm.querySelectorAll('.is-invalid');
                 invalidFields.forEach(field => {
                     field.classList.add('shake');
@@ -257,51 +260,228 @@ function attachRegistrationEventListeners() {
                 return;
             }
             
-            // Submit form via AJAX
-            const formData = new FormData();
-            formData.append('action', 'register');
-            formData.append('givenName', givenNameVal);
-            formData.append('lastName', lastNameVal);
-            formData.append('middleName', middleNameVal);
-            formData.append('email', emailVal);
-            formData.append('password', passwordVal);
-            formData.append('repeatPassword', repeatPasswordVal);
-            
-            // Show loading state
-            const submitBtn = registerForm.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creating Account...';
-            submitBtn.disabled = true;
-            
-            fetch('/exe/student', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showSuccessAnimation();
-                } else {
-                    // Show error message
-                    if (data.message) {
-                        alert('Registration failed: ' + data.message);
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Registration failed. Please try again.');
-            })
-            .finally(() => {
-                // Reset button state
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
+            // Send verification code instead of registering directly
+            sendVerificationCode({
+                givenName: givenNameVal,
+                lastName: lastNameVal,
+                middleName: middleNameVal,
+                email: emailVal,
+                password: passwordVal,
+                repeatPassword: repeatPasswordVal
             });
         });
     }
+
+    function sendVerificationCode(formData) {
+        const submitBtn = document.querySelector('#registerForm button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending Code...';
+        submitBtn.disabled = true;
+
+        const verificationData = new FormData();
+        verificationData.append('action', 'send_verification');
+        verificationData.append('givenName', formData.givenName);
+        verificationData.append('lastName', formData.lastName);
+        verificationData.append('middleName', formData.middleName);
+        verificationData.append('email', formData.email);
+        verificationData.append('password', formData.password);
+        verificationData.append('repeatPassword', formData.repeatPassword);
+        verificationData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        fetch('/exe/student', {
+            method: 'POST',
+            body: verificationData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close register modal and open verification modal
+                const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+                registerModal.hide();
+                
+                // Set email in verification modal and show it
+                document.getElementById('verificationEmail').value = formData.email;
+                document.getElementById('verificationEmailText').textContent = 
+                    `We've sent a 6-digit verification code to ${formData.email}`;
+                
+                // Reset and show verification modal
+                document.getElementById('verificationCode').value = '';
+                document.getElementById('errorAlert').style.display = 'none';
+                document.getElementById('successAlert').style.display = 'none';
+
+                window.location.href = '/register_student_account';
+                
+                // const verificationModal = new bootstrap.Modal(document.getElementById('verificationModal'));
+                // verificationModal.show();
+                
+                // Start countdown timer
+                // startVerificationTimer();
+                
+            } else {
+                alert('Failed to send verification code: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to send verification code. Please try again.');
+        })
+        .finally(() => {
+            // Reset button state
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    }
+
+    function startVerificationTimer() {
+        countdownTime = 600; // Reset to 10 minutes
+        clearInterval(verificationTimer);
+        
+        const resendBtn = document.getElementById('resendCodeBtn');
+        resendBtn.disabled = true;
+        
+        verificationTimer = setInterval(() => {
+            countdownTime--;
+            
+            const minutes = Math.floor(countdownTime / 60);
+            const seconds = countdownTime % 60;
+            document.getElementById('countdown').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (countdownTime <= 0) {
+                clearInterval(verificationTimer);
+                resendBtn.disabled = false;
+                document.getElementById('resendText').textContent = 'Resend Code';
+                document.getElementById('countdown').textContent = 'Expired';
+            }
+        }, 1000);
+    }
+
+
+    // Resend verification code
+    function resendVerificationCode() {
+        const resendBtn = document.getElementById('resendCodeBtn');
+        const resendSpinner = document.getElementById('resendSpinner');
+        const resendText = document.getElementById('resendText');
+        
+        resendBtn.disabled = true;
+        resendSpinner.style.display = 'inline-block';
+        resendText.textContent = 'Resending...';
+        
+        const email = document.getElementById('verificationEmail').value;
+        const formData = new FormData();
+        formData.append('action', 'send_verification');
+        formData.append('email', email);
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        
+        fetch('/exe/student', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Restart timer
+                startVerificationTimer();
+                document.getElementById('errorAlert').style.display = 'none';
+            } else {
+                document.getElementById('errorMessage').textContent = data.message;
+                document.getElementById('errorAlert').style.display = 'block';
+                resendBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('errorMessage').textContent = 'Failed to resend code. Please try again.';
+            document.getElementById('errorAlert').style.display = 'block';
+            resendBtn.disabled = false;
+        })
+        .finally(() => {
+            resendSpinner.style.display = 'none';
+            resendText.textContent = 'Resend Code';
+        });
+    }
+
+
+    // Verify code and complete registration
+    function verifyCode() {
+        const code = document.getElementById('verificationCode').value.trim();
+        const email = document.getElementById('verificationEmail').value;
+        
+        if (code.length !== 6) {
+            document.getElementById('errorMessage').textContent = 'Please enter a 6-digit verification code.';
+            document.getElementById('errorAlert').style.display = 'block';
+            return;
+        }
+        
+        const verifyBtn = document.getElementById('verifyBtn');
+        const verifySpinner = document.getElementById('verifySpinner');
+        const verifyBtnText = document.getElementById('verifyBtnText');
+        
+        verifyBtn.disabled = true;
+        verifySpinner.style.display = 'inline-block';
+        verifyBtnText.textContent = 'Verifying...';
+        document.getElementById('errorAlert').style.display = 'none';
+        
+        const formData = new FormData();
+        formData.append('action', 'verify_code');
+        formData.append('email', email);
+        formData.append('code', code);
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        
+        fetch('/exe/student', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('successAlert').style.display = 'block';
+                document.getElementById('errorAlert').style.display = 'none';
+                
+                // Clear timer
+                clearInterval(verificationTimer);
+                
+                // Show success and redirect or show success message
+                setTimeout(() => {
+                    const verificationModal = bootstrap.Modal.getInstance(document.getElementById('verificationModal'));
+                    verificationModal.hide();
+                    
+                    // Show success message or redirect
+                    showRegistrationSuccess(data.data);
+                }, 2000);
+                
+            } else {
+                document.getElementById('errorMessage').textContent = data.message;
+                document.getElementById('errorAlert').style.display = 'block';
+                verifyBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('errorMessage').textContent = 'Verification failed. Please try again.';
+            document.getElementById('errorAlert').style.display = 'block';
+            verifyBtn.disabled = false;
+        })
+        .finally(() => {
+            verifySpinner.style.display = 'none';
+            verifyBtnText.textContent = 'Verify & Register';
+        });
+    }
+
+    // Show registration success
+    function showRegistrationSuccess(userData) {
+        // You can show a success message or redirect to login
+        alert(`Registration successful! Welcome ${userData.name}. Your student ID is: ${userData.student_id}`);
+        
+        // Reset the registration form
+        document.getElementById('registerForm').reset();
+        
+        // Optionally redirect to login or show login modal
+        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        loginModal.show();
+    }
+
+
 }
 
 let emailTimeout;
@@ -415,6 +595,37 @@ function initializePasswordStrengthIndicator() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+
+    // Verification form submission
+    const verificationForm = document.getElementById('verificationForm');
+    if (verificationForm) {
+        verificationForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            verifyCode();
+        });
+    }
+
+    // Resend code button
+    const resendBtn = document.getElementById('resendCodeBtn');
+    if (resendBtn) {
+        resendBtn.addEventListener('click', function() {
+            if (!this.disabled) {
+                resendVerificationCode();
+            }
+        });
+    }
+
+    // Auto-advance verification code input
+    const verificationCodeInput = document.getElementById('verificationCode');
+    if (verificationCodeInput) {
+        verificationCodeInput.addEventListener('input', function() {
+            if (this.value.length === 6) {
+                // Auto-submit when 6 digits are entered
+                verifyCode();
+            }
+        });
+    }
+
     // Initialize password strength indicator
     initializePasswordStrengthIndicator();
 
