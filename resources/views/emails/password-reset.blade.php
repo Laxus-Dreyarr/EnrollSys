@@ -77,8 +77,8 @@
               <p style="margin:0;">© {{ date('Y') }} EnrollSys - EVSU Ormoc Campus. All rights reserved.</p>
               <p style="margin:5px 0;">This is an automated message. Please do not reply.</p>
               <p style="margin:5px 0;">
-                <a href="#" style="color:#3498db; text-decoration:none;">Privacy Policy</a> • 
-                <a href="#" style="color:#3498db; text-decoration:none;">Terms of Service</a>
+                <!-- <a href="#" style="color:#3498db; text-decoration:none;">Privacy Policy</a> • 
+                <a href="#" style="color:#3498db; text-decoration:none;">Terms of Service</a> -->
               </p>
             </td>
           </tr>

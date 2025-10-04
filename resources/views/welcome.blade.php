@@ -555,7 +555,7 @@
                                 <span id="resendText">Resend Code</span>
                                 <span class="spinner-border spinner-border-sm" style="display: none;" id="resendSpinner"></span>
                             </button>
-                            <button type="submit" class="btn btn-enhanced btn-enhanced-primary w-50" id="verifyBtn">
+                            <button onclick="verif()" type="submit" class="btn btn-enhanced btn-enhanced-primary w-50" id="verifyBtn">
                                 <span id="verifyBtnText">Verify & Register</span>
                                 <span class="spinner-border spinner-border-sm" style="display: none;" id="verifySpinner"></span>
                             </button>

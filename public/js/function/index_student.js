@@ -296,25 +296,25 @@ function attachRegistrationEventListeners() {
         .then(data => {
             if (data.success) {
                 // Close register modal and open verification modal
-                const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
-                registerModal.hide();
+                // const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+                // registerModal.hide();
                 
                 // Set email in verification modal and show it
-                document.getElementById('verificationEmail').value = formData.email;
-                document.getElementById('verificationEmailText').textContent = 
-                    `We've sent a 6-digit verification code to ${formData.email}`;
+                // document.getElementById('verificationEmail').value = formData.email;
+                // document.getElementById('verificationEmailText').textContent = 
+                //     `We've sent a 6-digit verification code to ${formData.email}`;
                 
                 // Reset and show verification modal
-                document.getElementById('verificationCode').value = '';
-                document.getElementById('errorAlert').style.display = 'none';
-                document.getElementById('successAlert').style.display = 'none';
+                // document.getElementById('verificationCode').value = '';
+                // document.getElementById('errorAlert').style.display = 'none';
+                // document.getElementById('successAlert').style.display = 'none';
 
                 window.location.href = '/register_student_account';
                 
                 // const verificationModal = new bootstrap.Modal(document.getElementById('verificationModal'));
                 // verificationModal.show();
                 
-                // Start countdown timer
+                // // Start countdown timer
                 // startVerificationTimer();
                 
             } else {
@@ -357,7 +357,6 @@ function attachRegistrationEventListeners() {
     }
 
 
-    // Resend verification code
     function resendVerificationCode() {
         const resendBtn = document.getElementById('resendCodeBtn');
         const resendSpinner = document.getElementById('resendSpinner');
@@ -401,85 +400,6 @@ function attachRegistrationEventListeners() {
         });
     }
 
-
-    // Verify code and complete registration
-    function verifyCode() {
-        const code = document.getElementById('verificationCode').value.trim();
-        const email = document.getElementById('verificationEmail').value;
-        
-        if (code.length !== 6) {
-            document.getElementById('errorMessage').textContent = 'Please enter a 6-digit verification code.';
-            document.getElementById('errorAlert').style.display = 'block';
-            return;
-        }
-        
-        const verifyBtn = document.getElementById('verifyBtn');
-        const verifySpinner = document.getElementById('verifySpinner');
-        const verifyBtnText = document.getElementById('verifyBtnText');
-        
-        verifyBtn.disabled = true;
-        verifySpinner.style.display = 'inline-block';
-        verifyBtnText.textContent = 'Verifying...';
-        document.getElementById('errorAlert').style.display = 'none';
-        
-        const formData = new FormData();
-        formData.append('action', 'verify_code');
-        formData.append('email', email);
-        formData.append('code', code);
-        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-        
-        fetch('/exe/student', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById('successAlert').style.display = 'block';
-                document.getElementById('errorAlert').style.display = 'none';
-                
-                // Clear timer
-                clearInterval(verificationTimer);
-                
-                // Show success and redirect or show success message
-                setTimeout(() => {
-                    const verificationModal = bootstrap.Modal.getInstance(document.getElementById('verificationModal'));
-                    verificationModal.hide();
-                    
-                    // Show success message or redirect
-                    showRegistrationSuccess(data.data);
-                }, 2000);
-                
-            } else {
-                document.getElementById('errorMessage').textContent = data.message;
-                document.getElementById('errorAlert').style.display = 'block';
-                verifyBtn.disabled = false;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('errorMessage').textContent = 'Verification failed. Please try again.';
-            document.getElementById('errorAlert').style.display = 'block';
-            verifyBtn.disabled = false;
-        })
-        .finally(() => {
-            verifySpinner.style.display = 'none';
-            verifyBtnText.textContent = 'Verify & Register';
-        });
-    }
-
-    // Show registration success
-    function showRegistrationSuccess(userData) {
-        // You can show a success message or redirect to login
-        alert(`Registration successful! Welcome ${userData.name}. Your student ID is: ${userData.student_id}`);
-        
-        // Reset the registration form
-        document.getElementById('registerForm').reset();
-        
-        // Optionally redirect to login or show login modal
-        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-        loginModal.show();
-    }
 
 
 }
@@ -592,6 +512,19 @@ function initializePasswordStrengthIndicator() {
         updatePasswordStrength('');
         updatePasswordRequirements('');
     }
+}
+
+// Show registration success
+function showRegistrationSuccess(userData) {
+    // You can show a success message or redirect to login
+    alert(`Registration successful! Welcome ${userData.name}. Your student ID is: ${userData.student_id}`);
+    
+    // Reset the registration form
+    document.getElementById('registerForm').reset();
+    
+    // Optionally redirect to login or show login modal
+    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+    loginModal.show();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -919,4 +852,155 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+
+    // Verify code and complete registration
+    function verifyCode() {
+        const code = document.getElementById('verificationCode').value.trim();
+        const email = document.getElementById('verificationEmail').value;
+        
+        if (code.length !== 6) {
+            document.getElementById('errorMessage').textContent = 'Please enter a 6-digit verification code.';
+            document.getElementById('errorAlert').style.display = 'block';
+            document.getElementById('successAlert').style.display = 'none';
+            return;
+        }
+        
+        const verifyBtn = document.getElementById('verifyBtn');
+        const verifySpinner = document.getElementById('verifySpinner');
+        const verifyBtnText = document.getElementById('verifyBtnText');
+        
+        verifyBtn.disabled = true;
+        verifySpinner.style.display = 'inline-block';
+        verifyBtnText.textContent = 'Verifying...';
+        document.getElementById('errorAlert').style.display = 'none';
+        document.getElementById('successAlert').style.display = 'none';
+        
+        const formData = new FormData();
+        formData.append('action', 'verify_code');
+        formData.append('email', email);
+        formData.append('code', code);
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        
+        fetch('/exe/student', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            // First check if response is ok
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            // Try to parse as text first since your backend returns plain text
+            return response.text();
+        })
+        .then(responseText => {
+            console.log('Raw response:', responseText); // For debugging
+            
+            // Check if response is exactly '5'
+            if (responseText.trim() === '5') {
+                // Success case
+                document.getElementById('successAlert').style.display = 'block';
+                document.getElementById('errorAlert').style.display = 'none';
+                
+                // Clear timer
+                clearInterval(verificationTimer);
+                
+                // Show success and redirect
+                setTimeout(() => {
+                    const verificationModal = bootstrap.Modal.getInstance(document.getElementById('verificationModal'));
+                    if (verificationModal) {
+                        verificationModal.hide();
+                    }
+                    
+                    // Show success message and redirect to login
+                    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                    loginModal.show();
+                    
+                    // Optional: Show success message in login modal
+                    const successMessage = document.getElementById('successMessage');
+                    if (successMessage) {
+                        successMessage.textContent = 'Registration successful! Please login with your credentials.';
+                        successMessage.style.display = 'block';
+                    }
+                    
+                }, 2000);
+                
+            } else {
+                // Error case - try to parse as JSON for error message
+                try {
+                    const errorData = JSON.parse(responseText);
+                    document.getElementById('errorMessage').textContent = errorData.message || 'Verification failed.';
+                } catch {
+                    // If not JSON, use the raw text as error message
+                    document.getElementById('errorMessage').textContent = 'Verification failed. Please try again.';
+                }
+                document.getElementById('errorAlert').style.display = 'block';
+                document.getElementById('successAlert').style.display = 'none';
+                verifyBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('errorMessage').textContent = 'Network error. Please check your connection and try again.';
+            document.getElementById('errorAlert').style.display = 'block';
+            document.getElementById('successAlert').style.display = 'none';
+            verifyBtn.disabled = false;
+        })
+        .finally(() => {
+            verifySpinner.style.display = 'none';
+            verifyBtnText.textContent = 'Verify & Register';
+        });
+    }
+
+    function showSuccessAndRefresh() {
+    const modalBody = document.querySelector('#verificationModal .modal-body');
+    
+    modalBody.innerHTML = `
+        <div class="text-center py-5">
+            <div class="success-animation mb-4">
+                <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>
+            </div>
+            
+            <h4 class="text-success mb-3">
+                <i class="fas fa-check-circle me-2"></i>
+                Registration Successful!
+            </h4>
+            
+            <p class="text-muted mb-4">
+                Your account has been created successfully. 
+                You will be redirected to the home page shortly.
+            </p>
+            
+            <div class="countdown-container">
+                <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <small class="text-muted">Refreshing page in <span id="countdownTimer">3</span> seconds...</small>
+            </div>
+        </div>
+    `;
+
+    // Countdown and refresh
+    let countdown = 3;
+    const countdownElement = document.getElementById('countdownTimer');
+    
+    const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdownElement) {
+            countdownElement.textContent = countdown;
+        }
+        
+        if (countdown <= 0) {
+            clearInterval(countdownInterval);
+            location.reload(); // Refresh the page
+        }
+    }, 1000);
+}
+
+
+
 });

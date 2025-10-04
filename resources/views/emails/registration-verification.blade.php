@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Registration Code</title>
+  <title>Email Verification - EnrollSys</title>
 </head>
 <body style="font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height:1.6; color:#333333; margin:0; padding:0; background-color:#f4f6f8;">
 
@@ -24,10 +24,14 @@
           <!-- Body -->
           <tr>
             <td style="padding:30px;">
-              <p style="margin:0 0 15px 0; font-size:16px;">Dear User,</p>
+              @if($givenName)
+              <p style="margin:0 0 15px 0; font-size:16px;">Dear {{ $givenName }},</p>
+              @else
+              <p style="margin:0 0 15px 0; font-size:16px;">Dear Student,</p>
+              @endif
 
               <p style="margin:0 0 25px 0; font-size:15px; color:#555;">
-                You recently requested for registration<strong>EnrollSys</strong> account. Please use the verification code below to complete the process:
+                Welcome to EnrollSys! To complete your registration, please use the verification code below:
               </p>
 
               <!-- Code Section -->
@@ -38,6 +42,9 @@
                     <div style="font-size:32px; font-weight:bold; letter-spacing:6px; color:#1f3a93; padding:12px 20px; background:#ffffff; border-radius:6px; display:inline-block;">
                       {{ $verificationCode }}
                     </div>
+                    <p style="margin:15px 0 0 0; font-size:14px; color:#666;">
+                      <!-- This code will expire in 10 minutes -->
+                    </p>
                   </td>
                 </tr>
               </table>
@@ -46,7 +53,7 @@
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;">
                 <tr>
                   <td style="background-color:#fff8e6; border-left:4px solid #ffa726; padding:15px 18px; border-radius:6px; font-size:14px; color:#6b4f00;">
-                    <strong>Security Note:</strong> If you did not request this password reset, please ignore this email or contact support immediately.
+                    <strong>Security Note:</strong> If you did not request this registration, please ignore this email.
                   </td>
                 </tr>
               </table>
@@ -62,7 +69,7 @@
                   <td style="padding-top:18px;">
                     <p style="margin:0; font-size:14px; color:#444;">
                       Best regards,<br>
-                      <strong>Team CyberNexus (EnrollSys)</strong><br>
+                      <strong>Team CyberNexus</strong><br>
                       EVSU Ormoc Campus
                     </p>
                   </td>
@@ -77,8 +84,8 @@
               <p style="margin:0;">© {{ date('Y') }} EnrollSys - EVSU Ormoc Campus. All rights reserved.</p>
               <p style="margin:5px 0;">This is an automated message. Please do not reply.</p>
               <p style="margin:5px 0;">
-                <a href="#" style="color:#3498db; text-decoration:none;">Privacy Policy</a> • 
-                <a href="#" style="color:#3498db; text-decoration:none;">Terms of Service</a>
+                <!-- <a href="#" style="color:#3498db; text-decoration:none;">Privacy Policy</a> • 
+                <a href="#" style="color:#3498db; text-decoration:none;">Terms of Service</a> -->
               </p>
             </td>
           </tr>

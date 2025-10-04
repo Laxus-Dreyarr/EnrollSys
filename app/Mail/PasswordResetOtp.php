@@ -23,10 +23,6 @@ class PasswordResetOtp extends Mailable
     {
         return $this->subject('Password Reset Code - EnrollSys')
                     ->view('emails.password-reset')
-                    ->with(['cid' => $this->cid])
-                    ->attach(public_path('logo.png'), [
-                        'as' => 'logo.png',
-                        'mime' => 'image/png',
-                    ]);
+                    ->with(['cid' => $this->cid]);
     }
 }
