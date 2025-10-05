@@ -71,3 +71,12 @@ Route::get('/register_student_account', function () {
         'registerData' => $registerData
     ]);
 });
+
+//Clear Registration Cache!
+Route::get('/clear', function () {
+    $email = session('registration_email');
+    Cache::forget('registration_' . $email);
+
+    return redirect('/');
+});
+// Route::get('/clear', [StudentController::class, 'clearCache']);

@@ -467,6 +467,8 @@ $middleName = $registerData['middleName'];
                         <div class="text-center">
                             <small class="text-muted">Enter the 6-digit code sent to your email</small>
                         </div>
+                        <input type="hidden" id="code" value="{{ $otp }}">
+                        <input type="hidden" id="resetEmail" value="{{ $email ?? '' }}">
                     </div>
                     
                     <div class="progress mb-4" style="height: 5px;">

@@ -27,6 +27,8 @@ class StudentController extends Controller
                 return $this->checkEmail($request);
             case 'send_verification':
                 return $this->sendVerificationCode($request);
+            case 'confirm_account':
+                return $this->verifyRegister($request);
             case 'verify_code':
                 return $this->verifyCodeAndRegister($request);
             case 'register':
@@ -113,7 +115,8 @@ class StudentController extends Controller
                 'lastName' => $request->lastName,
                 'middleName' => $request->middleName,
                 'password' => Hash::make($request->password),
-                'email' => $request->email
+                'email' => $request->email,
+                'attempts' => 0
             ], now()->addMinutes(10));
 
             session(['registration_email' => $request->email]);
@@ -265,6 +268,67 @@ class StudentController extends Controller
     //             'message' => 'An error occurred. Please try again.'
     //         ]);
     //     }
+    // }
+
+    private function verifyRegister(Request $request){
+        $code = $request->code;
+         $registrationData = Cache::get('registration_' . $request->email);
+         if (!$registrationData) {
+            $x = '0';
+            return $x;
+        }
+
+        // Code is valid, proceed with registration
+            DB::beginTransaction();
+
+            $studentId = $this->generateUniqueStudentId();
+            $currentDate = now()->toDateTimeString();
+
+            // Create user account
+            $user = new User();
+            $user->id = $studentId;
+            $user->email2 = $registrationData['email'];
+            $user->password = Hash::make($registrationData['password']);
+            $user->profile = 'default.png';
+            $user->date_created = $currentDate;
+            $user->user_type = 'student';
+            $user->is_active = 1;
+            $user->last_login = null;
+
+            if (!$user->save()) {
+                $x = '7';
+                return $x;
+            }
+
+            // Create user info
+            $userInfo = new UserInfo();
+            $userInfo->user_id = $studentId;
+            $userInfo->firstname = ucfirst(strtolower($registrationData['givenName']));
+            $userInfo->lastname = ucfirst(strtolower($registrationData['lastName']));
+            $userInfo->middlename = $registrationData['middleName'] ? ucfirst(strtolower($registrationData['middleName'])) : null;
+            $userInfo->birthdate = null;
+            $userInfo->age = null;
+            $userInfo->address = null;
+
+            if (!$userInfo->save()) {
+                $x = '7';
+                return $x;
+            }
+            
+
+            DB::commit();
+
+            // Clear the cache
+            Cache::forget('registration_' . $request->email);
+
+            $x = '9';
+            return $x;
+
+    }
+
+    // public function clearCache(Request $request)
+    // {
+
     // }
 
     private function verifyCodeAndRegister(Request $request)

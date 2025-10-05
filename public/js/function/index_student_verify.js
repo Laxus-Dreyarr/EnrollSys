@@ -326,13 +326,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form submission handler
     const resetBtn = document.getElementById('verifyButton');
     const statusMessage = document.getElementById('statusMessage');
+    let wrongAttempts = 0; // Track wrong attempts globally
     
     verifyButton.addEventListener('click', function(e) {
         e.preventDefault();
         
         // Get form values
         const verificationCode = hiddenCodeInput.value;
-        const newPassword = document.getElementById('password').value;
         const vcode = document.getElementById('code').value;
         const nemail = document.getElementById('resetEmail').value;
         
@@ -344,40 +344,58 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Verify the code
         if (verificationCode !== vcode) {
-            showStatus('Invalid verification code. Please try again.', 'error');
+            wrongAttempts++; // Increment wrong attempts
+
+            if (wrongAttempts >= 3) {
+                showStatus('Too many failed attempts. Refreshing page...', 'error');
+                setTimeout(() => {
+                     window.location.href = '/clear';
+                }, 2000); // Optional: 2 second delay to show message
+                return;
+            }
+
+            const remainingAttempts = 3 - wrongAttempts;
+
+            showStatus(`Invalid verification code. ${remainingAttempts} attempt(s) remaining.`, 'error');
+            
             return;
         }
         
         // If code is correct, update password
-        updatePassword(newPassword, nemail, verificationCode);
+        updatePassword(nemail);
     });
     
     // Function to update password via AJAX
-    function updatePassword(newPassword, nemail, vcode) {
+    function updatePassword(nemail) {
         // Show loading state
         resetBtn.disabled = true;
-        resetBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Resetting...';
+        resetBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
         
         // Simulate AJAX call (replace with actual API call)
         setTimeout(() => {
             $.ajax({
-                url: '/reset',
+                url: '/exe/student',
                 method: 'POST',
                 data: {
                     email: nemail,
-                    password: newPassword,
-                    otp: vcode,
+                    action: 'confirm_account',
                     _token: $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function(response) {
                     if(response == '0'){
-                        showStatus('Not Updated Something went wrong!', 'error');
+                        showStatus('Something went wrong!', 'error');
                         resetBtn.disabled = false;
-                    }else if (response == '1') {
-                        showStatus('Password updated successfully! Redirecting to login...', 'success');
+                    }else if (response == '7') {
+                        showStatus('Failed to save user record!', 'error');
+                        resetBtn.disabled = false;
                         setTimeout(() => {
-                            window.location.href = '/welcome_admin';
+                            window.location.href = '/';
                         }, 2000);
+                    }else if (response == '9') {
+                        showStatus('Registration Complete...', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 5000);
                     }
                 },
                 error: function() {
