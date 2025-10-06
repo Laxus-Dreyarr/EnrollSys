@@ -86,6 +86,9 @@ class StudentController extends Controller
                 return $this->checkEmail($request);
             case 'send_verification':
                 return $this->sendVerificationCode($request);
+            case 'forgot_verification':
+                return $this->sendStudentOtpForgotPass($request);
+
             case 'confirm_account':
                 return $this->verifyRegister($request);
             case 'verify_code':
@@ -333,6 +336,7 @@ class StudentController extends Controller
     //         ]);
     //     }
     // }
+
 
     private function getClientRealIp()
     {
@@ -603,7 +607,102 @@ class StudentController extends Controller
             return $x;
 
     }
+    
 
+    private function sendStudentOtpForgotPass(Request $request) {
+        try {
+            // Validate the registration data first
+            $validator = Validator::make($request->all(), [
+                'email' => [
+                    'required',
+                    'email',
+                    'regex:/^[^\s@]+@evsu\.edu\.ph$/'
+                ],
+                'password' => [
+                    'required',
+                    'min:8'
+                ]
+            ], [
+                'email.regex' => 'Please enter a valid EVSUmail address (username@evsu.edu.ph).',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $validator->errors()->first()
+                ]);
+            }
+
+            // Check if email already exists
+            $emailExists = User::where('email2', $request->email)->exists();
+            if (!$emailExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid email account!'
+                ]);
+            }
+
+            // Check password confirmation
+            if ($request->password !== $request->repeatPassword) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Passwords do not match.'
+                ]);
+            }
+
+            // Generate verification code (6 digits)
+            $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+
+            Cache::put('studentForgot_' . $request->email, [
+                'otp' => $verificationCode,
+                'password' => Hash::make($request->password),
+                'email' => $request->email,
+                'attempts' => 0
+            ], now()->addMinutes(10));
+
+            session(['registration_email' => $request->email]);
+
+            // Send verification email
+            try {
+                Mail::to($request->email)->send(new PasswordResetOtp($verificationCode));
+
+                // Check if email was actually sent
+                if (count(Mail::failures()) > 0) {
+                    Log::error('Email failed to send to: ' . $request->email);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to send verification email. Please try again.'
+                    ]);
+                }
+
+                Log::info('Verification code sent successfully to: ' . $request->email);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Verification code sent to your email!',
+                    'email' => $request->email,
+                    'debug_code' => $verificationCode // Remove this in production
+                ]);
+
+            } catch (\Exception $e) {
+                Log::error('Failed to send verification email: ' . $e->getMessage());
+                Log::error('Email error details: ', ['exception' => $e]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to send verification email: ' . $e->getMessage()
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Send verification error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage()
+            ]);
+        }
+    }
 
     public function getClientDeviceInfoWithRequest(Request $request) {
         $userAgent = $request->userAgent() ?? 'Unknown';

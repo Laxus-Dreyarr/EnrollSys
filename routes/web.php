@@ -19,6 +19,10 @@ Route::get('/welcome_admin', function () {
     return view('welcome_admin');
 });
 
+Route::get('/forgot_acc_student', function (){
+    return view('student.student_forgot'); 
+});
+
 Route::post('/log', [AdminController::class, 'login']);
 Route::post('/forgot', [AdminController::class, 'forgotPassword']);
 Route::get('/reset_admin_password', function () {
