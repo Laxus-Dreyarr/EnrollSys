@@ -86,11 +86,13 @@ class StudentController extends Controller
                 return $this->checkEmail($request);
             case 'send_verification':
                 return $this->sendVerificationCode($request);
-            case 'forgot_verification':
-                return $this->sendStudentOtpForgotPass($request);
-
             case 'confirm_account':
                 return $this->verifyRegister($request);
+            case 'forgot_verification':
+                return $this->sendStudentOtpForgotPass($request);
+            case 'resetPassword_account':
+                return $this->studentResetPass($request);
+
             case 'verify_code':
                 return $this->verifyCodeAndRegister($request);
             case 'register':
@@ -514,8 +516,8 @@ class StudentController extends Controller
         $code = $request->code;
 
 
-         $registrationData = Cache::get('registration_' . $request->email);
-         if (!$registrationData) {
+        $registrationData = Cache::get('registration_' . $request->email);
+        if (!$registrationData) {
             $x = '0';
             return $x;
         }
@@ -661,7 +663,7 @@ class StudentController extends Controller
                 'attempts' => 0
             ], now()->addMinutes(10));
 
-            session(['registration_email' => $request->email]);
+            session(['reset_pass' => $request->email]);
 
             // Send verification email
             try {
@@ -702,6 +704,59 @@ class StudentController extends Controller
                 'message' => 'An error occurred: ' . $e->getMessage()
             ]);
         }
+    }
+
+
+    private function studentResetPass(Request $request) {
+        $registrationData = Cache::get('studentForgot_' . $request->email);
+        if (!$registrationData) {
+            $x = '0';
+            return $x;
+        }
+
+        // Code is valid, proceed with registration
+            DB::beginTransaction();
+
+            $user = User::where('email2', $request->email)->first();
+            $user->update([
+                'password' => $registrationData['password']
+            ]);
+
+
+            date_default_timezone_set('Asia/Manila');
+            $todays_date=date("Y-m-d h:i:sa");
+            $today=strtotime($todays_date);
+            $date=date("Y-m-d h:i:sa", $today);
+
+            
+            // $clientInfo = $this->getClientDeviceInfoWithRequest($request);
+            $clientInfo = $this->collectClientInformation($request);
+            // $ipaddress = $this->getClientRealIp();
+            $ipaddress = $this->getClientDeviceInfo();
+            
+
+
+            //Save to AuditLogs!
+            $audit = new AuditLog();
+            $audit->user_id = $user->id;
+            $audit->action = $registrationData['email'] .' Create New Password!';
+            $audit->details = '' .$clientInfo['operating_system'] .'/' .$clientInfo['device_type'] .'/' .$clientInfo['user_agent'];
+            $audit->ip_address = $ipaddress['ip_address'];
+            $audit->date = $date;
+            $audit->access_by = '107568';
+
+            if (!$audit->save()) {
+                $x = '7';
+                return $x;
+            }
+
+            DB::commit();
+
+            // Clear the cache
+            Cache::forget('studentForgot_' . $request->email);
+
+            $x = '9';
+            return $x;
     }
 
     public function getClientDeviceInfoWithRequest(Request $request) {

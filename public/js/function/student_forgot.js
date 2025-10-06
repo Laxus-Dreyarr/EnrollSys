@@ -213,8 +213,7 @@ function attachRegistrationEventListeners() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // window.location.href = '/register_student_account';
-                alert("Already Sent!")
+                window.location.href = '/register_reset_password';
                 
             } else {
                 alert('Failed to send verification code: ' + data.message);

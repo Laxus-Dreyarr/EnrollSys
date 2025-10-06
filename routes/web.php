@@ -84,3 +84,16 @@ Route::get('/clear', function () {
     return redirect('/');
 });
 // Route::get('/clear', [StudentController::class, 'clearCache']);
+
+Route::get('/register_reset_password', function () {
+    $email = session('reset_pass');
+    $registerData = $email ? Cache::get('studentForgot_' . $email) : null;
+    if (!$registerData) {
+        return redirect('/');
+    }
+
+    return view('student.student_reset', [
+        'email' => $email,
+        'registerData' => $registerData
+    ]);
+});
