@@ -573,9 +573,10 @@ class StudentController extends Controller
             }
 
             
-            $clientInfo = $this->getClientDeviceInfoWithRequest($request);
-            // $clientInfo = $this->collectClientInformation($request);
-            $ipaddress = $this->getClientRealIp();
+            // $clientInfo = $this->getClientDeviceInfoWithRequest($request);
+            $clientInfo = $this->collectClientInformation($request);
+            // $ipaddress = $this->getClientRealIp();
+            $ipaddress = $this->getClientDeviceInfo();
             
 
 
@@ -583,8 +584,8 @@ class StudentController extends Controller
             $audit = new AuditLog();
             $audit->user_id = $studentId;
             $audit->action = 'New Student Account Created '.$registrationData['email'];
-            $audit->details = $clientInfo['user_agent'];
-            $audit->ip_address = $ipaddress;
+            $audit->details = '' .$clientInfo['operating_system'] .'/' .$clientInfo['device_type'] .'/' .$clientInfo['user_agent'];
+            $audit->ip_address = $ipaddress['ip_address'];
             $audit->date = $date;
             $audit->access_by = '107568';
 
