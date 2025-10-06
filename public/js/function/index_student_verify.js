@@ -327,6 +327,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const resetBtn = document.getElementById('verifyButton');
     const statusMessage = document.getElementById('statusMessage');
     let wrongAttempts = 0; // Track wrong attempts globally
+
     
     verifyButton.addEventListener('click', function(e) {
         e.preventDefault();
@@ -362,11 +363,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // If code is correct, update password
-        updatePassword(nemail);
+        saveAccount(nemail);
     });
     
     // Function to update password via AJAX
-    function updatePassword(nemail) {
+    function saveAccount(nemail) {
         // Show loading state
         resetBtn.disabled = true;
         resetBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
@@ -401,12 +402,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 error: function() {
                     showStatus('An error occurred. Please try again.', 'error');
                     resetBtn.disabled = false;
-                    resetBtn.innerHTML = 'Reset Password';
+                    resetBtn.innerHTML = 'Verify';
                 }
             });
             
         }, 1500);
     }
+
+    
 
         // Function to show status messages
     function showStatus(message, type) {

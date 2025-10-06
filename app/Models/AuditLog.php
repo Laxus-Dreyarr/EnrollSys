@@ -14,13 +14,18 @@ class AuditLog extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'user_id', 'action', 'details', 'ip_address', 'timestamp', 'access_by'
+        'user_id', 'action', 'details', 'ip_address', 'date', 'access_by'
     ];
 
-    public function user()
-    {
-        return $this->morphTo();
-    }
+    // public function user()
+    // {
+    //     return $this->morphTo();
+    // }
+
+    // public function student()
+    // {
+    //     return $this->belongsTo(Student::class, 'user_id', 'id');
+    // }
 
     public function accessedBy()
     {

@@ -217,6 +217,104 @@ class StudentController extends Controller
             if (!$userInfo->save()) {
                 throw new \Exception('Failed to save user info record');
             }
+            
+
+            DB::commit();
+
+            // Clear the cache
+            Cache::forget($cacheKey);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration successful! Welcome to EnrollSys.',
+                'data' => [
+                    'student_id' => $studentId,
+                    'name' => $registrationData['givenName'] . ' ' . $registrationData['lastName'],
+                    'email' => $registrationData['email']
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Verification and registration error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    private function verifyCodeAndRegister(Request $request)
+    {
+        try {
+            $email = $request->input('email');
+            $code = $request->input('code');
+            
+            $cacheKey = 'registration_' . $email;
+            $registrationData = Cache::get($cacheKey);
+
+            if (!$registrationData) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Verification session expired. Please register again.'
+                ]);
+            }
+
+            // Check attempts
+            if ($registrationData['attempts'] >= 3) {
+                Cache::forget($cacheKey);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Too many failed attempts. Please register again.'
+                ]);
+            }
+
+            // Verify code
+            if ($registrationData['verification_code'] !== $code) {
+                $registrationData['attempts']++;
+                Cache::put($cacheKey, $registrationData, 600);
+                
+                $remainingAttempts = 3 - $registrationData['attempts'];
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid verification code. ' . $remainingAttempts . ' attempts remaining.'
+                ]);
+            }
+
+            // Code is valid, proceed with registration
+            DB::beginTransaction();
+
+            $studentId = $this->generateUniqueStudentId();
+            $currentDate = now()->toDateTimeString();
+
+            // Create user account
+            $user = new User();
+            $user->id = $studentId;
+            $user->email2 = $registrationData['email'];
+            $user->password = Hash::make($registrationData['password']);
+            $user->profile = 'default.png';
+            $user->date_created = $currentDate;
+            $user->user_type = 'student';
+            $user->is_active = 1;
+            $user->last_login = null;
+
+            if (!$user->save()) {
+                throw new \Exception('Failed to save user record');
+            }
+
+            // Create user info
+            $userInfo = new UserInfo();
+            $userInfo->user_id = $studentId;
+            $userInfo->firstname = ucfirst(strtolower($registrationData['givenName']));
+            $userInfo->lastname = ucfirst(strtolower($registrationData['lastName']));
+            $userInfo->middlename = $registrationData['middleName'] ? ucfirst(strtolower($registrationData['middleName'])) : null;
+            $userInfo->birthdate = null;
+            $userInfo->age = null;
+            $userInfo->address = null;
+
+            if (!$userInfo->save()) {
+                throw new \Exception('Failed to save user info record');
+            }
 
             DB::commit();
 
