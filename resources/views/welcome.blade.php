@@ -440,7 +440,8 @@
                                 <input type="email" class="form-control-enhanced" id="registerEmail" placeholder="input evsumail" required>
                                 <i class="form-icon fas fa-at"></i>
                             </div>
-                            <div class="invalid-feedback">Please enter a valid EVSUmail address (@evsu.edu.ph)</div>
+                            <div id="RloginEmailError" class="text-danger mt-1 small"></div>
+                            <!-- <div class="invalid-feedback">Please enter a valid EVSUmail address (@evsu.edu.ph)</div> -->
                         </div>
                         
                         <div class="form-group-enhanced">

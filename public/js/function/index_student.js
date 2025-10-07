@@ -196,6 +196,8 @@ function attachRegistrationEventListeners() {
 
     let verificationTimer;
     let countdownTime = 600; // 10 minutes in seconds
+
+    
     
     // Form submission handler
     if (registerForm) {
@@ -209,6 +211,12 @@ function attachRegistrationEventListeners() {
             const emailVal = registerEmail.value.trim();
             const passwordVal = registerPassword.value;
             const repeatPasswordVal = repeatPassword.value;
+
+            const registeremailInputError = document.getElementById('RloginEmailError');
+
+            // Reset email error message
+            registeremailInputError.style.display = 'none';
+            registeremailInputError.textContent = '';
             
             // Validate names
             let isValid = true;
@@ -233,6 +241,8 @@ function attachRegistrationEventListeners() {
             
             // Validate email
             if (!isValidEmail(emailVal)) {
+                registeremailInputError.textContent = 'Please input a valid evsumail!';
+                registeremailInputError.style.display = 'block';
                 registerEmail.classList.add('is-invalid');
                 registerEmail.nextElementSibling.textContent = '';
                 isValid = false;
@@ -407,8 +417,15 @@ function attachRegistrationEventListeners() {
 let emailTimeout;
 // Check if email exists
 function checkEmailExists(email) {
+
+    const emailFieldErr = document.getElementById('RloginEmailError')
+
     // Clear previous timeout
     clearTimeout(emailTimeout);
+
+    // Reset email error message
+    emailFieldErr.style.display = 'none';
+    emailFieldErr.textContent = '';
 
     // Debounce the API call
     emailTimeout = setTimeout(() => {
@@ -423,10 +440,11 @@ function checkEmailExists(email) {
         })
         .then(response => response.json())
         .then(data => {
-            const emailField = document.getElementById('registerEmail');
+            const emailField = document.getElementById('registerEmail');RloginEmailError
             if (data.exists) {
                 emailField.classList.add('is-invalid');
-                emailField.nextElementSibling.textContent = '';
+                emailFieldErr.textContent = ''+data.message;
+                emailFieldErr.style.display = 'block';
             } else {
                 emailField.classList.remove('is-invalid');
             }
