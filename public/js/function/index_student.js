@@ -565,29 +565,67 @@ document.addEventListener('DOMContentLoaded', function() {
     // Theme Toggle Functionality
     const themeToggleBtn = document.getElementById('themeToggle');
     const body = document.body;
+
+    // Define theme colors
+    const lightThemeColor = '#ffffff'; 
+    const darkThemeColor = '#101126'; 
     
     // Check for saved theme preference or use preferred color scheme
     const savedTheme = localStorage.getItem('theme') || 
                       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
     
-    // Apply the saved theme
-    if (savedTheme === 'dark') {
-        body.classList.add('dark-theme');
-        themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+    // Function to update theme meta tags
+    function updateThemeMetaTags(theme) {
+        const themeColor = theme === 'dark' ? darkThemeColor : lightThemeColor;
+        
+        // Update or create theme-color meta tag
+        let themeColorMeta = document.querySelector('meta[name="theme-color"]');
+        if (!themeColorMeta) {
+            themeColorMeta = document.createElement('meta');
+            themeColorMeta.name = 'theme-color';
+            document.head.appendChild(themeColorMeta);
+        }
+        themeColorMeta.content = themeColor;
+        
+        // Update or create msapplication-navbutton-color meta tag
+        let msNavButtonMeta = document.querySelector('meta[name="msapplication-navbutton-color"]');
+        if (!msNavButtonMeta) {
+            msNavButtonMeta = document.createElement('meta');
+            msNavButtonMeta.name = 'msapplication-navbutton-color';
+            document.head.appendChild(msNavButtonMeta);
+        }
+        msNavButtonMeta.content = themeColor;
+        
+        // For Safari iOS - you might want to keep this static or update it too
+        let appleMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+        if (!appleMeta) {
+            appleMeta = document.createElement('meta');
+            appleMeta.name = 'apple-mobile-web-app-status-bar-style';
+            document.head.appendChild(appleMeta);
+        }
+        appleMeta.content = theme === 'dark' ? 'black-translucent' : 'default';
     }
     
-    // Theme toggle button click event
-    themeToggleBtn.addEventListener('click', function() {
-        body.classList.toggle('dark-theme');
-        
-        if (body.classList.contains('dark-theme')) {
-            localStorage.setItem('theme', 'dark');
+    // Apply the saved theme
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            body.classList.add('dark-theme');
             themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
         } else {
-            localStorage.setItem('theme', 'light');
+            body.classList.remove('dark-theme');
             themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
         }
-    });
+        
+        // Update meta tags
+        updateThemeMetaTags(theme);
+        
+        // Save to localStorage
+        localStorage.setItem('theme', theme);
+    }
+
+   // Initialize theme on page load
+    applyTheme(savedTheme);
     
     // Navbar scroll effect
     window.addEventListener('scroll', function() {
@@ -598,6 +636,24 @@ document.addEventListener('DOMContentLoaded', function() {
             navbar.classList.remove('scrolled');
         }
     });
+
+    // Theme toggle button click event
+    themeToggleBtn.addEventListener('click', function() {
+        const isDark = body.classList.contains('dark-theme');
+        const newTheme = isDark ? 'light' : 'dark';
+        applyTheme(newTheme);
+    });
+
+
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+        // Only apply system theme if no user preference is saved
+        if (!localStorage.getItem('theme')) {
+            const newTheme = e.matches ? 'dark' : 'light';
+            applyTheme(newTheme);
+        }
+    });
+
     
     // Back to top button
     const backToTopBtn = document.querySelector('.back-to-top');
@@ -657,6 +713,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const passwordInput = document.getElementById('password');
     const loginBtn = document.getElementById('loginBtn');
 
+    const emailInputError = document.getElementById('loginEmailError');
+    const passwordInputError = document.getElementById('loginPasswordError');
+
     if (loginForm) {
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -668,6 +727,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Reset previous states
             const invalidFields = loginForm.querySelectorAll('.is-invalid');
             invalidFields.forEach(field => field.classList.remove('is-invalid'));
+
+            // Reset email error message
+            emailInputError.style.display = 'none';
+            emailInputError.textContent = '';
+
+            // Reset password error message
+            passwordInputError.style.display = 'none';
+            passwordInputError.textContent = '';
             
             // Show loading state
             loginBtn.disabled = true;
@@ -677,11 +744,13 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Create FormData
             const formData = new FormData();
+            formData.append('action', 'login');
             formData.append('email', email);
             formData.append('password', password);
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
             
             // Send login request
-            fetch('exe/student_login.php', {
+            fetch('/exe/student', {
                 method: 'POST',
                 body: formData
             })
@@ -690,17 +759,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data === '3') {
                    showSuccessAlert();
                 } else if (data === '2') {
-                    passwordInput.nextElementSibling.textContent = 'Incorrect password. Please try again.';
+                    passwordInputError.textContent = 'Incorrect password. Please try again.';
+                    passwordInputError.style.display = 'block';
                     passwordInput.classList.add('is-invalid', 'shake');
                     setTimeout(() => passwordInput.classList.remove('shake'), 500);
                 } else if (data === '1') {
-                    emailInput.nextElementSibling.textContent = 'Email not found. Please check your EVSUmail address.';
+                    emailInputError.textContent = 'Email not found. Please check your EVSUmail address.';
+                    emailInputError.style.display = 'block';
                     emailInput.classList.add('is-invalid', 'shake');
                     setTimeout(() => emailInput.classList.remove('shake'), 500);
                 } else if (data === '0') {
                     alert('Your account has been suspended. Please contact support.');
-                } else {
+                } else if(data == 9) {
                     alert('An unexpected error occurred. Please try again.');
+                } else if(data == 10) {
+                    const successMessage = document.getElementById('successMessage');
+                    if (successMessage) {
+                        successMessage.textContent = 'Login Successfully!';
+                        successMessage.style.display = 'block';
+                    }
                 }
             })
             .catch(error => {
@@ -713,6 +790,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const loginSpinner = document.getElementById('loginSpinner');
                 if (loginSpinner) loginSpinner.style.display = 'none';
                 loginBtn.querySelector('span').textContent = 'Login';
+
+                // Reset email error message
+                // emailInputError.style.display = 'none';
+                // emailInputError.textContent = '';
             });
         });
     }

@@ -92,6 +92,8 @@ class StudentController extends Controller
                 return $this->sendStudentOtpForgotPass($request);
             case 'resetPassword_account':
                 return $this->studentResetPass($request);
+            case 'login':
+                return $this->loginStudent($request);
 
             case 'verify_code':
                 return $this->verifyCodeAndRegister($request);
@@ -823,4 +825,48 @@ class StudentController extends Controller
 
         return $studentId;
     }
-}
+
+
+
+    private function loginStudent(Request $request) {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        $email = $request->email;
+        $password = $request->password;
+
+        if(!$request) {
+            $x = '9';
+            return $x;
+        }
+
+        $y = User::where('email2', $email)->first();
+
+        if(!$y) {
+            $x = '1';
+            return $x;
+        }
+
+        if (!Hash::check($password, $y->password)) {
+            $x = 2;
+            return $x;  
+        }
+
+        if($y->is_active == 0) {
+            $x = 0;
+            return $x;  
+        }
+
+        //Login Successfully!
+        return 10;
+        
+    }
+
+    
+
+
+
+
+}//END OF Class

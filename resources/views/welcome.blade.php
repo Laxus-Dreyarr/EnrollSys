@@ -6,8 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="application-title" content="EnrollSys">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="color-scheme" content="#101126">
     <meta name="theme-color" content="#101126">
+    <meta name="msapplication-navbutton-color" content="#101126">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>EnrollSys - Student Enrollment System</title>
     <link rel="website icon" href="{{ asset('img/logo.png') }}">
     <!-- Bootstrap CSS -->
@@ -340,7 +341,7 @@
                                 <input type="email" class="form-control-enhanced" id="email" placeholder="username@evsu.edu.ph" required>
                                 <i class="form-icon fas fa-at"></i>
                             </div>
-                            <div id="loginEmailError" class="text-danger mt-1 small" style="display: none;"></div>
+                            <div id="loginEmailError" class="text-danger mt-1 small"></div>
                         </div>
                         
                         <div class="form-group-enhanced">
