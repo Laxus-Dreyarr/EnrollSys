@@ -440,7 +440,7 @@ function checkEmailExists(email) {
         })
         .then(response => response.json())
         .then(data => {
-            const emailField = document.getElementById('registerEmail');RloginEmailError
+            const emailField = document.getElementById('registerEmail');
             if (data.exists) {
                 emailField.classList.add('is-invalid');
                 emailFieldErr.textContent = ''+data.message;

@@ -17,6 +17,7 @@ use App\Models\SubjectPrerequisite;
 use App\Models\SubjectSchedule;
 use App\Models\Passkey;
 use App\Models\AuditLog;
+use App\Models\AdminInfo;
 
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
@@ -521,34 +522,136 @@ class AdminController extends Controller
         }
     }
 
-
     public function generatePasskey(Request $request)
     {
+        DB::beginTransaction();
+
         try {
-            $passkey = Str::random(15);
-            
-            Passkey::create([
-                'passkey' => $passkey,
-                'email3' => $request->email,
-                'created_by' => Auth::guard('admin')->id(),
-                'expiration_date' => now()->addDays(7),
-                'user_type' => $request->user_type
+            // Validate required fields
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email',
+                'passkey' => 'required',
+                'userType' => 'required'
             ]);
+
+            if ($validator->fails()) {
+                DB::rollBack();
+                Log::error('Passkey validation failed: ' . json_encode($validator->errors()));
+                return response()->json(1);
+            }
+
+            // Get the authenticated admin
+            $admin = Auth::guard('admin')->user();
+
+            if (!$admin) {
+                DB::rollBack();
+                Log::error('No authenticated admin found');
+                return response()->json(1);
+            }
+
+            // Find the admin_info record for this admin
+            $adminInfo = AdminInfo::where('admin_id', $admin->admin_id)->first();
+
+            if (!$adminInfo) {
+                DB::rollBack();
+                Log::error('AdminInfo record not found for admin ID: ' . $admin->admin_id);
+                return response()->json(1);
+            }
+
+            // Use Carbon for proper date handling
+            // $now = now()->setTimezone('Asia/Manila');
+
+            // $savePasskey = Passkey::create([
+            //     'passkey' => $request->passkey,
+            //     'email3' => $request->email,
+            //     'created_by' => Auth::guard('admin')->id() ?? 1, // Use authenticated admin or fallback
+            //     'date_created' => $now,
+            //     'expiration_date' => $now->copy()->addDays(7), // Set proper expiration
+            //     'is_used' => 0,
+            //     'user_type' => $request->userType
+            // ]);
+
+            $now = now()->setTimezone('Asia/Manila');
+
+            $savePasskey = Passkey::create([
+                'passkey' => $request->passkey,
+                'email3' => $request->email,
+                'created_by' => $adminInfo->id, // Use admin_info.id, not admin.admin_id
+                'date_created' => $now,
+                'expiration_date' => $now->copy()->addDays(7),
+                'is_used' => 0,
+                'user_type' => $request->userType
+            ]);
+
+            
+
+            if(!$savePasskey){
+                DB::rollBack();
+                Log::error('Failed to create passkey record');
+                return response()->json(1);
+            }
+            // if(!$savePasskey){
+            //     DB::rollBack();
+            //     Log::error('Failed to create passkey record');
+            //     return response()->json(1);
+            // }
+
+
+            DB::commit();
+            Log::info('Passkey generated successfully for email: ' . $request->email);
+            return response()->json(7);
+
+            // Passkey::create([
+            //     'passkey' => $passkey,
+            //     'email3' => $request->email,
+            //     'created_by' => Auth::guard('admin')->id(),
+            //     'expiration_date' => now()->addDays(7),
+            //     'user_type' => $request->user_type
+            // ]);
 
             // Here you would typically send the email with the passkey
             // For now, we'll just return success
             
-            return response()->json([
-                'success' => true, 
-                'message' => 'Passkey generated successfully',
-                'passkey' => $passkey
-            ]);
+            
             
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Passkey generation failed: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to generate passkey']);
+            return response()->json(1);
+            
         }
+
+
     }
+
+
+    // public function generatePasskey(Request $request)
+    // {
+    //     try {
+    //         $passkey = Str::random(15);
+            
+    //         Passkey::create([
+    //             'passkey' => $passkey,
+    //             'email3' => $request->email,
+    //             'created_by' => Auth::guard('admin')->id(),
+    //             'expiration_date' => now()->addDays(7),
+    //             'user_type' => $request->user_type
+    //         ]);
+
+    //         // Here you would typically send the email with the passkey
+    //         // For now, we'll just return success
+            
+    //         return response()->json([
+    //             'success' => true, 
+    //             'message' => 'Passkey generated successfully',
+    //             'passkey' => $passkey
+    //         ]);
+            
+    //     } catch (\Exception $e) {
+    //         Log::error('Passkey generation failed: ' . $e->getMessage());
+    //         return response()->json(['success' => false, 'message' => 'Failed to generate passkey']);
+    //     }
+    // }
 
     public function getAuditLogs(Request $request)
     {

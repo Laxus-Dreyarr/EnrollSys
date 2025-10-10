@@ -20,6 +20,6 @@ class Passkey extends Model
 
     public function creator()
     {
-        return $this->belongsTo(Admin::class, 'created_by', 'admin_id');
+        return $this->belongsTo(AdminInfo::class, 'created_by', 'id');
     }
 }

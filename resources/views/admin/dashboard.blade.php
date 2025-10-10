@@ -20,6 +20,7 @@ $profile_picture = $user->profile;
     <!-- Google Fonts -->
     <link rel="stylesheet" href="{{ asset('style/google-fonts.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/sweetalert2.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body class="light-theme">
@@ -932,6 +933,7 @@ $profile_picture = $user->profile;
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{asset('js/jquery.js')}}"></script>
+    <script src="{{asset('js/sweetalert2.js')}}"></script>
     <script src="{{asset('js/function/admin_dashboard/dashboard.js')}}"></script>
 </body>
 </html>

@@ -360,12 +360,41 @@
                 emailInput.classList.add('is-invalid');
                 return;
             }
+
+            const formData = new FormData();
+            formData.append('action', 'generate_passkey');
+            formData.append('email', emailInput.value);
+            formData.append('userType', userTypeSelect.value);
+            formData.append('passkey', passkeyDisplay.value || passkeyDisplay.textContent);
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+            fetch('/admin/ajax/get-stats', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data == 7) {
+                    alert("Send Successfully");
+                } else if(data == 1) {
+                    alert("Failed to Send");
+                    
+                }
+            })
+            .catch(error => {
+                console.error('Error checking email:', error);
+            });
             
             emailInput.classList.remove('is-invalid');
             
             // Simulate sending email
-            alert(`Passkey sent to ${emailInput.value}`);
-            $('#passkeyModal').modal('hide');
+            // alert(`Passkey sent to ${emailInput.value}`);
+            // $('#passkeyModal').modal('hide');
         });
 
         // Initialize form state on modal open (optional but good practice)
@@ -725,41 +754,6 @@
             alert('Failed to create subject. Please check console for details.');
         });
     }
-
-    // Handle passkey generation
-    $('#generatePasskeyBtn').click(function() {
-        const email = $('#emailAddress').val();
-        const userType = $('#userTypeSelect').val();
-        
-        if (!email || !userType) {
-            alert('Please fill all fields');
-            return;
-        }
-        
-        if (!email.endsWith('@evsu.edu.ph')) {
-            $('#emailAddress').addClass('is-invalid');
-            return;
-        }
-        
-        $.post('/admin/ajax/get-stats', {
-            action: 'generate_passkey', 
-            email: email, 
-            user_type: userType
-        }, function(response) {
-            if (response.success) {
-                alert('Passkey generated and sent to ' + email);
-                $('#passkeyModal').modal('hide');
-                // Reset form
-                $('#emailAddress').val('');
-                $('#userTypeSelect').val('');
-            } else {
-                alert('Error: ' + response.message);
-            }
-        }, 'json').fail(function(xhr, status, error) {
-            console.error('Error generating passkey:', error);
-            alert('Failed to generate passkey. Please check console for details.');
-        });
-    });
 
     function loadSubjects() {
         
