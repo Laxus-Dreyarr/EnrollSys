@@ -182,7 +182,7 @@ class StudentController extends Controller
                 'givenName' => $request->givenName,
                 'lastName' => $request->lastName,
                 'middleName' => $request->middleName,
-                'password' => Hash::make($request->password),
+                'password' => $request->password,
                 'email' => $request->email,
                 'attempts' => 0,
                 'ip_address' => request()->ip(),

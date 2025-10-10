@@ -97,3 +97,8 @@ Route::get('/register_reset_password', function () {
         'registerData' => $registerData
     ]);
 });
+
+
+Route::get('/instructor', function () {
+    return view('instructor.index');
+});
