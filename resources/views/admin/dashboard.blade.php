@@ -67,13 +67,13 @@ $profile_picture = $user->profile;
                     <h5 class="mb-0 d-none d-md-block">Admin Dashboard</h5>
                 </div>
                 <div class="topbar-right">
-                    <button id="themeToggle" class="theme-toggle-btn">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                    <button class="btn btn-outline-primary me-2 d-none d-md-inline-block" data-bs-toggle="modal" data-bs-target="#passkeyModal">
+                    <!-- Generate Passkey - always visible -->
+                    <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#passkeyModal">
                         <i class="fas fa-key me-1"></i> Generate Passkey
                     </button>
-                    <div class="user-profile">
+                    
+                    <!-- User Profile - centered -->
+                    <div class="user-profile me-2">
                         <div class="user-avatar">
                             <img src="profile/{{ $profile_picture }}" alt="user_avatar" class="rounded-circle">
                         </div>
@@ -82,6 +82,11 @@ $profile_picture = $user->profile;
                             <div class="user-role">Administrator</div>
                         </div>
                     </div>
+                    
+                    <!-- Theme Toggle - last -->
+                    <button id="themeToggle" class="theme-toggle-btn">
+                        <i class="fas fa-moon"></i>
+                    </button>
                 </div>
             </div>
 
