@@ -867,7 +867,7 @@ $profile_picture = $user->profile;
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="emailAddress" class="form-label">Recipient Email</label>
-                        <input type="email" class="form-control" id="emailAddress" placeholder="name@evsu.edu.ph" required>
+                        <input type="email" class="form-control" id="emailAddress" placeholder="evsumail" required>
                         <div class="invalid-feedback">Please enter a valid EVSUmail address</div>
                     </div>
                     <div class="mb-3">
@@ -877,6 +877,7 @@ $profile_picture = $user->profile;
                             <option value="instructor">Instructor</option>
                             <option value="organization">Organization</option>
                         </select>
+                        <div class="invalid-feedback">Please select a user type</div>
                     </div>
                     <div class="passkey-display" id="passkeyDisplay">
                         Click Generate to create a passkey

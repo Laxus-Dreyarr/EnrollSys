@@ -292,14 +292,57 @@
         const sendPasskeyBtn = document.getElementById('sendPasskeyBtn');
         const passkeyDisplay = document.getElementById('passkeyDisplay');
         const emailInput = document.getElementById('emailAddress');
-        
+        const userTypeSelect = document.getElementById('userTypeSelect');
+
+        // Function to check if both required fields are valid
+        function checkFormValidity() {
+            const isEmailValid = emailInput.value.endsWith('@evsu.edu.ph');
+            const isUserTypeSelected = userTypeSelect.value !== '';
+            
+            // Enable generate button only if both fields are valid
+            generatePasskeyBtn.disabled = !(isEmailValid && isUserTypeSelected);
+        }
+
+        // Email validation and form check
+        emailInput.addEventListener('input', function() {
+            if (!this.value.endsWith('@evsu.edu.ph')) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+            checkFormValidity();
+        });
+
+        // User type validation and form check
+        userTypeSelect.addEventListener('change', function() {
+            if (this.value === '') {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+            checkFormValidity();
+        });
+
+        // Generate passkey button event
         generatePasskeyBtn.addEventListener('click', function() {
+            // Double-check validation before generating
+            if (!emailInput.value.endsWith('@evsu.edu.ph') || userTypeSelect.value === '') {
+                // Show validation errors
+                if (!emailInput.value.endsWith('@evsu.edu.ph')) {
+                    emailInput.classList.add('is-invalid');
+                }
+                if (userTypeSelect.value === '') {
+                    userTypeSelect.classList.add('is-invalid');
+                }
+                return;
+            }
+    
             // Generate a random passkey
             const passkey = generatePasskey(15);
             passkeyDisplay.textContent = passkey;
             passkeyDisplay.classList.add('text-primary', 'fw-bold');
             sendPasskeyBtn.disabled = false;
-            
+    
             // Add copy functionality
             passkeyDisplay.onclick = function() {
                 navigator.clipboard.writeText(passkey);
@@ -310,7 +353,8 @@
                 }, 2000);
             };
         });
-        
+
+        // Send passkey button event
         sendPasskeyBtn.addEventListener('click', function() {
             if (!emailInput.value.endsWith('@evsu.edu.ph')) {
                 emailInput.classList.add('is-invalid');
@@ -323,15 +367,27 @@
             alert(`Passkey sent to ${emailInput.value}`);
             $('#passkeyModal').modal('hide');
         });
-        
-        // Email validation
-        emailInput.addEventListener('input', function() {
-            if (!this.value.endsWith('@evsu.edu.ph')) {
-                this.classList.add('is-invalid');
-            } else {
-                this.classList.remove('is-invalid');
-            }
+
+        // Initialize form state on modal open (optional but good practice)
+        document.getElementById('passkeyModal').addEventListener('show.bs.modal', function() {
+            // Reset form state when modal opens
+            generatePasskeyBtn.disabled = true;
+            sendPasskeyBtn.disabled = true;
+            passkeyDisplay.textContent = 'Click Generate to create a passkey';
+            passkeyDisplay.classList.remove('text-primary', 'fw-bold');
         });
+
+        // You'll also need the generatePasskey function if you don't have it already:
+        function generatePasskey(length) {
+            const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let passkey = '';
+            for (let i = 0; i < length; i++) {
+                passkey += charset.charAt(Math.floor(Math.random() * charset.length));
+            }
+            return passkey;
+        }
+
+        // End of Passkey Generator
         
         // Schedule adding functionality with type selection
         $('.add-schedule').click(function() {
