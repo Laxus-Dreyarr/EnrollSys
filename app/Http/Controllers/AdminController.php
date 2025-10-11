@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
 use App\Mail\PasswordResetOtp;
+use App\Mail\PassKeyCreate;
 use App\Models\Admin;
 use App\Models\Student;
 use App\Models\Instructor;
@@ -89,6 +90,80 @@ class AdminController extends Controller
         return view('admin.dashboard', compact('user', 'stats'));
         
     }
+
+
+    public function cleanupExpiredPasskeys()
+    {
+        Log::info("=== CLEANUP STARTED ===");
+        Log::info("Current time: " . now()->toDateTimeString());
+        
+        $lastCleanup = Cache::get('last_passkeys_cleanup_global');
+        Log::info("Last cleanup time from cache: " . ($lastCleanup ? $lastCleanup->toDateTimeString() : 'Never'));
+        
+        // Run cleanup only once per 5 minutes to avoid overhead
+        if (!$lastCleanup || now()->diffInMinutes($lastCleanup) >= 5) {
+            Log::info("Proceeding with cleanup...");
+            
+            try {
+                // Test the expired scope directly
+                $expiredQuery = Passkey::expired()->toSql();
+                Log::info("Expired query SQL: " . $expiredQuery);
+                
+                $expiredCount = Passkey::expired()->count();
+                Log::info("Found {$expiredCount} expired passkeys");
+                
+                // Also check what's actually in the database
+                $allPasskeys = Passkey::all();
+                Log::info("Total passkeys in database: " . $allPasskeys->count());
+                
+                foreach ($allPasskeys as $passkey) {
+                    Log::info("Passkey ID: {$passkey->id}, Expiration: {$passkey->expiration_date}, Is Expired: " . ($passkey->isExpired() ? 'Yes' : 'No'));
+                }
+                
+                if ($expiredCount > 0) {
+                    $deletedCount = Passkey::expired()->delete();
+                    Log::info("SUCCESS: Deleted {$deletedCount} expired records");
+                } else {
+                    Log::info("No expired passkeys to delete");
+                }
+                
+                Cache::put('last_passkeys_cleanup_global', now(), now()->addMinutes(5));
+                Log::info("Cache updated with current time");
+                
+            } catch (\Exception $e) {
+                Log::error("Cleanup failed: " . $e->getMessage());
+                Log::error("Stack trace: " . $e->getTraceAsString());
+            }
+        } else {
+            $minutesSinceLastCleanup = now()->diffInMinutes($lastCleanup);
+            Log::info("Skipping cleanup - last cleanup was {$minutesSinceLastCleanup} minutes ago");
+        }
+        
+        Log::info("=== CLEANUP FINISHED ===");
+    }
+
+
+    // public function cleanupExpiredPasskeys()
+    // {
+    //     $lastCleanup = Cache::get('last_passkeys_cleanup_global');
+        
+    //     // Run cleanup only once per hour to avoid overhead
+    //     if (!$lastCleanup || now()->diffInMinutes($lastCleanup) >= 5) {
+    //         try {
+    //             $expiredCount = Passkey::expired()->count();
+                
+    //             if ($expiredCount > 0) {
+    //                 $deletedCount = Passkey::expired()->delete();
+    //                 Log::info("Global passkeys cleanup: Deleted {$deletedCount} expired records");
+    //             }
+                
+    //             Cache::put('last_passkeys_cleanup_global', now(), now()->addMinutes(5));
+                
+    //         } catch (\Exception $e) {
+    //             Log::error("Global passkeys cleanup failed: " . $e->getMessage());
+    //         }
+    //     }
+    // }
 
 
     public function get_statistics() 
@@ -558,59 +633,35 @@ class AdminController extends Controller
                 return response()->json(1);
             }
 
-            // Use Carbon for proper date handling
-            // $now = now()->setTimezone('Asia/Manila');
-
-            // $savePasskey = Passkey::create([
-            //     'passkey' => $request->passkey,
-            //     'email3' => $request->email,
-            //     'created_by' => Auth::guard('admin')->id() ?? 1, // Use authenticated admin or fallback
-            //     'date_created' => $now,
-            //     'expiration_date' => $now->copy()->addDays(7), // Set proper expiration
-            //     'is_used' => 0,
-            //     'user_type' => $request->userType
-            // ]);
-
             $now = now()->setTimezone('Asia/Manila');
 
-            $savePasskey = Passkey::create([
-                'passkey' => $request->passkey,
-                'email3' => $request->email,
-                'created_by' => $adminInfo->id, // Use admin_info.id, not admin.admin_id
-                'date_created' => $now,
-                'expiration_date' => $now->copy()->addDays(7),
-                'is_used' => 0,
-                'user_type' => $request->userType
-            ]);
 
-            
+            try {
+                Mail::to($request->email)->send(new PassKeyCreate($request->passkey));
 
-            if(!$savePasskey){
-                DB::rollBack();
-                Log::error('Failed to create passkey record');
+                $savePasskey = Passkey::create([
+                    'passkey' => $request->passkey,
+                    'email3' => $request->email,
+                    'created_by' => $adminInfo->id,
+                    'date_created' => $now,
+                    'expiration_date' => $now->copy()->addMinute(1),
+                    'is_used' => 0,
+                    'user_type' => $request->userType
+                ]);
+
+                if(!$savePasskey){
+                    DB::rollBack();
+                    Log::error('Failed to create passkey record');
+                    return response()->json(1);
+                }
+
+                 DB::commit();
+                Log::info('Passkey generated successfully for email: ' . $request->email);
+                return response()->json(7);
+
+            } catch (\Exception $e) {
                 return response()->json(1);
             }
-            // if(!$savePasskey){
-            //     DB::rollBack();
-            //     Log::error('Failed to create passkey record');
-            //     return response()->json(1);
-            // }
-
-
-            DB::commit();
-            Log::info('Passkey generated successfully for email: ' . $request->email);
-            return response()->json(7);
-
-            // Passkey::create([
-            //     'passkey' => $passkey,
-            //     'email3' => $request->email,
-            //     'created_by' => Auth::guard('admin')->id(),
-            //     'expiration_date' => now()->addDays(7),
-            //     'user_type' => $request->user_type
-            // ]);
-
-            // Here you would typically send the email with the passkey
-            // For now, we'll just return success
             
             
             

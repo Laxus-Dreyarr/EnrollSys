@@ -9,24 +9,23 @@ class Kernel extends ConsoleKernel
 {
     /**
      * Define the application's command schedule.
-     *
-     * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
-     * @return void
      */
-    protected function schedule(Schedule $schedule)
-    {
-        // $schedule->command('inspire')->hourly();
-    }
+    // protected function schedule(Schedule $schedule)
+    // {
+    //     // Clean up expired passkeys daily at 3:00 AM
+    //     $schedule->command('passkeys:cleanup')->dailyAt('22:37');
+        
+    //     // Alternatively, you can run it every hour:
+    //     // $schedule->command('passkeys:cleanup')->hourly();
+    // }
 
     /**
      * Register the commands for the application.
-     *
-     * @return void
      */
-    protected function commands()
-    {
-        $this->load(__DIR__.'/Commands');
+    // protected function commands()
+    // {
+    //     $this->load(__DIR__.'/Commands');
 
-        require base_path('routes/console.php');
-    }
+    //     require base_path('routes/console.php');
+    // }
 }

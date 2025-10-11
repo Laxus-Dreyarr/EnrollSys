@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Admin;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 
 
 // Public routes
@@ -16,7 +17,25 @@ Route::get('/', function () {
 });
 
 Route::get('/welcome_admin', function () {
+    app(AdminController::class)->cleanupExpiredPasskeys();
     return view('welcome_admin');
+});
+
+// Sample
+// Add this to web.php temporarily
+Route::get('/test-timezone', function() {
+    $manilaTime = now()->setTimezone('Asia/Manila');
+    $utcTime = now()->setTimezone('UTC');
+    
+    echo "Manila Time: " . $manilaTime->toDateTimeString() . "<br>";
+    echo "UTC Time: " . $utcTime->toDateTimeString() . "<br>";
+    echo "App Default: " . now()->toDateTimeString() . "<br>";
+    
+    // Test creating a passkey that expires in 1 minute
+    $expiration = $manilaTime->copy()->addMinute();
+    echo "Test Expiration: " . $expiration->toDateTimeString() . "<br>";
+    
+    return "Timezone test completed";
 });
 
 Route::get('/forgot_acc_student', function (){

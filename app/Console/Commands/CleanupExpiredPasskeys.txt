@@ -1,0 +1,78 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use App\Models\Passkey;
+use Illuminate\Support\Facades\Log;
+
+class CleanupExpiredPasskeys extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'passkeys:cleanup 
+                            {--dry-run : Show how many passkeys would be deleted without actually deleting them}';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Clean up expired passkeys from the database';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle()
+    {
+        $isDryRun = $this->option('dry-run');
+        
+        $this->info('Starting expired passkeys cleanup...');
+        $this->line('Current time: ' . now()->toDateTimeString());
+        
+        // Count expired passkeys
+        $expiredCount = Passkey::expired()->count();
+        $totalPasskeys = Passkey::count();
+        
+        $this->info("Total passkeys in database: {$totalPasskeys}");
+        $this->info("Expired passkeys found: {$expiredCount}");
+        
+        if ($expiredCount === 0) {
+            $this->info('No expired passkeys found. Cleanup completed.');
+            return Command::SUCCESS;
+        }
+        
+        if ($isDryRun) {
+            $this->info('[DRY RUN] Would delete ' . $expiredCount . ' expired passkeys');
+            $this->info('[DRY RUN] No changes were made to the database.');
+            return Command::SUCCESS;
+        }
+        
+        // Show a confirmation for large deletions
+        if ($expiredCount > 100) {
+            if (!$this->confirm("You are about to delete {$expiredCount} expired passkeys. Do you wish to continue?")) {
+                $this->info('Cleanup cancelled.');
+                return Command::SUCCESS;
+            }
+        }
+        
+        // Perform the deletion
+        try {
+            $deletedCount = Passkey::expired()->delete();
+            
+            $this->info("Successfully deleted {$deletedCount} expired passkeys.");
+            Log::info("Expired passkeys cleanup: Deleted {$deletedCount} records");
+            
+        } catch (\Exception $e) {
+            $this->error("Failed to delete expired passkeys: " . $e->getMessage());
+            Log::error("Failed to clean up expired passkeys: " . $e->getMessage());
+            return Command::FAILURE;
+        }
+        
+        $this->info('Cleanup completed successfully.');
+        return Command::SUCCESS;
+    }
+}
