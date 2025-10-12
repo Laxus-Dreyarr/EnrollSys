@@ -644,7 +644,7 @@ class AdminController extends Controller
                     'email3' => $request->email,
                     'created_by' => $adminInfo->id,
                     'date_created' => $now,
-                    'expiration_date' => $now->copy()->addMinute(1),
+                    'expiration_date' => $now->copy()->addDay(1),
                     'is_used' => 0,
                     'user_type' => $request->userType
                 ]);

@@ -888,7 +888,9 @@ $profile_picture = $user->profile;
                             <i class="fas fa-key me-1"></i> Generate Passkey
                         </button>
                         <button class="btn btn-success" id="sendPasskeyBtn" disabled>
-                            <i class="fas fa-paper-plane me-1"></i> Send Passkey
+                            <i class="fas fa-paper-plane me-1"></i>
+                            <span id="loginBtnText">Send Passkey</span> 
+                            <span class="spinner-border spinner-border-sm" style="display: none;" id="sendPasskeySpinner"></span>
                         </button>
                     </div>
                 </div>

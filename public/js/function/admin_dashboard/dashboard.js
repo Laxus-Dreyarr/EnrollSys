@@ -368,6 +368,12 @@
             formData.append('passkey', passkeyDisplay.value || passkeyDisplay.textContent);
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
+            const sendPasskeyBtn1 = document.getElementById('sendPasskeyBtn');
+            sendPasskeyBtn1.disabled = true;
+            if (sendPasskeySpinner) sendPasskeySpinner.style.display = 'inline-block';
+            sendPasskeyBtn1.querySelector('span').textContent = 'Sending...';
+
+
             fetch('/admin/ajax/get-stats', {
                 method: 'POST',
                 body: formData,
@@ -380,9 +386,52 @@
             })
             .then(data => {
                 if (data == 7) {
-                    alert("Send Successfully");
+                    Swal.fire({
+                        title: 'Send Successfully!',
+                        text: 'to: ' + emailInput.value,
+                        icon: 'success',
+                        confirmButtonText: 'Continue to Dashboard',
+                        confirmButtonColor: '#0d6efd',
+                        background: '#1a1a2e',
+                        color: '#ffffff',
+                        backdrop: 'rgba(0,0,0,0.7)',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showClass: {
+                            popup: 'animate__animated animate__fadeInDown'
+                        },
+                        hideClass: {
+                            popup: 'animate__animated animate__fadeOutUp'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = "/ad-dashboard";
+                        }
+                    });
+
                 } else if(data == 1) {
-                    alert("Failed to Send");
+                    Swal.fire({
+                        title: 'Send Failed',
+                        text: 'to: ' + emailInput.value,
+                        icon: 'error',
+                        confirmButtonText: 'Continue to Dashboard',
+                        confirmButtonColor: '#0d6efd',
+                        background: '#1a1a2e',
+                        color: '#ffffff',
+                        backdrop: 'rgba(0,0,0,0.7)',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showClass: {
+                            popup: 'animate__animated animate__fadeInDown'
+                        },
+                        hideClass: {
+                            popup: 'animate__animated animate__fadeOutUp'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = "/ad-dashboard";
+                        }
+                    });
                     
                 }
             })
