@@ -1,5 +1,6 @@
 <?php
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Cache;
@@ -77,7 +78,13 @@ Route::middleware(['admin.auth'])->group(function () {
     });
 });
 
+//Instructor Routes
+Route::prefix('/exe')->group(function (){
+    Route::post('/instructor', [InstructorController::class, 'register']);
+});
 
+
+// Student Routes
 Route::prefix('/exe')->group(function (){
     Route::post('/student', [StudentController::class, 'register']);
 });

@@ -397,7 +397,7 @@
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="fas fa-user-plus"></i>
-                        Student Registration
+                        Instructor Registration
                     </h5>
                     <button type="button" class="btn-close btn-close-enhanced" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -437,7 +437,7 @@
                                 EVSUmail
                             </label>
                             <div class="input-group-enhanced">
-                                <input type="email" class="form-control-enhanced" id="registerEmail" placeholder="input evsumail" required>
+                                <input type="text" class="form-control-enhanced" id="registerEmail" placeholder="input evsumail" required>
                                 <i class="form-icon fas fa-at"></i>
                             </div>
                             <div id="RloginEmailError" class="text-danger mt-1 small"></div>
@@ -481,8 +481,8 @@
                             <div class="input-group-enhanced">
                                 <input type="password" class="form-control-enhanced" id="repeatPassword" placeholder="Repeat your password" required>
                                 <i class="form-icon fas fa-key"></i>
+                                <div id="key" class="invalid-feedback">Passwords do not match</div>
                             </div>
-                            <div class="invalid-feedback">Passwords do not match</div>
                         </div>
                         
                         <div class="form-check-enhanced">
@@ -588,7 +588,8 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Custom JS -->
      <script src="{{asset('js/jquery.js')}}"></script>
+     <script src="{{asset('js/sweetalert2.js')}}"></script>
     <!-- <script src="script.js"></script> -->
-    <script src="{{asset('js/function/index_student.js')}}"></script>
+    <script src="{{asset('js/function/instructor/index.js')}}"></script>
 </body>
 </html>

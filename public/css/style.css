@@ -27,7 +27,28 @@
     /* --text-light: maroon; */
     --text-light: #212529;
     --text-muted-light: #6c757d;
+
+    --swal2-background: #1e1e2d;
+    --swal2-title-color: #ffffff;
+    --swal2-text-color: #cdcdcd;
+    --swal2-confirm-button-background: #3699FF;
+    --swal2-confirm-button-border-color: #3699FF;
+    --swal2-cancel-button-background: #6c757d;
+    --swal2-popup-border-radius: 10px;
+    --swal2-font-size: 16px;
 }
+
+/* create custom classes */
+        .my-custom-swal {
+        background: linear-gradient(45deg, #667eea, #764ba2) !important;
+        border-radius: 20px !important;
+        color: white !important;
+        }
+
+        .my-custom-swal .swal2-title {
+        font-size: 24px !important;
+        font-weight: bold !important;
+        }
 
 * {
     margin: 0;
@@ -713,6 +734,19 @@ ul {
     border: 1px solid var(--light-gray);
     transition: all 0.3s ease;
 }
+
+.form-control-enhanced.is-invalid ~ .invalid-feedback {
+    display: block;
+}
+
+.invalid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #dc3545;
+}
+
 
 .dark-theme .contact-form .form-control {
     background-color: var(--card-light);
