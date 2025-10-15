@@ -309,12 +309,34 @@ function attachRegistrationEventListeners() {
                 const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
                 registerModal.hide();
 
-                
+                Swal.fire({
+                        title: 'Registration successful!',
+                        text: 'You can now log in to your account.',
+                        icon: 'success',
+                        confirmButtonText: 'Continue to Dashboard',
+                        confirmButtonColor: '#0d6efd',
+                        background: '#1a1a2e',
+                        color: '#ffffff',
+                        backdrop: 'rgba(0,0,0,0.7)',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showClass: {
+                            popup: 'animate__animated animate__fadeInDown'
+                        },
+                        hideClass: {
+                            popup: 'animate__animated animate__fadeOutUp'
+                        }
+                    });
+
             } else {
-                if(data.message == 'Passwords do not match'){
+                if (data.message == 'Invalid Passkey') {
+                    alert("Invalid Passkey")
+                } else if (data.message == 'Passwords do not match'){
                     repeatPassword.classList.add('is-invalid');
                     const key = document.getElementById('key');
                     key.nextElementSibling.textContent = 'Passwords do not match';
+                } else if (data.message == 'Not Saved') {
+                    alert("Registration to Instructor failed. Please try again.");
                 }
             }
         })
@@ -428,12 +450,20 @@ function checkEmailExists(email) {
         .then(response => response.json())
         .then(data => {
             const emailField = document.getElementById('registerEmail');
-            if (data.exists) {
-                emailField.classList.add('is-invalid');
-                emailFieldErr.textContent = ''+data.message;
-                emailFieldErr.style.display = 'block';
-            } else {
+            if (data.success) {
                 emailField.classList.remove('is-invalid');
+
+            } else {
+                if(data.message == 'Passkey is required') {
+                    emailField.classList.add('is-invalid');
+                    emailFieldErr.textContent = ''+data.message;
+                    emailFieldErr.style.display = 'block';
+                } else if (data.message == 'Invalid Passkey') {
+                    emailField.classList.add('is-invalid');
+                    emailFieldErr.textContent = ''+data.message;
+                    emailFieldErr.style.display = 'block';
+                }
+                    
             }
         })
         .catch(error => {

@@ -433,14 +433,14 @@
                         
                         <div class="form-group-enhanced">
                             <label for="registerEmail" class="form-label">
-                                <i class="fas fa-envelope"></i>
-                                EVSUmail
+                                <i class="fa-solid fa-key"></i>
+                                Passkey
                             </label>
                             <div class="input-group-enhanced">
-                                <input type="text" class="form-control-enhanced" id="registerEmail" placeholder="input evsumail" required>
-                                <i class="form-icon fas fa-at"></i>
+                                <input type="text" class="form-control-enhanced" id="registerEmail" placeholder="input passkey" required>
+                                <i class="fa-solid fa-key"></i>
+                                <div id="RloginEmailError" class="text-danger mt-1 small"></div>
                             </div>
-                            <div id="RloginEmailError" class="text-danger mt-1 small"></div>
                             <!-- <div class="invalid-feedback">Please enter a valid EVSUmail address (@evsu.edu.ph)</div> -->
                         </div>
                         
