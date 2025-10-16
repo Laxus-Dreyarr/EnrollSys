@@ -211,7 +211,6 @@ class StudentController extends Controller
                     'success' => true,
                     'message' => 'Verification code sent to your email!',
                     'email' => $request->email,
-                    'debug_code' => $verificationCode // Remove this in production
                 ]);
 
             } catch (\Exception $e) {
@@ -686,7 +685,6 @@ class StudentController extends Controller
                     'success' => true,
                     'message' => 'Verification code sent to your email!',
                     'email' => $request->email,
-                    'debug_code' => $verificationCode // Remove this in production
                 ]);
 
             } catch (\Exception $e) {

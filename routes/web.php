@@ -84,6 +84,25 @@ Route::prefix('/exe')->group(function (){
 });
 
 
+Route::get('/intructor_forgot', function (){
+    return view('instructor.instructor_forgot'); 
+});
+
+Route::get('/reset_password_12', function () {
+    $email = session('reset_pass_instructor');
+    $registerData = $email ? Cache::get('instructorForgot_' . $email) : null;
+    if (!$registerData) {
+        return redirect('/instructor');
+    }
+
+    return view('instructor.instructor_reset', [
+        'email' => $email,
+        'registerData' => $registerData
+    ]);
+});
+
+
+
 // Student Routes
 Route::prefix('/exe')->group(function (){
     Route::post('/student', [StudentController::class, 'register']);

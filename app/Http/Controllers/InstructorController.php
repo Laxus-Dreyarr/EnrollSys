@@ -274,9 +274,12 @@ class InstructorController extends Controller
         switch ($action) {
             case 'check_passkey':
                 return $this->checkPasskey($request);
-
             case 'registering':
                 return $this->registerInstructor($request);
+            case 'check_email':
+                return $this->checkEmailExists($request);
+            case 'forgot_verification':
+                return $this->sendInstructorOtpForgotPass($request);
         }
 
     }
@@ -514,6 +517,134 @@ class InstructorController extends Controller
         } while ($exists);
 
         return $instructorID;
+    }
+
+    private function checkEmailExists(Request $request) 
+    {
+        try {
+            
+            $validator = Validator::make($request->all(), [
+                'email' => 'required',
+            ], [
+                'email.required' => 'Email is required',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['success' => false, 'message' => $validator->errors()->first()]);
+            }
+
+            $y = Instructor::where('email5', $request->email)->exists();
+
+            if(!$y) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "You don't have an account with that email"
+                ]);
+            }
+            $y = null;
+
+            return response()->json(['success' => true, 'message' => 'Email is available']);
+
+        } catch (\Exception $e) {
+            Log::error('Email check error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error checking email']);
+        }
+
+    }
+
+
+    private function sendInstructorOtpForgotPass(Request $request) {
+        try {
+            // Validate the registration data first
+            $validator = Validator::make($request->all(), [
+                'email' => [
+                    'required',
+                    'email',
+                    'regex:/^[^\s@]+@evsu\.edu\.ph$/'
+                ],
+                'password' => [
+                    'required',
+                    'min:8'
+                ]
+            ], [
+                'email.regex' => 'Please enter a valid EVSUmail address (username@evsu.edu.ph).',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $validator->errors()->first()
+                ]);
+            }
+
+            // Check if email already exists
+            $emailExists = Instructor::where('email5', $request->email)->exists();
+            if (!$emailExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid email account!'
+                ]);
+            }
+
+            // Check password confirmation
+            if ($request->password !== $request->repeatPassword) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Passwords do not match.'
+                ]);
+            }
+
+            // Generate verification code (6 digits)
+            $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+
+            Cache::put('instructorForgot_' . $request->email, [
+                'otp' => $verificationCode,
+                'password' => Hash::make($request->password),
+                'email' => $request->email,
+                'attempts' => 0
+            ], now()->addMinutes(10));
+
+            session(['reset_pass_instructor' => $request->email]);
+
+            // Send verification email
+            try {
+                Mail::to($request->email)->send(new PasswordResetOtp($verificationCode));
+
+                // Check if email was actually sent
+                if (count(Mail::failures()) > 0) {
+                    Log::error('Email failed to send to: ' . $request->email);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to send verification email. Please try again.'
+                    ]);
+                }
+
+                Log::info('Verification code sent successfully to: ' . $request->email);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Verification code sent to your email!',
+                    'email' => $request->email,
+                ]);
+
+            } catch (\Exception $e) {
+                Log::error('Failed to send verification email: ' . $e->getMessage());
+                Log::error('Email error details: ', ['exception' => $e]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to send verification email: ' . $e->getMessage()
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Send verification error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage()
+            ]);
+        }
     }
 
     
