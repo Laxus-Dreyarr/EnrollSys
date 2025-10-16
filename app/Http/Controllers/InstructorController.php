@@ -42,6 +42,231 @@ class InstructorController extends Controller
     //     return view('instructor.profile', compact('user', 'userInfo'));
     // }
 
+    private function getDeviceInfo()
+    {
+        $agent = new Agent();
+        
+        return [
+            'device' => $agent->device(),
+            'platform' => $agent->platform(),
+            'browser' => $agent->browser(),
+            'is_desktop' => $agent->isDesktop(),
+            'is_phone' => $agent->isPhone(),
+            'is_tablet' => $agent->isTablet(),
+            'is_robot' => $agent->isRobot(),
+            'robot_name' => $agent->isRobot() ? $agent->robot() : null,
+            'user_agent' => request()->userAgent(),
+        ];
+    }
+
+    private function getDeviceSummary()
+    {
+        $agent = new Agent();
+        $device = $agent->device();
+        
+        if ($agent->isDesktop()) {
+            return "Desktop" . ($device ? " ($device)" : "");
+        } elseif ($agent->isTablet()) {
+            return "Tablet" . ($device ? " ($device)" : "");
+        } elseif ($agent->isPhone()) {
+            return "Mobile" . ($device ? " ($device)" : "");
+        } elseif ($agent->isRobot()) {
+            return "Robot" . ($agent->robot() ? " ({$agent->robot()})" : "");
+        }
+        
+        return "Unknown Device";
+    }
+
+
+    private function updateUserDeviceInfo($user)
+    {
+        $deviceInfo = $this->getDeviceInfo();
+        
+        $user->update([
+            'ip_address' => request()->ip(),
+            'device_type' => $this->getDeviceSummary(),
+            'platform' => $deviceInfo['platform'],
+            'browser' => $deviceInfo['browser'],
+            'device' => $deviceInfo['device'],
+            'is_desktop' => $deviceInfo['is_desktop'],
+            'is_mobile' => $deviceInfo['is_phone'],
+            'is_tablet' => $deviceInfo['is_tablet'],
+            'is_robot' => $deviceInfo['is_robot'],
+            'user_agent' => $deviceInfo['user_agent'],
+            'last_login_at' => now(),
+        ]);
+    }
+
+    private function getClientRealIp()
+    {
+        $ipAddress = '';
+
+        // Check for forwarded IP addresses first (common with proxies, load balancers)
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ipAddress = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+        } elseif (!empty($_SERVER['HTTP_X_REAL_IP'])) {
+            $ipAddress = $_SERVER['HTTP_X_REAL_IP'];
+        } elseif (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $ipAddress = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+            $ipAddress = $_SERVER['REMOTE_ADDR'];
+        }
+
+        // Clean the IP address
+        $ipAddress = trim($ipAddress);
+        
+        // Validate it's a real IP address
+        if (filter_var($ipAddress, FILTER_VALIDATE_IP)) {
+            return $ipAddress;
+        }
+
+        return 'Unknown';
+    }
+
+    public function getClientDeviceInfo() {
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+        
+        // Get client IP address (handling proxies)
+        $ipAddress = $this->getClientRealIp();
+        
+        // Parse device information from user agent
+        $deviceInfo = $this->parseUserAgent($userAgent);
+        
+        return [
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent,
+            'device_info' => $deviceInfo,
+            'request_time' => date('Y-m-d H:i:s'),
+            'server_vars' => [
+                'http_referer' => $_SERVER['HTTP_REFERER'] ?? 'Direct',
+                'http_accept_language' => $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'Unknown',
+                'server_protocol' => $_SERVER['SERVER_PROTOCOL'] ?? 'Unknown'
+            ]
+        ];
+    }
+
+    public function getClientIP() {
+        // Check for shared internet/ISP IP
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            return $_SERVER['HTTP_CLIENT_IP'];
+        }
+        // Check for IPs passing through proxies
+        elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            // Check for multiple IPs in X_FORWARDED_FOR
+            $ipList = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            return trim($ipList[0]);
+        }
+        // Check for remote IP
+        elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+            return $_SERVER['REMOTE_ADDR'];
+        }
+        
+        return 'Unknown';
+    }
+
+    public function parseUserAgent($userAgent) {
+        $deviceType = 'desktop';
+        $browser = 'Unknown';
+        $os = 'Unknown';
+        
+        // Device type detection
+        if (preg_match('/(android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini)/i', $userAgent)) {
+            $deviceType = 'mobile';
+            if (preg_match('/(tablet|ipad)/i', $userAgent)) {
+                $deviceType = 'tablet';
+            }
+        }
+        
+        // Browser detection
+        if (preg_match('/Chrome/i', $userAgent) && !preg_match('/Edg/i', $userAgent)) {
+            $browser = 'Chrome';
+        } elseif (preg_match('/Firefox/i', $userAgent)) {
+            $browser = 'Firefox';
+        } elseif (preg_match('/Safari/i', $userAgent) && !preg_match('/Chrome/i', $userAgent)) {
+            $browser = 'Safari';
+        } elseif (preg_match('/Edg/i', $userAgent)) {
+            $browser = 'Edge';
+        } elseif (preg_match('/Opera|OPR/i', $userAgent)) {
+            $browser = 'Opera';
+        }
+        
+        // OS detection
+        if (preg_match('/Android/i', $userAgent)) {
+            $os = 'Android';
+        } elseif (preg_match('/iPhone|iPad|iPod/i', $userAgent)) {
+            $os = 'iOS';
+        } elseif (preg_match('/Windows/i', $userAgent)) {
+            $os = 'Windows';
+        } elseif (preg_match('/Macintosh|Mac OS X/i', $userAgent)) {
+            $os = 'macOS';
+        } elseif (preg_match('/Linux/i', $userAgent)) {
+            $os = 'Linux';
+        }
+        
+        // Device brand detection
+        $brand = 'Unknown';
+        $model = 'Unknown';
+        
+        if (preg_match('/Samsung|SM-[A-Z0-9]+|GT-[A-Z0-9]+/i', $userAgent)) {
+            $brand = 'Samsung';
+        } elseif (preg_match('/Realme|RMX[A-Z0-9]+/i', $userAgent)) {
+            $brand = 'Realme';
+        } elseif (preg_match('/iPhone/i', $userAgent)) {
+            $brand = 'Apple';
+            $model = 'iPhone';
+        } elseif (preg_match('/iPad/i', $userAgent)) {
+            $brand = 'Apple';
+            $model = 'iPad';
+        } elseif (preg_match('/Macintosh/i', $userAgent)) {
+            $brand = 'Apple';
+            $model = 'Mac';
+        } elseif (preg_match('/Redmi|Mi |Xiaomi/i', $userAgent)) {
+            $brand = 'Xiaomi';
+        } elseif (preg_match('/Huawei/i', $userAgent)) {
+            $brand = 'Huawei';
+        } elseif (preg_match('/OnePlus/i', $userAgent)) {
+            $brand = 'OnePlus';
+        } elseif (preg_match('/Pixel/i', $userAgent)) {
+            $brand = 'Google';
+        }
+        
+        return [
+            'device_type' => $deviceType,
+            'browser' => $browser,
+            'operating_system' => $os,
+            'brand' => $brand,
+            'model' => $model
+        ];
+    }
+
+    public function collectClientInformation() {
+        $deviceInfo = $this->getClientDeviceInfo();
+        
+        // Attempt to get MAC address (works only in local network)
+        // $macAddress = attemptMacAddressDetection($deviceInfo['ip_address']);
+        
+        $completeInfo = [
+            'ip_address' => $deviceInfo['ip_address'],
+            'user_agent' => $deviceInfo['user_agent'],
+            'device_type' => $deviceInfo['device_info']['device_type'],
+            'browser' => $deviceInfo['device_info']['browser'],
+            'operating_system' => $deviceInfo['device_info']['operating_system'],
+            'device_brand' => $deviceInfo['device_info']['brand'],
+            'device_model' => $deviceInfo['device_info']['model'],
+            'timestamp' => $deviceInfo['request_time'],
+            'is_local_network' => $this->isLocalIP($deviceInfo['ip_address'])
+        ];
+
+        // 'mac_address' => $macAddress,
+        
+        return $completeInfo;
+    }
+
+    public function isLocalIP($ip) {
+        // Check if IP is in local range
+        return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+    }
+
     public function register(Request $request){
 
         $action = $request->input('action');
@@ -74,6 +299,8 @@ class InstructorController extends Controller
             }
             $y = null;
 
+            return response()->json(['success' => true, 'message' => 'Valid Passkey']);
+
         } catch (\Exception $e) {
             Log::error('Passkey check error: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Error checking passkey']);
@@ -95,6 +322,12 @@ class InstructorController extends Controller
             Log::info('Passkey found', ['passkey_id' => $passkey->id, 'email3' => $passkey->email3]);
             
             $instructorEmail = $passkey->email3;
+
+            $check = Instructor::where('email5', $instructorEmail)->exists();
+            if($check) {
+                Log::warning('Email already registered', ['email' => $instructorEmail]);
+                return response()->json(['success' => false, 'message' => 'Email is already registered']);
+            }
 
             // Check if passwords match
             if ($request->input('password') !== $request->input('repeatPassword')) {
@@ -134,8 +367,26 @@ class InstructorController extends Controller
                 'department' => 'Computer Studies Department',
             ]);
 
+            // $clientInfo = $this->getClientDeviceInfoWithRequest($request);
+            $clientInfo = $this->collectClientInformation($request);
+            // $ipaddress = $this->getClientRealIp();
+            $ipaddress = $this->getClientDeviceInfo();
+
+            // Save to AuditLogs!
+            AuditLog::create([
+                'user_id' => $instructorId,
+                'action' => 'New Instuctor Account Created: '.$instructorEmail,
+                'details' => '' .$clientInfo['operating_system'] .'/' .$clientInfo['device_type'] .'/' .$clientInfo['user_agent'],
+                'ip_address' => $ipaddress['ip_address'],
+                'birthdate' => 'null',
+                'date' => $currentDate,
+                'access_by' => '107568'
+            ]);
+
             // Invalidate the used passkey
-            Passkey::where('passkey', $request->input('email'))->delete();
+            Passkey::where('passkey', $request->input('email'))
+                    ->orWhere('email3', $instructorEmail)
+                    ->delete();
             
             DB::commit();
             

@@ -313,7 +313,7 @@ function attachRegistrationEventListeners() {
                         title: 'Registration successful!',
                         text: 'You can now log in to your account.',
                         icon: 'success',
-                        confirmButtonText: 'Continue to Dashboard',
+                        confirmButtonText: 'Ok',
                         confirmButtonColor: '#0d6efd',
                         background: '#1a1a2e',
                         color: '#ffffff',
@@ -326,11 +326,51 @@ function attachRegistrationEventListeners() {
                         hideClass: {
                             popup: 'animate__animated animate__fadeOutUp'
                         }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = "/instructor";
+                        }
                     });
 
             } else {
-                if (data.message == 'Invalid Passkey') {
-                    alert("Invalid Passkey")
+                if (data.message == 'Email is already registered') {
+                    Swal.fire({
+                        title: 'Registration Failed!',
+                        text: 'Email is already registered',
+                        icon: 'error',
+                        confirmButtonText: 'Close',
+                        confirmButtonColor: '#070808ff',
+                        background: '#1a1a2e',
+                        color: '#ffffff',
+                        backdrop: 'rgba(0,0,0,0.7)',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showClass: {
+                            popup: 'animate__animated animate__fadeInDown'
+                        },
+                        hideClass: {
+                            popup: 'animate__animated animate__fadeOutUp'
+                        }
+                    });
+                } else if (data.message == 'Invalid Passkey') {
+                    Swal.fire({
+                        title: 'Registration Failed!',
+                        text: 'Invalid Passkey',
+                        icon: 'error',
+                        confirmButtonText: 'Close',
+                        confirmButtonColor: '#070808ff',
+                        background: '#1a1a2e',
+                        color: '#ffffff',
+                        backdrop: 'rgba(0,0,0,0.7)',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showClass: {
+                            popup: 'animate__animated animate__fadeInDown'
+                        },
+                        hideClass: {
+                            popup: 'animate__animated animate__fadeOutUp'
+                        }
+                    });
                 } else if (data.message == 'Passwords do not match'){
                     repeatPassword.classList.add('is-invalid');
                     const key = document.getElementById('key');
