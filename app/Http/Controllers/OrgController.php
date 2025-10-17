@@ -15,6 +15,8 @@ use App\Models\Passkey;
 use App\Models\AuditLog;
 use App\Models\Instructor;
 use App\Models\InstructorInfo;
+use App\Models\Organization;
+use App\Models\OrgInfo;
 use App\Models\Student;
 use App\Mail\RegistrationVerification;
 use Illuminate\Support\Facades\Log;
@@ -22,26 +24,9 @@ use App\Mail\PasswordResetOtp;
 use Illuminate\Support\Str;
 use Jenssegers\Agent\Agent;
 
-class InstructorController extends Controller
+class OrgController extends Controller
 {
-    // public function __construct()
-    // {
-    //     $this->middleware('auth');
-    //     $this->middleware('role:instructor');
-    // }
-
-    // public function dashboard()
-    // {
-    //     return view('instructor.dashboard');
-    // }
-
-    // public function profile()
-    // {
-    //     $user = Auth::user();
-    //     $userInfo = UserInfo::where('user_id', $user->id)->first();
-    //     return view('instructor.profile', compact('user', 'userInfo'));
-    // }
-
+    
     private function getDeviceInfo()
     {
         $agent = new Agent();
@@ -275,7 +260,7 @@ class InstructorController extends Controller
             case 'check_passkey':
                 return $this->checkPasskey($request);
             case 'registering':
-                return $this->registerInstructor($request);
+                return $this->registerOrg($request);
             case 'check_email':
                 return $this->checkEmailExists($request);
             case 'forgot_verification':
@@ -314,7 +299,7 @@ class InstructorController extends Controller
 
     }
 
-    private function registerInstructor(Request $request) {
+    private function registerOrg(Request $request) {
         try {
             Log::info('Starting instructor registration', ['email' => $request->email]);
             
@@ -327,16 +312,16 @@ class InstructorController extends Controller
             
             Log::info('Passkey found', ['passkey_id' => $passkey->id, 'email3' => $passkey->email3]);
             
-            $instructorEmail = $passkey->email3;
+            $orgEmail = $passkey->email3;
 
-            if($passkey->user_type !== 'instructor') {
-                Log::warning('Passkey user type mismatch', ['expected' => 'instructor', 'found' => $passkey->user_type]);
-                return response()->json(['success' => false, 'message' => 'Passkey not valid for instructor registration']);
-            } 
+            if($passkey->user_type !== 'organization') {
+                Log::warning('Passkey user type mismatch', ['expected' => 'organization', 'found' => $passkey->user_type]);
+                return response()->json(['success' => false, 'message' => 'Passkey not valid for organization registration']);
+            }   
 
-            $check = Instructor::where('email5', $instructorEmail)->exists();
+            $check = Organization::where('email4', $orgEmail)->exists();
             if($check) {
-                Log::warning('Email already registered', ['email' => $instructorEmail]);
+                Log::warning('Email already registered', ['email' => $orgEmail]);
                 return response()->json(['success' => false, 'message' => 'Email is already registered']);
             }
 
@@ -347,15 +332,15 @@ class InstructorController extends Controller
 
             DB::beginTransaction();
 
-            $instructorId = $this->generateUniqueInstructorId();
+            $orgId = $this->generateUniqueOrgId();
             $currentDate = now()->toDateTimeString();
 
-            Log::info('Creating instructor record', ['instructor_id' => $instructorId]);
+            Log::info('Creating instructor record', ['instructor_id' => $orgId]);
             
             // Create instructor
-            $instructor = Instructor::create([
-                'instructor_id' => $instructorId,
-                'email5' => $instructorEmail,
+            $organization = Organization::create([
+                'org_id' => $orgId,
+                'email4' => $orgEmail,
                 'password' => Hash::make($request->input('password')),
                 'profile' => 'default.png',
                 'date_created' => $currentDate,
@@ -364,18 +349,17 @@ class InstructorController extends Controller
                 'last_login' => $currentDate,
             ]);
 
-            Log::info('Creating instructor info record', ['instructor_id' => $instructorId]);
+            Log::info('Creating instructor info record', ['instructor_id' => $orgId]);
             
             // Create instructor info
-            InstructorInfo::create([
-                'instructor_id' => $instructorId,
+            OrgInfo::create([
+                'organization_id' => $orgId,
                 'firstname' => $request->input('givenName'),
                 'lastname' => $request->input('lastName'),
                 'middlename' => $request->input('middleName') ?? null,
                 'birthdate' => 'null',
                 'age' => 'null',
-                'address' => 'null',
-                'department' => 'Computer Studies Department',
+                'address' => 'null'
             ]);
 
             // $clientInfo = $this->getClientDeviceInfoWithRequest($request);
@@ -385,8 +369,8 @@ class InstructorController extends Controller
 
             // Save to AuditLogs!
             AuditLog::create([
-                'user_id' => $instructorId,
-                'action' => 'New Instuctor Account Created: '.$instructorEmail,
+                'user_id' => $orgId,
+                'action' => 'New Org Member Account Created: '.$orgEmail,
                 'details' => '' .$clientInfo['operating_system'] .'/' .$clientInfo['device_type'] .'/' .$clientInfo['user_agent'],
                 'ip_address' => $ipaddress['ip_address'],
                 'birthdate' => 'null',
@@ -396,12 +380,12 @@ class InstructorController extends Controller
 
             // Invalidate the used passkey
             Passkey::where('passkey', $request->input('email'))
-                    ->orWhere('email3', $instructorEmail)
+                    ->orWhere('email3', $orgEmail)
                     ->delete();
             
             DB::commit();
             
-            Log::info('Instructor registration successful', ['instructor_id' => $instructorId]);
+            Log::info('Instructor registration successful', ['instructor_id' => $orgId]);
             
             return response()->json(['success' => true, 'message' => 'Registration successful. You can now log in.']);
             
@@ -415,101 +399,8 @@ class InstructorController extends Controller
         }
     }
 
-    // private function registerInstructor(Request $request) {
-    //     // $validator = Validator::make($request->all(), [
-    //     //     'givenName' => 'required|string|max:10',
-    //     //     'lastName' => 'required|string|max:255',
-    //     //     'middleName' => 'nullable|string|max:255',
-    //     //     'email' => 'required|max:255',
-    //     //     'password' => 'required|string|min:8|confirmed',
-    //     //     'repeatPassword' => 'required|string|min:8'
-    //     // ], [
-    //     //     'givenName.required' => 'Given Name is required.',
-    //     //     'givenName.string' => 'Given Name must be a valid text.',
-    //     //     'givenName.max' => 'Given Name cannot exceed 10 characters.',
-    //     //     'lastName.required' => 'Last Name is required.',
-    //     //     'lastName.string' => 'Last Name must be a valid text.',
-    //     //     'lastName.max' => 'Last Name cannot exceed 255 characters.',
-    //     //     'email.required' => 'Passkey is required.',
-    //     //     'email.max' => 'Passkey cannot exceed 255 characters.',
-    //     //     'password.required' => 'Password is required.',
-    //     //     'password.string' => 'Password must be a valid text.',
-    //     //     'password.min' => 'Password must be at least 8 characters.',
-    //     //     'password.confirmed' => 'Password confirmation does not match.',
-    //     //     'repeatPassword.required' => 'Repeat Password is required.',
-    //     //     'repeatPassword.string' => 'Repeat Password must be a valid text.',
-    //     //     'repeatPassword.min' => 'Repeat Password must be at least 8 characters.',
-    //     //     'middleName.string' => 'Middle Name must be a valid text.',
-    //     //     'middleName.max' => 'Middle Name cannot exceed 255 characters.',
-    //     // ]);
 
-    //     // if ($validator->fails()) {
-    //     //     return response()->json(['success' => false, 'message' => $validator->errors()->first()]);
-    //     // }
-    //     $y = Passkey::where('passkey', $request->email)->exists();
-    //     if(!$y) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Invalid Passkey'
-    //         ]);
-    //     }
-    //     $instructorEmail = $y->email3;
-
-    //     // Check if passwords match
-    //     if ($request->input('password') !== $request->input('repeatPassword')) {
-    //         return response()->json(['success' => false, 'message' => 'Passwords do not match']);
-    //     }
-
-    //     // Validate EVSU email domain
-    //     // $email = $request->input('email');
-    //     // if (!preg_match('/^[a-zA-Z0-9._%+-]+@evsu\.edu\.ph$/', $email)) {
-    //     //     return response()->json(['success' => false, 'message' => 'Email must be a valid EVSU email address']);
-    //     // }
-
-    //     try {
-    //         DB::beginTransaction();
-    //         $studentId = $this->generateUniqueInstructorId();
-    //         $currentDate = now()->toDateTimeString();
-
-    //         // // Create user
-    //         $user = Instructor::create([
-    //             'instructor_id' => $studentId,
-    //             'email5' => $instructorEmail,
-    //             'password' => Hash::make($request->input('password')),
-    //             'profile' => 'default.png',
-    //             'date_created' => $currentDate,
-    //             'user_type' => 'instructor',
-    //             'is_active' => 1,    
-    //             'last_login' => null,
-    //         ]);
-
-    //         // // Create user info
-    //         InstructorInfo::create([
-    //             'instructor_id' => $studentId,
-    //             'firstname' => $request->input('givenName'),
-    //             'lastname' => $request->input('lastName'),
-    //             'middlename' => $request->input('middleName') ?? null,
-    //             'birthdate' => null,
-    //             'age' => null,
-    //             'address' => null,
-    //             'department' => 'Computer Studies Department',
-    //             // Add other fields as necessary
-    //         ]);
-
-    //         // Invalidate the used passkey
-    //         Passkey::where('passkey', $request->input('email'))->delete();
- 
-            
-    //          DB::commit();
-            
-    //         return response()->json(['success' => true, 'message' => 'Registration successful. You can now log in.']);
-    //     } catch (\Exception $e) {
-    //         Log::error('Instructor registration error: ' . $e->getMessage());
-    //         return response()->json(['success' => false, 'message' => 'Error during registration. Please try again later.']);
-    //     }
-    // }
-
-    private function generateUniqueInstructorId()
+    private function generateUniqueOrgId()
     {
         $maxAttempts = 10;
         $attempt = 0;
@@ -541,7 +432,7 @@ class InstructorController extends Controller
                 return response()->json(['success' => false, 'message' => $validator->errors()->first()]);
             }
 
-            $y = Instructor::where('email5', $request->email)->exists();
+            $y = Organization::where('email4', $request->email)->exists();
 
             if(!$y) {
                 return response()->json([
@@ -715,5 +606,6 @@ class InstructorController extends Controller
             return $x;
     }
 
-    
-}// End of Class
+
+
+}//End of Class

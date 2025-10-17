@@ -2,6 +2,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\OrgController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +18,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/welcome_admin', function () {
+Route::get('/admin', function () {
     app(AdminController::class)->cleanupExpiredPasskeys();
     return view('welcome_admin');
 });
@@ -49,7 +50,7 @@ Route::get('/reset_admin_password', function () {
     $email = session('password_reset_email');
     $resetData = $email ? Cache::get('password_reset_' . $email) : null;
     if (!$resetData) {
-        return redirect('/welcome_admin');
+        return redirect('/admin');
     }
 
     return view('index-admin-reset', [
@@ -83,7 +84,7 @@ Route::get('/clearAdmin', function () {
     $email = session('password_reset_email');
     Cache::forget('password_reset_' . $email);
 
-    return redirect('/welcome_admin');
+    return redirect('/admin');
 });
 
 //Instructor Routes
@@ -180,4 +181,13 @@ Route::get('/clear_r', function () {
 
 Route::get('/instructor', function () {
     return view('instructor.index');
+});
+
+
+//Org Routes
+Route::get('/org', function () {
+    return view('org.index');
+});
+Route::prefix('/exe')->group(function (){
+    Route::post('/org', [OrgController::class, 'register']);
 });

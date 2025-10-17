@@ -298,7 +298,7 @@ function attachRegistrationEventListeners() {
         verificationData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
 
-        fetch('/exe/instructor', {
+        fetch('/exe/org', {
             method: 'POST',
             body: verificationData
         })
@@ -328,7 +328,7 @@ function attachRegistrationEventListeners() {
                         }
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            window.location.href = "/instructor";
+                            window.location.href = "/org";
                         }
                     });
 
@@ -377,7 +377,7 @@ function attachRegistrationEventListeners() {
                     key.nextElementSibling.textContent = 'Passwords do not match';
                 } else if (data.message == 'Not Saved') {
                     alert("Registration to Instructor failed. Please try again.");
-                } else if (data.message == 'Passkey not valid for instructor registration') {
+                } else if (data.message == 'Passkey not valid for organization registration') {
                     Swal.fire({
                         title: 'Registration Failed!',
                         text: '' + data.message,
@@ -502,7 +502,7 @@ function checkEmailExists(email) {
         formData.append('passkey', email);
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
-        fetch('/exe/instructor', {
+        fetch('/exe/org', {
             method: 'POST',
             body: formData,
         })

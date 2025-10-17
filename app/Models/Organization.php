@@ -24,7 +24,7 @@ class Organization extends Model
 
     public function info()
     {
-        return $this->hasOne(OrgInfo::class, 'organization_id', 'org_id');
+        return $this->hasOne(OrgInfo::class, 'org_id', 'organization_id');
     }
 
     public function organizationFees()
