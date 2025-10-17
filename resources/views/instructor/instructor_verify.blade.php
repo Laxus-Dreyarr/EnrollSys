@@ -1,11 +1,12 @@
 <?php
 use Illuminate\Support\Facades\Cache;
-if (!session('reset_pass_instructor')) {
-    return redirect()->route('/instructor');
+if (!session('rpi')) {
+    return redirect()->route('/');
+    // header("Location: " . route('welcome_admin')); exit;
 }
 
-$email = session('reset_pass_instructor');
-$registerData = $email ? Cache::get('instructorForgot_' . $email) : null;
+$email = session('rpi');
+$registerData = $email ? Cache::get('if_' . $email) : null;
 
 $otp = $registerData['otp'] ?? null;
 $password = $registerData['password'];
@@ -475,7 +476,7 @@ $password = $registerData['password'];
                     <button type="button" class="btn btn-secondary" id="redirectButton">
                         <i class="fas fa-sign-in-alt me-2"></i>Go to Login
                     </button>
-                    <button type="button" class="btn btn-success" id="verifyButton">
+                    <button onclick="f5()" type="button" class="btn btn-success" id="verifyButton">
                         <i class="fas fa-check me-2"></i>Verify
                     </button>
                 </div>
@@ -493,6 +494,6 @@ $password = $registerData['password'];
      <!-- <script src="javaScript/jquery-3.6.0.min.js"></script> -->
      <script src="{{asset('js/jquery.js')}}"></script>
     <!-- Custom JS -->
-    <script src="{{ asset('js/function/student_resetpass.js') }}"></script>
+    <script src="{{ asset('js/function/instructor/instructor_resetpass.js') }}"></script>
 </body>
 </html>

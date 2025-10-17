@@ -203,14 +203,14 @@ function attachRegistrationEventListeners() {
         verificationData.append('repeatPassword', formData.repeatPassword);
         verificationData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
-        fetch('/exe/student', {
+        fetch('/exe/instructor', {
             method: 'POST',
             body: verificationData
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                window.location.href = '/reset_password_12';
+                window.location.href = '/instructor_verify_otp';
                 
             } else {
                 Swal.fire({

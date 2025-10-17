@@ -280,9 +280,12 @@ class InstructorController extends Controller
                 return $this->checkEmailExists($request);
             case 'forgot_verification':
                 return $this->sendInstructorOtpForgotPass($request);
+            case 'resetPassword_account':
+                return $this->InstructorResetPass($request);
         }
 
     }
+    
 
 
     private function checkPasskey(Request $request) 
@@ -598,14 +601,14 @@ class InstructorController extends Controller
             $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
 
-            Cache::put('instructorForgot_' . $request->email, [
+            Cache::put('if_' . $request->email, [
                 'otp' => $verificationCode,
                 'password' => Hash::make($request->password),
                 'email' => $request->email,
                 'attempts' => 0
-            ], now()->addMinutes(10));
+            ], now()->addMinutes(10)); 
 
-            session(['reset_pass_instructor' => $request->email]);
+            session(['rpi' => $request->email]);
 
             // Send verification email
             try {
@@ -645,6 +648,66 @@ class InstructorController extends Controller
                 'message' => 'An error occurred: ' . $e->getMessage()
             ]);
         }
+    }
+
+
+    private function InstructorResetPass(Request $request) {
+
+        $registrationData = Cache::get('if_' . $request->email);
+        if (!$registrationData) {
+            $x = '0';
+            return $x;
+        }
+
+        // Code is valid, proceed with registration
+            DB::beginTransaction();
+
+            $user = Instructor::where('email5', $request->email)->first();
+            if (!$user) {
+                DB::rollBack();
+                $x = '7';
+                return $x;
+            }
+
+            $user->update([
+                'password' => $registrationData['password']
+            ]);
+
+
+            date_default_timezone_set('Asia/Manila');
+            $todays_date=date("Y-m-d h:i:sa");
+            $today=strtotime($todays_date);
+            $date=date("Y-m-d h:i:sa", $today);
+
+            
+            // $clientInfo = $this->getClientDeviceInfoWithRequest($request);
+            $clientInfo = $this->collectClientInformation($request);
+            // $ipaddress = $this->getClientRealIp();
+            $ipaddress = $this->getClientDeviceInfo();
+            
+
+
+            //Save to AuditLogs!
+            $audit = new AuditLog();
+            $audit->user_id = $user->instructor_id;
+            $audit->action = $registrationData['email'] .' Update New Password!';
+            $audit->details = '' .$clientInfo['operating_system'] .'/' .$clientInfo['device_type'] .'/' .$clientInfo['user_agent'];
+            $audit->ip_address = $ipaddress['ip_address'];
+            $audit->date = $date;
+            $audit->access_by = '107568';
+
+            if (!$audit->save()) {
+                $x = '7';
+                return $x;
+            }
+
+            DB::commit();
+
+            // Clear the cache
+            Cache::forget('if_' . $request->email);
+
+            $x = '9';
+            return $x;
     }
 
     

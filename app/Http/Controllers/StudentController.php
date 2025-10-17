@@ -739,7 +739,7 @@ class StudentController extends Controller
             //Save to AuditLogs!
             $audit = new AuditLog();
             $audit->user_id = $user->id;
-            $audit->action = $registrationData['email'] .' Create New Password!';
+            $audit->action = $registrationData['email'] .' Update New Password!';
             $audit->details = '' .$clientInfo['operating_system'] .'/' .$clientInfo['device_type'] .'/' .$clientInfo['user_agent'];
             $audit->ip_address = $ipaddress['ip_address'];
             $audit->date = $date;

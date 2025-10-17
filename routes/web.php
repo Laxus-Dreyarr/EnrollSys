@@ -84,21 +84,39 @@ Route::prefix('/exe')->group(function (){
 });
 
 
-Route::get('/intructor_forgot', function (){
+Route::get('/instructor_forgot2', function (){
     return view('instructor.instructor_forgot'); 
 });
 
-Route::get('/reset_password_12', function () {
-    $email = session('reset_pass_instructor');
-    $registerData = $email ? Cache::get('instructorForgot_' . $email) : null;
-    if (!$registerData) {
-        return redirect('/instructor');
-    }
 
-    return view('instructor.instructor_reset', [
+Route::get('/instructor_verify_otp', function () {
+    $email = session('rpi');
+    
+    if (!$email) {
+        // Redirect if no session exists (user accessed directly)
+        return redirect('/instructor_forgot2')->with('error', 'Session expired. Please try again.');
+    }
+    
+    $registerData = Cache::get('if_' . $email);
+    
+    if (!$registerData) {
+        // Redirect if cache expired
+       return redirect('/instructor_forgot2')->with('error', 'OTP expired. Please request a new one.');
+    }
+    
+    return view('instructor.instructor_verify', [
         'email' => $email,
         'registerData' => $registerData
     ]);
+});
+
+
+//Clear Instructor Registration Cache!
+Route::get('/clear2', function () {
+    $email = session('rpi');
+    Cache::forget('if_' . $email);
+
+    return redirect('/instructor');
 });
 
 

@@ -372,7 +372,7 @@
                     </form>
                     
                     <div class="text-center mt-3">
-                        <a href="/intructor_forgot" class="text-muted" style="font-size: 0.9rem;">
+                        <a href="/instructor_forgot2" class="text-muted" style="font-size: 0.9rem;">
                             <i class="fas fa-question-circle"></i>
                             Forgot your password?
                         </a>
