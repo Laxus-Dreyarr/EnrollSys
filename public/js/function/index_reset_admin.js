@@ -267,7 +267,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Redirect when timer completes
         if (secondsLeft === 0) {
             localStorage.removeItem('verificationTimerEnd');
-            window.location.href = '/welcome_admin';
+            clearInterval(timerInterval);
+            window.location.href = '/clearAdmin';
         }
     }
 
@@ -282,7 +283,7 @@ document.addEventListener('DOMContentLoaded', function() {
     redirectButton.addEventListener('click', function() {
         localStorage.removeItem('verificationTimerEnd');
         clearInterval(timerInterval);
-        window.location.href = '/welcome_admin';
+        window.location.href = '/clearAdmin';
     });
     
 

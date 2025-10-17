@@ -78,6 +78,14 @@ Route::middleware(['admin.auth'])->group(function () {
     });
 });
 
+//Clear Admin Forgot Cache!
+Route::get('/clearAdmin', function () {
+    $email = session('password_reset_email');
+    Cache::forget('password_reset_' . $email);
+
+    return redirect('/welcome_admin');
+});
+
 //Instructor Routes
 Route::prefix('/exe')->group(function (){
     Route::post('/instructor', [InstructorController::class, 'register']);
