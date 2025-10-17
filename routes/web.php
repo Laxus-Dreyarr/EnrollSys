@@ -162,6 +162,14 @@ Route::get('/register_reset_password', function () {
 });
 
 
+//Clear Student Reset Cache!
+Route::get('/clear_r', function () {
+    $email = session('reset_pass');
+    Cache::forget('studentForgot_' . $email);
+
+    return redirect('/');
+});
+
 Route::get('/instructor', function () {
     return view('instructor.index');
 });

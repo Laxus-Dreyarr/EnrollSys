@@ -246,7 +246,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Redirect when timer completes
         if (secondsLeft === 0) {
             localStorage.removeItem('verificationTimerEnd');
-            window.location.href = '/clear';
+            clearInterval(timerInterval);
+            window.location.href = '/clear_r';
         }
     }
 
@@ -261,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
     redirectButton.addEventListener('click', function() {
         localStorage.removeItem('verificationTimerEnd');
         clearInterval(timerInterval);
-        window.location.href = '/clear';
+        window.location.href = '/clear_r';
     });
     
 
@@ -329,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (wrongAttempts >= 3) {
                 showStatus('Too many failed attempts. Refreshing page...', 'error');
                 setTimeout(() => {
-                     window.location.href = '/clear';
+                     window.location.href = '/clear_r';
                 }, 2000); // Optional: 2 second delay to show message
                 return;
             }
