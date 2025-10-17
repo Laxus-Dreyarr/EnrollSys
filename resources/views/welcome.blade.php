@@ -340,8 +340,8 @@
                             <div class="input-group-enhanced">
                                 <input type="email" class="form-control-enhanced" id="email" placeholder="username@evsu.edu.ph" required>
                                 <i class="form-icon fas fa-at"></i>
+                                <div id="loginEmailError" class="text-danger mt-1 small"></div>
                             </div>
-                            <div id="loginEmailError" class="text-danger mt-1 small"></div>
                         </div>
                         
                         <div class="form-group-enhanced">
@@ -352,8 +352,8 @@
                             <div class="input-group-enhanced">
                                 <input type="password" class="form-control-enhanced" id="password" placeholder="Enter your password" required>
                                 <i class="form-icon fas fa-key"></i>
+                                <div id="loginPasswordError" class="text-danger mt-1 small" style="display: none;"></div>
                             </div>
-                            <div id="loginPasswordError" class="text-danger mt-1 small" style="display: none;"></div>
                         </div>
                         
                         <div class="form-check-enhanced">

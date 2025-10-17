@@ -787,14 +787,51 @@ document.addEventListener('DOMContentLoaded', function() {
                     emailInput.classList.add('is-invalid', 'shake');
                     setTimeout(() => emailInput.classList.remove('shake'), 500);
                 } else if (data === '0') {
-                    alert('Your account has been suspended. Please contact support.');
+                    Swal.fire({
+                        title: 'Login Failed!',
+                        text: 'Your account has been suspended. Please contact support.',
+                        icon: 'error',
+                        confirmButtonText: 'Close',
+                        confirmButtonColor: '#070808ff',
+                        background: '#1a1a2e',
+                        color: '#ffffff',
+                        backdrop: 'rgba(0,0,0,0.7)',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showClass: {
+                            popup: 'animate__animated animate__fadeInDown'
+                        },
+                        hideClass: {
+                            popup: 'animate__animated animate__fadeOutUp'
+                        }
+                    });
                 } else if(data == 9) {
-                    alert('An unexpected error occurred. Please try again.');
+                    Swal.fire({
+                        title: 'Login Failed!',
+                        text: 'An unexpected error occurred. Please try again.',
+                        icon: 'error',
+                        confirmButtonText: 'Close',
+                        confirmButtonColor: '#070808ff',
+                        background: '#1a1a2e',
+                        color: '#ffffff',
+                        backdrop: 'rgba(0,0,0,0.7)',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showClass: {
+                            popup: 'animate__animated animate__fadeInDown'
+                        },
+                        hideClass: {
+                            popup: 'animate__animated animate__fadeOutUp'
+                        }
+                    });
                 } else if(data == 10) {
                     const successMessage = document.getElementById('successMessage');
                     if (successMessage) {
                         successMessage.textContent = 'Login Successfully!';
                         successMessage.style.display = 'block';
+                        setTimeout(() => {
+                            window.location.href = '/student-dashboard';
+                        }, 5000);
                     }
                 }
             })

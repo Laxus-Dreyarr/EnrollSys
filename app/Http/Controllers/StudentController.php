@@ -857,8 +857,25 @@ class StudentController extends Controller
             return $x;  
         }
 
-        //Login Successfully!
-        return 10;
+        if (Auth::guard('student')->attempt([
+            'email2' => $request->email,
+            'password' => $request->password
+            ])) {
+            $request->session()->regenerate();
+            return response()->json(10);
+        }
+        
+    }
+
+
+    public function dashboard(){
+
+        if (!Auth::guard('student')->check()) {
+            return redirect('/')->with('error', 'Please login first.');
+        }
+
+        $user = Auth::guard('student')->user();
+        return view('student.dashboard.dashboard', compact('user'));
         
     }
 

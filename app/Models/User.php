@@ -10,6 +10,9 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
+    // use HasApiTokens, HasFactory;
+    use HasFactory, Notifiable;
+
     protected $table = 'users';
     protected $primaryKey = 'id';
     public $timestamps = false;
@@ -20,6 +23,14 @@ class User extends Authenticatable
     ];
     
     protected $hidden = [
-        'password',
+        'password', 'remember_token',
     ];
+
+    // Specify the guard for this model
+    protected $guard = 'student';
+
+     public function user_information()
+    {
+        return $this->hasOne(UserInfo::class, 'user_id', 'id');
+    }
 }

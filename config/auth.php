@@ -46,6 +46,12 @@ return [
             'provider' => 'admins',
             'login' => '/welcome_admin', // Add this line
         ],
+
+        'student' => [ // Add student guard
+            'driver' => 'session',
+            'provider' => 'students',
+            'login' => '/', // Add this line exiting student login route
+        ],
     ],
 
     /*
@@ -85,6 +91,11 @@ return [
         'admins' => [ // Add admin provider
             'driver' => 'eloquent',
             'model' => App\Models\Admin::class,
+        ],
+
+        'students' => [ // Add admin provider
+            'driver' => 'eloquent',
+            'model' => App\Models\User::class,
         ],
     ],
 

@@ -18,6 +18,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+
+//Admin Routes
 Route::get('/admin', function () {
     app(AdminController::class)->cleanupExpiredPasskeys();
     return view('welcome_admin');
@@ -39,10 +41,7 @@ Route::get('/test-timezone', function() {
     
     return "Timezone test completed";
 });
-
-Route::get('/forgot_acc_student', function (){
-    return view('student.student_forgot'); 
-});
+//End Sample
 
 Route::post('/log', [AdminController::class, 'login']);
 Route::post('/forgot', [AdminController::class, 'forgotPassword']);
@@ -118,8 +117,6 @@ Route::get('/instructor_verify_otp', function () {
         'registerData' => $registerData
     ]);
 });
-
-
 //Clear Instructor Registration Cache!
 Route::get('/clear2', function () {
     $email = session('rpi');
@@ -127,12 +124,18 @@ Route::get('/clear2', function () {
 
     return redirect('/instructor');
 });
-
+Route::get('/instructor', function () {
+    return view('instructor.index');
+});
 
 
 // Student Routes
 Route::prefix('/exe')->group(function (){
     Route::post('/student', [StudentController::class, 'register']);
+});
+
+Route::get('/forgot_acc_student', function (){
+    return view('student.student_forgot'); 
 });
 
 Route::get('/register_student_account', function () {
@@ -170,7 +173,6 @@ Route::get('/register_reset_password', function () {
     ]);
 });
 
-
 //Clear Student Reset Cache!
 Route::get('/clear_r', function () {
     $email = session('reset_pass');
@@ -179,8 +181,14 @@ Route::get('/clear_r', function () {
     return redirect('/');
 });
 
-Route::get('/instructor', function () {
-    return view('instructor.index');
+Route::middleware(['student.auth'])->group(function () {
+    Route::get('/student-dashboard', [StudentController::class, 'dashboard'])->name('student.dashboard');
+    // Route::post('/logout', [StudentController::class, 'logout'])->name('admin.logout');
+    
+    // AJAX endpoints
+    // Route::prefix('admin/ajax')->group(function () {
+    //     Route::post('/get-stats', [StudentController::class, 'getStats']);
+    // });
 });
 
 
