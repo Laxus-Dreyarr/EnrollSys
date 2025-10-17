@@ -191,3 +191,33 @@ Route::get('/org', function () {
 Route::prefix('/exe')->group(function (){
     Route::post('/org', [OrgController::class, 'register']);
 });
+Route::get('/org_forgot', function (){
+    return view('org.organization_forgot'); 
+});
+Route::get('/org_verify_otp', function () {
+    $email = session('rpo');
+    
+    if (!$email) {
+        // Redirect if no session exists (user accessed directly)
+        return redirect('/org_forgot')->with('error', 'Session expired. Please try again.');
+    }
+    
+    $registerData = Cache::get('of_' . $email);
+    
+    if (!$registerData) {
+        // Redirect if cache expired
+       return redirect('/org_forgot')->with('error', 'OTP expired. Please request a new one.');
+    }
+    
+    return view('org.org_verify', [
+        'email' => $email,
+        'registerData' => $registerData
+    ]);
+});
+//Clear Org Reset Password Cache!
+Route::get('/clearOrg', function () {
+    $email = session('rpo');
+    Cache::forget('of_' . $email);
+
+    return redirect('/org');
+});

@@ -6,9 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="application-title" content="EnrollSys">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="color-scheme" content="#101126">
     <meta name="theme-color" content="#101126">
-    <meta name="msapplication-navbutton-color" content="#101126">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>EnrollSys - Student Enrollment System</title>
     <link rel="website icon" href="{{ asset('img/logo.png') }}">
     <!-- Bootstrap CSS -->
@@ -61,7 +60,7 @@
                         <button class="btn btn-primary btn-login" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
                     </li>
                     <li class="nav-item ms-lg-2">
-                        <button class="btn btn-outline-primary btn-register" data-bs-toggle="modal" data-bs-target="#registerModal">Register</button>
+                        <button class="btn btn-outline-primary btn-register" data-bs-toggle="modal" data-bs-target="#registerModal">Forgot Account</button>
                     </li>
                 </ul>
             </div>
@@ -319,129 +318,28 @@
         </div>
     </footer>
 
-    <!-- Enhanced Login Modal -->
-    <div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
-        <div id="des_md" class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-sign-in-alt"></i>
-                        Organization Login
-                    </h5>
-                    <button type="button" class="btn-close btn-close-enhanced" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="loginForm">
-                        <div class="form-group-enhanced">
-                            <label for="email" class="form-label">
-                                <i class="fas fa-envelope"></i>
-                                EVSUmail
-                            </label>
-                            <div class="input-group-enhanced">
-                                <input type="email" class="form-control-enhanced" id="email" placeholder="username@evsu.edu.ph" required>
-                                <i class="form-icon fas fa-at"></i>
-                            </div>
-                            <div id="loginEmailError" class="text-danger mt-1 small"></div>
-                        </div>
-                        
-                        <div class="form-group-enhanced">
-                            <label for="password" class="form-label">
-                                <i class="fas fa-lock"></i>
-                                Password
-                            </label>
-                            <div class="input-group-enhanced">
-                                <input type="password" class="form-control-enhanced" id="password" placeholder="Enter your password" required>
-                                <i class="form-icon fas fa-key"></i>
-                            </div>
-                            <div id="loginPasswordError" class="text-danger mt-1 small" style="display: none;"></div>
-                        </div>
-                        
-                        <div class="form-check-enhanced">
-                            <input type="checkbox" class="form-check-input-enhanced" id="show_login_password">
-                            <label class="form-check-label-enhanced" for="show_login_password">
-                                Show Password
-                            </label>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-enhanced btn-enhanced-primary w-100" id="loginBtn">
-                            <span id="loginBtnText">Login to Account</span>
-                            <span class="spinner-border spinner-border-sm" style="display: none;" id="loginSpinner"></span>
-                        </button>
-                        
-                        <div class="mb-3 success-message" id="successMessage"></div>
-                    </form>
-                    
-                    <div class="text-center mt-3">
-                        <a href="/org_forgot" class="text-muted" style="font-size: 0.9rem;">
-                            <i class="fas fa-question-circle"></i>
-                            Forgot your password?
-                        </a>
-                    </div>
-                </div>
-                <div class="modal-footer-enhanced">
-                    <p>Don't have an account? 
-                        <a href="#" data-bs-toggle="modal" data-bs-target="#registerModal" data-bs-dismiss="modal">
-                            Create Account
-                        </a>
-                    </p>
-                </div>
-                <div class="alert-container" id="alertContainer"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Enhanced Register Modal -->
+    <!-- Forgot Password -->
     <div class="modal fade" id="registerModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="fas fa-user-plus"></i>
-                        Organization Registration
+                        Forgot Password
                     </h5>
-                    <button type="button" class="btn-close btn-close-enhanced" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="registerForm">
-                        <div class="form-grid">
-                            <div class="form-group-enhanced">
-                                <label for="givenName" class="form-label">
-                                    <i class="fas fa-user"></i>
-                                    Given Name
-                                </label>
-                                <input type="text" class="form-control-enhanced" id="givenName" placeholder="First Name" required>
-                                <div class="invalid-feedback">Please enter your given name</div>
-                            </div>
-                            
-                            <div class="form-group-enhanced">
-                                <label for="lastName" class="form-label">
-                                    <i class="fas fa-user"></i>
-                                    Last Name
-                                </label>
-                                <input type="text" class="form-control-enhanced" id="lastName" placeholder="Last Name" required>
-                                <div class="invalid-feedback">Please enter your last name</div>
-                            </div>
-                            
-                            <div class="form-group-enhanced form-grid-full">
-                                <label for="middleName" class="form-label">
-                                    <i class="fas fa-user"></i>
-                                    Middle Name <small class="text-muted">(Optional)</small>
-                                </label>
-                                <input type="text" class="form-control-enhanced" id="middleName" placeholder="Middle Name">
-                            </div>
-                        </div>
-                        
                         <div class="form-group-enhanced">
                             <label for="registerEmail" class="form-label">
-                                <i class="fa-solid fa-key"></i>
-                                Passkey
+                                <i class="fas fa-envelope"></i>
+                                EVSUmail
                             </label>
                             <div class="input-group-enhanced">
-                                <input type="text" class="form-control-enhanced" id="registerEmail" placeholder="input passkey" required>
-                                <i class="fa-solid fa-key"></i>
+                                <input type="email" class="form-control-enhanced" id="registerEmail" placeholder="input evsumail" required>
+                                <i class="form-icon fas fa-at"></i>
                                 <div id="RloginEmailError" class="text-danger mt-1 small"></div>
                             </div>
-                            <!-- <div class="invalid-feedback">Please enter a valid EVSUmail address (@evsu.edu.ph)</div> -->
                         </div>
                         
                         <div class="form-group-enhanced">
@@ -481,7 +379,7 @@
                             <div class="input-group-enhanced">
                                 <input type="password" class="form-control-enhanced" id="repeatPassword" placeholder="Repeat your password" required>
                                 <i class="form-icon fas fa-key"></i>
-                                <div id="key" class="invalid-feedback">Passwords do not match</div>
+                                <div class="invalid-feedback">Passwords do not match</div>
                             </div>
                         </div>
                         
@@ -493,84 +391,16 @@
                         </div>
                         
                         <button type="submit" class="btn btn-enhanced btn-enhanced-primary w-100">
-                            Create Account
+                            Submit
                         </button>
                     </form>
                 </div>
                 <div class="modal-footer-enhanced">
                     <p>Already have an account? 
-                        <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">
+                        <a href="/org">
                             Sign In
                         </a>
                     </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Verification Code Modal -->
-    <div class="modal fade" id="verificationModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-shield-alt"></i>
-                        Email Verification
-                    </h5>
-                    <button type="button" class="btn-close btn-close-enhanced" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="text-center mb-4">
-                        <div class="verification-icon">
-                            <i class="fas fa-envelope"></i>
-                        </div>
-                        <h4>Verify Your Email</h4>
-                        <p class="text-muted" id="verificationEmailText">
-                            We've sent a 6-digit verification code to your email.
-                        </p>
-                    </div>
-
-                    <form id="verificationForm">
-                        <input type="hidden" id="verificationEmail" name="email">
-                        
-                        <div class="form-group-enhanced">
-                            <label for="verificationCode" class="form-label">
-                                <i class="fas fa-key"></i>
-                                Verification Code
-                            </label>
-                            <div class="input-group-enhanced">
-                                <input type="text" class="form-control-enhanced text-center" id="verificationCode" 
-                                    placeholder="Enter 6-digit code" maxlength="6" required>
-                                <i class="form-icon fas fa-shield-alt"></i>
-                            </div>
-                            <div class="invalid-feedback">Please enter the 6-digit verification code</div>
-                        </div>
-
-                        <div class="text-center mb-3">
-                            <small class="text-muted" id="timerText">
-                                Code expires in: <span id="countdown">10:00</span>
-                            </small>
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-enhanced btn-enhanced-outline w-50" id="resendCodeBtn" disabled>
-                                <span id="resendText">Resend Code</span>
-                                <span class="spinner-border spinner-border-sm" style="display: none;" id="resendSpinner"></span>
-                            </button>
-                            <button onclick="verif()" type="submit" class="btn btn-enhanced btn-enhanced-primary w-50" id="verifyBtn">
-                                <span id="verifyBtnText">Verify & Register</span>
-                                <span class="spinner-border spinner-border-sm" style="display: none;" id="verifySpinner"></span>
-                            </button>
-                        </div>
-                    </form>
-
-                    <div class="alert alert-success mt-3" style="display: none;" id="successAlert">
-                        <i class="fas fa-check-circle"></i> Verification successful! Redirecting...
-                    </div>
-
-                    <div class="alert alert-danger mt-3" style="display: none;" id="errorAlert">
-                        <i class="fas fa-exclamation-circle"></i> <span id="errorMessage"></span>
-                    </div>
                 </div>
             </div>
         </div>
@@ -588,8 +418,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Custom JS -->
      <script src="{{asset('js/jquery.js')}}"></script>
-     <script src="{{asset('js/sweetalert2.js')}}"></script>
     <!-- <script src="script.js"></script> -->
-    <script src="{{asset('js/function/org/index.js')}}"></script>
+    <script src="{{asset('js/function/org/org_forgot.js')}}"></script>
 </body>
 </html>

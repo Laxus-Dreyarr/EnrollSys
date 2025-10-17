@@ -359,7 +359,7 @@ class InstructorController extends Controller
                 'password' => Hash::make($request->input('password')),
                 'profile' => 'default.png',
                 'date_created' => $currentDate,
-                'user_type' => 'instructor',
+                'user_type' => $passkey->user_type,
                 'is_active' => 1,    
                 'last_login' => $currentDate,
             ]);

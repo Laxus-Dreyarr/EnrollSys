@@ -330,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (wrongAttempts >= 3) {
                 showStatus('Too many failed attempts. Refreshing page...', 'error');
                 setTimeout(() => {
-                     window.location.href = '/clear';
+                     window.location.href = '/clear2';
                 }, 2000); // Optional: 2 second delay to show message
                 return;
             }

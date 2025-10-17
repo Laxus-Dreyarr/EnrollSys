@@ -109,27 +109,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Switch between login and register modals
-    const loginModalLinks = document.querySelectorAll('[data-bs-target="#loginModal"]');
-    const registerModalLinks = document.querySelectorAll('[data-bs-target="#registerModal"]');
-    
-    loginModalLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            if (this.hasAttribute('data-bs-dismiss')) {
-                const currentModal = bootstrap.Modal.getInstance(document.querySelector('.modal.show'));
-                currentModal.hide();
-            }
-        });
-    });
-    
-    registerModalLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            if (this.hasAttribute('data-bs-dismiss')) {
-                const currentModal = bootstrap.Modal.getInstance(document.querySelector('.modal.show'));
-                currentModal.hide();
-            }
-        });
-    });
     
     // Initialize Bootstrap tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -268,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (secondsLeft === 0) {
             localStorage.removeItem('verificationTimerEnd');
             clearInterval(timerInterval);
-            window.location.href = '/clear';
+            window.location.href = '/clearOrg';
         }
     }
 
@@ -283,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
     redirectButton.addEventListener('click', function() {
         localStorage.removeItem('verificationTimerEnd');
         clearInterval(timerInterval);
-        window.location.href = '/clear';
+        window.location.href = '/clearOrg';
     });
     
 
@@ -351,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (wrongAttempts >= 3) {
                 showStatus('Too many failed attempts. Refreshing page...', 'error');
                 setTimeout(() => {
-                     window.location.href = '/clear';
+                     window.location.href = '/clearOrg';
                 }, 2000); // Optional: 2 second delay to show message
                 return;
             }
@@ -371,16 +350,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function saveAccount(nemail) {
         // Show loading state
         resetBtn.disabled = true;
-        resetBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+        resetBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Resetting...';
         
         // Simulate AJAX call (replace with actual API call)
         setTimeout(() => {
             $.ajax({
-                url: '/exe/student',
+                url: '/exe/org',
                 method: 'POST',
                 data: {
                     email: nemail,
-                    action: 'confirm_account',
+                    action: 'resetPassword_account',
                     _token: $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function(response) {
@@ -394,9 +373,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             window.location.href = '/';
                         }, 2000);
                     }else if (response == '9') {
-                        showStatus('Registration Complete...', 'success');
+                        showStatus('Password Reset Complete...', 'success');
                         setTimeout(() => {
-                            window.location.href = '/';
+                            window.location.href = '/instructor';
                         }, 5000);
                     }
                 },

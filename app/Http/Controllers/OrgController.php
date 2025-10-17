@@ -264,9 +264,9 @@ class OrgController extends Controller
             case 'check_email':
                 return $this->checkEmailExists($request);
             case 'forgot_verification':
-                return $this->sendInstructorOtpForgotPass($request);
+                return $this->sendOrgOtpForgotPass($request);
             case 'resetPassword_account':
-                return $this->InstructorResetPass($request);
+                return $this->OrgResetPass($request);
         }
 
     }
@@ -344,7 +344,7 @@ class OrgController extends Controller
                 'password' => Hash::make($request->input('password')),
                 'profile' => 'default.png',
                 'date_created' => $currentDate,
-                'user_type' => 'instructor',
+                'user_type' => $passkey->user_type,
                 'is_active' => 1,    
                 'last_login' => $currentDate,
             ]);
@@ -452,7 +452,7 @@ class OrgController extends Controller
     }
 
 
-    private function sendInstructorOtpForgotPass(Request $request) {
+    private function sendOrgOtpForgotPass(Request $request) {
         try {
             // Validate the registration data first
             $validator = Validator::make($request->all(), [
@@ -477,7 +477,7 @@ class OrgController extends Controller
             }
 
             // Check if email already exists
-            $emailExists = Instructor::where('email5', $request->email)->exists();
+            $emailExists = Organization::where('email4', $request->email)->exists();
             if (!$emailExists) {
                 return response()->json([
                     'success' => false,
@@ -497,14 +497,14 @@ class OrgController extends Controller
             $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
 
-            Cache::put('if_' . $request->email, [
+            Cache::put('of_' . $request->email, [
                 'otp' => $verificationCode,
                 'password' => Hash::make($request->password),
                 'email' => $request->email,
                 'attempts' => 0
             ], now()->addMinutes(10)); 
 
-            session(['rpi' => $request->email]);
+            session(['rpo' => $request->email]);
 
             // Send verification email
             try {
@@ -547,9 +547,9 @@ class OrgController extends Controller
     }
 
 
-    private function InstructorResetPass(Request $request) {
+    private function OrgResetPass(Request $request) {
 
-        $registrationData = Cache::get('if_' . $request->email);
+        $registrationData = Cache::get('of_' . $request->email);
         if (!$registrationData) {
             $x = '0';
             return $x;
@@ -558,7 +558,7 @@ class OrgController extends Controller
         // Code is valid, proceed with registration
             DB::beginTransaction();
 
-            $user = Instructor::where('email5', $request->email)->first();
+            $user = Organization::where('email4', $request->email)->first();
             if (!$user) {
                 DB::rollBack();
                 $x = '7';
@@ -585,7 +585,7 @@ class OrgController extends Controller
 
             //Save to AuditLogs!
             $audit = new AuditLog();
-            $audit->user_id = $user->instructor_id;
+            $audit->user_id = $user->org_id;
             $audit->action = $registrationData['email'] .' Update New Password!';
             $audit->details = '' .$clientInfo['operating_system'] .'/' .$clientInfo['device_type'] .'/' .$clientInfo['user_agent'];
             $audit->ip_address = $ipaddress['ip_address'];
@@ -600,7 +600,7 @@ class OrgController extends Controller
             DB::commit();
 
             // Clear the cache
-            Cache::forget('if_' . $request->email);
+            Cache::forget('of_' . $request->email);
 
             $x = '9';
             return $x;
