@@ -17,6 +17,15 @@ $profile_picture = $user->profile;
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="{{ asset('style/google-fonts.css') }}" rel="stylesheet">
     <link href="{{ asset('style/bootstrap.css') }}" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'AbrilFatface';
+            src: url("{{ asset('font/BBHSansHegarty-Regular.ttf') }}") format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+    </style>
     <link rel="stylesheet" href="{{ asset('css/student/dashboard.css') }}">
 </head>
 <body>
@@ -73,6 +82,18 @@ $profile_picture = $user->profile;
         <div class="main-content">
             <div class="header">
                 <h1 class="page-title">Student Dashboard</h1>
+
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <div class="search-bar">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Search courses, assignments, grades...">
+                        <button class="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="header-actions">
                     <div class="notification-btn">
                         <i class="fas fa-bell"></i>
@@ -842,6 +863,44 @@ $profile_picture = $user->profile;
             // Toggle sidebar on mobile
             const sidebarToggle = document.querySelector('.sidebar-toggle');
             const sidebar = document.querySelector('.sidebar');
+            const searchInput = document.querySelector('.search-input');
+            const searchBtn = document.querySelector('.search-btn');
+            const searchBar = document.querySelector('.search-bar');
+
+            // Search functionality
+            function performSearch() {
+                const searchTerm = searchInput.value.trim();
+                
+                if (searchTerm) {
+                    // Add loading state
+                    searchBar.classList.add('loading');
+                    
+                    // Simulate search (replace with actual search logic)
+                    setTimeout(() => {
+                        searchBar.classList.remove('loading');
+                        alert(`Searching for: ${searchTerm}`);
+                        // Here you would typically filter content or make an API call
+                    }, 1000);
+                }
+            }
+
+            // Search on button click
+            searchBtn.addEventListener('click', performSearch);
+
+            // Search on Enter key
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+
+            // Clear search on escape
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    searchInput.value = '';
+                    searchInput.blur();
+                }
+            });
             
             sidebarToggle.addEventListener('click', function() {
                 sidebar.classList.toggle('active');
