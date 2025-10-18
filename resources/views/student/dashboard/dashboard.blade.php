@@ -1,5 +1,7 @@
 <?php
 $firstname = $user->user_information->firstname;
+$lastname = $user->user_information->lastname;
+$student_id = $user->user_information->student->id_no;
 $profile_picture = $user->profile;
 ?>
 <!DOCTYPE html>
@@ -37,9 +39,14 @@ $profile_picture = $user->profile;
             </div>
             
             <div class="user-profile">
-                <img src="https://ui-avatars.com/api/?name=Carl+James+Duallo&background=4361ee&color=fff" alt="User Avatar" class="user-avatar">
-                <h4 class="user-name">{{ $firstname }}</h4>
-                <p class="user-id">ID: 2023-12345</p>
+                @if(!empty($profile_picture) && $profile_picture !== 'default.png')
+                    <img src="{{ asset('profile/' . $profile_picture) }}" alt="User Avatar" class="user-avatar">
+                @else
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=4361ee&color=fff" alt="User Avatar" class="user-avatar">
+                @endif
+                
+                <h4 class="user-name">{{ $firstname ?? 'User' }}</h4>
+                <p class="user-id">{{ $student_id }}</p>
             </div>
             
             <div class="sidebar-menu">
@@ -130,15 +137,15 @@ $profile_picture = $user->profile;
                             <i class="fas fa-calendar-day"></i>
                         </div>
                         <h3 class="stat-value">3</h3>
-                        <p class="stat-label">Upcoming Deadlines</p>
+                        <p class="stat-label">Upcoming Enrollment</p>
                     </div>
                     
                     <div class="stat-card">
                         <div class="stat-icon attendance">
-                            <i class="fas fa-user-check"></i>
+                            <i class="fa-solid fa-folder-open"></i>
                         </div>
                         <h3 class="stat-value">96.2%</h3>
-                        <p class="stat-label">Attendance Rate</p>
+                        <p class="stat-label">Documents</p>
                     </div>
                 </div>
                 

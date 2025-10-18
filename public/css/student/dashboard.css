@@ -24,6 +24,23 @@
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background-color: #292b32;
+}
+
+::-webkit-scrollbar {
+    width: 5px;
+    background-color: var(--accent-color);
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  background-color: var(--accent-color);
+}
+
 body {
     background-color: #f8fafc;
     color: #334155;
@@ -675,8 +692,9 @@ body {
         order: 2;
         align-self: flex-end;
         position: absolute;
-        top: 16px;
-        right: 16px;
+        top: 30px;
+        right: 30px;
+        gap: 12px;
     }
 }
 
@@ -727,6 +745,7 @@ body {
     .stat-card, .course-card, .schedule-container {
         border-radius: 14px;
     }
+
 }
 
 @media (max-width: 480px) {
@@ -768,6 +787,15 @@ body {
     .section-title::before {
         width: 4px;
         height: 20px;
+    }
+
+    .header-actions {
+        top: 20px;
+    }
+
+    .page-title {
+        font-size: 1.3rem;
+        text-align: left;
     }
 }
 
