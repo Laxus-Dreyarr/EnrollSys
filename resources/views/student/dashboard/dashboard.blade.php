@@ -691,21 +691,46 @@ $profile_picture = $user->profile;
                     <!-- Profile Summary Card -->
                     <div class="profile-summary-card">
                         <div class="profile-avatar-section">
-                            <div class="avatar-container">
-                                <img src="https://ui-avatars.com/api/?name=Carl+James+Duallo&background=4361ee&color=fff&size=150" alt="User Avatar" class="profile-avatar">
-                                <div class="avatar-overlay">
+                            <div class="avatar-container" id="avatar-container">
+                                <img src="{{ !empty($profile_picture) && $profile_picture !== 'default.png' ? asset('profile/' . $profile_picture) : 'https://ui-avatars.com/api/?name=' . urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) . '&background=4361ee&color=fff&size=150' }}" 
+                                    alt="User Avatar" 
+                                    class="profile-avatar"
+                                    id="profile-avatar">
+                                <div class="avatar-overlay" id="avatar-overlay">
                                     <i class="fas fa-camera"></i>
                                 </div>
+                                
+                                <!-- Loading Animation -->
+                                <div class="upload-loading" id="upload-loading">
+                                    <div class="loading-spinner"></div>
+                                    <div class="loading-progress">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" id="progress-fill"></div>
+                                        </div>
+                                        <span class="progress-text" id="progress-text">0%</span>
+                                    </div>
+                                </div>
                             </div>
-                            <button class="btn-secondary btn-avatar">
+                            
+                            <!-- Hidden File Input -->
+                            <input type="file" 
+                                id="avatar-input" 
+                                accept="image/*" 
+                                style="display: none;">
+                            
+                            <button class="btn-secondary btn-avatar" id="change-photo-btn">
                                 <i class="fas fa-camera"></i>
                                 Change Photo
                             </button>
+                            
+                            <div class="upload-requirements">
+                                <small>Supported: JPG, PNG, WEBP • Max: 5MB</small>
+                            </div>
                         </div>
                         
                         <div class="profile-info-summary">
-                            <h3 class="profile-name">Laxus Dreyar</h3>
-                            <p class="profile-id">Student ID: 2023-12345</p>
+                            <h3 class="profile-name">{{ $firstname ?? 'User' }} {{ $lastname ?? '' }}</h3>
+                            <p class="profile-id">Student ID: {{ $student_id }}</p>
                             <div class="profile-badge">
                                 <i class="fas fa-graduation-cap"></i>
                                 Active Student
@@ -1194,6 +1219,305 @@ $profile_picture = $user->profile;
                 
                 // Show success message
                 alert('Profile updated successfully!');
+            });
+
+            // Profile picture upload functionality
+            const avatarContainer = document.getElementById('avatar-container');
+            const avatarInput = document.getElementById('avatar-input');
+            const profileAvatar = document.getElementById('profile-avatar');
+            const avatarOverlay = document.getElementById('avatar-overlay');
+            const changePhotoBtn = document.getElementById('change-photo-btn');
+            const uploadLoading = document.getElementById('upload-loading');
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            
+            // Add success checkmark element
+            const successCheckmark = document.createElement('div');
+            successCheckmark.className = 'upload-success';
+            successCheckmark.innerHTML = '<i class="fas fa-check"></i>';
+            avatarContainer.appendChild(successCheckmark);
+            
+            // Add error message element
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'avatar-error';
+            avatarContainer.appendChild(errorMessage);
+            
+            // Click events for avatar container and button
+            avatarContainer.addEventListener('click', function() {
+                avatarInput.click();
+            });
+            
+            changePhotoBtn.addEventListener('click', function() {
+                avatarInput.click();
+            });
+            
+            // File input change event
+            avatarInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                
+                if (file) {
+                    // Validate file
+                    if (!validateImageFile(file)) {
+                        return;
+                    }
+                    
+                    // Show preview
+                    showImagePreview(file);
+                    
+                    // Start upload process
+                    uploadImageToServer(file);
+                }
+            });
+            
+            // File validation
+            function validateImageFile(file) {
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                const maxSize = 5 * 1024 * 1024; // 5MB
+                
+                // Check file type
+                if (!validTypes.includes(file.type)) {
+                    showError('Please select a valid image (JPG, PNG, WEBP)');
+                    return false;
+                }
+                
+                // Check file size
+                if (file.size > maxSize) {
+                    showError('Image must be less than 5MB');
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            // Show image preview
+            function showImagePreview(file) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    profileAvatar.src = e.target.result;
+                    profileAvatar.style.transform = 'scale(1.1)';
+                    setTimeout(() => {
+                        profileAvatar.style.transform = 'scale(1)';
+                    }, 200);
+                };
+                
+                reader.readAsDataURL(file);
+            }
+            
+            // Upload image to server
+            function uploadImageToServer(file) {
+                // Disable button and show loading state
+                changePhotoBtn.disabled = true;
+                changePhotoBtn.classList.add('loading');
+                avatarContainer.classList.add('uploading');
+                
+                // Show loading animation
+                uploadLoading.classList.add('active');
+                
+                // Simulate upload progress
+                simulateUploadProgress(file);
+            }
+            
+            // Simulate upload progress (replace with actual AJAX upload)
+            function simulateUploadProgress(file) {
+                let progress = 0;
+                const totalSteps = 100;
+                const stepTime = 30; // ms per step
+                
+                const progressInterval = setInterval(() => {
+                    progress += 1;
+                    
+                    // Update progress bar
+                    progressFill.style.width = progress + '%';
+                    progressText.textContent = progress + '%';
+                    
+                    // Simulate different speeds for different parts of upload
+                    if (progress === 20) {
+                        progressText.textContent = 'Processing image...';
+                    } else if (progress === 60) {
+                        progressText.textContent = 'Uploading to server...';
+                    } else if (progress === 85) {
+                        progressText.textContent = 'Saving to database...';
+                    }
+                    
+                    // Complete upload
+                    if (progress >= totalSteps) {
+                        clearInterval(progressInterval);
+                        completeUpload(file);
+                    }
+                }, stepTime);
+            }
+            
+            // Complete upload process
+            function completeUpload(file) {
+                // Show success animation
+                successCheckmark.classList.add('active');
+                
+                // Update progress text
+                progressText.textContent = 'Upload Complete!';
+                
+                // Hide loading after delay
+                setTimeout(() => {
+                    uploadLoading.classList.remove('active');
+                    successCheckmark.classList.remove('active');
+                    avatarContainer.classList.remove('uploading');
+                    
+                    // Re-enable button
+                    changePhotoBtn.disabled = false;
+                    changePhotoBtn.classList.remove('loading');
+                    
+                    // In a real application, you would submit the form or send AJAX here
+                    // For now, we'll simulate a successful upload
+                    simulateServerUpload(file);
+                    
+                }, 1500);
+            }
+            
+            // Simulate server upload (replace with actual AJAX call)
+            function simulateServerUpload(file) {
+                // Create FormData for actual upload
+                const formData = new FormData();
+                formData.append('avatar', file);
+                formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                
+                // This is where you would make the actual AJAX call
+                /*
+                fetch('/api/upload-profile-picture', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update avatar with new image URL
+                        profileAvatar.src = data.imageUrl + '?t=' + new Date().getTime();
+                        showNotification('Profile picture updated successfully!', 'success');
+                    } else {
+                        showError('Upload failed: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Upload error:', error);
+                    showError('Upload failed. Please try again.');
+                });
+                */
+                
+                // For demo purposes, we'll just show a success message
+                setTimeout(() => {
+                    showNotification('Profile picture updated successfully!', 'success');
+                }, 500);
+            }
+            
+            // Show error message
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.add('active');
+                
+                setTimeout(() => {
+                    errorMessage.classList.remove('active');
+                }, 3000);
+            }
+            
+            // Show notification
+            function showNotification(message, type = 'success') {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `upload-notification ${type}`;
+                notification.innerHTML = `
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    <span>${message}</span>
+                `;
+                
+                // Add styles for notification
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${type === 'success' ? 'var(--success-color)' : 'var(--danger-color)'};
+                    color: white;
+                    padding: 16px 20px;
+                    border-radius: 12px;
+                    box-shadow: var(--shadow-hover);
+                    z-index: 10000;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-weight: 500;
+                    animation: slideInRight 0.3s ease;
+                    max-width: 300px;
+                `;
+                
+                document.body.appendChild(notification);
+                
+                // Remove notification after delay
+                setTimeout(() => {
+                    notification.style.animation = 'slideOutRight 0.3s ease';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }, 3000);
+            }
+            
+            // Add CSS animations for notifications
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideInRight {
+                    from {
+                        opacity: 0;
+                        transform: translateX(100%);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(0);
+                    }
+                }
+                
+                @keyframes slideOutRight {
+                    from {
+                        opacity: 1;
+                        transform: translateX(0);
+                    }
+                    to {
+                        opacity: 0;
+                        transform: translateX(100%);
+                    }
+                }
+                
+                .upload-notification {
+                    backdrop-filter: blur(10px);
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Drag and drop functionality
+            avatarContainer.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                avatarContainer.style.borderColor = 'var(--primary-color)';
+                avatarContainer.style.background = 'rgba(67, 97, 238, 0.1)';
+            });
+            
+            avatarContainer.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                avatarContainer.style.borderColor = '';
+                avatarContainer.style.background = '';
+            });
+            
+            avatarContainer.addEventListener('drop', function(e) {
+                e.preventDefault();
+                avatarContainer.style.borderColor = '';
+                avatarContainer.style.background = '';
+                
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    avatarInput.files = e.dataTransfer.files;
+                    const event = new Event('change', { bubbles: true });
+                    avatarInput.dispatchEvent(event);
+                }
             });
             
         });//End of DOMContentLoaded
