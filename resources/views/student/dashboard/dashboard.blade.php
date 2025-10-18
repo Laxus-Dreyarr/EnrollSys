@@ -682,71 +682,181 @@ $profile_picture = $user->profile;
             
             <!-- Profile Section -->
             <div id="profile-section" class="content-section">
-                <h2 class="section-title">My Profile</h2>
+                <div class="profile-header">
+                    <h2 class="section-title">My Profile</h2>
+                    <p class="profile-subtitle">Manage your personal information and account settings</p>
+                </div>
                 
-                <div class="profile-form">
-                    <div class="row">
-                        <div class="col-md-4 text-center mb-4">
-                            <img src="https://ui-avatars.com/api/?name=Carl+James+Duallo&background=4361ee&color=fff&size=150" alt="User Avatar" class="user-avatar">
-                            <button class="btn-primary mt-3">Change Photo</button>
+                <div class="profile-container">
+                    <!-- Profile Summary Card -->
+                    <div class="profile-summary-card">
+                        <div class="profile-avatar-section">
+                            <div class="avatar-container">
+                                <img src="https://ui-avatars.com/api/?name=Carl+James+Duallo&background=4361ee&color=fff&size=150" alt="User Avatar" class="profile-avatar">
+                                <div class="avatar-overlay">
+                                    <i class="fas fa-camera"></i>
+                                </div>
+                            </div>
+                            <button class="btn-secondary btn-avatar">
+                                <i class="fas fa-camera"></i>
+                                Change Photo
+                            </button>
                         </div>
-                        <div class="col-md-8">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="firstName">First Name</label>
-                                        <input type="text" class="form-control" id="firstName" value="Laxus">
-                                    </div>
+                        
+                        <div class="profile-info-summary">
+                            <h3 class="profile-name">Laxus Dreyar</h3>
+                            <p class="profile-id">Student ID: 2023-12345</p>
+                            <div class="profile-badge">
+                                <i class="fas fa-graduation-cap"></i>
+                                Active Student
+                            </div>
+                            
+                            <div class="profile-stats">
+                                <div class="profile-stat">
+                                    <span class="stat-number">5</span>
+                                    <span class="stat-label">Courses</span>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="lastName">Last Name</label>
-                                        <input type="text" class="form-control" id="lastName" value="Dreyar">
-                                    </div>
+                                <div class="profile-stat">
+                                    <span class="stat-number">89.5%</span>
+                                    <span class="stat-label">Avg Grade</span>
+                                </div>
+                                <div class="profile-stat">
+                                    <span class="stat-number">96%</span>
+                                    <span class="stat-label">Attendance</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Details Card -->
+                    <div class="profile-details-card">
+                        <div class="card-header">
+                            <h4>Personal Information</h4>
+                            <button class="btn-edit" id="edit-profile-btn">
+                                <i class="fas fa-edit"></i>
+                                Edit Profile
+                            </button>
+                        </div>
+                        
+                        <form class="profile-form" id="profile-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="firstName" class="form-label">
+                                        <i class="fas fa-user"></i>
+                                        First Name
+                                    </label>
+                                    <input type="text" class="form-control" id="firstName" value="Laxus" readonly>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="lastName" class="form-label">
+                                        <i class="fas fa-user"></i>
+                                        Last Name
+                                    </label>
+                                    <input type="text" class="form-control" id="lastName" value="Dreyar" readonly>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="email" class="form-label">
+                                        <i class="fas fa-envelope"></i>
+                                        Email Address
+                                    </label>
+                                    <input type="email" class="form-control" id="email" value="laxus@evsu.edu.ph" readonly>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="phone" class="form-label">
+                                        <i class="fas fa-phone"></i>
+                                        Phone Number
+                                    </label>
+                                    <input type="tel" class="form-control" id="phone" value="+63 123 456 7890" readonly>
+                                </div>
+                                
+                                <div class="form-group full-width">
+                                    <label for="address" class="form-label">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        Address
+                                    </label>
+                                    <input type="text" class="form-control" id="address" value="Ormoc City, Leyte" readonly>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="program" class="form-label">
+                                        <i class="fas fa-book"></i>
+                                        Program
+                                    </label>
+                                    <input type="text" class="form-control" id="program" value="BS in Information Technology" disabled>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="yearLevel" class="form-label">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        Year Level
+                                    </label>
+                                    <input type="text" class="form-control" id="yearLevel" value="3rd Year" disabled>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="semester" class="form-label">
+                                        <i class="fas fa-school"></i>
+                                        Semester
+                                    </label>
+                                    <input type="text" class="form-control" id="semester" value="1st Semester 2023-2024" disabled>
                                 </div>
                             </div>
                             
-                            <div class="form-group">
-                                <label for="email">Email Address</label>
-                                <input type="email" class="form-control" id="email" value="laxus@evsu.edu.ph">
+                            <div class="form-actions" id="form-actions" style="display: none;">
+                                <button type="button" class="btn-cancel" id="cancel-edit">Cancel</button>
+                                <button type="submit" class="btn-primary">Save Changes</button>
                             </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="studentId">Student ID</label>
-                                        <input type="text" class="form-control" id="studentId" value="2023-12345" disabled>
-                                    </div>
+                        </form>
+                    </div>
+
+                    <!-- Additional Information Card -->
+                    <div class="profile-info-card">
+                        <div class="card-header">
+                            <h4>Academic Information</h4>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-university"></i>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="phone">Phone Number</label>
-                                        <input type="tel" class="form-control" id="phone" value="+63 123 456 7890">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="address">Address</label>
-                                <input type="text" class="form-control" id="address" value="Ormoc City, Leyte">
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="program">Program</label>
-                                        <input type="text" class="form-control" id="program" value="BS in Information Technology" disabled>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="yearLevel">Year Level</label>
-                                        <input type="text" class="form-control" id="yearLevel" value="3rd Year" disabled>
-                                    </div>
+                                <div class="info-content">
+                                    <span class="info-label">Department</span>
+                                    <span class="info-value">College of Information Technology</span>
                                 </div>
                             </div>
                             
-                            <button class="btn-primary">Update Profile</button>
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-id-card"></i>
+                                </div>
+                                <div class="info-content">
+                                    <span class="info-label">Student Type</span>
+                                    <span class="info-value">Regular</span>
+                                </div>
+                            </div>
+                            
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div class="info-content">
+                                    <span class="info-label">Current GPA</span>
+                                    <span class="info-value">3.75</span>
+                                </div>
+                            </div>
+                            
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div class="info-content">
+                                    <span class="info-label">Enrollment Date</span>
+                                    <span class="info-value">August 15, 2023</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -999,7 +1109,94 @@ $profile_picture = $user->profile;
             
             window.addEventListener('scroll', animateOnScroll);
             animateOnScroll(); // Run once on page load
-        });
+
+            // Profile edit functionality
+            const editProfileBtn = document.getElementById('edit-profile-btn');
+            const cancelEditBtn = document.getElementById('cancel-edit');
+            const profileForm = document.getElementById('profile-form');
+            const formActions = document.getElementById('form-actions');
+            const editableFields = ['firstName', 'lastName', 'email', 'phone', 'address'];
+            
+            let originalValues = {};
+            
+            // Store original values
+            editableFields.forEach(field => {
+                originalValues[field] = document.getElementById(field).value;
+            });
+            
+            // Edit profile button click
+            editProfileBtn.addEventListener('click', function() {
+                // Enable editing for all fields
+                editableFields.forEach(field => {
+                    const input = document.getElementById(field);
+                    input.readOnly = false;
+                    input.style.background = 'white';
+                    input.style.color = '#374151';
+                });
+                
+                // Show form actions
+                formActions.style.display = 'flex';
+                
+                // Change edit button to editing state
+                editProfileBtn.innerHTML = '<i class="fas fa-pencil-alt"></i> Editing...';
+                editProfileBtn.style.background = '#fbbf24';
+                editProfileBtn.style.borderColor = '#fbbf24';
+                editProfileBtn.style.color = '#78350f';
+            });
+            
+            // Cancel edit button click
+            cancelEditBtn.addEventListener('click', function() {
+                // Restore original values
+                editableFields.forEach(field => {
+                    const input = document.getElementById(field);
+                    input.value = originalValues[field];
+                    input.readOnly = true;
+                    input.style.background = '#f8fafc';
+                    input.style.color = '#64748b';
+                });
+                
+                // Hide form actions
+                formActions.style.display = 'none';
+                
+                // Reset edit button
+                editProfileBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Profile';
+                editProfileBtn.style.background = 'transparent';
+                editProfileBtn.style.borderColor = 'var(--primary-color)';
+                editProfileBtn.style.color = 'var(--primary-color)';
+            });
+            
+            // Form submission
+            profileForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Here you would typically send the data to your server
+                // For now, we'll just show a success message
+                
+                // Make fields read-only again
+                editableFields.forEach(field => {
+                    const input = document.getElementById(field);
+                    input.readOnly = true;
+                    input.style.background = '#f8fafc';
+                    input.style.color = '#64748b';
+                    
+                    // Update original values
+                    originalValues[field] = input.value;
+                });
+                
+                // Hide form actions
+                formActions.style.display = 'none';
+                
+                // Reset edit button
+                editProfileBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Profile';
+                editProfileBtn.style.background = 'transparent';
+                editProfileBtn.style.borderColor = 'var(--primary-color)';
+                editProfileBtn.style.color = 'var(--primary-color)';
+                
+                // Show success message
+                alert('Profile updated successfully!');
+            });
+            
+        });//End of DOMContentLoaded
     </script>
 </body>
 </html>
