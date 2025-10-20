@@ -791,26 +791,40 @@
                 loadSubjects();
                 insertsupabase();
             } else if (response.conflicts) {
-                // Handle schedule conflicts
-                let conflictMessage = "Schedule conflicts detected:\n\n";
+                // Handle schedule conflicts with clickable suggestions
+                let conflictMessage = "<div class='text-start'>";
+                conflictMessage += "<strong>Schedule conflicts detected:</strong><br><br>";
                 
                 response.conflicts.forEach((conflict, index) => {
-                    conflictMessage += `${index + 1}. ${conflict.message}\n`;
+                    conflictMessage += `<div class='text-danger mb-1'><i class='fas fa-exclamation-triangle'></i> ${conflict.message}</div>`;
                 });
                 
                 if (response.available_slots && response.available_slots.length > 0) {
-                    conflictMessage += "\nSuggested available time slots:\n";
+                    conflictMessage += "<br><strong>Click on an available time slot to auto-fill:</strong><br><div class='suggestions-container mt-2'>";
                     response.available_slots.forEach((slot, index) => {
-                        conflictMessage += `${index + 1}. ${slot.message}\n`;
+                        conflictMessage += `
+                            <div class="suggestion-slot btn btn-outline-success btn-sm me-2 mb-2" 
+                                data-day="${slot.day}" 
+                                data-start="${slot.start_time}" 
+                                data-end="${slot.end_time}" 
+                                data-room="${slot.room}">
+                                <i class="fas fa-clock me-1"></i>${slot.day} ${slot.start_time}-${slot.end_time}
+                                <br><small>Room: ${slot.room}</small>
+                            </div>
+                        `;
                     });
+                    conflictMessage += "</div>";
                 }
                 
+                conflictMessage += "</div>";
+
                 Swal.fire({
                     title: 'Schedule Conflict',
-                    html: conflictMessage.replace(/\n/g, '<br>'),
+                    html: conflictMessage,
                     icon: 'warning',
-                    confirmButtonText: 'OK',
-                    confirmButtonColor: '#0d6efd',
+                    confirmButtonText: 'I\'ll fix it manually',
+                    confirmButtonColor: '#6c757d',
+                    showCancelButton: false,
                     background: '#1a1a2e',
                     color: '#ffffff',
                     backdrop: 'rgba(0,0,0,0.7)',
@@ -821,6 +835,45 @@
                     },
                     hideClass: {
                         popup: 'animate__animated animate__fadeOutUp'
+                    },
+                    didOpen: () => {
+                        // Add click handlers to suggestion slots
+                        document.querySelectorAll('.suggestion-slot').forEach(slot => {
+                            slot.addEventListener('click', function() {
+                                const day = this.getAttribute('data-day');
+                                const start = this.getAttribute('data-start');
+                                const end = this.getAttribute('data-end');
+                                const room = this.getAttribute('data-room');
+                                
+                                // Auto-fill the schedule form
+                                $('#scheduleDay').val(day);
+                                $('#startTime').val(start);
+                                $('#endTime').val(end);
+                                $('#room').val(room);
+
+                                $('#scheduleType').val('Lecture'); 
+                                $('#sectionType').val('A'); 
+                                
+                                // Close the alert
+                                Swal.close();
+                                
+                                // Optional: Focus on the section field for quick completion
+                                $('#sectionType').focus();
+                                
+                                // Show a quick success message
+                                setTimeout(() => {
+                                    Swal.fire({
+                                        title: 'Form Auto-filled!',
+                                        text: 'Schedule form has been filled with your selection. Please set the section and type, then click "Add"',
+                                        icon: 'success',
+                                        timer: 2000,
+                                        showConfirmButton: false,
+                                        background: '#1a1a2e',
+                                        color: '#ffffff'
+                                    });
+                                }, 300);
+                            });
+                        });
                     }
                 });
             } else {
@@ -1195,26 +1248,40 @@
                 loadStatistics();
                 loadSubjects();
             } else if (response.conflicts) {
-                // Handle schedule conflicts
-                let conflictMessage = "Schedule conflicts detected:\n\n";
+                // Handle schedule conflicts with clickable suggestions (same as create)
+                let conflictMessage = "<div class='text-start'>";
+                conflictMessage += "<strong>Schedule conflicts detected:</strong><br><br>";
                 
                 response.conflicts.forEach((conflict, index) => {
-                    conflictMessage += `${index + 1}. ${conflict.message}\n`;
+                    conflictMessage += `<div class='text-danger mb-1'><i class='fas fa-exclamation-triangle'></i> ${conflict.message}</div>`;
                 });
                 
                 if (response.available_slots && response.available_slots.length > 0) {
-                    conflictMessage += "\nSuggested available time slots:\n";
+                    conflictMessage += "<br><strong>Click on an available time slot to auto-fill:</strong><br><div class='suggestions-container mt-2'>";
                     response.available_slots.forEach((slot, index) => {
-                        conflictMessage += `${index + 1}. ${slot.message}\n`;
+                        conflictMessage += `
+                            <div class="suggestion-slot btn btn-outline-success btn-sm me-2 mb-2" 
+                                data-day="${slot.day}" 
+                                data-start="${slot.start_time}" 
+                                data-end="${slot.end_time}" 
+                                data-room="${slot.room}">
+                                <i class="fas fa-clock me-1"></i>${slot.day} ${slot.start_time}-${slot.end_time}
+                                <br><small>Room: ${slot.room}</small>
+                            </div>
+                        `;
                     });
+                    conflictMessage += "</div>";
                 }
                 
+                conflictMessage += "</div>";
+
                 Swal.fire({
                     title: 'Schedule Conflict',
-                    html: conflictMessage.replace(/\n/g, '<br>'),
+                    html: conflictMessage,
                     icon: 'warning',
-                    confirmButtonText: 'OK',
-                    confirmButtonColor: '#0d6efd',
+                    confirmButtonText: 'I\'ll fix it manually',
+                    confirmButtonColor: '#6c757d',
+                    showCancelButton: false,
                     background: '#1a1a2e',
                     color: '#ffffff',
                     backdrop: 'rgba(0,0,0,0.7)',
@@ -1225,6 +1292,45 @@
                     },
                     hideClass: {
                         popup: 'animate__animated animate__fadeOutUp'
+                    },
+                    didOpen: () => {
+                        // Add click handlers to suggestion slots
+                        document.querySelectorAll('.suggestion-slot').forEach(slot => {
+                            slot.addEventListener('click', function() {
+                                const day = this.getAttribute('data-day');
+                                const start = this.getAttribute('data-start');
+                                const end = this.getAttribute('data-end');
+                                const room = this.getAttribute('data-room');
+                                
+                                // Auto-fill the EDIT schedule form
+                                $('#editScheduleDay').val(day);
+                                $('#editStartTime').val(start);
+                                $('#editEndTime').val(end);
+                                $('#editRoom').val(room);
+                                
+                                $('#editScheduleType').val('Lecture'); 
+                                $('#editSectionType').val('A');
+                                
+                                // Close the alert
+                                Swal.close();
+                                
+                                // Focus on the section field for quick completion
+                                $('#editSectionType').focus();
+                                
+                                // Show a quick success message
+                                setTimeout(() => {
+                                    Swal.fire({
+                                        title: 'Form Auto-filled!',
+                                        text: 'Schedule form has been filled with your selection. Please set the section and type, then click "Add"',
+                                        icon: 'success',
+                                        timer: 2000,
+                                        showConfirmButton: false,
+                                        background: '#1a1a2e',
+                                        color: '#ffffff'
+                                    });
+                                }, 300);
+                            });
+                        });
                     }
                 });
             } else {
@@ -1259,7 +1365,7 @@
             const sectionType = $('#editSectionType').val();
             
             if (!day || !start || !end || !scheduleType || !sectionType) {
-                alert('Please fill all schedule fields');
+                // alert('Please fill all schedule fields');
                 return;
             }
             
