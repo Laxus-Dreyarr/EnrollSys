@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 use App\Services\AdminService;
 use Illuminate\Support\Facades\DB;
+use Jenssegers\Agent\Agent;
 
 
 class AdminController extends Controller
@@ -38,6 +39,244 @@ class AdminController extends Controller
     public function __construct(AdminService $adminService)
     {
         $this->adminService = $adminService;
+    }
+
+    private function getDeviceInfo()
+    {
+        $agent = new Agent();
+        
+        return [
+            'device' => $agent->device(),
+            'platform' => $agent->platform(),
+            'browser' => $agent->browser(),
+            'is_desktop' => $agent->isDesktop(),
+            'is_phone' => $agent->isPhone(),
+            'is_tablet' => $agent->isTablet(),
+            'is_robot' => $agent->isRobot(),
+            'robot_name' => $agent->isRobot() ? $agent->robot() : null,
+            'user_agent' => request()->userAgent(),
+        ];
+    }
+
+    private function getDeviceSummary()
+    {
+        $agent = new Agent();
+        $device = $agent->device();
+        
+        if ($agent->isDesktop()) {
+            return "Desktop" . ($device ? " ($device)" : "");
+        } elseif ($agent->isTablet()) {
+            return "Tablet" . ($device ? " ($device)" : "");
+        } elseif ($agent->isPhone()) {
+            return "Mobile" . ($device ? " ($device)" : "");
+        } elseif ($agent->isRobot()) {
+            return "Robot" . ($agent->robot() ? " ({$agent->robot()})" : "");
+        }
+        
+        return "Unknown Device";
+    }
+
+    private function updateUserDeviceInfo($user)
+    {
+        $deviceInfo = $this->getDeviceInfo();
+        
+        $user->update([
+            'ip_address' => request()->ip(),
+            'device_type' => $this->getDeviceSummary(),
+            'platform' => $deviceInfo['platform'],
+            'browser' => $deviceInfo['browser'],
+            'device' => $deviceInfo['device'],
+            'is_desktop' => $deviceInfo['is_desktop'],
+            'is_mobile' => $deviceInfo['is_phone'],
+            'is_tablet' => $deviceInfo['is_tablet'],
+            'is_robot' => $deviceInfo['is_robot'],
+            'user_agent' => $deviceInfo['user_agent'],
+            'last_login_at' => now(),
+        ]);
+    }
+
+    private function getClientRealIp()
+    {
+        $ipAddress = '';
+
+        // Check for forwarded IP addresses first (common with proxies, load balancers)
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ipAddress = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+        } elseif (!empty($_SERVER['HTTP_X_REAL_IP'])) {
+            $ipAddress = $_SERVER['HTTP_X_REAL_IP'];
+        } elseif (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $ipAddress = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+            $ipAddress = $_SERVER['REMOTE_ADDR'];
+        }
+
+        // Clean the IP address
+        $ipAddress = trim($ipAddress);
+        
+        // Validate it's a real IP address
+        if (filter_var($ipAddress, FILTER_VALIDATE_IP)) {
+            return $ipAddress;
+        }
+
+        return 'Unknown';
+    }
+
+    public function getClientDeviceInfo() {
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+        
+        // Get client IP address (handling proxies)
+        $ipAddress = $this->getClientRealIp();
+        
+        // Parse device information from user agent
+        $deviceInfo = $this->parseUserAgent($userAgent);
+        
+        return [
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent,
+            'device_info' => $deviceInfo,
+            'request_time' => date('Y-m-d H:i:s'),
+            'server_vars' => [
+                'http_referer' => $_SERVER['HTTP_REFERER'] ?? 'Direct',
+                'http_accept_language' => $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'Unknown',
+                'server_protocol' => $_SERVER['SERVER_PROTOCOL'] ?? 'Unknown'
+            ]
+        ];
+    }
+
+    public function getClientIP() {
+        // Check for shared internet/ISP IP
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            return $_SERVER['HTTP_CLIENT_IP'];
+        }
+        // Check for IPs passing through proxies
+        elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            // Check for multiple IPs in X_FORWARDED_FOR
+            $ipList = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            return trim($ipList[0]);
+        }
+        // Check for remote IP
+        elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+            return $_SERVER['REMOTE_ADDR'];
+        }
+        
+        return 'Unknown';
+    }
+
+    public function parseUserAgent($userAgent) {
+        $deviceType = 'desktop';
+        $browser = 'Unknown';
+        $os = 'Unknown';
+        
+        // Device type detection
+        if (preg_match('/(android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini)/i', $userAgent)) {
+            $deviceType = 'mobile';
+            if (preg_match('/(tablet|ipad)/i', $userAgent)) {
+                $deviceType = 'tablet';
+            }
+        }
+        
+        // Browser detection
+        if (preg_match('/Chrome/i', $userAgent) && !preg_match('/Edg/i', $userAgent)) {
+            $browser = 'Chrome';
+        } elseif (preg_match('/Firefox/i', $userAgent)) {
+            $browser = 'Firefox';
+        } elseif (preg_match('/Safari/i', $userAgent) && !preg_match('/Chrome/i', $userAgent)) {
+            $browser = 'Safari';
+        } elseif (preg_match('/Edg/i', $userAgent)) {
+            $browser = 'Edge';
+        } elseif (preg_match('/Opera|OPR/i', $userAgent)) {
+            $browser = 'Opera';
+        }
+        
+        // OS detection
+        if (preg_match('/Android/i', $userAgent)) {
+            $os = 'Android';
+        } elseif (preg_match('/iPhone|iPad|iPod/i', $userAgent)) {
+            $os = 'iOS';
+        } elseif (preg_match('/Windows/i', $userAgent)) {
+            $os = 'Windows';
+        } elseif (preg_match('/Macintosh|Mac OS X/i', $userAgent)) {
+            $os = 'macOS';
+        } elseif (preg_match('/Linux/i', $userAgent)) {
+            $os = 'Linux';
+        }
+        
+        // Device brand detection
+        $brand = 'Unknown';
+        $model = 'Unknown';
+        
+        if (preg_match('/Samsung|SM-[A-Z0-9]+|GT-[A-Z0-9]+/i', $userAgent)) {
+            $brand = 'Samsung';
+        } elseif (preg_match('/Realme|RMX[A-Z0-9]+/i', $userAgent)) {
+            $brand = 'Realme';
+        } elseif (preg_match('/iPhone/i', $userAgent)) {
+            $brand = 'Apple';
+            $model = 'iPhone';
+        } elseif (preg_match('/iPad/i', $userAgent)) {
+            $brand = 'Apple';
+            $model = 'iPad';
+        } elseif (preg_match('/Macintosh/i', $userAgent)) {
+            $brand = 'Apple';
+            $model = 'Mac';
+        } elseif (preg_match('/Redmi|Mi |Xiaomi/i', $userAgent)) {
+            $brand = 'Xiaomi';
+        } elseif (preg_match('/Huawei/i', $userAgent)) {
+            $brand = 'Huawei';
+        } elseif (preg_match('/OnePlus/i', $userAgent)) {
+            $brand = 'OnePlus';
+        } elseif (preg_match('/Pixel/i', $userAgent)) {
+            $brand = 'Google';
+        }
+        
+        return [
+            'device_type' => $deviceType,
+            'browser' => $browser,
+            'operating_system' => $os,
+            'brand' => $brand,
+            'model' => $model
+        ];
+    }
+
+    public function collectClientInformation() {
+        $deviceInfo = $this->getClientDeviceInfo();
+        
+        // Attempt to get MAC address (works only in local network)
+        // $macAddress = attemptMacAddressDetection($deviceInfo['ip_address']);
+        
+        $completeInfo = [
+            'ip_address' => $deviceInfo['ip_address'],
+            'user_agent' => $deviceInfo['user_agent'],
+            'device_type' => $deviceInfo['device_info']['device_type'],
+            'browser' => $deviceInfo['device_info']['browser'],
+            'operating_system' => $deviceInfo['device_info']['operating_system'],
+            'device_brand' => $deviceInfo['device_info']['brand'],
+            'device_model' => $deviceInfo['device_info']['model'],
+            'timestamp' => $deviceInfo['request_time'],
+            'is_local_network' => $this->isLocalIP($deviceInfo['ip_address'])
+        ];
+
+        // 'mac_address' => $macAddress,
+        
+        return $completeInfo;
+    }
+
+    public function isLocalIP($ip) {
+        // Check if IP is in local range
+        return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+    }
+
+    public function getClientDeviceInfoWithRequest(Request $request) {
+        $userAgent = $request->userAgent() ?? 'Unknown';
+        $ipAddress = $request->ip(); // Laravel handles proxy headers automatically
+        
+        $deviceInfo = $this->parseUserAgent($userAgent);
+        
+        return [
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent,
+            'device_info' => $deviceInfo,
+            'request_time' => now()->toDateTimeString(),
+        ];
     }
 
     public function login(Request $request)
@@ -280,18 +519,29 @@ class AdminController extends Controller
                 return response()->json(['success' => false, 'message' => 'Subject code already exists']);
             }
 
-            // Check for duplicate schedules - NO json_decode needed
-            $schedules = $request->schedules; // ✅ Already an array
+            // Check for duplicate schedules
+            $schedules = $request->schedules;
             $uniqueSchedules = [];
             foreach ($schedules as $schedule) {
                 $key = $schedule['section'] . '-' . $schedule['day'] . '-' . $schedule['start_time'] . '-' . $schedule['end_time'];
                 if (!isset($uniqueSchedules[$key])) {
                     $uniqueSchedules[$key] = $schedule;
                 } else {
-                    // Duplicate schedule found
                     DB::rollBack();
-                    return response()->json(1); // This matches your JavaScript check for response == 1
+                    return response()->json(['success' => false, 'message' => 'Duplicate schedule found in your input']);
                 }
+            }
+
+            // Check for schedule conflicts
+            $conflicts = $this->checkScheduleConflicts($uniqueSchedules);
+            if (!empty($conflicts)) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Schedule conflicts detected',
+                    'conflicts' => $conflicts,
+                    'available_slots' => $this->getAvailableTimeSlots($uniqueSchedules)
+                ]);
             }
 
             // Create subject
@@ -307,9 +557,9 @@ class AdminController extends Controller
                 'is_active' => 1
             ]);
 
-            // Add prerequisites - NO json_decode needed
+            // Add prerequisites
             if (!empty($request->prerequisites)) {
-                $prerequisites = $request->prerequisites; // ✅ Already an array
+                $prerequisites = $request->prerequisites;
                 foreach ($prerequisites as $prereqId) {
                     SubjectPrerequisite::create([
                         'subject_id' => $subject->id,
@@ -331,6 +581,34 @@ class AdminController extends Controller
                 ]);
             }
 
+            // $clientInfo = $this->getClientDeviceInfoWithRequest($request);
+            $clientInfo = $this->collectClientInformation($request);
+            // $ipaddress = $this->getClientRealIp();
+            $ipaddress = $this->getClientDeviceInfo();
+            
+            $admin = Auth::guard('admin')->user();
+
+            date_default_timezone_set('Asia/Manila');
+            $todays_date=date("Y-m-d h:i:sa");
+            $today=strtotime($todays_date);
+            $date=date("Y-m-d h:i:sa", $today);
+
+            //Save to AuditLogs!
+            $audit = new AuditLog();
+            $audit->user_id = $admin->admin_id;
+            $audit->action = 'New Subject Created: ' .$request->name .'('.$request->code.')';
+            $audit->details = '' .$clientInfo['operating_system'] .'/' .$clientInfo['device_type'] .'/' .$clientInfo['user_agent'];
+            $audit->ip_address = $ipaddress['ip_address'];
+            $audit->date = $date;
+            $audit->access_by = '107568';
+
+            if (!$audit->save()) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'message' => 'Failed to create subject: Unable to log audit trail']);
+            }
+
+
+
             DB::commit();
             return response()->json(['success' => true, 'message' => 'Subject created successfully']);
             
@@ -339,6 +617,116 @@ class AdminController extends Controller
             Log::error('Subject creation failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to create subject: ' . $e->getMessage()]);
         }
+    }
+
+
+    private function checkScheduleConflicts($newSchedules, $excludeSubjectId = null)
+    {
+        $conflicts = [];
+        
+        foreach ($newSchedules as $index => $newSchedule) {
+            // Check for room conflicts
+            $roomQuery = SubjectSchedule::where('day', $newSchedule['day'])
+                ->where('room', $newSchedule['room'])
+                ->where(function($query) use ($newSchedule) {
+                    $query->where(function($q) use ($newSchedule) {
+                        $q->where('start_time', '<', $newSchedule['end_time'])
+                        ->where('end_time', '>', $newSchedule['start_time']);
+                    });
+                })
+                ->with('subject');
+
+            if ($excludeSubjectId) {
+                $roomQuery->whereHas('subject', function($q) use ($excludeSubjectId) {
+                    $q->where('id', '!=', $excludeSubjectId);
+                });
+            }
+
+            $roomConflicts = $roomQuery->get();
+
+            foreach ($roomConflicts as $conflict) {
+                $conflicts[] = [
+                    'type' => 'room',
+                    'message' => "Room {$newSchedule['room']} is already occupied on {$newSchedule['day']} from {$conflict->start_time} to {$conflict->end_time} by {$conflict->subject->code}",
+                    'conflicting_schedule' => $conflict,
+                    'new_schedule' => $newSchedule
+                ];
+            }
+
+            // Check for time overlap in the same section
+            if (isset($newSchedule['section'])) {
+                $sectionQuery = SubjectSchedule::where('day', $newSchedule['day'])
+                    ->where('Section', $newSchedule['section'])
+                    ->where(function($query) use ($newSchedule) {
+                        $query->where(function($q) use ($newSchedule) {
+                            $q->where('start_time', '<', $newSchedule['end_time'])
+                            ->where('end_time', '>', $newSchedule['start_time']);
+                        });
+                    })
+                    ->with('subject');
+
+                if ($excludeSubjectId) {
+                    $sectionQuery->whereHas('subject', function($q) use ($excludeSubjectId) {
+                        $q->where('id', '!=', $excludeSubjectId);
+                    });
+                }
+
+                $sectionConflicts = $sectionQuery->get();
+
+                foreach ($sectionConflicts as $conflict) {
+                    $conflicts[] = [
+                        'type' => 'section_time',
+                        'message' => "Section {$newSchedule['section']} already has a class on {$newSchedule['day']} from {$conflict->start_time} to {$conflict->end_time} for {$conflict->subject->code}",
+                        'conflicting_schedule' => $conflict,
+                        'new_schedule' => $newSchedule
+                    ];
+                }
+            }
+        }
+        
+        return $conflicts;
+    }
+
+    private function getAvailableTimeSlots($conflictingSchedules)
+    {
+        $suggestions = [];
+        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        $timeSlots = [
+            ['08:00', '09:30'], ['09:30', '11:00'], ['11:00', '12:30'],
+            ['13:00', '14:30'], ['14:30', '16:00'], ['16:00', '17:30']
+        ];
+        
+        foreach ($conflictingSchedules as $schedule) {
+            $day = $schedule['day'];
+            $room = $schedule['room'];
+            
+            foreach ($timeSlots as $slot) {
+                [$start, $end] = $slot;
+                
+                // Check if this time slot is available
+                $isAvailable = !SubjectSchedule::where('day', $day)
+                    ->where('room', $room)
+                    ->where(function($query) use ($start, $end) {
+                        $query->where(function($q) use ($start, $end) {
+                            $q->where('start_time', '<', $end)
+                            ->where('end_time', '>', $start);
+                        });
+                    })
+                    ->exists();
+                
+                if ($isAvailable) {
+                    $suggestions[] = [
+                        'day' => $day,
+                        'room' => $room,
+                        'start_time' => $start,
+                        'end_time' => $end,
+                        'message' => "Available slot: {$day} {$start} - {$end} in Room {$room}"
+                    ];
+                }
+            }
+        }
+        
+        return array_slice($suggestions, 0, 5); // Return top 5 suggestions
     }
 
     // public function createSubject(Request $request)
@@ -428,25 +816,32 @@ class AdminController extends Controller
                 return response()->json(['success' => false, 'message' => 'Subject code already exists']);
             }
 
-            // Check if subject name exists (excluding current subject)
-            if (Subject::where('name', $request->name)->where('id', '!=', $request->subject_id)->exists()) {
-                return response()->json(['success' => false, 'message' => 'Subject name already exists']);
-            }
-
-            // Check for duplicate schedules - NO json_decode needed
-            $schedules = $request->schedules; // ✅ Already an array
+            // Check for duplicate schedules
+            $schedules = $request->schedules;
             $uniqueSchedules = [];
             foreach ($schedules as $schedule) {
                 $key = $schedule['section'] . '-' . $schedule['day'] . '-' . $schedule['start_time'] . '-' . $schedule['end_time'];
                 if (!isset($uniqueSchedules[$key])) {
                     $uniqueSchedules[$key] = $schedule;
                 } else {
-                    // Duplicate schedule found
                     DB::rollBack();
-                    return response()->json(1);
+                    return response()->json(['success' => false, 'message' => 'Duplicate schedule found in your input']);
                 }
             }
 
+            // Check for schedule conflicts (excluding current subject's schedules)
+            $conflicts = $this->checkScheduleConflicts($uniqueSchedules, $subject->id);
+            if (!empty($conflicts)) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Schedule conflicts detected',
+                    'conflicts' => $conflicts,
+                    'available_slots' => $this->getAvailableTimeSlots($uniqueSchedules)
+                ]);
+            }
+
+            // ... rest of your update method remains the same
             // Update subject
             $subject->update([
                 'code' => $request->code,
@@ -458,10 +853,10 @@ class AdminController extends Controller
                 'max_students' => $request->max_students,
             ]);
 
-            // Update prerequisites - NO json_decode needed
+            // Update prerequisites
             SubjectPrerequisite::where('subject_id', $subject->id)->delete();
             if (!empty($request->prerequisites)) {
-                $prerequisites = $request->prerequisites; // ✅ Already an array
+                $prerequisites = $request->prerequisites;
                 foreach ($prerequisites as $prereqId) {
                     SubjectPrerequisite::create([
                         'subject_id' => $subject->id,
@@ -492,6 +887,73 @@ class AdminController extends Controller
             Log::error('Subject update failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to update subject: ' . $e->getMessage()]);
         }
+    }
+
+    private function checkScheduleConflicts2($newSchedules, $excludeSubjectId = null)
+    {
+        $conflicts = [];
+        
+        foreach ($newSchedules as $index => $newSchedule) {
+            // Check for room conflicts
+            $roomQuery = SubjectSchedule::where('day', $newSchedule['day'])
+                ->where('room', $newSchedule['room'])
+                ->where(function($query) use ($newSchedule) {
+                    $query->where(function($q) use ($newSchedule) {
+                        $q->where('start_time', '<', $newSchedule['end_time'])
+                        ->where('end_time', '>', $newSchedule['start_time']);
+                    });
+                })
+                ->with('subject');
+
+            if ($excludeSubjectId) {
+                $roomQuery->whereHas('subject', function($q) use ($excludeSubjectId) {
+                    $q->where('id', '!=', $excludeSubjectId);
+                });
+            }
+
+            $roomConflicts = $roomQuery->get();
+
+            foreach ($roomConflicts as $conflict) {
+                $conflicts[] = [
+                    'type' => 'room',
+                    'message' => "Room {$newSchedule['room']} is already occupied on {$newSchedule['day']} from {$conflict->start_time} to {$conflict->end_time} by {$conflict->subject->code}",
+                    'conflicting_schedule' => $conflict,
+                    'new_schedule' => $newSchedule
+                ];
+            }
+
+            // Check for time overlap in the same section
+            if (isset($newSchedule['section'])) {
+                $sectionQuery = SubjectSchedule::where('day', $newSchedule['day'])
+                    ->where('Section', $newSchedule['section'])
+                    ->where(function($query) use ($newSchedule) {
+                        $query->where(function($q) use ($newSchedule) {
+                            $q->where('start_time', '<', $newSchedule['end_time'])
+                            ->where('end_time', '>', $newSchedule['start_time']);
+                        });
+                    })
+                    ->with('subject');
+
+                if ($excludeSubjectId) {
+                    $sectionQuery->whereHas('subject', function($q) use ($excludeSubjectId) {
+                        $q->where('id', '!=', $excludeSubjectId);
+                    });
+                }
+
+                $sectionConflicts = $sectionQuery->get();
+
+                foreach ($sectionConflicts as $conflict) {
+                    $conflicts[] = [
+                        'type' => 'section_time',
+                        'message' => "Section {$newSchedule['section']} already has a class on {$newSchedule['day']} from {$conflict->start_time} to {$conflict->end_time} for {$conflict->subject->code}",
+                        'conflicting_schedule' => $conflict,
+                        'new_schedule' => $newSchedule
+                    ];
+                }
+            }
+        }
+        
+        return $conflicts;
     }
 
     // public function updateSubject(Request $request)

@@ -788,13 +788,41 @@
                 
                 // Reload the subjects instead of the whole page
                 loadStatistics();
-                // loadSubjects2();
                 loadSubjects();
-                // supabase insert notifications
                 insertsupabase();
-                // END
-            } else if (response == 1){
-                alert("Section Already exist!")
+            } else if (response.conflicts) {
+                // Handle schedule conflicts
+                let conflictMessage = "Schedule conflicts detected:\n\n";
+                
+                response.conflicts.forEach((conflict, index) => {
+                    conflictMessage += `${index + 1}. ${conflict.message}\n`;
+                });
+                
+                if (response.available_slots && response.available_slots.length > 0) {
+                    conflictMessage += "\nSuggested available time slots:\n";
+                    response.available_slots.forEach((slot, index) => {
+                        conflictMessage += `${index + 1}. ${slot.message}\n`;
+                    });
+                }
+                
+                Swal.fire({
+                    title: 'Schedule Conflict',
+                    html: conflictMessage.replace(/\n/g, '<br>'),
+                    icon: 'warning',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#0d6efd',
+                    background: '#1a1a2e',
+                    color: '#ffffff',
+                    backdrop: 'rgba(0,0,0,0.7)',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showClass: {
+                        popup: 'animate__animated animate__fadeInDown'
+                    },
+                    hideClass: {
+                        popup: 'animate__animated animate__fadeOutUp'
+                    }
+                });
             } else {
                 alert('Error: ' + response.message);
             }
@@ -1165,8 +1193,40 @@
                 
                 // Reload the subjects
                 loadStatistics();
-                // loadSubjects2();
                 loadSubjects();
+            } else if (response.conflicts) {
+                // Handle schedule conflicts
+                let conflictMessage = "Schedule conflicts detected:\n\n";
+                
+                response.conflicts.forEach((conflict, index) => {
+                    conflictMessage += `${index + 1}. ${conflict.message}\n`;
+                });
+                
+                if (response.available_slots && response.available_slots.length > 0) {
+                    conflictMessage += "\nSuggested available time slots:\n";
+                    response.available_slots.forEach((slot, index) => {
+                        conflictMessage += `${index + 1}. ${slot.message}\n`;
+                    });
+                }
+                
+                Swal.fire({
+                    title: 'Schedule Conflict',
+                    html: conflictMessage.replace(/\n/g, '<br>'),
+                    icon: 'warning',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#0d6efd',
+                    background: '#1a1a2e',
+                    color: '#ffffff',
+                    backdrop: 'rgba(0,0,0,0.7)',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showClass: {
+                        popup: 'animate__animated animate__fadeInDown'
+                    },
+                    hideClass: {
+                        popup: 'animate__animated animate__fadeOutUp'
+                    }
+                });
             } else {
                 alert('Error: ' + response.message);
             }
