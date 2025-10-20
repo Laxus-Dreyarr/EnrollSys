@@ -881,7 +881,6 @@ class StudentController extends Controller
         
     }
 
-
     private function completeStudentInfo(Request $request)
     {
         try {
@@ -913,36 +912,150 @@ class StudentController extends Controller
 
             DB::beginTransaction();
 
-            if($request->student_type == 'Regular') {
-                $request->student_type = '1';
-            } else if($request->student_type == 'Irregular') {
-                $request->student_type = '2';
-            } else if($request->student_type == 'Transferee') {
-                $request->student_type = '0';
+            try {
+                $studentType = match($request->student_type) {
+                    'Regular' => '1',
+                    'Irregular' => '2',
+                    'Transferee' => '0',
+                    default => $request->student_type
+                };
+
+                // Get the current authenticated user
+                $user = Auth::guard('student')->user();
+                
+                // Find the user_info record for this user
+                $userInfo = UserInfo::where('user_id', $user->id)->first();
+                
+                if (!$userInfo) {
+                    DB::rollback();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'User information not found.'
+                    ]);
+                }
+
+                // Update using the user_info id as student_id
+                $save = Student::where('student_id', $userInfo->id)
+                    ->update([
+                        'id_no' => $request->school_id,
+                        'year_level' => $request->year_level,
+                        'status' => 'Not Enrolled',
+                        'is_regular' => $studentType
+                    ]);
+
+                if(!$save) {
+                    DB::rollback();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Not able to update student information.'
+                    ]);
+                }
+
+                DB::commit();
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Student information completed successfully'
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollback();
+                Log::error('Student info update error: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to update student: ' . $e->getMessage()
+                ]);
             }
 
-            $save = Student::UPDATE([
-                'id_no' => $request->school_id,
-                'year_level' => $request->year_level,
-                'status' => 'Not Enrolled',
-                'is_regular' => $request->student_type
-            ]);
-
-
         } catch (\Exception $e) {
-            Log::error('Save error: ' . $e->getMessage());
+            Log::error('Complete student info error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred: ' . $e->getMessage()
             ]);
         }
-        
-        // Implement the logic to complete student information
-        return response()->json([
-            'success' => true,
-            'message' => 'Student information completed successfully'
-        ]);
     }
+
+
+    // private function completeStudentInfo(Request $request)
+    // {
+    //     try {
+    //         // Validate the registration data first
+    //         $validator = Validator::make($request->all(), [
+    //             'school_id' => [
+    //                 'required',
+    //                 'max:50'
+    //             ],
+    //             'year_level' => [
+    //                 'required'
+    //             ],
+    //             'student_type' => [
+    //                 'required'
+    //             ]
+    //         ], [
+    //             'school_id.required' => 'School ID is required.',
+    //             'school_id.max' => 'School ID must not exceed 50 characters.',
+    //             'year_level.required' => 'Please select your year level.',
+    //             'student_type.required' => 'Please select your student type.'
+    //         ]);
+
+    //         if ($validator->fails()) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => $validator->errors()->first()
+    //             ]);
+    //         }
+
+    //         DB::beginTransaction();
+
+    //         try {
+    //             $studentType = match($request->student_type) {
+    //                 'Regular' => '1',
+    //                 'Irregular' => '2',
+    //                 'Transferee' => '0',
+    //                 default => $request->student_type
+    //             };
+
+    //             $save = Student::where('student_id', Auth::guard('student')->user()->id)
+    //                 ->update([
+    //                     'id_no' => $request->school_id,
+    //                     'year_level' => $request->year_level,
+    //                     'status' => 'Not Enrolled',
+    //                     'is_regular' => $studentType
+    //                 ]);
+
+    //             if(!$save) {
+    //                 DB::rollback();
+    //                 return response()->json([
+    //                     'success' => false,
+    //                     'message' => 'Not able to update student information.'
+    //                 ]);
+    //             }
+
+    //             DB::commit();
+                
+    //             // Implement the logic to complete student information
+    //             return response()->json([
+    //                 'success' => true,
+    //                 'message' => 'Student information completed successfully'
+    //             ]);
+
+    //         } catch (\Exception $e) {
+    //             DB::rollback();
+    //             return redirect()->back()->with('error', 'Failed to update student: ' . $e->getMessage());
+    //         }
+
+
+    //     } catch (\Exception $e) {
+    //         Log::error('Save error: ' . $e->getMessage());
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'An error occurred: ' . $e->getMessage()
+    //         ]);
+    //     }
+        
+        
+    // }
 
     
 

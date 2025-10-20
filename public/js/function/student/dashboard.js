@@ -694,87 +694,69 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
             
             // Get form data
-            const formData = {
-                action: 'complete_student_info',
-                school_id: document.getElementById('school_id').value,
-                year_level: document.getElementById('year_level').value,
-                student_type: document.getElementById('student_type').value,
-                _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            };
+            const formData = new FormData();
+            formData.append('action', 'complete_student_info');
+            formData.append('school_id', document.getElementById('school_id').value);
+            formData.append('year_level', document.getElementById('year_level').value);
+            formData.append('student_type', document.getElementById('student_type').value);
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
-            // Send login request
+            // Send request
             fetch('/exe/student', {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.text())
+            .then(response => response.json())
             .then(data => {
-                if(data === 'success') {
-                    setTimeout(() => {
-                    // This is where you would make your actual AJAX call
-                    // For demonstration, we'll simulate success
-                    
-                    // Show success message
+                if(data.success) {
                     showSuccessMessage();
-                    
-                    // Reset button
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.classList.remove('loading');
-                    submitBtn.disabled = false;
-                
-                    }, 2000);
                 } else {
-                    if (data.message === 'School ID is required.') {
+                    // Handle specific field errors
+                    if (data.message.includes('School ID')) {
                         const schoolIdInput = document.getElementById('school_id');
                         const schoolIdInputError = document.getElementById('school_id_error');
                         showFieldError(schoolIdInput, schoolIdInputError, data.message);
-                    } else if (data.message === 'School ID must not exceed 50 characters.') {
-                        const schoolIdInput = document.getElementById('school_id');
-                        const schoolIdInputError = document.getElementById('school_id_error');
-                        showFieldError(schoolIdInput, schoolIdInputError, data.message);
-                    } else if (data.message === 'Please select your year level.') {
+                    } else if (data.message.includes('year level')) {
                         const yearLevelInput = document.getElementById('year_level');
                         const yearLevelInputError = document.getElementById('year_level_error');
                         showFieldError(yearLevelInput, yearLevelInputError, data.message);
-                    } else if (data.message === 'Please select your student type.') {
+                    } else if (data.message.includes('student type')) {
                         const studentTypeInput = document.getElementById('student_type');
                         const studentTypeInputError = document.getElementById('student_type_error');
                         showFieldError(studentTypeInput, studentTypeInputError, data.message);
+                    } else {
+                        // Show generic error
+                        Swal.fire({
+                            title: 'Failed',
+                            text: data.message,
+                            icon: 'error',
+                            confirmButtonText: 'Close',
+                            confirmButtonColor: '#070808ff',
+                            background: '#1a1a2e',
+                            color: '#ffffff',
+                            backdrop: 'rgba(0,0,0,0.7)',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showClass: {
+                                popup: 'animate__animated animate__fadeInDown'
+                            },
+                            hideClass: {
+                                popup: 'animate__animated animate__fadeOutUp'
+                            }
+                        });
                     }
                 }
             })
             .catch(error => {
+                console.error('Error:', error);
                 alert('Network error. Please check your connection and try again.');
-                console.error('Login error:', error);
             })
             .finally(() => {
-                // Show success message
-                    showSuccessMessage();
-                    
-                    // Reset button
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.classList.remove('loading');
-                    submitBtn.disabled = false;
-
-                // Reset email error message
-                // emailInputError.style.display = 'none';
-                // emailInputError.textContent = '';
+                // Reset button
+                submitBtn.innerHTML = originalText;
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
             });
-            
-            // Simulate API call (replace with actual endpoint)
-            // setTimeout(() => {
-            //     // This is where you would make your actual AJAX call
-            //     // For demonstration, we'll simulate success
-                
-            //     // Show success message
-            //     showSuccessMessage();
-                
-            //     // Reset button
-            //     submitBtn.innerHTML = originalText;
-            //     submitBtn.classList.remove('loading');
-            //     submitBtn.disabled = false;
-                
-            // }, 2000);
         }
 
         function showSuccessMessage() {
