@@ -780,4 +780,267 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 3000);
         }
 
+
+
+    // Enrollment functionality
+    const enrollNowBtn = document.getElementById('d-stat-card-enroll');
+    const enrollmentModal = document.getElementById('enrollmentModal');
+    const closeEnrollmentModal = document.getElementById('closeEnrollmentModal');
+    const cancelEnrollment = document.getElementById('cancelEnrollment');
+    const subjectsList = document.getElementById('subjectsList');
+    const submitEnrollment = document.getElementById('submitEnrollment');
+    const totalUnitsCounter = document.getElementById('totalUnitsCounter');
+    const enrollmentYearLevel = document.getElementById('enrollmentYearLevel');
+    const enrollmentSemester = document.getElementById('enrollmentSemester');
+    const enrollmentStudentType = document.getElementById('enrollmentStudentType');
+
+    let selectedSubjects = new Set();
+    let totalUnits = 0;
+    let isRegular = true;
+
+    // Open enrollment modal
+    enrollNowBtn.addEventListener('click', function() {
+        enrollmentModal.classList.add('active');
+        loadEnrollmentSubjects();
+    });
+
+    // Close enrollment modal
+    closeEnrollmentModal.addEventListener('click', closeEnrollment);
+    cancelEnrollment.addEventListener('click', closeEnrollment);
+
+    function closeEnrollment() {
+        enrollmentModal.classList.remove('active');
+        selectedSubjects.clear();
+        totalUnits = 0;
+        updateUnitsCounter();
+        submitEnrollment.disabled = true;
+    }
+
+    // Load enrollment subjects
+    function loadEnrollmentSubjects() {
+        subjectsList.innerHTML = `
+            <div class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Loading subjects...</span>
+            </div>
+        `;
+
+        fetch('/student/enrollment/subjects', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displaySubjects(data);
+            } else {
+                showEnrollmentError('Failed to load subjects');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading subjects:', error);
+            showEnrollmentError('Network error. Please try again.');
+        });
+    }
+
+    // Display subjects in the modal
+    function displaySubjects(data) {
+        enrollmentYearLevel.textContent = data.year_level;
+        enrollmentSemester.textContent = data.semester;
+        enrollmentStudentType.textContent = data.is_regular ? 'Regular' : 'Irregular';
+        isRegular = data.is_regular;
+        
+        if (data.subjects.length === 0) {
+            subjectsList.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-book-open"></i>
+                    <span>No subjects available for your year level and semester.</span>
+                </div>
+            `;
+            return;
+        }
+        
+        let subjectsHTML = '';
+        
+        data.subjects.forEach(subject => {
+            const hasPrerequisites = subject.prerequisites && subject.prerequisites.length > 0;
+            const prerequisitesMet = hasPrerequisites ? 
+                subject.prerequisites.every(prereq => data.completed_subjects.includes(prereq.id)) : 
+                true;
+            
+            const isSelectable = isRegular || (!hasPrerequisites || prerequisitesMet);
+            const isAutoSelected = isRegular;
+            
+            if (isAutoSelected) {
+                selectedSubjects.add(subject.id);
+                totalUnits += parseInt(subject.units);
+            }
+            
+            subjectsHTML += `
+                <div class="subject-item ${!isSelectable ? 'disabled' : ''}">
+                    <div class="subject-checkbox">
+                        <input 
+                            type="checkbox" 
+                            id="subject_${subject.id}" 
+                            value="${subject.id}" 
+                            ${isAutoSelected ? 'checked' : ''}
+                            ${!isSelectable ? 'disabled' : ''}
+                            onchange="toggleSubject(${subject.id}, ${subject.units}, ${!isSelectable})"
+                        >
+                    </div>
+                    <div class="subject-info">
+                        <div class="subject-header">
+                            <span class="subject-code">${subject.code}</span>
+                            <span class="subject-units">${subject.units} units</span>
+                        </div>
+                        <div class="subject-name">${subject.name}</div>
+                        <div class="subject-description">${subject.description || 'No description available'}</div>
+                        
+                        ${subject.schedules && subject.schedules.length > 0 ? `
+                            <div class="subject-schedule">
+                                ${subject.schedules.map(schedule => `
+                                    <span class="schedule-badge">
+                                        ${schedule.day} ${schedule.start_time} - ${schedule.end_time}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        ${hasPrerequisites && !prerequisitesMet ? `
+                            <div class="prerequisite-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Requires prerequisites: ${subject.prerequisites.map(p => p.code).join(', ')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        
+        subjectsList.innerHTML = subjectsHTML;
+        updateUnitsCounter();
+        submitEnrollment.disabled = selectedSubjects.size === 0;
+    }
+
+    // Toggle subject selection
+    function toggleSubject(subjectId, units, isDisabled) {
+        if (isDisabled) return;
+        
+        const checkbox = document.getElementById(`subject_${subjectId}`);
+        
+        if (checkbox.checked) {
+            selectedSubjects.add(subjectId);
+            totalUnits += parseInt(units);
+        } else {
+            selectedSubjects.delete(subjectId);
+            totalUnits -= parseInt(units);
+        }
+        
+        updateUnitsCounter();
+        submitEnrollment.disabled = selectedSubjects.size === 0;
+    }
+
+    // Update units counter
+    function updateUnitsCounter() {
+        totalUnitsCounter.textContent = totalUnits;
+    }
+
+    // Show enrollment error
+    function showEnrollmentError(message) {
+        subjectsList.innerHTML = `
+            <div class="error-state">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+            </div>
+        `;
+    }
+
+    // Submit enrollment
+    submitEnrollment.addEventListener('click', function() {
+        if (selectedSubjects.size === 0) return;
+        
+        const submitBtn = submitEnrollment;
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        submitBtn.disabled = true;
+        
+        fetch('/student/enrollment/enroll', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                subjects: Array.from(selectedSubjects)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                closeEnrollment();
+                
+                // Refresh the page or update UI as needed
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showNotification(data.message, 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Enrollment error:', error);
+            showNotification('Enrollment failed. Please try again.', 'error');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+
+    // Enhanced notification function (update your existing one)
+    function showNotification(message, type = 'success') {
+        // Your existing notification code, but ensure it handles different types
+        const notification = document.createElement('div');
+        notification.className = `upload-notification ${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+            <span>${message}</span>
+        `;
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'success' ? 'var(--success-color)' : 'var(--danger-color)'};
+            color: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-hover);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            animation: slideInRight 0.3s ease;
+            max-width: 300px;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+
     });//End of DOMContentLoaded

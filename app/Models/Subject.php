@@ -20,7 +20,7 @@ class Subject extends Model
 
     public function schedules()
     {
-        return $this->hasMany(SubjectSchedule::class, 'subject_id', 'id');
+        return $this->hasMany(SubjectSchedule::class, 'subject_id');
     }
 
     public function enrollments()

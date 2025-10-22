@@ -13,6 +13,12 @@ use App\Models\User;
 use App\Models\UserInfo;
 use App\Models\AuditLog;
 use App\Models\Student;
+use App\Models\Subject;
+use App\Models\SubjectSchedule;
+use App\Models\SubjectPrerequisite;
+use App\Models\Section;
+use App\Models\Enrollment;
+use App\Models\EnrollmentRequest;
 use App\Mail\RegistrationVerification;
 use Illuminate\Support\Facades\Log;
 use App\Mail\PasswordResetOtp;
@@ -1057,6 +1063,249 @@ class StudentController extends Controller
         
     // }
 
+    public function getEnrollmentSubjects(Request $request)
+    {
+        try {
+            $user = Auth::guard('student')->user();
+            $student = $user->user_information->student;
+            
+            // Get student's year level
+            $yearLevel = $student->year_level;
+            
+            // Determine current semester (you might want to make this dynamic)
+            $currentSemester = '1st Sem'; // or get from system settings
+            
+            // Get subjects for student's year level and current semester
+            $subjects = Subject::where('year_level', $yearLevel)
+                            ->where('semester', $currentSemester)
+                            ->where('is_active', 1)
+                            ->with(['schedules', 'prerequisites'])
+                            ->get();
+            
+            // Get student's completed subjects (for prerequisite checking)
+            $completedSubjects = [];
+            if ($student->is_regular != 1) { // Irregular student
+                $completedSubjects = Enrollment::where('student_id', $student->id)
+                                            ->where('status', 'Enrolled')
+                                            ->whereNotNull('grade')
+                                            ->where('grade', '<=', 3.0) // Assuming passing grade
+                                            ->pluck('subject_id')
+                                            ->toArray();
+            }
+            
+            // Calculate total units for the semester
+            $totalUnits = $subjects->sum('units');
+            
+            return response()->json([
+                'success' => true,
+                'subjects' => $subjects,
+                'completed_subjects' => $completedSubjects,
+                'total_units' => $totalUnits,
+                'is_regular' => $student->is_regular == 1,
+                'year_level' => $yearLevel,
+                'semester' => $currentSemester
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Get enrollment subjects error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load enrollment data'
+            ]);
+        }
+    }
+
+    // public function enrollSubjects(Request $request)
+    // {
+    //     try {
+    //         $user = Auth::guard('student')->user();
+    //         $student = $user->user_information->student;
+            
+    //         $validator = Validator::make($request->all(), [
+    //             'subjects' => 'required|array',
+    //             'subjects.*' => 'exists:subjects,id'
+    //         ]);
+            
+    //         if ($validator->fails()) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Invalid subjects selected'
+    //             ]);
+    //         }
+            
+    //         DB::beginTransaction();
+            
+    //         // Create enrollment request
+    //         $enrollmentRequest = new EnrollmentRequest();
+    //         $enrollmentRequest->student_id = $student->id;
+    //         $enrollmentRequest->status = 'Pending';
+    //         $enrollmentRequest->save();
+            
+    //         // Create enrollment records for each subject
+    //         foreach ($request->subjects as $subjectId) {
+    //             $enrollment = new Enrollment();
+    //             $enrollment->student_id = $student->id;
+    //             $enrollment->subject_id = $subjectId;
+    //             $enrollment->section_id = 1; // Default section, you might want to implement section selection
+    //             $enrollment->status = 'Enrolled';
+    //             $enrollment->save();
+    //         }
+            
+    //         // Update student status
+    //         $student->status = 'Pending';
+    //         $student->save();
+            
+    //         DB::commit();
+            
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Enrollment submitted successfully! Waiting for approval.'
+    //         ]);
+            
+    //     } catch (\Exception $e) {
+    //         DB::rollback();
+    //         Log::error('Enrollment error: ' . $e->getMessage());
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Enrollment failed. Please try again.'
+    //         ]);
+    //     }
+    // }
+
+    public function enrollSubjects(Request $request)
+    {
+        try {
+            $user = Auth::guard('student')->user();
+            $student = $user->user_information->student;
+            
+            $validator = Validator::make($request->all(), [
+                'subjects' => 'required|array',
+                'subjects.*' => 'exists:subjects,id'
+            ]);
+            
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid subjects selected'
+                ]);
+            }
+            
+            DB::beginTransaction();
+            
+            // Check if student already has a pending enrollment request
+            $existingRequest = EnrollmentRequest::where('student_id', $student->id)
+                                            ->where('status', 'Pending')
+                                            ->first();
+            
+            if ($existingRequest) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You already have a pending enrollment request. Please wait for approval.'
+                ]);
+            }
+            
+            // Create enrollment request
+            $enrollmentRequest = new EnrollmentRequest();
+            $enrollmentRequest->student_id = $student->id;
+            $enrollmentRequest->status = 'Pending';
+            $enrollmentRequest->request_date = now();
+            $enrollmentRequest->save();
+            
+            // Create enrollment records for each subject
+            foreach ($request->subjects as $subjectId) {
+                $sectionId = $this->getOrCreateDefaultSection($subjectId);
+                
+                if (!$sectionId) {
+                    DB::rollback();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to assign section for subject. Please contact administrator.'
+                    ]);
+                }
+                
+                $enrollment = new Enrollment();
+                $enrollment->student_id = $student->id;
+                $enrollment->subject_id = $subjectId;
+                $enrollment->section_id = $sectionId;
+                $enrollment->status = 'Enrolled';
+                $enrollment->enrollment_date = now();
+                $enrollment->save();
+
+                // Update section student count
+                $section = Section::find($sectionId);
+                if ($section) {
+                    $section->current_students += 1;
+                    $section->save();
+                }
+            }
+            
+            // Update student status
+            $student->status = 'Pending';
+            $student->save();
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Enrollment submitted successfully! Waiting for approval.'
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Enrollment error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Enrollment failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    private function getOrCreateDefaultSection($subjectId)
+    {
+        try {
+            // First, try to get any existing section for this subject
+            $section = Section::where('subsched_id', function($query) use ($subjectId) {
+                $query->select('id')
+                    ->from('subjectschedules')
+                    ->where('subject_id', $subjectId)
+                    ->limit(1);
+            })->first();
+
+            if ($section) {
+                return $section->id;
+            }
+
+            // If no section exists, create a default one
+            $subjectSchedule = SubjectSchedule::where('subject_id', $subjectId)->first();
+            
+            if (!$subjectSchedule) {
+                // Create a default schedule first
+                $subjectSchedule = new SubjectSchedule();
+                $subjectSchedule->subject_id = $subjectId;
+                $subjectSchedule->Section = 'A';
+                $subjectSchedule->Type = 'Lecture';
+                $subjectSchedule->day = 'Monday';
+                $subjectSchedule->start_time = '08:00:00';
+                $subjectSchedule->end_time = '09:30:00';
+                $subjectSchedule->room = 'TBA';
+                $subjectSchedule->save();
+            }
+
+            // Create a default section
+            $section = new Section();
+            $section->subsched_id = $subjectSchedule->id;
+            $section->section_name = 'A';
+            $section->max_students = 50;
+            $section->current_students = 0;
+            $section->save();
+
+            return $section->id;
+
+        } catch (\Exception $e) {
+            Log::error('Section creation error: ' . $e->getMessage());
+            return null;
+        }
+    }
     
 
 

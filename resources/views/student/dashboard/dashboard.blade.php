@@ -1076,6 +1076,59 @@ $show_student_form = (strtolower($student_id) === 'none');
         </div>
     </div>
 
+    <!-- Enrollment Modal -->
+    <div id="enrollmentModal" class="modal-overlay">
+        <div class="modal-container" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3>Course Enrollment</h3>
+                <button type="button" class="close-modal" id="closeEnrollmentModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-form">
+                <div class="enrollment-info">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Year Level:</span>
+                            <span class="info-value" id="enrollmentYearLevel">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Semester:</span>
+                            <span class="info-value" id="enrollmentSemester">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Student Type:</span>
+                            <span class="info-value" id="enrollmentStudentType">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Total Units:</span>
+                            <span class="info-value" id="totalUnitsCounter">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="subjects-container">
+                    <h4>Available Subjects</h4>
+                    <div class="subjects-list" id="subjectsList">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>Loading subjects...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" id="cancelEnrollment">Cancel</button>
+                    <button type="button" class="btn-primary" id="submitEnrollment" disabled>
+                        <i class="fas fa-paper-plane"></i>
+                        Submit Enrollment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- jQuery -->

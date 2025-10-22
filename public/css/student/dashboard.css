@@ -1961,6 +1961,233 @@ body.dark-mode .form-note {
     color: var(--text-muted-dark);
 }
 
+/* Enrollment Modal Styles */
+.enrollment-info {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    border: 1px solid #e2e8f0;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #374151;
+}
+
+.info-value {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.subjects-container {
+    margin-bottom: 24px;
+}
+
+.subjects-container h4 {
+    margin-bottom: 16px;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.subjects-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.subject-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    transition: var(--transition);
+    background: white;
+}
+
+.subject-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow);
+}
+
+.subject-item:last-child {
+    margin-bottom: 0;
+}
+
+.subject-checkbox {
+    margin-right: 12px;
+    margin-top: 4px;
+}
+
+.subject-info {
+    flex: 1;
+}
+
+.subject-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.subject-code {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.subject-units {
+    background: var(--primary-color);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.subject-name {
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.subject-description {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.subject-schedule {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.schedule-badge {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.prerequisite-warning {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    color: #92400e;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    margin-top: 8px;
+}
+
+.prerequisite-warning i {
+    margin-right: 6px;
+}
+
+.loading-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #64748b;
+}
+
+.loading-state i {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.error-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #ef4444;
+}
+
+.error-state i {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #64748b;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.close-modal:hover {
+    color: #ef4444;
+    background: #fef2f2;
+}
+
+/* Dark mode styles for enrollment */
+body.dark-mode .enrollment-info {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+}
+
+body.dark-mode .info-item {
+    border-bottom-color: var(--border-dark);
+}
+
+body.dark-mode .info-label {
+    color: var(--text-dark);
+}
+
+body.dark-mode .subject-item {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+    color: var(--text-dark);
+}
+
+body.dark-mode .subject-name {
+    color: var(--text-dark);
+}
+
+body.dark-mode .subject-description {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .schedule-badge {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .prerequisite-warning {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+    color: #fbbf24;
+}
+
 /* Enhanced Mobile Responsiveness */
 @media (max-width: 1200px) {
     .sidebar {

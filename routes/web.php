@@ -189,6 +189,9 @@ Route::middleware(['student.auth'])->group(function () {
     // Route::prefix('admin/ajax')->group(function () {
     //     Route::post('/get-stats', [StudentController::class, 'getStats']);
     // });
+    // Enrollment routes
+    Route::get('/student/enrollment/subjects', [StudentController::class, 'getEnrollmentSubjects']);
+    Route::post('/student/enrollment/enroll', [StudentController::class, 'enrollSubjects']);
 });
 
 

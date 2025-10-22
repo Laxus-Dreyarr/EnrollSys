@@ -26,4 +26,9 @@ class Student extends Authenticatable
     {
         return $this->belongsTo(UserInfo::class, 'student_id', 'id');
     }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class, 'student_id');
+    }
 }
