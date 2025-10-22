@@ -120,20 +120,20 @@ $show_student_form = (strtolower($student_id) === 'none');
             <div id="dashboard-section" class="content-section active">
                 <!-- Stats Overview -->
                 <div class="stats-grid">
+                    <div class="stat-card" id="d-stat-card-enroll">
+                        <div class="stat-icon grades">
+                            <i class="fa-solid fa-plus"></i>
+                        </div>
+                        <h3 class="stat-value">Enroll Now</h3>
+                        <p class="stat-label">October 22, 2025</p>
+                    </div>
+
                     <div class="stat-card">
                         <div class="stat-icon courses">
                             <i class="fas fa-book"></i>
                         </div>
                         <h3 class="stat-value">5</h3>
                         <p class="stat-label">Enrolled Courses</p>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon grades">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <h3 class="stat-value">89.5%</h3>
-                        <p class="stat-label">Average Grade</p>
                     </div>
                     
                     <div class="stat-card">
