@@ -441,7 +441,7 @@ class AdminController extends Controller
             case 'get_subjects':
                 $subjects = Subject::with(['schedules', 'prerequisites'])
                     ->where('is_active', 1)
-                    ->orderBy('code')
+                    ->orderBy('year_level')
                     ->get()
                     ->map(function($subject) {
                         return [
