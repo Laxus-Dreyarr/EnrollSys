@@ -32,6 +32,8 @@ use Illuminate\Support\Facades\DB;
 use Jenssegers\Agent\Agent;
 
 
+//NOTE: This Controller can detect schedule conflicts when creating/updating subjects.
+
 class AdminController extends Controller
 {
     protected $adminService;

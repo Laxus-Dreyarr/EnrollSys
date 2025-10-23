@@ -1073,7 +1073,7 @@ class StudentController extends Controller
             $yearLevel = $student->year_level;
             
             // Determine current semester (you might want to make this dynamic)
-            $currentSemester = '1st Sem'; // or get from system settings
+            $currentSemester = '2nd Sem'; // or get from system settings
             
             // Get subjects for student's year level and current semester
             $subjects = Subject::where('year_level', $yearLevel)
