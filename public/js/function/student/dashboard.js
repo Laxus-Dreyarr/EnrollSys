@@ -1043,4 +1043,330 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
 
+
+    //
+    // Irregular Student Functionality
+    const irregularSubjectsModal = document.getElementById('irregularSubjectsModal');
+    const closeIrregularModal = document.getElementById('closeIrregularModal');
+    const cancelIrregular = document.getElementById('cancelIrregular');
+    const savePastSubjects = document.getElementById('savePastSubjects');
+    const pastSubjectsList = document.getElementById('pastSubjectsList');
+    const pastSubjectsSearch = document.getElementById('pastSubjectsSearch');
+
+    let allSubjects = [];
+    let selectedPastSubjects = new Set();
+
+    // Check if student is irregular and show modal if needed
+    function checkIrregularStudent() {
+        // This should be set from your PHP variable
+        const isIrregular = document.getElementById('is-regular').value == 2;
+        
+        if (isIrregular) {
+            // Check if student has already submitted past subjects
+            checkPastSubjectsStatus();
+        }
+    }
+
+    // Check if student has already submitted past subjects
+    function checkPastSubjectsStatus() {
+        fetch('/student/enrollment/check-past-subjects', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && !data.has_submitted) {
+                // Student hasn't submitted past subjects, show modal
+                setTimeout(() => {
+                    loadAllSubjectsForIrregular();
+                }, 1000);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking past subjects:', error);
+        });
+    }
+
+    // Load all subjects for irregular student selection
+    function loadAllSubjectsForIrregular() {
+        pastSubjectsList.innerHTML = `
+            <div class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Loading subjects...</span>
+            </div>
+        `;
+
+        fetch('/student/enrollment/all-subjects', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                allSubjects = data.subjects;
+                displayPastSubjects(allSubjects);
+                irregularSubjectsModal.classList.add('active');
+            } else {
+                showNotification('Failed to load subjects', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading subjects:', error);
+            showNotification('Network error. Please try again.', 'error');
+        });
+    }
+
+    // Display subjects for past subjects selection
+    function displayPastSubjects(subjects) {
+        if (subjects.length === 0) {
+            pastSubjectsList.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-book-open"></i>
+                    <span>No subjects available.</span>
+                </div>
+            `;
+            return;
+        }
+
+        // Group subjects by year level and semester
+        const groupedSubjects = groupSubjectsByLevelAndSemester(subjects);
+        
+        let subjectsHTML = '';
+        
+        Object.keys(groupedSubjects).forEach(groupKey => {
+            const [yearLevel, semester] = groupKey.split('|');
+            subjectsHTML += `
+                <div class="subject-group">
+                    <h5 class="group-header">${yearLevel} - ${semester}</h5>
+                    <div class="group-subjects">
+            `;
+            
+            groupedSubjects[groupKey].forEach(subject => {
+                subjectsHTML += `
+                    <div class="subject-item past-subject-item">
+                        <div class="subject-checkbox">
+                            <input 
+                                type="checkbox" 
+                                id="past_subject_${subject.id}" 
+                                value="${subject.id}"
+                                onchange="togglePastSubject(${subject.id}, '${subject.code}', '${subject.name.replace(/'/g, "\\'")}', ${subject.units})"
+                            >
+                        </div>
+                        <div class="subject-info">
+                            <div class="subject-header">
+                                <span class="subject-code">${subject.code}</span>
+                                <span class="subject-units">${subject.units} units</span>
+                            </div>
+                            <div class="subject-name">${subject.name}</div>
+                            ${subject.prerequisites && subject.prerequisites.length > 0 ? `
+                                <div class="prerequisite-info">
+                                    <small>Prerequisites: ${subject.prerequisites.map(p => p.code).join(', ')}</small>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            subjectsHTML += `
+                    </div>
+                </div>
+            `;
+        });
+        
+        pastSubjectsList.innerHTML = subjectsHTML;
+    }
+
+    // Group subjects by year level and semester
+    function groupSubjectsByLevelAndSemester(subjects) {
+        const grouped = {};
+        
+        subjects.forEach(subject => {
+            const key = `${subject.year_level}|${subject.semester}`;
+            if (!grouped[key]) {
+                grouped[key] = [];
+            }
+            grouped[key].push(subject);
+        });
+        
+        return grouped;
+    }
+
+    // Toggle past subject selection
+    function togglePastSubject(subjectId, subjectCode, subjectName, units) {
+        const checkbox = document.getElementById(`past_subject_${subjectId}`);
+        const subjectData = {
+            id: subjectId,
+            code: subjectCode,
+            name: subjectName,
+            units: units
+        };
+        
+        if (checkbox.checked) {
+            selectedPastSubjects.add(JSON.stringify(subjectData));
+        } else {
+            // Remove from set
+            for (let item of selectedPastSubjects) {
+                const parsed = JSON.parse(item);
+                if (parsed.id === subjectId) {
+                    selectedPastSubjects.delete(item);
+                    break;
+                }
+            }
+        }
+        
+        updateSaveButtonState();
+    }
+
+    // Update save button state
+    function updateSaveButtonState() {
+        savePastSubjects.disabled = selectedPastSubjects.size === 0;
+    }
+
+    // Save past subjects
+    savePastSubjects.addEventListener('click', function() {
+        if (selectedPastSubjects.size === 0) return;
+        
+        const submitBtn = savePastSubjects;
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        submitBtn.disabled = true;
+        
+        const pastSubjectsArray = Array.from(selectedPastSubjects).map(item => JSON.parse(item));
+        
+        fetch('/student/enrollment/save-past-subjects', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                past_subjects: pastSubjectsArray
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Completed subjects saved successfully!', 'success');
+                closeIrregularSubjectsModal();
+            } else {
+                showNotification(data.message, 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error saving past subjects:', error);
+            showNotification('Failed to save subjects. Please try again.', 'error');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+
+    // Close irregular subjects modal
+    function closeIrregularSubjectsModal() {
+        irregularSubjectsModal.classList.remove('active');
+        selectedPastSubjects.clear();
+        updateSaveButtonState();
+    }
+
+    // Event listeners for irregular modal
+    closeIrregularModal.addEventListener('click', closeIrregularSubjectsModal);
+    cancelIrregular.addEventListener('click', closeIrregularSubjectsModal);
+
+    // Search functionality for past subjects
+    pastSubjectsSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        
+        if (searchTerm === '') {
+            displayPastSubjects(allSubjects);
+            return;
+        }
+        
+        const filteredSubjects = allSubjects.filter(subject => 
+            subject.code.toLowerCase().includes(searchTerm) ||
+            subject.name.toLowerCase().includes(searchTerm)
+        );
+        
+        displayPastSubjects(filteredSubjects);
+    });
+
+    // Modify the existing enrollNowBtn click handler
+    enrollNowBtn.addEventListener('click', function() {
+        const isIrregular = document.getElementById('is-regular').value == 2;
+        
+        if (isIrregular) {
+            // For irregular students, check if they have submitted past subjects
+            fetch('/student/enrollment/check-past-subjects', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.has_submitted) {
+                        // Student has submitted past subjects, proceed with enrollment
+                        enrollmentModal.classList.add('active');
+                        loadEnrollmentSubjects();
+                    } else {
+                        // Student hasn't submitted past subjects, show the irregular modal
+                        loadAllSubjectsForIrregular();
+                    }
+                } else {
+                    showNotification('Error checking enrollment status', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking past subjects:', error);
+                showNotification('Network error. Please try again.', 'error');
+            });
+        } else {
+            // Regular student - proceed normally
+            enrollmentModal.classList.add('active');
+            loadEnrollmentSubjects();
+        }
+    });
+
+    // Update the toggleSubject function to enforce unit limits
+    function toggleSubject(subjectId, units, isDisabled, maxUnits = 23) {
+        if (isDisabled) return;
+        
+        const checkbox = document.getElementById(`subject_${subjectId}`);
+        const currentUnits = totalUnits;
+        const newUnits = checkbox.checked ? currentUnits - parseInt(units) : currentUnits + parseInt(units);
+        
+        if (!checkbox.checked && newUnits > maxUnits) {
+            showNotification(`Cannot exceed maximum of ${maxUnits} units for this semester`, 'error');
+            return;
+        }
+        
+        if (checkbox.checked) {
+            selectedSubjects.delete(subjectId);
+            totalUnits -= parseInt(units);
+        } else {
+            selectedSubjects.add(subjectId);
+            totalUnits += parseInt(units);
+        }
+        
+        updateUnitsCounter();
+        submitEnrollment.disabled = selectedSubjects.size === 0 || totalUnits > maxUnits;
+        
+        // Update checkbox state
+        checkbox.checked = !checkbox.checked;
+    }
+
+    // Initialize irregular student check on page load
+    checkIrregularStudent();
+
     });//End of DOMContentLoaded

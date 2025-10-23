@@ -2188,6 +2188,65 @@ body.dark-mode .prerequisite-warning {
     color: #fbbf24;
 }
 
+/* Irregular Student Modal Styles */
+.subject-group {
+    margin-bottom: 24px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.group-header {
+    background: #f8fafc;
+    padding: 12px 16px;
+    margin: 0;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.group-subjects {
+    padding: 8px;
+}
+
+.past-subject-item {
+    margin-bottom: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.past-subject-item:hover {
+    border-color: var(--primary-color);
+}
+
+.prerequisite-info {
+    background: #f1f5f9;
+    padding: 6px 8px;
+    border-radius: 6px;
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+/* Dark mode styles */
+body.dark-mode .subject-group {
+    border-color: var(--border-dark);
+}
+
+body.dark-mode .group-header {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-dark);
+    border-bottom-color: var(--border-dark);
+}
+
+body.dark-mode .past-subject-item {
+    border-color: var(--border-dark);
+}
+
+body.dark-mode .prerequisite-info {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted-dark);
+}
+
 /* Enhanced Mobile Responsiveness */
 @media (max-width: 1200px) {
     .sidebar {

@@ -127,6 +127,7 @@ $show_student_form = (strtolower($student_id) === 'none');
                         </div>
                         <h3 class="stat-value">Enroll Now</h3>
                         <p class="stat-label">October 22, 2025</p>
+                        <input type="text" id="is-regular" value="{{ $is_regular }}" hidden>
                     </div>
 
                     <div class="stat-card">
@@ -1124,6 +1125,61 @@ $show_student_form = (strtolower($student_id) === 'none');
                     <button type="button" class="btn-primary" id="submitEnrollment" disabled>
                         <i class="fas fa-paper-plane"></i>
                         Submit Enrollment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Irregular Student Past Subjects Modal -->
+    <div id="irregularSubjectsModal" class="modal-overlay">
+        <div class="modal-container" style="max-width: 900px; max-height: 80vh;">
+            <div class="modal-header">
+                <h3>Complete Your Academic History</h3>
+                <button type="button" class="close-modal" id="closeIrregularModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-form">
+                <div class="enrollment-info">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Student Type:</span>
+                            <span class="info-value">Irregular Student</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Instructions:</span>
+                            <span class="info-value">Select all subjects you've already completed</span>
+                        </div>
+                    </div>
+                    <div class="form-note" style="margin-top: 10px;">
+                        <i class="fas fa-info-circle"></i>
+                        This information helps us determine which subjects you're eligible to enroll in. Please select ALL subjects you have successfully completed in previous semesters.
+                    </div>
+                </div>
+
+                <div class="subjects-container">
+                    <h4>Select Completed Subjects</h4>
+                    <div class="search-container" style="margin-bottom: 16px;">
+                        <div class="search-bar">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" class="search-input" id="pastSubjectsSearch" placeholder="Search subjects...">
+                        </div>
+                    </div>
+                    <div class="subjects-list" id="pastSubjectsList" style="max-height: 400px; overflow-y: auto;">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>Loading subjects...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" id="cancelIrregular">Cancel</button>
+                    <button type="button" class="btn-primary" id="savePastSubjects">
+                        <i class="fas fa-save"></i>
+                        Save Completed Subjects
                     </button>
                 </div>
             </div>

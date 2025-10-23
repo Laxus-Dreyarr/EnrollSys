@@ -192,6 +192,10 @@ Route::middleware(['student.auth'])->group(function () {
     // Enrollment routes
     Route::get('/student/enrollment/subjects', [StudentController::class, 'getEnrollmentSubjects']);
     Route::post('/student/enrollment/enroll', [StudentController::class, 'enrollSubjects']);
+
+    Route::get('/student/enrollment/check-past-subjects', [StudentController::class, 'checkPastSubjects']);
+    Route::get('/student/enrollment/all-subjects', [StudentController::class, 'getAllSubjects']);
+    Route::post('/student/enrollment/save-past-subjects', [StudentController::class, 'savePastSubjects']);
 });
 
 
