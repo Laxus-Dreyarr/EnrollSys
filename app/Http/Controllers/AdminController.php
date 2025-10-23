@@ -534,19 +534,11 @@ class AdminController extends Controller
                 }
             }
 
-            // Check for schedule conflicts
+            // Check for schedule conflicts but don't block creation
             $conflicts = $this->checkScheduleConflicts($uniqueSchedules);
-            if (!empty($conflicts)) {
-                DB::rollBack();
-                return response()->json([
-                    'success' => false, 
-                    'message' => 'Schedule conflicts detected',
-                    'conflicts' => $conflicts,
-                    'available_slots' => $this->getAvailableTimeSlots($uniqueSchedules)
-                ]);
-            }
+            $hasConflicts = !empty($conflicts);
 
-            // Create subject
+            // Create subject even with conflicts
             $subject = Subject::create([
                 'code' => $request->code,
                 'name' => $request->name,
@@ -570,7 +562,7 @@ class AdminController extends Controller
                 }
             }
 
-            // Add schedules
+            // Add schedules even with conflicts
             foreach ($uniqueSchedules as $schedule) {
                 SubjectSchedule::create([
                     'subject_id' => $subject->id,
@@ -583,36 +575,17 @@ class AdminController extends Controller
                 ]);
             }
 
-            // $clientInfo = $this->getClientDeviceInfoWithRequest($request);
-            $clientInfo = $this->collectClientInformation($request);
-            // $ipaddress = $this->getClientRealIp();
-            $ipaddress = $this->getClientDeviceInfo();
-            
-            $admin = Auth::guard('admin')->user();
-
-            date_default_timezone_set('Asia/Manila');
-            $todays_date=date("Y-m-d h:i:sa");
-            $today=strtotime($todays_date);
-            $date=date("Y-m-d h:i:sa", $today);
-
-            //Save to AuditLogs!
-            $audit = new AuditLog();
-            $audit->user_id = $admin->admin_id;
-            $audit->action = 'New Subject Created: ' .$request->name .'('.$request->code.')';
-            $audit->details = '' .$clientInfo['operating_system'] .'/' .$clientInfo['device_type'] .'/' .$clientInfo['user_agent'];
-            $audit->ip_address = $ipaddress['ip_address'];
-            $audit->date = $date;
-            $audit->access_by = '107568';
-
-            if (!$audit->save()) {
-                DB::rollBack();
-                return response()->json(['success' => false, 'message' => 'Failed to create subject: Unable to log audit trail']);
-            }
-
-
-
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'Subject created successfully']);
+            
+            // Return success with conflict info if any
+            $response = ['success' => true, 'message' => 'Subject created successfully'];
+            if ($hasConflicts) {
+                $response['has_conflicts'] = true;
+                $response['conflicts'] = $conflicts;
+                $response['available_slots'] = $this->getAvailableTimeSlots($uniqueSchedules);
+            }
+            
+            return response()->json($response);
             
         } catch (\Exception $e) {
             DB::rollBack();
@@ -831,19 +804,10 @@ class AdminController extends Controller
                 }
             }
 
-            // Check for schedule conflicts (excluding current subject's schedules)
+            // Check for schedule conflicts but don't block update
             $conflicts = $this->checkScheduleConflicts($uniqueSchedules, $subject->id);
-            if (!empty($conflicts)) {
-                DB::rollBack();
-                return response()->json([
-                    'success' => false, 
-                    'message' => 'Schedule conflicts detected',
-                    'conflicts' => $conflicts,
-                    'available_slots' => $this->getAvailableTimeSlots($uniqueSchedules)
-                ]);
-            }
+            $hasConflicts = !empty($conflicts);
 
-            // ... rest of your update method remains the same
             // Update subject
             $subject->update([
                 'code' => $request->code,
@@ -867,7 +831,7 @@ class AdminController extends Controller
                 }
             }
 
-            // Update schedules
+            // Update schedules even with conflicts
             SubjectSchedule::where('subject_id', $subject->id)->delete();
             foreach ($uniqueSchedules as $schedule) {
                 SubjectSchedule::create([
@@ -882,7 +846,16 @@ class AdminController extends Controller
             }
 
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'Subject updated successfully']);
+            
+            // Return success with conflict info if any
+            $response = ['success' => true, 'message' => 'Subject updated successfully'];
+            if ($hasConflicts) {
+                $response['has_conflicts'] = true;
+                $response['conflicts'] = $conflicts;
+                $response['available_slots'] = $this->getAvailableTimeSlots($uniqueSchedules);
+            }
+            
+            return response()->json($response);
             
         } catch (\Exception $e) {
             DB::rollBack();
