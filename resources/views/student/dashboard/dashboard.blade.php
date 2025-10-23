@@ -66,13 +66,13 @@ $show_student_form = (strtolower($student_id) === 'none');
                     <i class="fas fa-calendar-alt"></i>
                     <span>Schedule</span>
                 </a>
-                <a class="menu-item" data-section="grades">
+                <!-- <a class="menu-item" data-section="grades">
                     <i class="fas fa-chart-bar"></i>
                     <span>Grades</span>
-                </a>
+                </a> -->
                 <a class="menu-item" data-section="assignments">
-                    <i class="fas fa-tasks"></i>
-                    <span>Assignments</span>
+                    <i class="fa-solid fa-folder-open"></i>
+                    <span>Files</span>
                 </a>
                 <a class="menu-item" data-section="profile">
                     <i class="fas fa-user-circle"></i>
@@ -148,7 +148,7 @@ $show_student_form = (strtolower($student_id) === 'none');
                         <div class="stat-icon attendance">
                             <i class="fa-solid fa-folder-open"></i>
                         </div>
-                        <h3 class="stat-value">96.2%</h3>
+                        <h3 class="stat-value">10</h3>
                         <p class="stat-label">Documents</p>
                     </div>
                 </div>
@@ -534,7 +534,7 @@ $show_student_form = (strtolower($student_id) === 'none');
             </div>
             
             <!-- Grades Section -->
-            <div id="grades-section" class="content-section">
+            <!-- <div id="grades-section" class="content-section">
                 <h2 class="section-title">My Grades</h2>
                 
                 <div class="schedule-container">
@@ -554,7 +554,7 @@ $show_student_form = (strtolower($student_id) === 'none');
                         <tbody>
                             <tr>
                                 <td>IT 373 - Software Engineering</td>
-                                <td>Dr. Smith</td>
+                                <td>Lexi Lore</td>
                                 <td>88%</td>
                                 <td>92%</td>
                                 <td>-</td>
@@ -562,7 +562,7 @@ $show_student_form = (strtolower($student_id) === 'none');
                             </tr>
                             <tr>
                                 <td>CS 301 - Data Structures</td>
-                                <td>Prof. Johnson</td>
+                                <td>Emily Willis</td>
                                 <td>95%</td>
                                 <td>87%</td>
                                 <td>-</td>
@@ -570,7 +570,7 @@ $show_student_form = (strtolower($student_id) === 'none');
                             </tr>
                             <tr>
                                 <td>MATH 202 - Calculus II</td>
-                                <td>Dr. Lee</td>
+                                <td>Azi Acosta</td>
                                 <td>78%</td>
                                 <td>85%</td>
                                 <td>-</td>
@@ -578,7 +578,7 @@ $show_student_form = (strtolower($student_id) === 'none');
                             </tr>
                             <tr>
                                 <td>ENG 101 - Composition I</td>
-                                <td>Prof. Davis</td>
+                                <td>Angeli Khang</td>
                                 <td>92%</td>
                                 <td>88%</td>
                                 <td>-</td>
@@ -586,7 +586,7 @@ $show_student_form = (strtolower($student_id) === 'none');
                             </tr>
                             <tr>
                                 <td>HIST 110 - World History</td>
-                                <td>Dr. Garcia</td>
+                                <td>Ayanna Misola</td>
                                 <td>85%</td>
                                 <td>90%</td>
                                 <td>-</td>
@@ -621,7 +621,7 @@ $show_student_form = (strtolower($student_id) === 'none');
                         <p class="stat-label">Academic Honors</p>
                     </div>
                 </div>
-            </div>
+            </div> -->
             
             <!-- Assignments Section -->
             <div id="assignments-section" class="content-section">
@@ -688,7 +688,7 @@ $show_student_form = (strtolower($student_id) === 'none');
             <div id="profile-section" class="content-section">
                 <div class="profile-header">
                     <h2 class="section-title">My Profile</h2>
-                    <p class="profile-subtitle">Manage your personal information and account settings</p>
+                    <p class="profile-subtitle">Manage your personal information</p>
                 </div>
                 
                 <div class="profile-container">
@@ -746,12 +746,12 @@ $show_student_form = (strtolower($student_id) === 'none');
                                     <span class="stat-label">Courses</span>
                                 </div>
                                 <div class="profile-stat">
-                                    <span class="stat-number">89.5%</span>
-                                    <span class="stat-label">Avg Grade</span>
+                                    <span class="stat-number">10</span>
+                                    <span class="stat-label">Total Units</span>
                                 </div>
                                 <div class="profile-stat">
-                                    <span class="stat-number">96%</span>
-                                    <span class="stat-label">Attendance</span>
+                                    <span class="stat-number">10/2025</span>
+                                    <span class="stat-label">Enrolled</span>
                                 </div>
                             </div>
                         </div>
@@ -872,8 +872,8 @@ $show_student_form = (strtolower($student_id) === 'none');
                                     <i class="fas fa-star"></i>
                                 </div>
                                 <div class="info-content">
-                                    <span class="info-label">Current GPA</span>
-                                    <span class="info-value">3.75</span>
+                                    <span class="info-label">Rating</span>
+                                    <span class="info-value">5</span>
                                 </div>
                             </div>
                             
@@ -906,7 +906,7 @@ $show_student_form = (strtolower($student_id) === 'none');
                         <button class="btn-primary">Change</button>
                     </div>
                     
-                    <div class="settings-option">
+                    <!-- <div class="settings-option">
                         <div class="option-info">
                             <h5>Two-Factor Authentication</h5>
                             <p>Add an extra layer of security to your account</p>
@@ -915,7 +915,7 @@ $show_student_form = (strtolower($student_id) === 'none');
                             <input type="checkbox">
                             <span class="slider"></span>
                         </label>
-                    </div>
+                    </div> -->
                     
                     <div class="settings-option">
                         <div class="option-info">
@@ -942,8 +942,8 @@ $show_student_form = (strtolower($student_id) === 'none');
                     
                     <div class="settings-option">
                         <div class="option-info">
-                            <h5>Assignment Reminders</h5>
-                            <p>Get notified about upcoming assignments</p>
+                            <h5>Enrollment Reminders</h5>
+                            <p>Get notified about upcoming enrollment</p>
                         </div>
                         <label class="toggle-switch">
                             <input type="checkbox" checked>
@@ -953,8 +953,8 @@ $show_student_form = (strtolower($student_id) === 'none');
                     
                     <div class="settings-option">
                         <div class="option-info">
-                            <h5>Grade Updates</h5>
-                            <p>Receive notifications when new grades are posted</p>
+                            <h5>Enrollment Status Updates</h5>
+                            <p>Receive notifications when enrollment is approved</p>
                         </div>
                         <label class="toggle-switch">
                             <input type="checkbox" checked>
