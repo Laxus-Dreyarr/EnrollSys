@@ -2,6 +2,7 @@
 $firstname = $user->user_information->firstname;
 $lastname = $user->user_information->lastname;
 $student_id = $user->user_information->student->id_no;
+$is_regular = $user->user_information->student->is_regular;
 $profile_picture = $user->profile;
 
 // Check if student ID is 'none' (case-insensitive)
