@@ -1064,12 +1064,105 @@ class StudentController extends Controller
     // }
 
     // Update the getEnrollmentSubjects method for irregular students
+    // public function getEnrollmentSubjects(Request $request)
+    // {
+    //     try {
+    //         $user = Auth::guard('student')->user();
+    //         $student = $user->user_information->student;
+            
+    //         Log::info('Get enrollment subjects called', [
+    //             'user_id' => $user->id,
+    //             'student_id' => $student->id,
+    //             'student_table_id' => $student->id, // This is the ID from students table
+    //             'is_regular' => $student->is_regular,
+    //             'year_level' => $student->year_level
+    //         ]);
+
+    //         // Get student's year level
+    //         $yearLevel = $student->year_level;
+            
+    //         // Determine current semester
+    //         $currentSemester = '2nd Sem';
+            
+    //         // Get completed subjects from enrolled_sub table
+    //         $completedSubjects = DB::table('enrolled_sub')
+    //             ->where('student_id', $student->id) // This should match students.id
+    //             ->pluck('subject_id')
+    //             ->toArray();
+
+    //         Log::info('Completed subjects retrieved', [
+    //             'student_id_used' => $student->id,
+    //             'completed_count' => count($completedSubjects),
+    //             'completed_subjects' => $completedSubjects
+    //         ]);
+
+    //         // Debug: Check what's actually in enrolled_sub for this student
+    //         $enrolledSubRecords = DB::table('enrolled_sub')
+    //             ->where('student_id', $student->id)
+    //             ->get();
+
+    //         Log::info('Enrolled_sub records for student', [
+    //             'records' => $enrolledSubRecords->toArray()
+    //         ]);
+            
+    //         if ($student->is_regular == 1) {
+    //             // Regular student logic
+    //             $subjects = Subject::where('year_level', $yearLevel)
+    //                 ->where('semester', $currentSemester)
+    //                 ->where('is_active', 1)
+    //                 ->with(['schedules', 'prerequisites'])
+    //                 ->get();
+
+    //             Log::info('Regular student subjects', ['count' => $subjects->count()]);
+    //         } else {
+    //             // Irregular student logic
+    //             $subjects = $this->getAvailableSubjectsForIrregular($student, $yearLevel, $currentSemester, $completedSubjects);
+    //         }
+            
+    //         // Calculate total units for the semester
+    //         $totalUnits = $this->calculateTotalUnitsForSemester($yearLevel, $currentSemester);
+            
+    //         $response = [
+    //             'success' => true,
+    //             'subjects' => $subjects,
+    //             'completed_subjects' => $completedSubjects,
+    //             'total_units' => $totalUnits,
+    //             'is_regular' => $student->is_regular == 1,
+    //             'year_level' => $yearLevel,
+    //             'semester' => $currentSemester
+    //         ];
+
+    //         Log::info('Enrollment subjects response', [
+    //             'subjects_count' => $subjects->count(),
+    //             'is_regular' => $student->is_regular == 1
+    //         ]);
+
+    //         return response()->json($response);
+            
+    //     } catch (\Exception $e) {
+    //         Log::error('Get enrollment subjects error: ' . $e->getMessage(), [
+    //             'trace' => $e->getTraceAsString()
+    //         ]);
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Failed to load enrollment data'
+    //         ]);
+    //     }
+    // }
     public function getEnrollmentSubjects(Request $request)
     {
         try {
             $user = Auth::guard('student')->user();
             $student = $user->user_information->student;
             
+            Log::info('Get enrollment subjects called', [
+                'user_id' => $user->id,
+                'student_info_id' => $user->user_information->id,
+                'student_table_id' => $student->id,
+                'is_regular' => $student->is_regular,
+                'year_level' => $student->year_level
+            ]);
+
             // Get student's year level
             $yearLevel = $student->year_level;
             
@@ -1081,37 +1174,96 @@ class StudentController extends Controller
                 ->where('student_id', $student->id)
                 ->pluck('subject_id')
                 ->toArray();
+
+            Log::info('Completed subjects retrieved', [
+                'student_id_used' => $student->id,
+                'completed_count' => count($completedSubjects)
+            ]);
             
             if ($student->is_regular == 1) {
-                // Regular student logic (your existing code)
+                // Regular student logic
                 $subjects = Subject::where('year_level', $yearLevel)
                     ->where('semester', $currentSemester)
                     ->where('is_active', 1)
                     ->with(['schedules', 'prerequisites'])
                     ->get();
+
+                Log::info('Regular student subjects', [
+                    'count' => $subjects->count(),
+                    'year_level' => $yearLevel,
+                    'semester' => $currentSemester
+                ]);
             } else {
                 // Irregular student logic
                 $subjects = $this->getAvailableSubjectsForIrregular($student, $yearLevel, $currentSemester, $completedSubjects);
+                
+                Log::info('Irregular student subjects', [
+                    'total_available' => $subjects->count(),
+                    'year_level' => $yearLevel,
+                    'semester' => $currentSemester
+                ]);
+            }
+            
+            // Ensure subjects is always a collection, even if empty
+            if (!$subjects) {
+                $subjects = collect();
             }
             
             // Calculate total units for the semester
             $totalUnits = $this->calculateTotalUnitsForSemester($yearLevel, $currentSemester);
             
-            return response()->json([
+            // Format the response with proper data structure
+            $response = [
                 'success' => true,
-                'subjects' => $subjects,
+                'subjects' => $subjects->map(function($subject) {
+                    return [
+                        'id' => $subject->id,
+                        'code' => $subject->code,
+                        'name' => $subject->name,
+                        'units' => $subject->units,
+                        'year_level' => $subject->year_level,
+                        'semester' => $subject->semester,
+                        'description' => $subject->description,
+                        'schedules' => $subject->schedules ? $subject->schedules->map(function($schedule) {
+                            return [
+                                'day' => $schedule->day,
+                                'start_time' => $schedule->start_time,
+                                'end_time' => $schedule->end_time,
+                                'room' => $schedule->room
+                            ];
+                        }) : [],
+                        'prerequisites' => $subject->prerequisites ? $subject->prerequisites->map(function($prereq) {
+                            return [
+                                'id' => $prereq->id,
+                                'code' => $prereq->code,
+                                'name' => $prereq->name
+                            ];
+                        }) : []
+                    ];
+                })->values()->toArray(),
                 'completed_subjects' => $completedSubjects,
                 'total_units' => $totalUnits,
                 'is_regular' => $student->is_regular == 1,
                 'year_level' => $yearLevel,
                 'semester' => $currentSemester
+            ];
+
+            Log::info('Enrollment subjects response prepared', [
+                'subjects_count' => count($response['subjects']),
+                'is_regular' => $response['is_regular'],
+                'total_units' => $totalUnits
             ]);
+
+            return response()->json($response);
             
         } catch (\Exception $e) {
-            Log::error('Get enrollment subjects error: ' . $e->getMessage());
+            Log::error('Get enrollment subjects error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load enrollment data'
+                'message' => 'Failed to load enrollment data: ' . $e->getMessage(),
+                'subjects' => [] // Always return empty array for subjects
             ]);
         }
     }
@@ -1379,6 +1531,11 @@ class StudentController extends Controller
             $user = Auth::guard('student')->user();
             $student = $user->user_information->student;
             
+            Log::info('Save past subjects request received', [
+                'student_id' => $student->id,
+                'data' => $request->all()
+            ]);
+            
             $validator = Validator::make($request->all(), [
                 'past_subjects' => 'required|array',
                 'past_subjects.*.id' => 'required|exists:subjects,id',
@@ -1388,9 +1545,10 @@ class StudentController extends Controller
             ]);
             
             if ($validator->fails()) {
+                Log::error('Validation failed', ['errors' => $validator->errors()]);
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid subjects data'
+                    'message' => 'Invalid subjects data: ' . $validator->errors()->first()
                 ]);
             }
             
@@ -1399,21 +1557,39 @@ class StudentController extends Controller
             // Delete any existing past subjects for this student
             DB::table('enrolled_sub')->where('student_id', $student->id)->delete();
             
-            // Insert new past subjects
+            // Get the actual subject details to use valid year_level and semester
+            $subjectIds = collect($request->past_subjects)->pluck('id')->toArray();
+            $subjectsDetails = Subject::whereIn('id', $subjectIds)
+                ->get(['id', 'year_level', 'semester'])
+                ->keyBy('id');
+            
+            // Insert new past subjects with valid year_level and semester
             foreach ($request->past_subjects as $subject) {
+                $subjectDetail = $subjectsDetails[$subject['id']] ?? null;
+                
+                if (!$subjectDetail) {
+                    Log::warning('Subject details not found for ID: ' . $subject['id']);
+                    continue;
+                }
+                
                 DB::table('enrolled_sub')->insert([
                     'student_id' => $student->id,
                     'subject_id' => $subject['id'],
                     'subject_code' => $subject['code'],
                     'subject_name' => $subject['name'],
                     'units' => $subject['units'],
-                    'year_level' => 'Past', // Mark as past subjects
-                    'semester' => 'Completed',
+                    'year_level' => $subjectDetail->year_level, // Use actual year level
+                    'semester' => $subjectDetail->semester,     // Use actual semester
                     'date_enrolled' => now()
                 ]);
             }
             
             DB::commit();
+            
+            Log::info('Past subjects saved successfully', [
+                'student_id' => $student->id,
+                'subjects_count' => count($request->past_subjects)
+            ]);
             
             return response()->json([
                 'success' => true,
@@ -1422,7 +1598,9 @@ class StudentController extends Controller
             
         } catch (\Exception $e) {
             DB::rollback();
-            Log::error('Save past subjects error: ' . $e->getMessage());
+            Log::error('Save past subjects error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to save past subjects: ' . $e->getMessage()
@@ -1430,31 +1608,66 @@ class StudentController extends Controller
         }
     }
 
-    
-
     private function getAvailableSubjectsForIrregular($student, $yearLevel, $semester, $completedSubjects)
     {
-        // Get all subjects that are not completed
-        $availableSubjects = Subject::whereNotIn('id', $completedSubjects)
-            ->where('is_active', 1)
-            ->with(['schedules', 'prerequisites'])
-            ->get();
-        
-        // Filter subjects based on prerequisites
-        $filteredSubjects = $availableSubjects->filter(function($subject) use ($completedSubjects) {
-            // If subject has no prerequisites, it's available
-            if ($subject->prerequisites->isEmpty()) {
-                return true;
-            }
-            
-            // Check if all prerequisites are completed
-            $prerequisiteIds = $subject->prerequisites->pluck('id')->toArray();
-            $completedPrerequisites = array_intersect($prerequisiteIds, $completedSubjects);
-            
-            return count($prerequisiteIds) === count($completedPrerequisites);
-        });
-        
-        return $filteredSubjects;
+        Log::info('Getting available subjects for irregular student', [
+            'student_id' => $student->id,
+            'current_year_level' => $yearLevel,
+            'current_semester' => $semester,
+            'completed_subjects_count' => count($completedSubjects)
+        ]);
+
+        try {
+            // For irregular students, get all 2nd semester subjects from 1st to 4th year
+            $allSubjects = Subject::where('is_active', 1)
+                ->where('semester', $semester) // Current semester (2nd Sem)
+                ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year']) // All year levels
+                ->whereNotIn('code', ['IT 433', 'IT 429']) // Exclude these subjects
+                ->with(['schedules', 'prerequisites'])
+                ->get();
+
+            Log::info('Total 2nd sem subjects found for irregular student', ['count' => $allSubjects->count()]);
+
+            // Filter out completed subjects and check prerequisites
+            $availableSubjects = $allSubjects->filter(function($subject) use ($completedSubjects, $student) {
+                // Skip if subject is already completed
+                if (in_array($subject->id, $completedSubjects)) {
+                    Log::info("Subject {$subject->code} ({$subject->id}) filtered out - already completed");
+                    return false;
+                }
+                
+                // If subject has no prerequisites, it's available
+                if ($subject->prerequisites->isEmpty()) {
+                    Log::info("Subject {$subject->code} ({$subject->id}) available - no prerequisites");
+                    return true;
+                }
+                
+                // Check if all prerequisites are completed
+                $prerequisiteIds = $subject->prerequisites->pluck('id')->toArray();
+                $completedPrerequisites = array_intersect($prerequisiteIds, $completedSubjects);
+                
+                $allPrerequisitesMet = count($prerequisiteIds) === count($completedPrerequisites);
+                
+                Log::info("Subject {$subject->code} ({$subject->id}) prerequisites check", [
+                    'prerequisites' => $prerequisiteIds,
+                    'completed_prerequisites' => $completedPrerequisites,
+                    'all_met' => $allPrerequisitesMet
+                ]);
+
+                return $allPrerequisitesMet;
+            });
+
+            Log::info('Available subjects after filtering', [
+                'count' => $availableSubjects->count(),
+                'available_codes' => $availableSubjects->pluck('code')->toArray()
+            ]);
+
+            return $availableSubjects;
+
+        } catch (\Exception $e) {
+            Log::error('Error in getAvailableSubjectsForIrregular: ' . $e->getMessage());
+            return collect(); // Return empty collection on error
+        }
     }
 
     private function calculateTotalUnitsForSemester($yearLevel, $semester)

@@ -817,6 +817,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Load enrollment subjects
+    // function loadEnrollmentSubjects() {
+    //     subjectsList.innerHTML = `
+    //         <div class="loading-state">
+    //             <i class="fas fa-spinner fa-spin"></i>
+    //             <span>Loading subjects...</span>
+    //         </div>
+    //     `;
+
+    //     fetch('/student/enrollment/subjects', {
+    //         method: 'GET',
+    //         headers: {
+    //             'X-Requested-With': 'XMLHttpRequest',
+    //             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    //         }
+    //     })
+    //     .then(response => response.json())
+    //     .then(data => {
+    //         if (data.success) {
+    //             displaySubjects(data);
+    //         } else {
+    //             showEnrollmentError('Failed to load subjects');
+    //         }
+    //     })
+    //     .catch(error => {
+    //         console.error('Error loading subjects:', error);
+    //         showEnrollmentError('Network error. Please try again.');
+    //     });
+    // }
+
+    // Call this after the enrollment modal opens
     function loadEnrollmentSubjects() {
         subjectsList.innerHTML = `
             <div class="loading-state">
@@ -832,51 +862,105 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Enrollment data received:', data);
+            
             if (data.success) {
-                displaySubjects(data);
+                // Convert subjects object to array if needed
+                let subjectsArray = data.subjects;
+                if (subjectsArray && typeof subjectsArray === 'object' && !Array.isArray(subjectsArray)) {
+                    console.log('Converting subjects object to array');
+                    subjectsArray = Object.values(subjectsArray);
+                }
+                
+                // Create a new data object with the array
+                const processedData = {
+                    ...data,
+                    subjects: subjectsArray || []
+                };
+                
+                displaySubjects(processedData);
             } else {
-                showEnrollmentError('Failed to load subjects');
+                showEnrollmentError('Failed to load subjects: ' + (data.message || 'Unknown error'));
             }
         })
         .catch(error => {
             console.error('Error loading subjects:', error);
-            showEnrollmentError('Network error. Please try again.');
+            showEnrollmentError('Network error. Please check your connection and try again. Error: ' + error.message);
         });
     }
 
     // Display subjects in the modal
+    // Display subjects in the modal - ENHANCED VERSION
     function displaySubjects(data) {
-        enrollmentYearLevel.textContent = data.year_level;
-        enrollmentSemester.textContent = data.semester;
+        console.log('Displaying subjects with data:', data);
+        
+        // Check if data has the expected structure
+        if (!data || typeof data !== 'object') {
+            console.error('Invalid data received:', data);
+            showEnrollmentError('Invalid response from server');
+            return;
+        }
+
+        // Ensure subjects is an array
+        let subjects = data.subjects;
+        if (subjects && typeof subjects === 'object' && !Array.isArray(subjects)) {
+            console.log('Converting subjects object to array in displaySubjects');
+            subjects = Object.values(subjects);
+        } else if (!subjects || !Array.isArray(subjects)) {
+            subjects = [];
+        }
+
+        enrollmentYearLevel.textContent = data.year_level || '-';
+        enrollmentSemester.textContent = data.semester || '-';
         enrollmentStudentType.textContent = data.is_regular ? 'Regular' : 'Irregular';
         isRegular = data.is_regular;
         
-        if (data.subjects.length === 0) {
+        const completedSubjects = data.completed_subjects || [];
+        
+        if (subjects.length === 0) {
             subjectsList.innerHTML = `
                 <div class="error-state">
                     <i class="fas fa-book-open"></i>
-                    <span>No subjects available for your year level and semester.</span>
+                    <span>No subjects available for enrollment.</span>
+                    <small>This could be because you have already enrolled in all available subjects or don't meet prerequisites.</small>
                 </div>
             `;
             return;
         }
         
         let subjectsHTML = '';
+        let totalAvailableUnits = 0;
         
-        data.subjects.forEach(subject => {
+        subjects.forEach(subject => {
+            console.log('Processing subject:', subject);
+            
+            // Make sure subject has required properties
+            if (!subject || !subject.id || !subject.code) {
+                console.warn('Invalid subject skipped:', subject);
+                return; // Skip invalid subjects
+            }
+
             const hasPrerequisites = subject.prerequisites && subject.prerequisites.length > 0;
             const prerequisitesMet = hasPrerequisites ? 
-                subject.prerequisites.every(prereq => data.completed_subjects.includes(prereq.id)) : 
+                subject.prerequisites.every(prereq => completedSubjects.includes(prereq.id)) : 
                 true;
             
             const isSelectable = isRegular || (!hasPrerequisites || prerequisitesMet);
             const isAutoSelected = isRegular;
             
+            // Calculate total available units for display
+            totalAvailableUnits += parseInt(subject.units || 0);
+            
             if (isAutoSelected) {
                 selectedSubjects.add(subject.id);
-                totalUnits += parseInt(subject.units);
+                totalUnits += parseInt(subject.units || 0);
             }
             
             subjectsHTML += `
@@ -888,22 +972,24 @@ document.addEventListener('DOMContentLoaded', function() {
                             value="${subject.id}" 
                             ${isAutoSelected ? 'checked' : ''}
                             ${!isSelectable ? 'disabled' : ''}
-                            onchange="toggleSubject(${subject.id}, ${subject.units}, ${!isSelectable})"
+                            onchange="toggleSubject(${subject.id}, ${subject.units || 0}, ${!isSelectable})"
                         >
                     </div>
                     <div class="subject-info">
                         <div class="subject-header">
                             <span class="subject-code">${subject.code}</span>
-                            <span class="subject-units">${subject.units} units</span>
+                            <span class="subject-units">${subject.units || 0} units</span>
+                            <span class="subject-level">${subject.year_level || ''} - ${subject.semester || ''}</span>
                         </div>
-                        <div class="subject-name">${subject.name}</div>
+                        <div class="subject-name">${subject.name || 'No name'}</div>
                         <div class="subject-description">${subject.description || 'No description available'}</div>
                         
                         ${subject.schedules && subject.schedules.length > 0 ? `
                             <div class="subject-schedule">
+                                <strong>Schedule:</strong>
                                 ${subject.schedules.map(schedule => `
                                     <span class="schedule-badge">
-                                        ${schedule.day} ${schedule.start_time} - ${schedule.end_time}
+                                        ${schedule.day} ${schedule.start_time} - ${schedule.end_time} (${schedule.room})
                                     </span>
                                 `).join('')}
                             </div>
@@ -915,6 +1001,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 Requires prerequisites: ${subject.prerequisites.map(p => p.code).join(', ')}
                             </div>
                         ` : ''}
+                        
+                        ${!isRegular && hasPrerequisites && prerequisitesMet ? `
+                            <div class="prerequisite-success">
+                                <i class="fas fa-check-circle"></i>
+                                Prerequisites met: ${subject.prerequisites.map(p => p.code).join(', ')}
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -923,29 +1016,147 @@ document.addEventListener('DOMContentLoaded', function() {
         subjectsList.innerHTML = subjectsHTML;
         updateUnitsCounter();
         submitEnrollment.disabled = selectedSubjects.size === 0;
-    }
 
-    // Toggle subject selection
-    function toggleSubject(subjectId, units, isDisabled) {
-        if (isDisabled) return;
-        
-        const checkbox = document.getElementById(`subject_${subjectId}`);
-        
-        if (checkbox.checked) {
-            selectedSubjects.add(subjectId);
-            totalUnits += parseInt(units);
-        } else {
-            selectedSubjects.delete(subjectId);
-            totalUnits -= parseInt(units);
+        if (isRegular) {
+            selectedSubjects.forEach(subjectId => {
+                const checkbox = document.getElementById(`subject_${subjectId}`);
+                if (checkbox) {
+                    const subjectItem = checkbox.closest('.subject-item');
+                    subjectItem.classList.add('selected');
+                }
+            });
+        }
+
+        if (!isRegular) {
+            // For irregular students, clear any previous selection and reset units
+            selectedSubjects.clear();
+            totalUnits = 0;
+            
+            // Also uncheck all checkboxes visually
+            const checkboxes = subjectsList.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                const subjectItem = checkbox.closest('.subject-item');
+                if (subjectItem) {
+                    subjectItem.classList.remove('selected');
+                }
+            });
+            
+            updateUnitsCounter();
+            submitEnrollment.disabled = true;
+            console.log('Reset selection state for irregular student - totalUnits:', totalUnits);
         }
         
-        updateUnitsCounter();
-        submitEnrollment.disabled = selectedSubjects.size === 0;
+        // Add info about total available units
+        if (subjects.length > 0) {
+            const infoElement = document.createElement('div');
+            infoElement.className = 'available-units-info';
+            infoElement.innerHTML = `<small>Total available units for selection: ${totalAvailableUnits}</small>`;
+            subjectsList.appendChild(infoElement);
+        }
     }
 
+    function debugEnrollmentState() {
+    console.log('=== ENROLLMENT DEBUG INFO ===');
+    console.log('isRegular:', isRegular);
+    console.log('selectedSubjects:', Array.from(selectedSubjects));
+    console.log('totalUnits:', totalUnits);
+    console.log('selectedSubjects size:', selectedSubjects.size);
+    
+    // Check all checkboxes state
+    const checkboxes = subjectsList.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        const subjectId = checkbox.value;
+        console.log(`Checkbox ${subjectId}: checked=${checkbox.checked}, in selectedSubjects=${selectedSubjects.has(subjectId)}`);
+    });
+    
+    console.log('=== END DEBUG INFO ===');
+}
+
+// Call this after loading subjects to verify initial state
+setTimeout(debugEnrollmentState, 1000);
+
+    // Toggle subject selection
+    // Enhanced toggleSubject function
+    // CORRECTED toggleSubject function - FIXED REVERSE BEHAVIOR
+    window.toggleSubject = function(subjectId, units, isDisabled, maxUnits = 23) {
+        console.log(`Toggle subject called: ${subjectId}, units: ${units}, isDisabled: ${isDisabled}`);
+        
+        if (isDisabled) {
+            const checkbox = document.getElementById(`subject_${subjectId}`);
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+            return;
+        }
+        
+        const checkbox = document.getElementById(`subject_${subjectId}`);
+        if (!checkbox) {
+            console.error('Checkbox not found for subject:', subjectId);
+            return;
+        }
+        
+        const subjectItem = checkbox.closest('.subject-item');
+        const isNowChecked = checkbox.checked; // This is the NEW state after the click
+        
+        console.log(`Subject ${subjectId} is now ${isNowChecked ? 'checked' : 'unchecked'}, current totalUnits: ${totalUnits}`);
+        
+        if (isNowChecked) {
+            // Checkbox was just CHECKED - ADD subject
+            const newTotal = totalUnits + parseInt(units);
+            if (newTotal > maxUnits) {
+                showNotification(`Cannot exceed maximum of ${maxUnits} units for this semester. Current: ${totalUnits} units`, 'error');
+                checkbox.checked = false; // Uncheck it since we can't add
+                return;
+            }
+            
+            selectedSubjects.add(subjectId);
+            totalUnits = newTotal;
+            subjectItem.classList.add('selected');
+            console.log(`SELECTED subject ${subjectId}, added ${units} units. Total: ${totalUnits}`);
+        } else {
+            // Checkbox was just UNCHECKED - REMOVE subject
+            if (selectedSubjects.has(subjectId)) {
+                selectedSubjects.delete(subjectId);
+                totalUnits -= parseInt(units);
+                console.log(`DESELECTED subject ${subjectId}, removed ${units} units. Total: ${totalUnits}`);
+            }
+            subjectItem.classList.remove('selected');
+        }
+        
+        // Update the UI
+        updateUnitsCounter();
+        submitEnrollment.disabled = selectedSubjects.size === 0;
+        
+        console.log('Currently selected subjects:', Array.from(selectedSubjects));
+        console.log('Total units:', totalUnits);
+    };
+
+
+    // Update units counter
     // Update units counter
     function updateUnitsCounter() {
-        totalUnitsCounter.textContent = totalUnits;
+        console.log('Updating units counter, current totalUnits:', totalUnits);
+        
+        // Ensure totalUnits is never negative and is a valid number
+        if (isNaN(totalUnits) || totalUnits < 0) {
+            console.warn('Invalid totalUnits value, resetting to 0. Previous value:', totalUnits);
+            totalUnits = 0;
+        }
+        
+        const unitCounterElement = document.getElementById('totalUnitsCounter');
+        if (unitCounterElement) {
+            unitCounterElement.textContent = totalUnits;
+            console.log('Updated unit counter to:', totalUnits);
+            
+            // Also update any other elements that might display total units
+            const allUnitElements = document.querySelectorAll('[data-unit-counter]');
+            allUnitElements.forEach(element => {
+                element.textContent = totalUnits;
+            });
+        } else {
+            console.error('Unit counter element not found!');
+        }
     }
 
     // Show enrollment error
@@ -954,13 +1165,26 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="error-state">
                 <i class="fas fa-exclamation-circle"></i>
                 <span>${message}</span>
+                <small>Please check your connection and try again. If the problem persists, contact support.</small>
+                <button class="btn-primary mt-3" onclick="loadEnrollmentSubjects()">
+                    <i class="fas fa-redo"></i>
+                    Try Again
+                </button>
             </div>
         `;
     }
 
     // Submit enrollment
     submitEnrollment.addEventListener('click', function() {
-        if (selectedSubjects.size === 0) return;
+        console.log('Submit enrollment clicked');
+        console.log('Selected subjects count:', selectedSubjects.size);
+        console.log('Selected subjects:', Array.from(selectedSubjects));
+        console.log('Total units:', totalUnits);
+        
+        if (selectedSubjects.size === 0) {
+            showNotification('Please select at least one subject', 'error');
+            return;
+        }
         
         const submitBtn = submitEnrollment;
         const originalText = submitBtn.innerHTML;
@@ -969,6 +1193,12 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
         submitBtn.disabled = true;
         
+        // Convert Set to Array for submission
+        const subjectsArray = Array.from(selectedSubjects);
+        
+        console.log('Submitting enrollment with subjects:', subjectsArray);
+        console.log('Total units to submit:', totalUnits);
+        
         fetch('/student/enrollment/enroll', {
             method: 'POST',
             headers: {
@@ -976,13 +1206,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
             body: JSON.stringify({
-                subjects: Array.from(selectedSubjects)
+                subjects: subjectsArray
+                // Note: Removed total_units as it might not be needed in your backend
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Enrollment response:', data);
             if (data.success) {
-                showNotification(data.message, 'success');
+                showNotification(data.message || 'Enrollment submitted successfully!', 'success');
                 closeEnrollment();
                 
                 // Refresh the page or update UI as needed
@@ -990,18 +1229,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.location.reload();
                 }, 2000);
             } else {
-                showNotification(data.message, 'error');
+                showNotification(data.message || 'Enrollment failed. Please try again.', 'error');
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }
         })
         .catch(error => {
             console.error('Enrollment error:', error);
-            showNotification('Enrollment failed. Please try again.', 'error');
+            console.error('Error details:', error.message);
+            showNotification('Enrollment failed. Please try again. Error: ' + error.message, 'error');
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         });
     });
+    
 
     // Enhanced notification function (update your existing one)
     function showNotification(message, type = 'success') {
@@ -1067,6 +1308,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Make this function globally accessible
+    function togglePastSubject(subjectId, subjectCode, subjectName, units, isChecked) {
+        const subjectData = {
+            id: subjectId,
+            code: subjectCode,
+            name: subjectName,
+            units: units
+        };
+        
+        if (isChecked) {
+            selectedPastSubjects.add(JSON.stringify(subjectData));
+        } else {
+            // Remove from set
+            for (let item of selectedPastSubjects) {
+                const parsed = JSON.parse(item);
+                if (parsed.id === subjectId) {
+                    selectedPastSubjects.delete(item);
+                    break;
+                }
+            }
+        }
+        
+        updateSaveButtonState();
+        
+        // Debug: log current selection
+        console.log('Selected subjects:', Array.from(selectedPastSubjects).map(item => JSON.parse(item)));
+    }
+
     // Check if student has already submitted past subjects
     function checkPastSubjectsStatus() {
         fetch('/student/enrollment/check-past-subjects', {
@@ -1090,7 +1359,54 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Load all subjects for irregular student selection
+    // Debug function to check if everything is working
+    function debugPastSubjects() {
+        console.log('allSubjects:', allSubjects);
+        console.log('selectedPastSubjects:', selectedPastSubjects);
+        console.log('pastSubjectsList:', pastSubjectsList);
+        console.log('savePastSubjects button:', savePastSubjects);
+        
+        // Check if CSRF token is present
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        console.log('CSRF Token:', csrfToken ? csrfToken.getAttribute('content') : 'Not found');
+    }
+
+    // Debug function to check enrollment data
+    function debugEnrollmentData() {
+        fetch('/student/enrollment/subjects', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Enrollment subjects response:', data);
+            
+            if (data.success) {
+                console.log('Subjects count:', data.subjects.length);
+                console.log('Completed subjects:', data.completed_subjects);
+                console.log('Is regular:', data.is_regular);
+                console.log('Year level:', data.year_level);
+                
+                // Display each subject with details
+                data.subjects.forEach(subject => {
+                    console.log(`Subject: ${subject.code} - ${subject.name} (${subject.units} units)`);
+                    console.log('  Prerequisites:', subject.prerequisites);
+                    console.log('  Schedules:', subject.schedules);
+                });
+            } else {
+                console.error('Error:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+        });
+    }
+
+
+    // Call this after the modal loads to check initial state
     function loadAllSubjectsForIrregular() {
         pastSubjectsList.innerHTML = `
             <div class="loading-state">
@@ -1108,10 +1424,14 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
+            console.log('Subjects loaded:', data);
             if (data.success) {
                 allSubjects = data.subjects;
                 displayPastSubjects(allSubjects);
                 irregularSubjectsModal.classList.add('active');
+                
+                // Debug after loading
+                setTimeout(debugPastSubjects, 100);
             } else {
                 showNotification('Failed to load subjects', 'error');
             }
@@ -1148,6 +1468,9 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             
             groupedSubjects[groupKey].forEach(subject => {
+                // Escape quotes in subject name for JavaScript
+                const escapedName = subject.name.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                
                 subjectsHTML += `
                     <div class="subject-item past-subject-item">
                         <div class="subject-checkbox">
@@ -1155,7 +1478,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 type="checkbox" 
                                 id="past_subject_${subject.id}" 
                                 value="${subject.id}"
-                                onchange="togglePastSubject(${subject.id}, '${subject.code}', '${subject.name.replace(/'/g, "\\'")}', ${subject.units})"
+                                class="past-subject-checkbox"
+                                data-id="${subject.id}"
+                                data-code="${subject.code}"
+                                data-name="${escapedName}"
+                                data-units="${subject.units}"
                             >
                         </div>
                         <div class="subject-info">
@@ -1181,7 +1508,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         pastSubjectsList.innerHTML = subjectsHTML;
+        
+        // Add event listeners to all checkboxes
+        initializePastSubjectCheckboxes();
     }
+
+    // Initialize event listeners for past subject checkboxes
+    function initializePastSubjectCheckboxes() {
+        const checkboxes = pastSubjectsList.querySelectorAll('.past-subject-checkbox');
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const subjectId = this.getAttribute('data-id');
+                const subjectCode = this.getAttribute('data-code');
+                const subjectName = this.getAttribute('data-name');
+                const units = parseInt(this.getAttribute('data-units'));
+                
+                togglePastSubject(subjectId, subjectCode, subjectName, units, this.checked);
+            });
+        });
+    }
+
 
     // Group subjects by year level and semester
     function groupSubjectsByLevelAndSemester(subjects) {
@@ -1231,7 +1578,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Save past subjects
     savePastSubjects.addEventListener('click', function() {
-        if (selectedPastSubjects.size === 0) return;
+        if (selectedPastSubjects.size === 0) {
+            showNotification('Please select at least one subject', 'error');
+            return;
+        }
         
         const submitBtn = savePastSubjects;
         const originalText = submitBtn.innerHTML;
@@ -1240,7 +1590,16 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         submitBtn.disabled = true;
         
-        const pastSubjectsArray = Array.from(selectedPastSubjects).map(item => JSON.parse(item));
+        const pastSubjectsArray = Array.from(selectedPastSubjects).map(item => {
+            try {
+                return JSON.parse(item);
+            } catch (e) {
+                console.error('Error parsing subject:', item, e);
+                return null;
+            }
+        }).filter(item => item !== null);
+        
+        console.log('Saving subjects:', pastSubjectsArray);
         
         fetch('/student/enrollment/save-past-subjects', {
             method: 'POST',
@@ -1252,13 +1611,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 past_subjects: pastSubjectsArray
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Save response:', data);
             if (data.success) {
                 showNotification('Completed subjects saved successfully!', 'success');
                 closeIrregularSubjectsModal();
+                
+                // Refresh the page or update UI
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
             } else {
-                showNotification(data.message, 'error');
+                showNotification(data.message || 'Failed to save subjects', 'error');
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }
@@ -1300,11 +1670,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Modify the existing enrollNowBtn click handler
+    // Modify the existing enrollNowBtn click handler
     enrollNowBtn.addEventListener('click', function() {
         const isIrregular = document.getElementById('is-regular').value == 2;
+        console.log('Enroll Now clicked - Is irregular:', isIrregular);
         
         if (isIrregular) {
             // For irregular students, check if they have submitted past subjects
+            console.log('Checking past subjects for irregular student...');
+            
             fetch('/student/enrollment/check-past-subjects', {
                 method: 'GET',
                 headers: {
@@ -1312,59 +1686,70 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Past subjects check response:', data);
                 if (data.success) {
                     if (data.has_submitted) {
                         // Student has submitted past subjects, proceed with enrollment
+                        console.log('Irregular student has submitted past subjects, opening enrollment modal');
                         enrollmentModal.classList.add('active');
                         loadEnrollmentSubjects();
                     } else {
                         // Student hasn't submitted past subjects, show the irregular modal
+                        console.log('Irregular student needs to submit past subjects first');
                         loadAllSubjectsForIrregular();
                     }
                 } else {
-                    showNotification('Error checking enrollment status', 'error');
+                    console.error('Error checking past subjects:', data.message);
+                    showNotification('Error checking enrollment status: ' + data.message, 'error');
                 }
             })
             .catch(error => {
                 console.error('Error checking past subjects:', error);
-                showNotification('Network error. Please try again.', 'error');
+                showNotification('Network error checking enrollment status. Please try again.', 'error');
             });
         } else {
             // Regular student - proceed normally
+            console.log('Regular student, opening enrollment modal');
             enrollmentModal.classList.add('active');
             loadEnrollmentSubjects();
         }
-    });
+});
+
 
     // Update the toggleSubject function to enforce unit limits
-    function toggleSubject(subjectId, units, isDisabled, maxUnits = 23) {
-        if (isDisabled) return;
+    // function toggleSubject(subjectId, units, isDisabled, maxUnits = 23) {
+    //     if (isDisabled) return;
         
-        const checkbox = document.getElementById(`subject_${subjectId}`);
-        const currentUnits = totalUnits;
-        const newUnits = checkbox.checked ? currentUnits - parseInt(units) : currentUnits + parseInt(units);
+    //     const checkbox = document.getElementById(`subject_${subjectId}`);
+    //     const currentUnits = totalUnits;
+    //     const newUnits = checkbox.checked ? currentUnits - parseInt(units) : currentUnits + parseInt(units);
         
-        if (!checkbox.checked && newUnits > maxUnits) {
-            showNotification(`Cannot exceed maximum of ${maxUnits} units for this semester`, 'error');
-            return;
-        }
+    //     if (!checkbox.checked && newUnits > maxUnits) {
+    //         showNotification(`Cannot exceed maximum of ${maxUnits} units for this semester`, 'error');
+    //         return;
+    //     }
         
-        if (checkbox.checked) {
-            selectedSubjects.delete(subjectId);
-            totalUnits -= parseInt(units);
-        } else {
-            selectedSubjects.add(subjectId);
-            totalUnits += parseInt(units);
-        }
+    //     if (checkbox.checked) {
+    //         selectedSubjects.delete(subjectId);
+    //         totalUnits -= parseInt(units);
+    //     } else {
+    //         selectedSubjects.add(subjectId);
+    //         totalUnits += parseInt(units);
+    //     }
         
-        updateUnitsCounter();
-        submitEnrollment.disabled = selectedSubjects.size === 0 || totalUnits > maxUnits;
+    //     updateUnitsCounter();
+    //     submitEnrollment.disabled = selectedSubjects.size === 0 || totalUnits > maxUnits;
         
-        // Update checkbox state
-        checkbox.checked = !checkbox.checked;
-    }
+    //     // Update checkbox state
+    //     checkbox.checked = !checkbox.checked;
+    // }
 
     // Initialize irregular student check on page load
     checkIrregularStudent();

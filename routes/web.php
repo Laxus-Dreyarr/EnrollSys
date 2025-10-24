@@ -198,6 +198,40 @@ Route::middleware(['student.auth'])->group(function () {
     Route::post('/student/enrollment/save-past-subjects', [StudentController::class, 'savePastSubjects']);
 });
 
+// Debug route - remove after testing
+Route::get('/debug-student-data', function() {
+    $user = Auth::guard('student')->user();
+    if (!$user) {
+        return response()->json(['error' => 'Not authenticated']);
+    }
+
+    $student = $user->user_information->student;
+    
+    $data = [
+        'user' => [
+            'id' => $user->id,
+            'email' => $user->email2,
+        ],
+        'user_info' => [
+            'id' => $user->user_information->id,
+            'firstname' => $user->user_information->firstname,
+        ],
+        'student' => [
+            'id' => $student->id,
+            'student_id' => $student->student_id,
+            'id_no' => $student->id_no,
+            'year_level' => $student->year_level,
+            'is_regular' => $student->is_regular,
+        ],
+        'enrolled_sub_records' => DB::table('enrolled_sub')
+            ->where('student_id', $student->id)
+            ->get()->toArray(),
+        'all_enrolled_sub' => DB::table('enrolled_sub')->get()->toArray() // For comparison
+    ];
+
+    return response()->json($data);
+});
+
 
 //Org Routes
 Route::get('/org', function () {
