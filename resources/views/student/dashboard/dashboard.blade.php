@@ -1131,53 +1131,168 @@ $show_student_form = (strtolower($student_id) === 'none');
         </div>
     </div>
 
-    <!-- Irregular Student Past Subjects Modal -->
-    <div id="irregularSubjectsModal" class="modal-overlay">
-        <div class="modal-container" style="max-width: 900px; max-height: 80vh;">
-            <div class="modal-header">
-                <h3>Complete Your Academic History</h3>
-                <button type="button" class="close-modal" id="closeIrregularModal">
+    <!-- Enhanced Irregular Student Past Subjects Modal -->
+    <div id="irregularSubjectsModal" class="irregular-modal-overlay">
+        <div class="irregular-modal-container">
+            <div class="irregular-modal-header">
+                <div class="irregular-modal-title-section">
+                    <h3 class="irregular-modal-title">Complete Your Academic History</h3>
+                    <p class="irregular-modal-subtitle">Select subjects you've successfully completed in previous semesters</p>
+                </div>
+                <button type="button" class="irregular-close-modal" id="closeIrregularModal" aria-label="Close modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             
-            <div class="modal-form">
-                <div class="enrollment-info">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label">Student Type:</span>
-                            <span class="info-value">Irregular Student</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Instructions:</span>
-                            <span class="info-value">Select all subjects you've already completed</span>
-                        </div>
+            <div class="irregular-modal-content">
+                <!-- Student Information Card -->
+                <div class="irregular-student-card">
+                    <div class="irregular-student-header">
+                        <i class="fas fa-user-graduate"></i>
+                        <h4>Student Information</h4>
                     </div>
-                    <div class="form-note" style="margin-top: 10px;">
-                        <i class="fas fa-info-circle"></i>
-                        This information helps us determine which subjects you're eligible to enroll in. Please select ALL subjects you have successfully completed in previous semesters.
+                    <div class="irregular-student-grid">
+                        <div class="irregular-student-item">
+                            <span class="irregular-student-label">Student Type:</span>
+                            <span class="irregular-student-value irregular-badge">Irregular Student</span>
+                        </div>
+                        <div class="irregular-student-item">
+                            <span class="irregular-student-label">Current Year Level:</span>
+                            <span class="irregular-student-value" id="currentYearLevel">-</span>
+                        </div>
+                        <div class="irregular-student-item">
+                            <span class="irregular-student-label">Completed Subjects:</span>
+                            <span class="irregular-student-value" id="completedCount">0</span>
+                        </div>
+                        <div class="irregular-student-item">
+                            <span class="irregular-student-label">Total Units:</span>
+                            <span class="irregular-student-value" id="totalUnits">0 units</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="subjects-container">
-                    <h4>Select Completed Subjects</h4>
-                    <div class="search-container" style="margin-bottom: 16px;">
-                        <div class="search-bar">
-                            <i class="fas fa-search search-icon"></i>
-                            <input type="text" class="search-input" id="pastSubjectsSearch" placeholder="Search subjects...">
+                <!-- Instructions Card -->
+                <div class="irregular-instruction-card">
+                    <div class="irregular-instruction-header">
+                        <i class="fas fa-info-circle"></i>
+                        <h5>Important Instructions</h5>
+                    </div>
+                    <div class="irregular-instruction-content">
+                        <p>This information helps us determine which subjects you're eligible to enroll in. Please select <strong>ALL subjects</strong> you have successfully completed in previous semesters.</p>
+                        <ul class="irregular-instruction-list">
+                            <li><i class="fas fa-check-circle"></i> Select subjects you've passed</li>
+                            <li><i class="fas fa-clock"></i> Include subjects from all previous years</li>
+                            <li><i class="fas fa-exclamation-triangle"></i> Do not select current or future subjects</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="irregular-subjects-section">
+                    <!-- Search and Filter Section -->
+                    <div class="irregular-filter-section">
+                        <div class="irregular-search-container">
+                            <div class="irregular-search-bar">
+                                <i class="fas fa-search irregular-search-icon"></i>
+                                <input type="text" class="irregular-search-input" id="pastSubjectsSearch" placeholder="Search subjects by code or name...">
+                                <div class="irregular-search-actions">
+                                    <button class="irregular-clear-search" id="clearSearch" title="Clear search" aria-label="Clear search">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="irregular-filter-controls">
+                            <div class="irregular-filter-group">
+                                <label for="yearLevelFilter" class="irregular-filter-label">
+                                    <i class="fas fa-filter"></i>
+                                    Filter by Year Level:
+                                </label>
+                                <select id="yearLevelFilter" class="irregular-filter-select">
+                                    <option value="all">All Year Levels</option>
+                                    <option value="1st Year">1st Year</option>
+                                    <option value="2nd Year">2nd Year</option>
+                                    <option value="3rd Year">3rd Year</option>
+                                    <option value="4th Year">4th Year</option>
+                                </select>
+                            </div>
+                            
+                            <div class="irregular-filter-group">
+                                <label for="semesterFilter" class="irregular-filter-label">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    Filter by Semester:
+                                </label>
+                                <select id="semesterFilter" class="irregular-filter-select">
+                                    <option value="all">All Semesters</option>
+                                    <option value="1st Sem">1st Semester</option>
+                                    <option value="2nd Sem">2nd Semester</option>
+                                </select>
+                            </div>
+
+                            <div class="irregular-selection-info">
+                                <span id="selectedCount">0 subjects selected</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="subjects-list" id="pastSubjectsList" style="max-height: 400px; overflow-y: auto;">
-                        <div class="loading-state">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            <span>Loading subjects...</span>
+
+                    <!-- Categories and Subjects Section -->
+                    <div class="irregular-content-layout">
+                        <!-- Categories Sidebar -->
+                        <div class="irregular-categories-sidebar">
+                            <div class="irregular-categories-header">
+                                <h5><i class="fas fa-folder"></i> Categories</h5>
+                                <button class="irregular-expand-all" id="expandAllCategories">
+                                    <i class="fas fa-expand"></i>
+                                    Expand All
+                                </button>
+                            </div>
+                            <div class="irregular-categories-list" id="categoriesList">
+                                <!-- Categories will be populated by JavaScript -->
+                                <div class="irregular-loading-state">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <span>Loading categories...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Subjects Main Content -->
+                        <div class="irregular-subjects-main">
+                            <div class="irregular-subjects-header">
+                                <h4 id="currentCategoryTitle">All Subjects</h4>
+                                <div class="irregular-subject-actions">
+                                    <button class="irregular-select-all" id="selectAllVisible">
+                                        <i class="fas fa-check-square"></i>
+                                        Select All Visible
+                                    </button>
+                                    <button class="irregular-deselect-all" id="deselectAllVisible">
+                                        <i class="fas fa-square"></i>
+                                        Deselect All
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="irregular-subjects-container">
+                                <div class="irregular-subjects-list" id="pastSubjectsList">
+                                    <div class="irregular-empty-state">
+                                        <i class="fas fa-book-open"></i>
+                                        <h4>No Subjects Available</h4>
+                                        <p>Select a category to view subjects, or use the search above.</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="form-actions">
-                    <button type="button" class="btn-cancel" id="cancelIrregular">Cancel</button>
-                    <button type="button" class="btn-primary" id="savePastSubjects">
+                <div class="irregular-modal-actions">
+                    <button type="button" class="irregular-cancel-btn" id="cancelIrregular">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <div class="irregular-action-info">
+                        <span class="irregular-selection-summary" id="selectionSummary">No subjects selected</span>
+                    </div>
+                    <button type="button" class="irregular-save-btn" id="savePastSubjects" disabled>
                         <i class="fas fa-save"></i>
                         Save Completed Subjects
                     </button>
