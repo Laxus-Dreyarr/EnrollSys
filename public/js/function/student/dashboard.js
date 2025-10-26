@@ -431,8 +431,8 @@ function initializeIrregularModal() {
     };
 }
 
-// Update existing checkIrregularStudent function to use the new init method
-function checkIrregularStudent(irregularModal) {
+// Updated checkIrregularStudent function to use both modals
+function checkIrregularStudent(irregularModal, enhancedEnrollmentModal) {
     const isIrregular = document.getElementById('is-regular')?.value == 2;
     
     if (isIrregular) {
@@ -446,8 +446,13 @@ function checkIrregularStudent(irregularModal) {
         .then(response => response.json())
         .then(data => {
             if (data.success && !data.has_submitted) {
-                irregularModal.init();
-                irregularModal.modal.classList.add('active');
+                if (irregularModal && irregularModal.init) {
+                    irregularModal.init();
+                    irregularModal.modal.classList.add('active');
+                }
+            } else if (data.success && data.has_submitted && enhancedEnrollmentModal) {
+                // If they have submitted past subjects, they can use the enhanced enrollment modal
+                console.log('Irregular student ready for enrollment');
             }
         })
         .catch(error => {
@@ -948,6 +953,673 @@ notificationStyles.textContent = `
 `;
 document.head.appendChild(notificationStyles);
 
+// Enhanced Enrollment Modal Functionality
+function initializeEnhancedEnrollmentModal() {
+    const modal = document.getElementById('enhancedEnrollmentModal');
+    const subjectsGrid = document.getElementById('enhancedSubjectsList');
+    const searchInput = document.getElementById('enhancedSubjectsSearch');
+    const mobileSearchInput = document.getElementById('enhancedMobileSubjectsSearch');
+    const subjectFilter = document.getElementById('enhancedSubjectFilter');
+    const sortFilter = document.getElementById('enhancedSortFilter');
+    const mobileSubjectFilter = document.getElementById('enhancedMobileSubjectFilter');
+    const mobileSortFilter = document.getElementById('enhancedMobileSortFilter');
+    const clearSearchBtn = document.getElementById('enhancedClearSearch');
+    const quickSelectAllBtn = document.getElementById('enhancedQuickSelectAll');
+    const quickDeselectAllBtn = document.getElementById('enhancedQuickDeselectAll');
+    const saveBtn = document.getElementById('enhancedSubmitEnrollment');
+    const selectedCount = document.getElementById('enhancedSelectedCount');
+    const totalUnits = document.getElementById('enhancedTotalUnits');
+    const currentYearLevel = document.getElementById('enhancedCurrentYearLevel');
+    const selectionSummary = document.getElementById('enhancedSelectionSummary');
+    const unitsSummary = document.getElementById('enhancedUnitsSummary');
+    const submitCount = document.getElementById('enhancedSubmitCount');
+    const mobileSearchToggle = document.getElementById('enhancedMobileSearchToggle');
+    const mobileSearchPanel = document.getElementById('enhancedMobileSearchPanel');
+    const mobileSearchClose = document.getElementById('enhancedMobileSearchClose');
+    const mobileFilterToggle = document.getElementById('enhancedMobileFilterToggle');
+    const mobileFilterPanel = document.getElementById('enhancedMobileFilterPanel');
+    const mobileFilterClose = document.getElementById('enhancedMobileFilterClose');
+    const filterCount = document.querySelector('.enhanced-filter-count');
+    const studentTypeBadge = document.getElementById('enhancedStudentTypeBadge');
+    const enrollmentYearLevel = document.getElementById('enhancedEnrollmentYearLevel');
+    const enrollmentSemester = document.getElementById('enhancedEnrollmentSemester');
+    const enrollmentStudentType = document.getElementById('enhancedEnrollmentStudentType');
+    const maxUnitsElement = document.getElementById('enhancedMaxUnits');
+
+    let enhancedAllSubjects = [];
+    let enhancedSelectedSubjects = new Set();
+    let enhancedCurrentFilters = {
+        subjectFilter: 'all',
+        sortBy: 'code',
+        search: ''
+    };
+
+    let enhancedTotalUnits = 0;
+    let enhancedIsRegular = true;
+    let enhancedMaxUnits = 0; // Will be set dynamically from server data
+
+    // Initialize modal
+    function init() {
+        attachEventListeners();
+    }
+
+    function attachEventListeners() {
+        // Search and filter events
+        searchInput.addEventListener('input', handleSearch);
+        mobileSearchInput.addEventListener('input', handleSearch);
+        subjectFilter.addEventListener('change', handleFilterChange);
+        sortFilter.addEventListener('change', handleFilterChange);
+        mobileSubjectFilter.addEventListener('change', handleMobileFilterChange);
+        mobileSortFilter.addEventListener('change', handleMobileFilterChange);
+        clearSearchBtn.addEventListener('click', clearSearch);
+
+        // Selection actions
+        quickSelectAllBtn.addEventListener('click', selectAllVisible);
+        quickDeselectAllBtn.addEventListener('click', deselectAllVisible);
+        saveBtn.addEventListener('click', submitEnrollment);
+
+        // Mobile interactions
+        mobileSearchToggle.addEventListener('click', toggleMobileSearch);
+        mobileSearchClose.addEventListener('click', closeMobileSearch);
+        mobileFilterToggle.addEventListener('click', toggleMobileFilters);
+        mobileFilterClose.addEventListener('click', closeMobileFilters);
+
+        // Close modal
+        document.getElementById('enhancedCloseEnrollmentModal').addEventListener('click', closeModal);
+        document.getElementById('enhancedCancelEnrollment').addEventListener('click', closeModal);
+        
+        // Close mobile panels when clicking outside
+        document.addEventListener('click', (e) => {
+            if (mobileFilterPanel && !mobileFilterPanel.contains(e.target) && !mobileFilterToggle.contains(e.target)) {
+                closeMobileFilters();
+            }
+            if (mobileSearchPanel && !mobileSearchPanel.contains(e.target) && !mobileSearchToggle.contains(e.target)) {
+                closeMobileSearch();
+            }
+        });
+    }
+
+    function handleSearch(e) {
+        enhancedCurrentFilters.search = e.target.value.trim().toLowerCase();
+        if (e.target === mobileSearchInput) {
+            searchInput.value = e.target.value;
+        } else {
+            mobileSearchInput.value = e.target.value;
+        }
+        filterAndDisplaySubjects();
+    }
+
+    function handleFilterChange() {
+        enhancedCurrentFilters.subjectFilter = subjectFilter.value;
+        enhancedCurrentFilters.sortBy = sortFilter.value;
+        syncMobileFilters();
+        filterAndDisplaySubjects();
+    }
+
+    function handleMobileFilterChange() {
+        enhancedCurrentFilters.subjectFilter = mobileSubjectFilter.value;
+        enhancedCurrentFilters.sortBy = mobileSortFilter.value;
+        syncDesktopFilters();
+        filterAndDisplaySubjects();
+        closeMobileFilters();
+    }
+
+    function syncMobileFilters() {
+        if (mobileSubjectFilter) mobileSubjectFilter.value = enhancedCurrentFilters.subjectFilter;
+        if (mobileSortFilter) mobileSortFilter.value = enhancedCurrentFilters.sortBy;
+    }
+
+    function syncDesktopFilters() {
+        if (subjectFilter) subjectFilter.value = enhancedCurrentFilters.subjectFilter;
+        if (sortFilter) sortFilter.value = enhancedCurrentFilters.sortBy;
+    }
+
+    function clearSearch() {
+        searchInput.value = '';
+        mobileSearchInput.value = '';
+        enhancedCurrentFilters.search = '';
+        filterAndDisplaySubjects();
+    }
+
+    function toggleMobileSearch() {
+        mobileSearchPanel.classList.toggle('active');
+        if (mobileSearchPanel.classList.contains('active')) {
+            mobileSearchInput.focus();
+        }
+    }
+
+    function closeMobileSearch() {
+        mobileSearchPanel.classList.remove('active');
+    }
+
+    function toggleMobileFilters() {
+        mobileFilterPanel.classList.toggle('active');
+    }
+
+    function closeMobileFilters() {
+        mobileFilterPanel.classList.remove('active');
+    }
+
+    function updateFilterCount() {
+        if (!filterCount) return;
+        let count = 0;
+        if (enhancedCurrentFilters.subjectFilter !== 'all') count++;
+        if (enhancedCurrentFilters.sortBy !== 'code') count++;
+        if (enhancedCurrentFilters.search !== '') count++;
+        filterCount.textContent = count;
+    }
+
+    // Load subjects for enhanced modal
+    function loadEnhancedEnrollmentSubjects() {
+        showLoadingState();
+        
+        fetch('/student/enrollment/subjects', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Enhanced enrollment data received:', data);
+            
+            if (data.success) {
+                // Convert subjects object to array if needed
+                let subjectsArray = data.subjects;
+                if (subjectsArray && typeof subjectsArray === 'object' && !Array.isArray(subjectsArray)) {
+                    console.log('Converting subjects object to array');
+                    subjectsArray = Object.values(subjectsArray);
+                }
+                
+                // Create a new data object with the array
+                const processedData = {
+                    ...data,
+                    subjects: subjectsArray || []
+                };
+                
+                enhancedAllSubjects = processedData.subjects || [];
+                displayEnhancedSubjects(processedData);
+            } else {
+                showEnhancedError('Failed to load subjects: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error loading subjects in enhanced modal:', error);
+            showEnhancedError('Network error. Please check your connection and try again. Error: ' + error.message);
+        });
+    }
+
+    // Display subjects in enhanced modal - UPDATED VERSION
+    function displayEnhancedSubjects(data) {
+        console.log('Displaying enhanced subjects with data:', data);
+        
+        if (!data || typeof data !== 'object') {
+            console.error('Invalid data received:', data);
+            showEnhancedError('Invalid response from server');
+            return;
+        }
+
+        // Ensure subjects is an array
+        let subjects = data.subjects || [];
+        if (subjects && typeof subjects === 'object' && !Array.isArray(subjects)) {
+            console.log('Converting subjects object to array in displayEnhancedSubjects');
+            subjects = Object.values(subjects);
+        }
+
+        // Update header information
+        if (enrollmentYearLevel) enrollmentYearLevel.textContent = data.year_level || '-';
+        if (enrollmentSemester) enrollmentSemester.textContent = data.semester || '-';
+        if (enrollmentStudentType) enrollmentStudentType.textContent = data.is_regular ? 'Regular' : 'Irregular';
+        if (currentYearLevel) currentYearLevel.textContent = data.year_level || '-';
+        
+        // Update student type badge
+        if (studentTypeBadge) {
+            studentTypeBadge.textContent = data.is_regular ? 'Regular Student' : 'Irregular Student';
+            studentTypeBadge.className = 'enhanced-student-badge ' + (data.is_regular ? 'regular' : 'irregular');
+        }
+
+        enhancedIsRegular = data.is_regular;
+        
+        // SET MAX UNITS DYNAMICALLY FROM SERVER DATA
+        enhancedMaxUnits = data.total_units || 0;
+        if (maxUnitsElement) {
+            maxUnitsElement.textContent = enhancedMaxUnits;
+        }
+        
+        const completedSubjects = data.completed_subjects || [];
+        
+        if (subjects.length === 0) {
+            showEnhancedEmptyState();
+            return;
+        }
+
+        hideEnhancedEmptyState();
+        
+        // Reset selection for ALL students initially
+        enhancedSelectedSubjects.clear();
+        enhancedTotalUnits = 0;
+
+        let subjectsHTML = '';
+        
+        subjects.forEach(subject => {
+            console.log('Processing enhanced subject:', subject);
+            
+            if (!subject || !subject.id || !subject.code) {
+                console.warn('Invalid subject skipped:', subject);
+                return;
+            }
+
+            const hasPrerequisites = subject.prerequisites && subject.prerequisites.length > 0;
+            const prerequisitesMet = hasPrerequisites ? 
+                subject.prerequisites.every(prereq => completedSubjects.includes(prereq.id)) : 
+                true;
+            
+            const isSelectable = enhancedIsRegular || (!hasPrerequisites || prerequisitesMet);
+            
+            // For regular students, auto-select but don't add to selection set yet
+            const shouldBeSelected = enhancedIsRegular && isSelectable;
+            
+            subjectsHTML += `
+                <div class="enhanced-subject-card ${shouldBeSelected ? 'selected' : ''} ${!isSelectable ? 'disabled' : ''}" data-id="${subject.id}">
+                    <div class="enhanced-subject-header">
+                        <div class="enhanced-subject-code">${subject.code}</div>
+                        <div class="enhanced-subject-meta">
+                            <span class="enhanced-subject-units">${subject.units || 0} units</span>
+                            <span class="enhanced-subject-level">${subject.year_level || ''} - ${subject.semester || ''}</span>
+                        </div>
+                    </div>
+                    <div class="enhanced-subject-name">${subject.name || 'No name'}</div>
+                    <div class="enhanced-subject-description">${subject.description || 'No description available'}</div>
+                    
+                    ${subject.schedules && subject.schedules.length > 0 ? `
+                        <div class="enhanced-subject-schedule">
+                            ${subject.schedules.map(schedule => `
+                                <span class="enhanced-schedule-badge">
+                                    ${schedule.day} ${schedule.start_time} - ${schedule.end_time} (${schedule.room})
+                                </span>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    ${hasPrerequisites && !prerequisitesMet ? `
+                        <div class="enhanced-prerequisite-info">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Requires prerequisites: ${subject.prerequisites.map(p => p.code).join(', ')}
+                        </div>
+                    ` : ''}
+                    
+                    ${!enhancedIsRegular && hasPrerequisites && prerequisitesMet ? `
+                        <div class="enhanced-prerequisite-success">
+                            <i class="fas fa-check-circle"></i>
+                            Prerequisites met: ${subject.prerequisites.map(p => p.code).join(', ')}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="enhanced-subject-footer">
+                        <div class="enhanced-subject-checkbox">
+                            <input type="checkbox" 
+                                id="enhanced_subject_${subject.id}" 
+                                ${shouldBeSelected ? 'checked' : ''}
+                                ${!isSelectable ? 'disabled' : ''}
+                                onchange="enhancedToggleSubject(${subject.id}, ${subject.units || 0}, ${!isSelectable})">
+                            <label for="enhanced_subject_${subject.id}" class="enhanced-checkbox-label">
+                                ${isSelectable ? 'Select for Enrollment' : 'Not Available'}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // For regular students, add to selection set after creating the HTML
+            if (shouldBeSelected) {
+                enhancedSelectedSubjects.add(subject.id.toString());
+                enhancedTotalUnits += parseInt(subject.units || 0);
+            }
+        });
+        
+        subjectsGrid.innerHTML = subjectsHTML;
+        updateEnhancedSelectionInfo();
+
+        // For irregular students, ensure all checkboxes are unchecked
+        if (!enhancedIsRegular) {
+            const checkboxes = subjectsGrid.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                const subjectItem = checkbox.closest('.enhanced-subject-card');
+                if (subjectItem) {
+                    subjectItem.classList.remove('selected');
+                }
+            });
+            
+            updateEnhancedSelectionInfo();
+            if (saveBtn) saveBtn.disabled = true;
+        }
+    }
+
+    // Filter and display subjects based on current filters
+    function filterAndDisplaySubjects() {
+        updateFilterCount();
+        
+        let filteredSubjects = enhancedAllSubjects;
+        
+        // Apply subject filter
+        if (enhancedCurrentFilters.subjectFilter !== 'all') {
+            filteredSubjects = filteredSubjects.filter(subject => {
+                if (enhancedCurrentFilters.subjectFilter === 'available') {
+                    const hasPrerequisites = subject.prerequisites && subject.prerequisites.length > 0;
+                    const prerequisitesMet = hasPrerequisites ? 
+                        subject.prerequisites.every(prereq => completedSubjects.includes(prereq.id)) : 
+                        true;
+                    return enhancedIsRegular || (!hasPrerequisites || prerequisitesMet);
+                } else if (enhancedCurrentFilters.subjectFilter === 'with-prerequisites') {
+                    return subject.prerequisites && subject.prerequisites.length > 0;
+                }
+                return true;
+            });
+        }
+        
+        // Apply search filter
+        if (enhancedCurrentFilters.search) {
+            const searchTerm = enhancedCurrentFilters.search.toLowerCase();
+            filteredSubjects = filteredSubjects.filter(subject => 
+                subject.code.toLowerCase().includes(searchTerm) ||
+                subject.name.toLowerCase().includes(searchTerm) ||
+                (subject.description && subject.description.toLowerCase().includes(searchTerm))
+            );
+        }
+        
+        // Apply sorting
+        filteredSubjects.sort((a, b) => {
+            switch (enhancedCurrentFilters.sortBy) {
+                case 'name':
+                    return (a.name || '').localeCompare(b.name || '');
+                case 'units':
+                    return (b.units || 0) - (a.units || 0);
+                case 'code':
+                default:
+                    return (a.code || '').localeCompare(b.code || '');
+            }
+        });
+        
+        // Create a mock data object for display
+        const displayData = {
+            subjects: filteredSubjects,
+            is_regular: enhancedIsRegular,
+            year_level: enrollmentYearLevel ? enrollmentYearLevel.textContent : '-',
+            semester: enrollmentSemester ? enrollmentSemester.textContent : '-'
+        };
+        
+        displayEnhancedSubjects(displayData);
+    }
+
+    // Update selection information
+    function updateEnhancedSelectionInfo() {
+        const count = enhancedSelectedSubjects.size;
+        const units = enhancedTotalUnits;
+        
+        if (selectedCount) selectedCount.textContent = `${count} selected`;
+        if (totalUnits) totalUnits.textContent = units;
+        if (selectionSummary) selectionSummary.textContent = `${count} subjects`;
+        if (unitsSummary) unitsSummary.textContent = `${units} units`;
+        if (submitCount) submitCount.textContent = count;
+        
+        // Update save button state
+        if (saveBtn) {
+            saveBtn.disabled = count === 0 || units > enhancedMaxUnits;
+            
+            // Add warning if over unit limit
+            if (units > enhancedMaxUnits) {
+                saveBtn.title = `Maximum ${enhancedMaxUnits} units allowed. Current: ${units} units`;
+            } else {
+                saveBtn.title = '';
+            }
+        }
+    }
+
+    // Toggle subject selection for enhanced modal - UPDATED VERSION
+    window.enhancedToggleSubject = function(subjectId, units, isDisabled) {
+        console.log(`Enhanced toggle subject called: ${subjectId}, units: ${units}, isDisabled: ${isDisabled}`);
+        console.log(`Current max units: ${enhancedMaxUnits}, current total: ${enhancedTotalUnits}`);
+        
+        if (isDisabled) {
+            const checkbox = document.getElementById(`enhanced_subject_${subjectId}`);
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+            return;
+        }
+        
+        const checkbox = document.getElementById(`enhanced_subject_${subjectId}`);
+        if (!checkbox) {
+            console.error('Enhanced checkbox not found for subject:', subjectId);
+            return;
+        }
+        
+        const subjectItem = checkbox.closest('.enhanced-subject-card');
+        const isNowChecked = checkbox.checked;
+        
+        console.log(`Enhanced subject ${subjectId} is now ${isNowChecked ? 'checked' : 'unchecked'}, current totalUnits: ${enhancedTotalUnits}`);
+        
+        if (isNowChecked) {
+            // Checkbox was just CHECKED - ADD subject
+            const newTotal = enhancedTotalUnits + parseInt(units);
+            console.log(`Would be ${newTotal} units, max is ${enhancedMaxUnits}`);
+            
+            if (newTotal > enhancedMaxUnits) {
+                showNotification(`Cannot exceed maximum of ${enhancedMaxUnits} units for this semester. Current: ${enhancedTotalUnits} units`, 'error');
+                checkbox.checked = false;
+                return;
+            }
+            
+            enhancedSelectedSubjects.add(subjectId.toString());
+            enhancedTotalUnits = newTotal;
+            if (subjectItem) subjectItem.classList.add('selected');
+            console.log(`ENHANCED SELECTED subject ${subjectId}, added ${units} units. Total: ${enhancedTotalUnits}`);
+        } else {
+            // Checkbox was just UNCHECKED - REMOVE subject
+            if (enhancedSelectedSubjects.has(subjectId.toString())) {
+                enhancedSelectedSubjects.delete(subjectId.toString());
+                enhancedTotalUnits -= parseInt(units);
+                console.log(`ENHANCED DESELECTED subject ${subjectId}, removed ${units} units. Total: ${enhancedTotalUnits}`);
+            }
+            if (subjectItem) subjectItem.classList.remove('selected');
+        }
+        
+        // Update the UI
+        updateEnhancedSelectionInfo();
+        
+        console.log('Enhanced currently selected subjects:', Array.from(enhancedSelectedSubjects));
+        console.log('Enhanced total units:', enhancedTotalUnits);
+    };
+
+    // Select all visible subjects
+    function selectAllVisible() {
+        const visibleSubjectElements = subjectsGrid.querySelectorAll('.enhanced-subject-card:not(.disabled)');
+        visibleSubjectElements.forEach(card => {
+            const subjectId = card.getAttribute('data-id');
+            const checkbox = card.querySelector('input[type="checkbox"]');
+            const subject = enhancedAllSubjects.find(s => s.id == subjectId);
+            
+            if (subject && checkbox && !checkbox.checked) {
+                // Use the enhancedToggleSubject function to ensure proper state management
+                checkbox.checked = true;
+                window.enhancedToggleSubject(subject.id, subject.units, false);
+            }
+        });
+    }
+
+    // Deselect all visible subjects
+    function deselectAllVisible() {
+        const visibleSubjectElements = subjectsGrid.querySelectorAll('.enhanced-subject-card');
+        visibleSubjectElements.forEach(card => {
+            const subjectId = card.getAttribute('data-id');
+            const checkbox = card.querySelector('input[type="checkbox"]');
+            const subject = enhancedAllSubjects.find(s => s.id == subjectId);
+            
+            if (subject && checkbox && checkbox.checked) {
+                // Use the enhancedToggleSubject function to ensure proper state management
+                checkbox.checked = false;
+                window.enhancedToggleSubject(subject.id, subject.units, false);
+            }
+        });
+    }
+
+    // Submit enrollment for enhanced modal
+    function submitEnrollment() {
+        console.log('Enhanced submit enrollment clicked');
+        console.log('Enhanced selected subjects count:', enhancedSelectedSubjects.size);
+        console.log('Enhanced selected subjects:', Array.from(enhancedSelectedSubjects));
+        console.log('Enhanced total units:', enhancedTotalUnits);
+        
+        if (enhancedSelectedSubjects.size === 0) {
+            showNotification('Please select at least one subject', 'error');
+            return;
+        }
+        
+        if (enhancedTotalUnits > enhancedMaxUnits) {
+            showNotification(`Cannot exceed maximum of ${enhancedMaxUnits} units. Current: ${enhancedTotalUnits} units`, 'error');
+            return;
+        }
+        
+        const submitBtn = saveBtn;
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        submitBtn.disabled = true;
+        
+        // Convert Set to Array for submission
+        const subjectsArray = Array.from(enhancedSelectedSubjects);
+        
+        console.log('Enhanced submitting enrollment with subjects:', subjectsArray);
+        console.log('Enhanced total units to submit:', enhancedTotalUnits);
+        
+        fetch('/student/enrollment/enroll', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                subjects: subjectsArray
+            })
+        })
+        .then(response => {
+            console.log('Enhanced response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Enhanced enrollment response:', data);
+            if (data.success) {
+                showNotification(data.message || 'Enrollment submitted successfully!', 'success');
+                closeModal();
+                
+                // Refresh the page or update UI as needed
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showNotification(data.message || 'Enrollment failed. Please try again.', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Enhanced enrollment error:', error);
+            showNotification('Enrollment failed. Please try again. Error: ' + error.message, 'error');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    }
+
+    function openModal() {
+        if (modal) {
+            modal.classList.add('active');
+            loadEnhancedEnrollmentSubjects();
+        }
+    }
+
+    function closeModal() {
+        if (modal) {
+            modal.classList.remove('active');
+            enhancedSelectedSubjects.clear();
+            enhancedTotalUnits = 0;
+            updateEnhancedSelectionInfo();
+        }
+    }
+
+    // Utility functions for enhanced modal
+    function showLoadingState() {
+        if (subjectsGrid) {
+            subjectsGrid.innerHTML = `
+                <div class="enhanced-enrollment-loading-state">
+                    <div class="enhanced-loading-spinner"></div>
+                    <p>Loading available subjects...</p>
+                </div>
+            `;
+        }
+    }
+
+    function showEnhancedEmptyState() {
+        const emptyState = document.querySelector('.enhanced-enrollment-empty-state');
+        if (emptyState) {
+            emptyState.style.display = 'flex';
+        }
+        if (subjectsGrid) {
+            subjectsGrid.style.display = 'none';
+        }
+    }
+
+    function hideEnhancedEmptyState() {
+        const emptyState = document.querySelector('.enhanced-enrollment-empty-state');
+        if (emptyState) {
+            emptyState.style.display = 'none';
+        }
+        if (subjectsGrid) {
+            subjectsGrid.style.display = 'grid';
+        }
+    }
+
+    function showEnhancedError(message) {
+        if (subjectsGrid) {
+            subjectsGrid.innerHTML = `
+                <div class="enhanced-enrollment-empty-state">
+                    <div class="enhanced-empty-state-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <h4>Error Loading Subjects</h4>
+                    <p>${message}</p>
+                    <button class="enhanced-btn-primary" onclick="loadEnhancedEnrollmentSubjects()">
+                        <i class="fas fa-redo"></i>
+                        Try Again
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Make functions available globally
+    window.loadEnhancedEnrollmentSubjects = loadEnhancedEnrollmentSubjects;
+    window.openEnhancedEnrollmentModal = openModal;
+    window.closeEnhancedEnrollmentModal = closeModal;
+
+    return {
+        init,
+        openModal,
+        closeModal,
+        modal: modal
+    };
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Toggle sidebar on mobile
     const sidebarToggle = document.querySelector('.sidebar-toggle');
@@ -958,6 +1630,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize irregular modal
     const irregularModal = initializeIrregularModal();
+
+    // Initialize enhanced enrollment modal
+    const enhancedEnrollmentModal = initializeEnhancedEnrollmentModal();
+    enhancedEnrollmentModal.init();
 
     // Make sure the modal is initialized when opened via button
     const openModalBtn = document.querySelector('[data-target="irregularSubjectsModal"]');
@@ -1227,7 +1903,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Enrollment functionality
-    const enrollNowBtn = document.getElementById('d-stat-card-enroll');
     const enrollmentModal = document.getElementById('enrollmentModal');
     const closeEnrollmentModal = document.getElementById('closeEnrollmentModal');
     const cancelEnrollment = document.getElementById('cancelEnrollment');
@@ -1242,58 +1917,61 @@ document.addEventListener('DOMContentLoaded', function() {
     let totalUnits = 0;
     let isRegular = true;
 
-    // Open enrollment modal
-    enrollNowBtn.addEventListener('click', function() {
-        const isIrregular = document.getElementById('is-regular').value == 2;
-        console.log('Enroll Now clicked - Is irregular:', isIrregular);
-        
-        if (isIrregular) {
-            // For irregular students, check if they have submitted past subjects
-            console.log('Checking past subjects for irregular student...');
+    // Updated enroll now button to use enhanced modal
+    const enrollNowBtn = document.getElementById('d-stat-card-enroll');
+    if (enrollNowBtn) {
+        enrollNowBtn.addEventListener('click', function() {
+            const isIrregular = document.getElementById('is-regular').value == 2;
+            console.log('Enroll Now clicked - Is irregular:', isIrregular);
             
-            fetch('/student/enrollment/check-past-subjects', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Past subjects check response:', data);
-                if (data.success) {
-                    if (data.has_submitted) {
-                        // Student has submitted past subjects, proceed with enrollment
-                        console.log('Irregular student has submitted past subjects, opening enrollment modal');
-                        enrollmentModal.classList.add('active');
-                        loadEnrollmentSubjects();
-                    } else {
-                        // Student hasn't submitted past subjects, show the irregular modal
-                        console.log('Irregular student needs to submit past subjects first');
-                        irregularModal.loadAllSubjects();
-                        irregularModal.modal.classList.add('active');
+            if (isIrregular) {
+                // For irregular students, check if they have submitted past subjects
+                console.log('Checking past subjects for irregular student...');
+                
+                fetch('/student/enrollment/check-past-subjects', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
-                } else {
-                    console.error('Error checking past subjects:', data.message);
-                    showNotification('Error checking enrollment status: ' + data.message, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error checking past subjects:', error);
-                showNotification('Network error checking enrollment status. Please try again.', 'error');
-            });
-        } else {
-            // Regular student - proceed normally
-            console.log('Regular student, opening enrollment modal');
-            enrollmentModal.classList.add('active');
-            loadEnrollmentSubjects();
-        }
-    });
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Past subjects check response:', data);
+                    if (data.success) {
+                        if (data.has_submitted) {
+                            // Student has submitted past subjects, proceed with enhanced enrollment
+                            console.log('Irregular student has submitted past subjects, opening enhanced enrollment modal');
+                            enhancedEnrollmentModal.openModal();
+                        } else {
+                            // Student hasn't submitted past subjects, show the irregular modal
+                            console.log('Irregular student needs to submit past subjects first');
+                            if (window.irregularModal) {
+                                window.irregularModal.loadAllSubjects();
+                                window.irregularModal.modal.classList.add('active');
+                            }
+                        }
+                    } else {
+                        console.error('Error checking past subjects:', data.message);
+                        showNotification('Error checking enrollment status: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking past subjects:', error);
+                    showNotification('Network error checking enrollment status. Please try again.', 'error');
+                });
+            } else {
+                // Regular student - proceed with enhanced modal
+                console.log('Regular student, opening enhanced enrollment modal');
+                enhancedEnrollmentModal.openModal();
+            }
+        });
+    }
 
     // Close enrollment modal
     closeEnrollmentModal.addEventListener('click', closeEnrollment);
@@ -1517,7 +2195,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Toggle subject selection
-    window.toggleSubject = function(subjectId, units, isDisabled, maxUnits = 23) {
+    window.toggleSubject = function(subjectId, units, isDisabled) {
+        const maxUnits = data.total_units || 23;
         console.log(`Toggle subject called: ${subjectId}, units: ${units}, isDisabled: ${isDisabled}`);
         
         if (isDisabled) {

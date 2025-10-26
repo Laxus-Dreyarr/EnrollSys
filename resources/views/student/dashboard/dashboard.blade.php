@@ -1078,54 +1078,250 @@ $show_student_form = (strtolower($student_id) === 'none');
         </div>
     </div>
 
-    <!-- Enrollment Modal -->
-    <div id="enrollmentModal" class="modal-overlay">
-        <div class="modal-container" style="max-width: 800px;">
-            <div class="modal-header">
-                <h3>Course Enrollment</h3>
-                <button type="button" class="close-modal" id="closeEnrollmentModal">
+    <!-- Enhanced Enrollment Modal -->
+    <div id="enhancedEnrollmentModal" class="enhanced-enrollment-modal-overlay">
+        <div class="enhanced-enrollment-modal-container">
+            <!-- Enhanced Header -->
+            <div class="enhanced-enrollment-modal-header">
+                <div class="enhanced-enrollment-modal-title-section">
+                    <div class="enhanced-enrollment-title-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <div>
+                        <h2 class="enhanced-enrollment-modal-title">Course Enrollment</h2>
+                        <p class="enhanced-enrollment-modal-subtitle">Select subjects for the current semester enrollment</p>
+                    </div>
+                </div>
+                <button type="button" class="enhanced-enrollment-close-modal" id="enhancedCloseEnrollmentModal" aria-label="Close modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             
-            <div class="modal-form">
-                <div class="enrollment-info">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label">Year Level:</span>
-                            <span class="info-value" id="enrollmentYearLevel">-</span>
+            <div class="enhanced-enrollment-modal-content">
+                <!-- Progress Indicator -->
+                <div class="enhanced-enrollment-progress-section">
+                    <div class="enhanced-enrollment-progress-steps">
+                        <div class="enhanced-progress-step active">
+                            <div class="enhanced-step-number">1</div>
+                            <span class="enhanced-step-label">Select Subjects</span>
                         </div>
-                        <div class="info-item">
-                            <span class="info-label">Semester:</span>
-                            <span class="info-value" id="enrollmentSemester">-</span>
+                        <div class="enhanced-progress-step">
+                            <div class="enhanced-step-number">2</div>
+                            <span class="enhanced-step-label">Review Schedule</span>
                         </div>
-                        <div class="info-item">
-                            <span class="info-label">Student Type:</span>
-                            <span class="info-value" id="enrollmentStudentType">-</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Total Units:</span>
-                            <span class="info-value" id="totalUnitsCounter">0</span>
+                        <div class="enhanced-progress-step">
+                            <div class="enhanced-step-number">3</div>
+                            <span class="enhanced-step-label">Confirm Enrollment</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="subjects-container">
-                    <h4>Available Subjects</h4>
-                    <div class="subjects-list" id="subjectsList">
-                        <div class="loading-state">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            <span>Loading subjects...</span>
+                <!-- Student Summary Card -->
+                <div class="enhanced-enrollment-student-summary">
+                    <div class="enhanced-student-avatar">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div class="enhanced-student-details">
+                        <h4>{{ $firstname ?? 'Student' }} {{ $lastname ?? '' }}</h4>
+                        <div class="enhanced-student-meta">
+                            <span class="enhanced-student-id">{{ $student_id }}</span>
+                            <span class="enhanced-student-badge regular" id="enhancedStudentTypeBadge">Regular Student</span>
+                        </div>
+                    </div>
+                    <div class="enhanced-student-stats">
+                        <div class="enhanced-stat">
+                            <span class="enhanced-stat-value" id="enhancedSelectedCount">0</span>
+                            <span class="enhanced-stat-label">Selected</span>
+                        </div>
+                        <div class="enhanced-stat">
+                            <span class="enhanced-stat-value" id="enhancedTotalUnits">0</span>
+                            <span class="enhanced-stat-label">Units</span>
+                        </div>
+                        <div class="enhanced-stat">
+                            <span class="enhanced-stat-value" id="enhancedCurrentYearLevel">-</span>
+                            <span class="enhanced-stat-label">Year Level</span>
                         </div>
                     </div>
                 </div>
-                
-                <div class="form-actions">
-                    <button type="button" class="btn-cancel" id="cancelEnrollment">Cancel</button>
-                    <button type="button" class="btn-primary" id="submitEnrollment" disabled>
-                        <i class="fas fa-paper-plane"></i>
-                        Submit Enrollment
+
+                <!-- Enrollment Information -->
+                <div class="enhanced-enrollment-info-card">
+                    <div class="enhanced-enrollment-info-grid">
+                        <div class="enhanced-info-item">
+                            <div class="enhanced-info-icon">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div class="enhanced-info-content">
+                                <span class="enhanced-info-label">Year Level</span>
+                                <span class="enhanced-info-value" id="enhancedEnrollmentYearLevel">-</span>
+                            </div>
+                        </div>
+                        <div class="enhanced-info-item">
+                            <div class="enhanced-info-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="enhanced-info-content">
+                                <span class="enhanced-info-label">Semester</span>
+                                <span class="enhanced-info-value" id="enhancedEnrollmentSemester">-</span>
+                            </div>
+                        </div>
+                        <div class="enhanced-info-item">
+                            <div class="enhanced-info-icon">
+                                <i class="fas fa-user-tag"></i>
+                            </div>
+                            <div class="enhanced-info-content">
+                                <span class="enhanced-info-label">Student Type</span>
+                                <span class="enhanced-info-value" id="enhancedEnrollmentStudentType">-</span>
+                            </div>
+                        </div>
+                        <div class="enhanced-info-item">
+                            <div class="enhanced-info-icon">
+                                <i class="fas fa-calculator"></i>
+                            </div>
+                            <div class="enhanced-info-content">
+                                <span class="enhanced-info-label">Max Units</span>
+                                <span class="enhanced-info-value" id="enhancedMaxUnits">23</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="enhanced-enrollment-quick-actions">
+                    <button class="enhanced-quick-action-btn" id="enhancedQuickSelectAll">
+                        <i class="fas fa-check-double"></i>
+                        Select All
                     </button>
+                    <button class="enhanced-quick-action-btn" id="enhancedQuickDeselectAll">
+                        <i class="fas fa-times"></i>
+                        Clear All
+                    </button>
+                    <div class="enhanced-search-toggle" id="enhancedMobileSearchToggle">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+
+                <!-- Mobile Search Panel -->
+                <div class="enhanced-enrollment-mobile-search" id="enhancedMobileSearchPanel">
+                    <div class="enhanced-mobile-search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search subjects..." id="enhancedMobileSubjectsSearch">
+                        <button class="enhanced-mobile-search-close" id="enhancedMobileSearchClose">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Main Content Area -->
+                <div class="enhanced-enrollment-main-content">
+                    <!-- Desktop Filters -->
+                    <div class="enhanced-enrollment-desktop-filters">
+                        <div class="enhanced-filter-group">
+                            <label>Filter by</label>
+                            <select id="enhancedSubjectFilter" class="enhanced-filter-select">
+                                <option value="all">All Subjects</option>
+                                <option value="available">Available Only</option>
+                                <option value="with-prerequisites">With Prerequisites</option>
+                            </select>
+                        </div>
+                        <div class="enhanced-filter-group">
+                            <label>Sort by</label>
+                            <select id="enhancedSortFilter" class="enhanced-filter-select">
+                                <option value="code">Subject Code</option>
+                                <option value="name">Subject Name</option>
+                                <option value="units">Units</option>
+                            </select>
+                        </div>
+                        <div class="enhanced-filter-group enhanced-search-group">
+                            <label>Search</label>
+                            <div class="enhanced-search-input-wrapper">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="enhancedSubjectsSearch" placeholder="Search by code or name...">
+                                <button class="enhanced-clear-search" id="enhancedClearSearch">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Filter Bar -->
+                    <div class="enhanced-enrollment-mobile-filter-bar">
+                        <button class="enhanced-mobile-filter-btn" id="enhancedMobileFilterToggle">
+                            <i class="fas fa-filter"></i>
+                            Filters
+                            <span class="enhanced-filter-count">0</span>
+                        </button>
+                        <div class="enhanced-mobile-selection-info">
+                            <span id="enhancedSelectedCount">0 selected</span>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Filter Panel -->
+                    <div class="enhanced-enrollment-mobile-filters" id="enhancedMobileFilterPanel">
+                        <div class="enhanced-mobile-filter-header">
+                            <h4>Filters</h4>
+                            <button class="enhanced-mobile-filter-close" id="enhancedMobileFilterClose">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="enhanced-mobile-filter-content">
+                            <div class="enhanced-mobile-filter-group">
+                                <label>Filter by</label>
+                                <select id="enhancedMobileSubjectFilter" class="enhanced-filter-select">
+                                    <option value="all">All Subjects</option>
+                                    <option value="available">Available Only</option>
+                                    <option value="with-prerequisites">With Prerequisites</option>
+                                </select>
+                            </div>
+                            <div class="enhanced-mobile-filter-group">
+                                <label>Sort by</label>
+                                <select id="enhancedMobileSortFilter" class="enhanced-filter-select">
+                                    <option value="code">Subject Code</option>
+                                    <option value="name">Subject Name</option>
+                                    <option value="units">Units</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subjects Grid -->
+                    <div class="enhanced-enrollment-subjects-grid" id="enhancedSubjectsList">
+                        <!-- Subjects will be populated here -->
+                        <div class="enhanced-enrollment-loading-state">
+                            <div class="enhanced-loading-spinner"></div>
+                            <p>Loading available subjects...</p>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="enhanced-enrollment-empty-state" style="display: none;">
+                        <div class="enhanced-empty-state-icon">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <h4>No Subjects Available</h4>
+                        <p>All subjects for this semester have been enrolled or no available subjects match your criteria.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Enhanced Footer -->
+            <div class="enhanced-enrollment-modal-footer">
+                <div class="enhanced-footer-selection-info">
+                    <div class="enhanced-selection-summary">
+                        <span class="enhanced-summary-count" id="enhancedSelectionSummary">0 subjects</span>
+                        <span class="enhanced-summary-units" id="enhancedUnitsSummary">0 units</span>
+                    </div>
+                    <div class="enhanced-selection-actions">
+                        <button class="enhanced-btn-secondary" id="enhancedCancelEnrollment">
+                            <i class="fas fa-arrow-left"></i>
+                            Cancel
+                        </button>
+                        <button class="enhanced-btn-primary" id="enhancedSubmitEnrollment" disabled>
+                            <i class="fas fa-paper-plane"></i>
+                            Submit Enrollment
+                            <span class="enhanced-btn-badge" id="enhancedSubmitCount">0</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
