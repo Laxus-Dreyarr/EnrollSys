@@ -1,36 +1,155 @@
 // Enhanced Irregular Student Modal Functionality
 function initializeIrregularModal() {
     const modal = document.getElementById('irregularSubjectsModal');
-    const categoriesList = document.getElementById('categoriesList');
-    const subjectsList = document.getElementById('pastSubjectsList');
+    const subjectsGrid = document.getElementById('pastSubjectsList');
     const searchInput = document.getElementById('pastSubjectsSearch');
+    const mobileSearchInput = document.getElementById('mobileSubjectsSearch');
     const yearLevelFilter = document.getElementById('yearLevelFilter');
     const semesterFilter = document.getElementById('semesterFilter');
+    const mobileYearLevelFilter = document.getElementById('mobileYearLevelFilter');
+    const mobileSemesterFilter = document.getElementById('mobileSemesterFilter');
     const clearSearchBtn = document.getElementById('clearSearch');
-    const expandAllBtn = document.getElementById('expandAllCategories');
-    const selectAllBtn = document.getElementById('selectAllVisible');
-    const deselectAllBtn = document.getElementById('deselectAllVisible');
+    const quickSelectAllBtn = document.getElementById('quickSelectAll');
+    const quickDeselectAllBtn = document.getElementById('quickDeselectAll');
     const saveBtn = document.getElementById('savePastSubjects');
     const selectedCount = document.getElementById('selectedCount');
     const completedCount = document.getElementById('completedCount');
     const totalUnits = document.getElementById('totalUnits');
+    const currentYearLevel = document.getElementById('currentYearLevel');
     const selectionSummary = document.getElementById('selectionSummary');
-    const currentCategoryTitle = document.getElementById('currentCategoryTitle');
+    const unitsSummary = document.getElementById('unitsSummary');
+    const saveCount = document.getElementById('saveCount');
+    const mobileSearchToggle = document.getElementById('mobileSearchToggle');
+    const mobileSearchPanel = document.getElementById('mobileSearchPanel');
+    const mobileSearchClose = document.getElementById('mobileSearchClose');
+    const mobileFilterToggle = document.getElementById('mobileFilterToggle');
+    const mobileFilterPanel = document.getElementById('mobileFilterPanel');
+    const mobileFilterClose = document.getElementById('mobileFilterClose');
+    const filterCount = document.querySelector('.filter-count');
 
     let irregularAllSubjects = [];
     let selectedPastSubjects = new Set();
-    let currentCategory = 'all';
     let currentFilters = {
         yearLevel: 'all',
         semester: 'all',
         search: ''
     };
 
+    // Initialize modal
+    function init() {
+        loadAllSubjects();
+        attachEventListeners();
+        updateFilterCount();
+    }
+
+    function attachEventListeners() {
+        // Search and filter events
+        searchInput.addEventListener('input', handleSearch);
+        mobileSearchInput.addEventListener('input', handleSearch);
+        yearLevelFilter.addEventListener('change', handleFilterChange);
+        semesterFilter.addEventListener('change', handleFilterChange);
+        mobileYearLevelFilter.addEventListener('change', handleMobileFilterChange);
+        mobileSemesterFilter.addEventListener('change', handleMobileFilterChange);
+        clearSearchBtn.addEventListener('click', clearSearch);
+
+        // Selection actions
+        quickSelectAllBtn.addEventListener('click', selectAllVisible);
+        quickDeselectAllBtn.addEventListener('click', deselectAllVisible);
+        saveBtn.addEventListener('click', saveSubjects);
+
+        // Mobile interactions
+        mobileSearchToggle.addEventListener('click', toggleMobileSearch);
+        mobileSearchClose.addEventListener('click', closeMobileSearch);
+        mobileFilterToggle.addEventListener('click', toggleMobileFilters);
+        mobileFilterClose.addEventListener('click', closeMobileFilters);
+
+        // Close modal
+        document.getElementById('closeIrregularModal').addEventListener('click', closeModal);
+        document.getElementById('cancelIrregular').addEventListener('click', closeModal);
+        
+        // Close mobile panels when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!mobileFilterPanel.contains(e.target) && !mobileFilterToggle.contains(e.target)) {
+                closeMobileFilters();
+            }
+            if (!mobileSearchPanel.contains(e.target) && !mobileSearchToggle.contains(e.target)) {
+                closeMobileSearch();
+            }
+        });
+    }
+
+    function handleSearch(e) {
+        currentFilters.search = e.target.value.trim().toLowerCase();
+        if (e.target === mobileSearchInput) {
+            searchInput.value = e.target.value;
+        } else {
+            mobileSearchInput.value = e.target.value;
+        }
+        filterAndDisplaySubjects();
+    }
+
+    function handleFilterChange() {
+        currentFilters.yearLevel = yearLevelFilter.value;
+        currentFilters.semester = semesterFilter.value;
+        syncMobileFilters();
+        filterAndDisplaySubjects();
+    }
+
+    function handleMobileFilterChange() {
+        currentFilters.yearLevel = mobileYearLevelFilter.value;
+        currentFilters.semester = mobileSemesterFilter.value;
+        syncDesktopFilters();
+        filterAndDisplaySubjects();
+        closeMobileFilters();
+    }
+
+    function syncMobileFilters() {
+        mobileYearLevelFilter.value = currentFilters.yearLevel;
+        mobileSemesterFilter.value = currentFilters.semester;
+    }
+
+    function syncDesktopFilters() {
+        yearLevelFilter.value = currentFilters.yearLevel;
+        semesterFilter.value = currentFilters.semester;
+    }
+
+    function clearSearch() {
+        searchInput.value = '';
+        mobileSearchInput.value = '';
+        currentFilters.search = '';
+        filterAndDisplaySubjects();
+    }
+
+    function toggleMobileSearch() {
+        mobileSearchPanel.classList.toggle('active');
+        if (mobileSearchPanel.classList.contains('active')) {
+            mobileSearchInput.focus();
+        }
+    }
+
+    function closeMobileSearch() {
+        mobileSearchPanel.classList.remove('active');
+    }
+
+    function toggleMobileFilters() {
+        mobileFilterPanel.classList.toggle('active');
+    }
+
+    function closeMobileFilters() {
+        mobileFilterPanel.classList.remove('active');
+    }
+
+    function updateFilterCount() {
+        let count = 0;
+        if (currentFilters.yearLevel !== 'all') count++;
+        if (currentFilters.semester !== 'all') count++;
+        if (currentFilters.search !== '') count++;
+        filterCount.textContent = count;
+    }
+
     // Load subjects and initialize modal
     function loadAllSubjects() {
         showLoadingState();
-        
-        console.log('Loading subjects for irregular modal...');
         
         fetch('/student/enrollment/all-subjects', {
             method: 'GET',
@@ -40,21 +159,16 @@ function initializeIrregularModal() {
             }
         })
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
+            if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
         })
         .then(data => {
-            console.log('Subjects loaded for irregular modal:', data);
             if (data.success) {
                 irregularAllSubjects = data.subjects;
-                console.log('Total subjects loaded:', irregularAllSubjects.length);
-                initializeCategories();
                 displaySubjects(irregularAllSubjects);
                 updateSelectionInfo();
             } else {
-                showErrorState('Failed to load subjects: ' + (data.message || 'Unknown error'));
+                showErrorState('Failed to load subjects');
             }
         })
         .catch(error => {
@@ -63,211 +177,20 @@ function initializeIrregularModal() {
         });
     }
 
-    // Initialize categories sidebar
-    function initializeCategories() {
-        if (irregularAllSubjects.length === 0) {
-            console.warn('No subjects available for categories');
-            return;
-        }
-        const categories = groupSubjectsByCategories(irregularAllSubjects);
-        renderCategories(categories);
-    }
-
-    // Group subjects by year level and semester
-    function groupSubjectsByCategories(subjects) {
-        const categories = {};
-        
-        subjects.forEach(subject => {
-            const yearLevel = subject.year_level;
-            const semester = subject.semester;
-            
-            if (!categories[yearLevel]) {
-                categories[yearLevel] = {};
-            }
-            
-            if (!categories[yearLevel][semester]) {
-                categories[yearLevel][semester] = [];
-            }
-            
-            categories[yearLevel][semester].push(subject);
-        });
-        
-        console.log('Categories grouped:', categories);
-        return categories;
-    }
-
-    // Render categories in sidebar
-    function renderCategories(categories) {
-        if (Object.keys(categories).length === 0) {
-            categoriesList.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-folder-open"></i>
-                    <span>No categories available</span>
-                </div>
-            `;
-            return;
-        }
-        
-        let categoriesHTML = '';
-        
-        // Add "All Subjects" option first
-        categoriesHTML += `
-            <div class="category-group">
-                <div class="category-header active" data-category="all">
-                    <div class="category-title">
-                        <i class="fas fa-layer-group"></i>
-                        All Subjects
-                    </div>
-                    <div class="category-count">${irregularAllSubjects.length}</div>
-                    <i class="fas fa-chevron-down category-arrow"></i>
-                </div>
-            </div>
-        `;
-        
-        Object.keys(categories).sort().forEach(yearLevel => {
-            const yearSubjects = categories[yearLevel];
-            let totalYearSubjects = 0;
-            
-            Object.values(yearSubjects).forEach(semesterSubjects => {
-                totalYearSubjects += semesterSubjects.length;
-            });
-            
-            categoriesHTML += `
-                <div class="category-group">
-                    <div class="category-header" data-year="${yearLevel}">
-                        <div class="category-title">
-                            <i class="fas fa-graduation-cap"></i>
-                            ${yearLevel}
-                        </div>
-                        <div class="category-count">${totalYearSubjects}</div>
-                        <i class="fas fa-chevron-down category-arrow"></i>
-                    </div>
-                    <div class="subcategories">
-            `;
-            
-            Object.keys(yearSubjects).sort().forEach(semester => {
-                const semesterSubjects = yearSubjects[semester];
-                
-                categoriesHTML += `
-                    <div class="subcategory-item" data-year="${yearLevel}" data-semester="${semester}">
-                        <div class="subcategory-name">
-                            <i class="fas fa-calendar-alt"></i>
-                            ${semester}
-                        </div>
-                        <div class="subcategory-count">${semesterSubjects.length}</div>
-                    </div>
-                `;
-            });
-            
-            categoriesHTML += `
-                    </div>
-                </div>
-            `;
-        });
-        
-        categoriesList.innerHTML = categoriesHTML;
-        attachCategoryEventListeners();
-    }
-
-    // Attach event listeners to categories
-    function attachCategoryEventListeners() {
-        console.log('Attaching category event listeners...');
-        
-        // Year level category headers - toggle expand/collapse
-        document.querySelectorAll('.category-header').forEach(header => {
-            header.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const categoryType = this.getAttribute('data-category');
-                const yearLevel = this.getAttribute('data-year');
-                
-                if (categoryType === 'all') {
-                    // Handle "All Subjects" click
-                    document.querySelectorAll('.category-header').forEach(h => h.classList.remove('active'));
-                    document.querySelectorAll('.subcategory-item').forEach(i => i.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    currentCategory = 'all';
-                    currentCategoryTitle.textContent = 'All Subjects';
-                    filterAndDisplaySubjects();
-                    return;
-                }
-                
-                // Toggle expand/collapse for year categories
-                const subcategories = this.nextElementSibling;
-                if (subcategories) {
-                    this.classList.toggle('active');
-                    subcategories.classList.toggle('expanded');
-                    
-                    const arrow = this.querySelector('.category-arrow');
-                    if (arrow) {
-                        arrow.style.transform = this.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)';
-                    }
-                }
-            });
-        });
-        
-        // Semester subcategory items - filter subjects
-        document.querySelectorAll('.subcategory-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const yearLevel = this.getAttribute('data-year');
-                const semester = this.getAttribute('data-semester');
-                
-                console.log('Subcategory clicked:', yearLevel, semester);
-                
-                // Remove active state from all category headers and subcategories
-                document.querySelectorAll('.category-header').forEach(h => h.classList.remove('active'));
-                document.querySelectorAll('.subcategory-item').forEach(i => i.classList.remove('active'));
-                
-                // Add active state to clicked subcategory and its parent
-                this.classList.add('active');
-                const parentHeader = this.closest('.category-group').querySelector('.category-header');
-                if (parentHeader) {
-                    parentHeader.classList.add('active');
-                    // Ensure the subcategories are expanded
-                    const subcategories = parentHeader.nextElementSibling;
-                    if (subcategories) {
-                        subcategories.classList.add('expanded');
-                        const arrow = parentHeader.querySelector('.category-arrow');
-                        if (arrow) {
-                            arrow.style.transform = 'rotate(180deg)';
-                        }
-                    }
-                }
-                
-                // Update current category and display subjects
-                currentCategory = `${yearLevel}|${semester}`;
-                currentCategoryTitle.textContent = `${yearLevel} - ${semester}`;
-                
-                filterAndDisplaySubjects();
-            });
-        });
-        
-        console.log('Category event listeners attached');
-    }
-
-    // Display subjects based on current filters and category
+    // Display subjects in grid layout
     function displaySubjects(subjects) {
-        console.log('Displaying subjects:', subjects.length);
-        
         if (subjects.length === 0) {
-            subjectsList.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-search"></i>
-                    <h4>No Subjects Found</h4>
-                    <p>Try adjusting your search or filters.</p>
-                </div>
-            `;
+            showEmptyState();
             return;
         }
+
+        hideEmptyState();
         
-        let subjectsHTML = '';
-        
-        subjects.forEach(subject => {
+        const subjectsHTML = subjects.map(subject => {
             const isSelected = selectedPastSubjects.has(subject.id.toString());
             
-            subjectsHTML += `
-                <div class="subject-item ${isSelected ? 'selected' : ''}" data-id="${subject.id}">
+            return `
+                <div class="subject-card ${isSelected ? 'selected' : ''}" data-id="${subject.id}">
                     <div class="subject-header">
                         <div class="subject-code">${subject.code}</div>
                         <div class="subject-meta">
@@ -288,40 +211,27 @@ function initializeIrregularModal() {
                             <input type="checkbox" id="subject_${subject.id}" 
                                    ${isSelected ? 'checked' : ''}
                                    onchange="togglePastSubjectSelection(${subject.id}, '${subject.code.replace(/'/g, "\\'")}', '${subject.name.replace(/'/g, "\\'")}', ${subject.units}, this.checked)">
-                            <label for="subject_${subject.id}" class="checkbox-label">Mark as completed</label>
+                            <label for="subject_${subject.id}" class="checkbox-label">Completed</label>
                         </div>
                     </div>
                 </div>
             `;
-        });
+        }).join('');
         
-        subjectsList.innerHTML = subjectsHTML;
+        subjectsGrid.innerHTML = subjectsHTML;
     }
 
-    // Filter and display subjects based on current selection
+    // Filter and display subjects based on current filters
     function filterAndDisplaySubjects() {
-        console.log('Filtering subjects with:', {
-            currentCategory,
-            currentFilters
-        });
+        updateFilterCount();
         
         let filteredSubjects = irregularAllSubjects;
-        
-        // Apply category filter
-        if (currentCategory !== 'all') {
-            const [yearLevel, semester] = currentCategory.split('|');
-            filteredSubjects = filteredSubjects.filter(subject => 
-                subject.year_level === yearLevel && subject.semester === semester
-            );
-            console.log(`After category filter (${yearLevel}|${semester}):`, filteredSubjects.length);
-        }
         
         // Apply year level filter
         if (currentFilters.yearLevel !== 'all') {
             filteredSubjects = filteredSubjects.filter(subject => 
                 subject.year_level === currentFilters.yearLevel
             );
-            console.log(`After year level filter (${currentFilters.yearLevel}):`, filteredSubjects.length);
         }
         
         // Apply semester filter
@@ -329,7 +239,6 @@ function initializeIrregularModal() {
             filteredSubjects = filteredSubjects.filter(subject => 
                 subject.semester === currentFilters.semester
             );
-            console.log(`After semester filter (${currentFilters.semester}):`, filteredSubjects.length);
         }
         
         // Apply search filter
@@ -340,7 +249,6 @@ function initializeIrregularModal() {
                 subject.name.toLowerCase().includes(searchTerm) ||
                 (subject.description && subject.description.toLowerCase().includes(searchTerm))
             );
-            console.log(`After search filter (${currentFilters.search}):`, filteredSubjects.length);
         }
         
         displaySubjects(filteredSubjects);
@@ -355,10 +263,12 @@ function initializeIrregularModal() {
             return total + (subject ? parseInt(subject.units) : 0);
         }, 0);
         
-        selectedCount.textContent = `${count} ${count === 1 ? 'subject' : 'subjects'} selected`;
+        selectedCount.textContent = `${count} selected`;
         completedCount.textContent = count;
-        totalUnits.textContent = `${units} units`;
-        selectionSummary.textContent = `${count} subjects selected • ${units} total units`;
+        totalUnits.textContent = units;
+        selectionSummary.textContent = `${count} subjects`;
+        unitsSummary.textContent = `${units} units`;
+        saveCount.textContent = count;
         
         // Update save button state
         saveBtn.disabled = count === 0;
@@ -366,8 +276,6 @@ function initializeIrregularModal() {
 
     // Toggle subject selection
     window.togglePastSubjectSelection = function(subjectId, subjectCode, subjectName, units, isChecked) {
-        console.log('Toggling subject:', subjectId, isChecked);
-        
         if (isChecked) {
             selectedPastSubjects.add(subjectId.toString());
         } else {
@@ -375,7 +283,7 @@ function initializeIrregularModal() {
         }
         
         // Update UI
-        const subjectElement = document.querySelector(`.subject-item[data-id="${subjectId}"]`);
+        const subjectElement = document.querySelector(`.subject-card[data-id="${subjectId}"]`);
         if (subjectElement) {
             subjectElement.classList.toggle('selected', isChecked);
         }
@@ -383,50 +291,12 @@ function initializeIrregularModal() {
         updateSelectionInfo();
     };
 
-    // Event listeners for filters
-    yearLevelFilter.addEventListener('change', function() {
-        currentFilters.yearLevel = this.value;
-        console.log('Year level filter changed to:', this.value);
-        filterAndDisplaySubjects();
-    });
-
-    semesterFilter.addEventListener('change', function() {
-        currentFilters.semester = this.value;
-        console.log('Semester filter changed to:', this.value);
-        filterAndDisplaySubjects();
-    });
-
-    searchInput.addEventListener('input', function() {
-        currentFilters.search = this.value.trim().toLowerCase();
-        console.log('Search input:', this.value);
-        filterAndDisplaySubjects();
-    });
-
-    clearSearchBtn.addEventListener('click', function() {
-        searchInput.value = '';
-        currentFilters.search = '';
-        filterAndDisplaySubjects();
-    });
-
-    expandAllBtn.addEventListener('click', function() {
-        document.querySelectorAll('.category-header').forEach(header => {
-            header.classList.add('active');
-            const subcategories = header.nextElementSibling;
-            if (subcategories) {
-                subcategories.classList.add('expanded');
-            }
-            const arrow = header.querySelector('.category-arrow');
-            if (arrow) {
-                arrow.style.transform = 'rotate(180deg)';
-            }
-        });
-    });
-
-    selectAllBtn.addEventListener('click', function() {
-        const visibleSubjectElements = subjectsList.querySelectorAll('.subject-item');
-        visibleSubjectElements.forEach(item => {
-            const subjectId = item.getAttribute('data-id');
-            const checkbox = item.querySelector('input[type="checkbox"]');
+    // Select all visible subjects
+    function selectAllVisible() {
+        const visibleSubjectElements = subjectsGrid.querySelectorAll('.subject-card');
+        visibleSubjectElements.forEach(card => {
+            const subjectId = card.getAttribute('data-id');
+            const checkbox = card.querySelector('input[type="checkbox"]');
             const subject = irregularAllSubjects.find(s => s.id == subjectId);
             
             if (subject && !checkbox.checked) {
@@ -434,13 +304,14 @@ function initializeIrregularModal() {
                 togglePastSubjectSelection(subject.id, subject.code, subject.name, subject.units, true);
             }
         });
-    });
+    }
 
-    deselectAllBtn.addEventListener('click', function() {
-        const visibleSubjectElements = subjectsList.querySelectorAll('.subject-item');
-        visibleSubjectElements.forEach(item => {
-            const subjectId = item.getAttribute('data-id');
-            const checkbox = item.querySelector('input[type="checkbox"]');
+    // Deselect all visible subjects
+    function deselectAllVisible() {
+        const visibleSubjectElements = subjectsGrid.querySelectorAll('.subject-card');
+        visibleSubjectElements.forEach(card => {
+            const subjectId = card.getAttribute('data-id');
+            const checkbox = card.querySelector('input[type="checkbox"]');
             const subject = irregularAllSubjects.find(s => s.id == subjectId);
             
             if (subject && checkbox.checked) {
@@ -448,10 +319,10 @@ function initializeIrregularModal() {
                 togglePastSubjectSelection(subject.id, subject.code, subject.name, subject.units, false);
             }
         });
-    });
+    }
 
     // Save functionality
-    saveBtn.addEventListener('click', function() {
+    function saveSubjects() {
         if (selectedPastSubjects.size === 0) {
             showNotification('Please select at least one subject', 'error');
             return;
@@ -474,8 +345,6 @@ function initializeIrregularModal() {
             } : null;
         }).filter(item => item !== null);
         
-        console.log('Saving subjects:', pastSubjectsArray);
-        
         fetch('/student/enrollment/save-past-subjects', {
             method: 'POST',
             headers: {
@@ -487,18 +356,15 @@ function initializeIrregularModal() {
             })
         })
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
+            if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
         })
         .then(data => {
-            console.log('Save response:', data);
             if (data.success) {
                 showNotification('Completed subjects saved successfully!', 'success');
-                modal.classList.remove('active');
+                closeModal();
                 
-                // Refresh the page or update UI
+                // Refresh the page
                 setTimeout(() => {
                     window.location.reload();
                 }, 1500);
@@ -514,25 +380,41 @@ function initializeIrregularModal() {
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         });
-    });
+    }
+
+    function closeModal() {
+        modal.classList.remove('active');
+    }
 
     // Utility functions
     function showLoadingState() {
-        subjectsList.innerHTML = `
-            <div class="loading-state">
-                <i class="fas fa-spinner fa-spin"></i>
-                <span>Loading subjects...</span>
+        subjectsGrid.innerHTML = `
+            <div class="irregular-loading-state">
+                <div class="loading-spinner"></div>
+                <p>Loading your subjects...</p>
             </div>
         `;
     }
 
+    function showEmptyState() {
+        document.querySelector('.irregular-empty-state').style.display = 'flex';
+        subjectsGrid.style.display = 'none';
+    }
+
+    function hideEmptyState() {
+        document.querySelector('.irregular-empty-state').style.display = 'none';
+        subjectsGrid.style.display = 'grid';
+    }
+
     function showErrorState(message) {
-        subjectsList.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-exclamation-circle"></i>
+        subjectsGrid.innerHTML = `
+            <div class="irregular-empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
                 <h4>Error Loading Subjects</h4>
                 <p>${message}</p>
-                <button class="btn-primary mt-3" onclick="loadAllSubjects()">
+                <button class="btn-primary" onclick="loadAllSubjects()">
                     <i class="fas fa-redo"></i>
                     Try Again
                 </button>
@@ -540,30 +422,20 @@ function initializeIrregularModal() {
         `;
     }
 
-    // Close modal functionality
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal || e.target.closest('.irregular-close-modal') || e.target.closest('.irregular-cancel-btn')) {
-            modal.classList.remove('active');
-        }
-    });
-
     // Make the initialization function available globally
-    window.loadIrregularSubjects = loadAllSubjects;
+    window.loadIrregularSubjects = init;
 
     return {
-        loadAllSubjects,
-        updateSelectionInfo,
+        init,
         modal: modal
     };
 }
 
-// Check if student is irregular and show modal if needed
+// Update existing checkIrregularStudent function to use the new init method
 function checkIrregularStudent(irregularModal) {
     const isIrregular = document.getElementById('is-regular')?.value == 2;
     
     if (isIrregular) {
-        console.log('Student is irregular, checking past subjects status...');
-        
         fetch('/student/enrollment/check-past-subjects', {
             method: 'GET',
             headers: {
@@ -573,14 +445,9 @@ function checkIrregularStudent(irregularModal) {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('Past subjects check response:', data);
             if (data.success && !data.has_submitted) {
-                // Student hasn't submitted past subjects, show modal
-                console.log('Irregular student needs to submit past subjects');
-                irregularModal.loadAllSubjects();
+                irregularModal.init();
                 irregularModal.modal.classList.add('active');
-            } else if (data.success) {
-                console.log('Irregular student has already submitted past subjects');
             }
         })
         .catch(error => {
