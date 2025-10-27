@@ -1169,10 +1169,11 @@ function initializeEnhancedEnrollmentModal() {
         });
     }
 
-    // Display subjects in enhanced modal - UPDATED VERSION
+    // Display subjects in enhanced modal - UPDATED VERSION (FIXED SELECTION PERSISTENCE)
     function displayEnhancedSubjects(data) {
         console.log('Displaying enhanced subjects with data:', data);
         console.log('Current max units:', enhancedMaxUnits);
+        console.log('Currently selected subjects:', Array.from(enhancedSelectedSubjects));
         
         if (!data || typeof data !== 'object') {
             console.error('Invalid data received:', data);
@@ -1215,10 +1216,6 @@ function initializeEnhancedEnrollmentModal() {
         }
 
         hideEnhancedEmptyState();
-        
-        // Reset selection for ALL students initially
-        enhancedSelectedSubjects.clear();
-        enhancedTotalUnits = 0;
 
         let subjectsHTML = '';
         
@@ -1237,11 +1234,11 @@ function initializeEnhancedEnrollmentModal() {
             
             const isSelectable = enhancedIsRegular || (!hasPrerequisites || prerequisitesMet);
             
-            // For regular students, auto-select but don't add to selection set yet
-            const shouldBeSelected = enhancedIsRegular && isSelectable;
+            // Check if this subject is already selected - IMPORTANT: This preserves selection during search/filter
+            const isSelected = enhancedSelectedSubjects.has(subject.id.toString());
             
             subjectsHTML += `
-                <div class="enhanced-subject-card ${shouldBeSelected ? 'selected' : ''} ${!isSelectable ? 'disabled' : ''}" data-id="${subject.id}">
+                <div class="enhanced-subject-card ${isSelected ? 'selected' : ''} ${!isSelectable ? 'disabled' : ''}" data-id="${subject.id}">
                     <div class="enhanced-subject-header">
                         <div class="enhanced-subject-code">${subject.code}</div>
                         <div class="enhanced-subject-meta">
@@ -1280,7 +1277,7 @@ function initializeEnhancedEnrollmentModal() {
                         <div class="enhanced-subject-checkbox">
                             <input type="checkbox" 
                                 id="enhanced_subject_${subject.id}" 
-                                ${shouldBeSelected ? 'checked' : ''}
+                                ${isSelected ? 'checked' : ''}
                                 ${!isSelectable ? 'disabled' : ''}
                                 onchange="enhancedToggleSubject(${subject.id}, ${subject.units || 0}, ${!isSelectable})">
                             <label for="enhanced_subject_${subject.id}" class="enhanced-checkbox-label">
@@ -1290,34 +1287,18 @@ function initializeEnhancedEnrollmentModal() {
                     </div>
                 </div>
             `;
-            
-            // For regular students, add to selection set after creating the HTML
-            if (shouldBeSelected) {
-                enhancedSelectedSubjects.add(subject.id.toString());
-                enhancedTotalUnits += parseInt(subject.units || 0);
-            }
         });
         
         subjectsGrid.innerHTML = subjectsHTML;
-        updateEnhancedSelectionInfo();
-
-        // For irregular students, ensure all checkboxes are unchecked
-        if (!enhancedIsRegular) {
-            const checkboxes = subjectsGrid.querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = false;
-                const subjectItem = checkbox.closest('.enhanced-subject-card');
-                if (subjectItem) {
-                    subjectItem.classList.remove('selected');
-                }
-            });
-            
-            updateEnhancedSelectionInfo();
-            if (saveBtn) saveBtn.disabled = true;
-        }
+        
+        // For irregular students, we don't reset the selection - it's already preserved in enhancedSelectedSubjects
+        // The checkboxes will reflect the current state of enhancedSelectedSubjects
+        
+        console.log('Subjects rendered. Current selection count:', enhancedSelectedSubjects.size);
+        console.log('Current total units:', enhancedTotalUnits);
     }
 
-    // Filter and display subjects based on current filters - FIXED VERSION
+    // Filter and display subjects based on current filters - UPDATED (no state reset)
     function filterAndDisplaySubjects() {
         updateFilterCount();
         
@@ -1377,8 +1358,11 @@ function initializeEnhancedEnrollmentModal() {
             year_level: enrollmentYearLevel ? enrollmentYearLevel.textContent : '-',
             semester: enrollmentSemester ? enrollmentSemester.textContent : '-',
             total_units: enhancedMaxUnits, // Preserve the max units value
-            completed_subjects: enhancedCompletedSubjects // ADD THIS LINE
+            completed_subjects: enhancedCompletedSubjects // Preserve completed subjects
         };
+        
+        // Note: We don't reset selection state here - it's preserved in enhancedSelectedSubjects
+        console.log('Filtering subjects. Current selection preserved:', enhancedSelectedSubjects.size);
         
         displayEnhancedSubjects(displayData);
     }
