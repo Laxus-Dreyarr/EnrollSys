@@ -997,6 +997,7 @@ function initializeEnhancedEnrollmentModal() {
     let enhancedTotalUnits = 0;
     let enhancedIsRegular = true;
     let enhancedMaxUnits = 0; // Will be set dynamically from server data
+    let originalMaxUnits = 0; // Store the original max units from server
 
     // Initialize modal
     function init() {
@@ -1109,7 +1110,7 @@ function initializeEnhancedEnrollmentModal() {
         filterCount.textContent = count;
     }
 
-    // Load subjects for enhanced modal
+    // Load subjects for enhanced modal - UPDATED
     function loadEnhancedEnrollmentSubjects() {
         showLoadingState();
         
@@ -1144,6 +1145,13 @@ function initializeEnhancedEnrollmentModal() {
                 };
                 
                 enhancedAllSubjects = processedData.subjects || [];
+                
+                // SET AND PRESERVE MAX UNITS
+                enhancedMaxUnits = data.total_units || 0;
+                originalMaxUnits = data.total_units || 0; // Store original value
+                
+                console.log('Max units set to:', enhancedMaxUnits);
+                
                 displayEnhancedSubjects(processedData);
             } else {
                 showEnhancedError('Failed to load subjects: ' + (data.message || 'Unknown error'));
@@ -1155,9 +1163,10 @@ function initializeEnhancedEnrollmentModal() {
         });
     }
 
-    // Display subjects in enhanced modal - UPDATED VERSION
+    // Display subjects in enhanced modal - UPDATED
     function displayEnhancedSubjects(data) {
         console.log('Displaying enhanced subjects with data:', data);
+        console.log('Current max units:', enhancedMaxUnits);
         
         if (!data || typeof data !== 'object') {
             console.error('Invalid data received:', data);
@@ -1186,8 +1195,7 @@ function initializeEnhancedEnrollmentModal() {
 
         enhancedIsRegular = data.is_regular;
         
-        // SET MAX UNITS DYNAMICALLY FROM SERVER DATA
-        enhancedMaxUnits = data.total_units || 0;
+        // UPDATE MAX UNITS DISPLAY (but don't reset the value)
         if (maxUnitsElement) {
             maxUnitsElement.textContent = enhancedMaxUnits;
         }
@@ -1302,7 +1310,7 @@ function initializeEnhancedEnrollmentModal() {
         }
     }
 
-    // Filter and display subjects based on current filters
+    // Filter and display subjects based on current filters - UPDATED
     function filterAndDisplaySubjects() {
         updateFilterCount();
         
@@ -1347,12 +1355,13 @@ function initializeEnhancedEnrollmentModal() {
             }
         });
         
-        // Create a mock data object for display
+        // Create a mock data object for display - PRESERVE MAX UNITS
         const displayData = {
             subjects: filteredSubjects,
             is_regular: enhancedIsRegular,
             year_level: enrollmentYearLevel ? enrollmentYearLevel.textContent : '-',
-            semester: enrollmentSemester ? enrollmentSemester.textContent : '-'
+            semester: enrollmentSemester ? enrollmentSemester.textContent : '-',
+            total_units: enhancedMaxUnits // Preserve the max units value
         };
         
         displayEnhancedSubjects(displayData);
