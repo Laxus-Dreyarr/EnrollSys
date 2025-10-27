@@ -4150,6 +4150,48 @@ body.dark-mode .enhanced-schedule-badge {
     color: var(--text-muted-dark);
 }
 
+/* Additional styles for irregular enrollment modal */
+.prerequisite-success {
+    background: #f0f9ff;
+    border: 1px solid #e0f2fe;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    color: #0369a1;
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.prerequisite-success i {
+    color: #0891b2;
+}
+
+.subject-card.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.subject-card.disabled:hover {
+    transform: none;
+    border-color: #e2e8f0;
+}
+
+.subject-card.disabled .subject-checkbox input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
+/* Dark mode support */
+body.dark-mode .prerequisite-success {
+    background: rgba(14, 165, 233, 0.2);
+    border-color: #0ea5e9;
+    color: #7dd3fc;
+}
+
+body.dark-mode .subject-card.disabled {
+    background: rgba(255, 255, 255, 0.05);
+}
 
 /* Enhanced Mobile Responsiveness */
 @media (max-width: 1200px) {

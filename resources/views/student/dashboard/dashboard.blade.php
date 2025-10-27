@@ -1538,6 +1538,259 @@ $show_student_form = (strtolower($student_id) === 'none');
         </div>
     </div>
 
+    <!-- Irregular Student Enrollment Modal -->
+    <div id="irregularEnrollmentModal" class="irregular-modal-overlay">
+        <div class="irregular-modal-container">
+            <!-- Enhanced Header -->
+            <div class="irregular-modal-header">
+                <div class="irregular-modal-title-section">
+                    <div class="irregular-title-icon">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                    <div>
+                        <h2 class="irregular-modal-title">Irregular Student Enrollment</h2>
+                        <p class="irregular-modal-subtitle">Select subjects based on your academic standing</p>
+                    </div>
+                </div>
+                <button type="button" class="irregular-close-modal" id="closeIrregularEnrollmentModal" aria-label="Close modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="irregular-modal-content">
+                <!-- Progress Indicator -->
+                <div class="irregular-progress-section">
+                    <div class="irregular-progress-steps">
+                        <div class="progress-step active">
+                            <div class="step-number">1</div>
+                            <span class="step-label">Select Subjects</span>
+                        </div>
+                        <div class="progress-step">
+                            <div class="step-number">2</div>
+                            <span class="step-label">Review Schedule</span>
+                        </div>
+                        <div class="progress-step">
+                            <div class="step-number">3</div>
+                            <span class="step-label">Confirm Enrollment</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Summary Card -->
+                <div class="irregular-student-summary">
+                    <div class="student-avatar">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div class="student-details">
+                        <h4>{{ $firstname ?? 'Student' }} {{ $lastname ?? '' }}</h4>
+                        <div class="student-meta">
+                            <span class="student-id">{{ $student_id }}</span>
+                            <span class="student-badge irregular">Irregular Student</span>
+                        </div>
+                    </div>
+                    <div class="student-stats">
+                        <div class="stat">
+                            <span class="stat-value" id="irregularSelectedCount">0</span>
+                            <span class="stat-label">Selected</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="irregularTotalUnits">0</span>
+                            <span class="stat-label">Units</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="irregularCurrentYearLevel">-</span>
+                            <span class="stat-label">Year Level</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enrollment Information -->
+                <div class="enhanced-enrollment-info-card">
+                    <div class="enhanced-enrollment-info-grid">
+                        <div class="enhanced-info-item">
+                            <div class="enhanced-info-icon">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div class="enhanced-info-content">
+                                <span class="enhanced-info-label">Year Level</span>
+                                <span class="enhanced-info-value" id="irregularEnrollmentYearLevel">-</span>
+                            </div>
+                        </div>
+                        <div class="enhanced-info-item">
+                            <div class="enhanced-info-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="enhanced-info-content">
+                                <span class="enhanced-info-label">Semester</span>
+                                <span class="enhanced-info-value" id="irregularEnrollmentSemester">-</span>
+                            </div>
+                        </div>
+                        <div class="enhanced-info-item">
+                            <div class="enhanced-info-icon">
+                                <i class="fas fa-user-tag"></i>
+                            </div>
+                            <div class="enhanced-info-content">
+                                <span class="enhanced-info-label">Student Type</span>
+                                <span class="enhanced-info-value" id="irregularEnrollmentStudentType">Irregular</span>
+                            </div>
+                        </div>
+                        <div class="enhanced-info-item">
+                            <div class="enhanced-info-icon">
+                                <i class="fas fa-calculator"></i>
+                            </div>
+                            <div class="enhanced-info-content">
+                                <span class="enhanced-info-label">Max Units</span>
+                                <span class="enhanced-info-value" id="irregularMaxUnits">23</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="irregular-quick-actions">
+                    <button class="quick-action-btn" id="irregularQuickSelectAll">
+                        <i class="fas fa-check-double"></i>
+                        Select All Available
+                    </button>
+                    <button class="quick-action-btn" id="irregularQuickDeselectAll">
+                        <i class="fas fa-times"></i>
+                        Clear All
+                    </button>
+                    <div class="search-toggle" id="irregularMobileSearchToggle">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+
+                <!-- Mobile Search Panel -->
+                <div class="irregular-mobile-search" id="irregularMobileSearchPanel">
+                    <div class="mobile-search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search subjects..." id="irregularMobileSubjectsSearch">
+                        <button class="mobile-search-close" id="irregularMobileSearchClose">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Main Content Area -->
+                <div class="irregular-main-content">
+                    <!-- Desktop Filters -->
+                    <div class="irregular-desktop-filters">
+                        <div class="filter-group">
+                            <label>Filter by</label>
+                            <select id="irregularSubjectFilter" class="filter-select">
+                                <option value="all">All Subjects</option>
+                                <option value="available">Available Only</option>
+                                <option value="with-prerequisites">With Prerequisites</option>
+                                <option value="prerequisites-met">Prerequisites Met</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Sort by</label>
+                            <select id="irregularSortFilter" class="filter-select">
+                                <option value="code">Subject Code</option>
+                                <option value="name">Subject Name</option>
+                                <option value="units">Units</option>
+                                <option value="year_level">Year Level</option>
+                            </select>
+                        </div>
+                        <div class="filter-group search-group">
+                            <label>Search</label>
+                            <div class="search-input-wrapper">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="irregularSubjectsSearch" placeholder="Search by code or name...">
+                                <button class="clear-search" id="irregularClearSearch">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Filter Bar -->
+                    <div class="irregular-mobile-filter-bar">
+                        <button class="mobile-filter-btn" id="irregularMobileFilterToggle">
+                            <i class="fas fa-filter"></i>
+                            Filters
+                            <span class="filter-count">0</span>
+                        </button>
+                        <div class="mobile-selection-info">
+                            <span id="irregularMobileSelectedCount">0 selected</span>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Filter Panel -->
+                    <div class="irregular-mobile-filters" id="irregularMobileFilterPanel">
+                        <div class="mobile-filter-header">
+                            <h4>Filters</h4>
+                            <button class="mobile-filter-close" id="irregularMobileFilterClose">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="mobile-filter-content">
+                            <div class="mobile-filter-group">
+                                <label>Filter by</label>
+                                <select id="irregularMobileSubjectFilter" class="filter-select">
+                                    <option value="all">All Subjects</option>
+                                    <option value="available">Available Only</option>
+                                    <option value="with-prerequisites">With Prerequisites</option>
+                                    <option value="prerequisites-met">Prerequisites Met</option>
+                                </select>
+                            </div>
+                            <div class="mobile-filter-group">
+                                <label>Sort by</label>
+                                <select id="irregularMobileSortFilter" class="filter-select">
+                                    <option value="code">Subject Code</option>
+                                    <option value="name">Subject Name</option>
+                                    <option value="units">Units</option>
+                                    <option value="year_level">Year Level</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subjects Grid -->
+                    <div class="irregular-subjects-grid" id="irregularSubjectsList">
+                        <!-- Subjects will be populated here -->
+                        <div class="irregular-loading-state">
+                            <div class="loading-spinner"></div>
+                            <p>Loading available subjects for irregular students...</p>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="irregular-empty-state" style="display: none;">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <h4>No Subjects Available</h4>
+                        <p>All available subjects for irregular students have been enrolled or no subjects match your criteria.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Enhanced Footer -->
+            <div class="irregular-modal-footer">
+                <div class="footer-selection-info">
+                    <div class="selection-summary">
+                        <span class="summary-count" id="irregularSelectionSummary">0 subjects</span>
+                        <span class="summary-units" id="irregularUnitsSummary">0 units</span>
+                    </div>
+                    <div class="selection-actions">
+                        <button class="btn-secondary" id="irregularCancelEnrollment">
+                            <i class="fas fa-arrow-left"></i>
+                            Cancel
+                        </button>
+                        <button class="btn-primary" id="irregularSubmitEnrollment" disabled>
+                            <i class="fas fa-paper-plane"></i>
+                            Submit Enrollment
+                            <span class="btn-badge" id="irregularSubmitCount">0</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- jQuery -->

@@ -196,6 +196,9 @@ Route::middleware(['student.auth'])->group(function () {
     Route::get('/student/enrollment/check-past-subjects', [StudentController::class, 'checkPastSubjects']);
     Route::get('/student/enrollment/all-subjects', [StudentController::class, 'getAllSubjects']);
     Route::post('/student/enrollment/save-past-subjects', [StudentController::class, 'savePastSubjects']);
+
+    Route::get('/student/enrollment/irregular-subjects', [StudentController::class, 'getIrregularEnrollmentSubjects']);
+    Route::post('/student/enrollment/enroll-irregular', [StudentController::class, 'enrollIrregularSubjects']);
 });
 
 // Debug route - remove after testing
