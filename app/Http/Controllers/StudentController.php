@@ -957,6 +957,11 @@ class StudentController extends Controller
                     ]);
                 }
 
+                // NEW: Auto-insert subjects for regular students
+                if ($studentType == '1') { // Regular student
+                    $this->autoInsertSubjectsForRegularStudent($userInfo->id, $request->year_level);
+                }
+
                 DB::commit();
                 
                 return response()->json([
@@ -979,6 +984,106 @@ class StudentController extends Controller
                 'success' => false,
                 'message' => 'An error occurred: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    private function autoInsertSubjectsForRegularStudent($studentId, $selectedYearLevel)
+    {
+        try {
+            // Determine current semester - CHANGE THIS VALUE AS NEEDED
+            $currentSemester = '2nd Sem'; // You can change this to '1st Sem' or '2nd Sem'
+            
+            Log::info('Auto-inserting subjects for regular student', [
+                'student_id' => $studentId,
+                'selected_year_level' => $selectedYearLevel,
+                'current_semester' => $currentSemester
+            ]);
+
+            $subjectsToInsert = [];
+            $now = now();
+
+            // Get all active subjects
+            $allSubjects = Subject::where('is_active', 1)->get();
+
+            // Define year level progression
+            $yearLevels = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'];
+            $selectedYearIndex = array_search($selectedYearLevel, $yearLevels);
+            
+            if ($selectedYearIndex === false) {
+                Log::error('Invalid year level selected: ' . $selectedYearLevel);
+                return;
+            }
+
+            // Filter subjects based on the logic
+            $subjects = $allSubjects->filter(function($subject) use ($selectedYearLevel, $selectedYearIndex, $currentSemester, $yearLevels) {
+                $subjectYearIndex = array_search($subject->year_level, $yearLevels);
+                
+                if ($subjectYearIndex === false) {
+                    return false;
+                }
+
+                // Always include subjects from previous years (both semesters)
+                if ($subjectYearIndex < $selectedYearIndex) {
+                    return true;
+                }
+
+                // Handle current year based on semester
+                if ($subjectYearIndex === $selectedYearIndex) {
+                    if ($currentSemester === '2nd Sem') {
+                        // For 2nd Sem: Include current year's 1st Sem subjects
+                        return $subject->semester === '1st Sem';
+                    } else {
+                        // For 1st Sem: Don't include any current year subjects
+                        return false;
+                    }
+                }
+
+                return false;
+            });
+
+            // Special handling for 4th Year to include summer subjects (regardless of current semester)
+            if ($selectedYearLevel === '4th Year') {
+                $summerSubjects = $allSubjects->where('semester', 'Summer');
+                $subjects = $subjects->merge($summerSubjects);
+            }
+
+            Log::info('Subjects to be inserted', [
+                'total_subjects' => $subjects->count(),
+                'current_semester' => $currentSemester,
+                'selected_year_level' => $selectedYearLevel,
+                'subject_codes' => $subjects->pluck('code')->toArray()
+            ]);
+
+            // Prepare data for insertion
+            foreach ($subjects as $subject) {
+                $subjectsToInsert[] = [
+                    'student_id' => $studentId,
+                    'subject_id' => $subject->id,
+                    'subject_code' => $subject->code,
+                    'subject_name' => $subject->name,
+                    'units' => $subject->units,
+                    'year_level' => $subject->year_level,
+                    'semester' => $subject->semester,
+                    'date_enrolled' => $now
+                ];
+            }
+
+            // Insert into enrolled_sub table
+            if (!empty($subjectsToInsert)) {
+                DB::table('enrolled_sub')->insert($subjectsToInsert);
+                Log::info('Successfully inserted subjects for regular student', [
+                    'student_id' => $studentId,
+                    'subjects_count' => count($subjectsToInsert),
+                    'current_semester' => $currentSemester
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error auto-inserting subjects for regular student: ' . $e->getMessage(), [
+                'student_id' => $studentId,
+                'selected_year_level' => $selectedYearLevel
+            ]);
+            throw $e; // Re-throw to be handled by the main transaction
         }
     }
 
