@@ -957,9 +957,12 @@ class StudentController extends Controller
                     ]);
                 }
 
+                // Find the student record for this user
+                $studentInfo = Student::where('student_id', $userInfo->id)->first();
+
                 // NEW: Auto-insert subjects for regular students
                 if ($studentType == '1') { // Regular student
-                    $this->autoInsertSubjectsForRegularStudent($userInfo->id, $request->year_level);
+                    $this->autoInsertSubjectsForRegularStudent($studentInfo->id, $request->year_level);
                 }
 
                 DB::commit();
@@ -1272,7 +1275,7 @@ class StudentController extends Controller
             $yearLevel = $student->year_level;
             
             // Determine current semester
-            $currentSemester = '2nd Sem';
+            $currentSemester = '1st Sem';
             
             // Get completed subjects from enrolled_sub table
             $completedSubjects = DB::table('enrolled_sub')
@@ -1594,9 +1597,25 @@ class StudentController extends Controller
     public function getAllSubjects(Request $request)
     {
         try {
-            // Get all subjects except IT 433 and IT 429
+            $user = Auth::guard('student')->user();
+            $student = $user->user_information->student;
+            
+            // Get the subjects that the student has already accomplished
+            $completedSubjectIds = DB::table('enrolled_sub')
+                ->where('student_id', $student->id)
+                ->pluck('subject_id')
+                ->toArray();
+
+            Log::info('Completed subject IDs for student', [
+                'student_id' => $student->id,
+                'completed_count' => count($completedSubjectIds),
+                'completed_subjects' => $completedSubjectIds
+            ]);
+
+            // Get all subjects except IT 433, IT 429 AND subjects already accomplished
             $subjects = Subject::whereNotIn('code', ['IT 433', 'IT 429'])
                 ->where('is_active', 1)
+                ->whereNotIn('id', $completedSubjectIds) // Exclude already accomplished subjects
                 ->with(['prerequisites'])
                 ->get()
                 ->map(function($subject) {
@@ -1607,6 +1626,7 @@ class StudentController extends Controller
                         'units' => $subject->units,
                         'year_level' => $subject->year_level,
                         'semester' => $subject->semester,
+                        'description' => $subject->description,
                         'prerequisites' => $subject->prerequisites->map(function($prereq) {
                             return [
                                 'id' => $prereq->id,
@@ -1615,6 +1635,11 @@ class StudentController extends Controller
                         })
                     ];
                 });
+
+            Log::info('Filtered subjects for irregular student', [
+                'total_subjects' => $subjects->count(),
+                'excluded_completed' => count($completedSubjectIds)
+            ]);
                 
             return response()->json([
                 'success' => true,

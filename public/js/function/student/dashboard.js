@@ -147,7 +147,7 @@ function initializeIrregularModal() {
         filterCount.textContent = count;
     }
 
-    // Load subjects and initialize modal
+    // In the loadAllSubjects function in initializeIrregularModal
     function loadAllSubjects() {
         showLoadingState();
         
@@ -165,6 +165,11 @@ function initializeIrregularModal() {
         .then(data => {
             if (data.success) {
                 irregularAllSubjects = data.subjects;
+                
+                // Log for debugging
+                console.log('Loaded subjects for irregular student:', irregularAllSubjects.length);
+                console.log('Subjects:', irregularAllSubjects);
+                
                 displaySubjects(irregularAllSubjects);
                 updateSelectionInfo();
             } else {
@@ -179,6 +184,8 @@ function initializeIrregularModal() {
 
     // Display subjects in grid layout
     function displaySubjects(subjects) {
+        console.log('Displaying subjects count:', subjects.length);
+        
         if (subjects.length === 0) {
             showEmptyState();
             return;
@@ -209,8 +216,8 @@ function initializeIrregularModal() {
                     <div class="subject-footer">
                         <div class="subject-checkbox">
                             <input type="checkbox" id="subject_${subject.id}" 
-                                   ${isSelected ? 'checked' : ''}
-                                   onchange="togglePastSubjectSelection(${subject.id}, '${subject.code.replace(/'/g, "\\'")}', '${subject.name.replace(/'/g, "\\'")}', ${subject.units}, this.checked)">
+                                ${isSelected ? 'checked' : ''}
+                                onchange="togglePastSubjectSelection(${subject.id}, '${subject.code.replace(/'/g, "\\'")}', '${subject.name.replace(/'/g, "\\'")}', ${subject.units}, this.checked)">
                             <label for="subject_${subject.id}" class="checkbox-label">Completed</label>
                         </div>
                     </div>
@@ -219,6 +226,9 @@ function initializeIrregularModal() {
         }).join('');
         
         subjectsGrid.innerHTML = subjectsHTML;
+        
+        // Debug log
+        console.log('Subjects rendered in grid');
     }
 
     // Filter and display subjects based on current filters
