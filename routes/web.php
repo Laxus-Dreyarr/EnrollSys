@@ -273,3 +273,8 @@ Route::get('/clearOrg', function () {
 
     return redirect('/org');
 });
+
+//sample
+Route::get('/instructor/d', function () {
+    return view('instructor.dashboard.dashboard'); 
+});
