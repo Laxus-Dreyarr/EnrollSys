@@ -799,6 +799,36 @@ $lastname = 'Donquixote';
                 <h2 class="section-title">Settings</h2>
                 
                 <div class="settings-card">
+                    <h4>Appearance</h4>
+                    
+                    <div class="settings-option">
+                        <div class="option-info">
+                            <h5>Dark Mode</h5>
+                            <p>Switch between light and dark themes</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="dark-mode-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="settings-option">
+                        <div class="option-info">
+                            <h5>Theme Color</h5>
+                            <p>Choose your preferred accent color</p>
+                        </div>
+                        <div class="theme-colors">
+                            <div class="color-option" data-color="#4361ee" style="background-color: #4361ee;"></div>
+                            <div class="color-option" data-color="#2c5530" style="background-color: #2c5530;"></div>
+                            <div class="color-option" data-color="#8b5cf6" style="background-color: #8b5cf6;"></div>
+                            <div class="color-option" data-color="#ef4444" style="background-color: #ef4444;"></div>
+                            <div class="color-option" data-color="#f59e0b" style="background-color: #f59e0b;"></div>
+                            <div class="color-option" data-color="#800000" style="background-color: #800000;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-card">
                     <h4>Account Settings</h4>
                     
                     <div class="settings-option">

@@ -25,6 +25,12 @@
     --instructor-secondary: #4a7c59;
     --instructor-accent: #6b8e4e;
     --instructor-light: #f0f7f0;
+
+    /* Theme color variables that will be dynamically updated */
+    --theme-primary: #4361ee;
+    --theme-primary-dark: #3a56d4;
+    --theme-secondary: #3f37c9;
+    --theme-accent: #4895ef;
 }
 
 * {
@@ -33,6 +39,75 @@
     box-sizing: border-box;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
+
+/* ===== THEME COLOR SYSTEM - FIXED ===== */
+/* Ensure all theme-colored elements use the dynamic variables */
+.menu-item:hover, 
+.menu-item.active {
+    background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)) !important;
+    border-left-color: var(--theme-accent) !important;
+}
+
+.search-btn,
+.btn-primary,
+.course-header,
+.profile-badge,
+.action-icon,
+.section-title::before,
+.stat-card::before {
+    background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)) !important;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--theme-secondary), var(--theme-primary)) !important;
+}
+
+/* Update specific elements that use instructor colors */
+.course-stats .stat-value,
+.stat-number,
+.schedule-time,
+.day-header {
+    color: var(--theme-primary) !important;
+}
+
+.course-stats .stat-value {
+    -webkit-text-fill-color: var(--theme-primary) !important;
+}
+
+.quick-action-card:hover,
+.course-card:hover {
+    border-color: var(--theme-primary) !important;
+}
+
+.progress {
+    background: linear-gradient(90deg, var(--theme-primary), var(--theme-secondary)) !important;
+}
+
+/* Fix dark mode theme colors */
+body.dark-mode .btn-primary {
+    background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)) !important;
+}
+
+body.dark-mode .btn-primary:hover {
+    background: linear-gradient(135deg, var(--theme-secondary), var(--theme-primary)) !important;
+}
+
+body.dark-mode .section-title::before {
+    background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)) !important;
+}
+
+body.dark-mode .course-stats .stat-value,
+body.dark-mode .stat-number,
+body.dark-mode .schedule-time,
+body.dark-mode .day-header {
+    color: var(--theme-accent) !important;
+}
+
+body.dark-mode .course-stats .stat-value {
+    -webkit-text-fill-color: var(--theme-accent) !important;
+}
+
+/* ===== END THEME COLOR SYSTEM ===== */
 
 ::-webkit-scrollbar-track {
     border-radius: 10px;
@@ -58,6 +133,634 @@ body {
     overflow-x: hidden;
     line-height: 1.6;
     transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Enhanced Dark Mode Fixes */
+body.dark-mode {
+    background-color: var(--dark-color);
+    color: var(--text-dark);
+}
+
+body.dark-mode .main-content {
+    background: var(--dark-color);
+}
+
+/* Fix Header and Search Bar */
+body.dark-mode .header {
+    background: var(--card-dark);
+    border-bottom-color: var(--border-dark);
+    color: var(--text-dark);
+    box-shadow: var(--shadow-dark);
+}
+
+body.dark-mode .page-title {
+    color: var(--text-dark);
+}
+
+body.dark-mode .search-bar {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+    box-shadow: var(--shadow-dark);
+}
+
+body.dark-mode .search-input {
+    color: var(--text-dark);
+    background: transparent;
+}
+
+body.dark-mode .search-input::placeholder {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .search-icon {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .search-bar:focus-within {
+    border-color: var(--theme-primary);
+    box-shadow: 0 8px 25px rgba(67, 97, 238, 0.2);
+}
+
+/* Fix Header Actions */
+body.dark-mode .notification-btn,
+body.dark-mode .sidebar-toggle {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+    color: var(--text-dark);
+    box-shadow: var(--shadow-dark);
+}
+
+body.dark-mode .notification-btn:hover,
+body.dark-mode .sidebar-toggle:hover {
+    background: var(--theme-primary);
+    color: white;
+}
+
+/* Fix Stats Grid */
+body.dark-mode .stat-card {
+    background: linear-gradient(135deg, var(--card-dark), #1a2438);
+    border-color: var(--border-dark);
+    color: var(--text-dark);
+    box-shadow: var(--shadow-dark);
+}
+
+body.dark-mode .stat-card:hover {
+    box-shadow: var(--shadow-hover-dark);
+}
+
+body.dark-mode .stat-value {
+    background: linear-gradient(135deg, var(--text-dark), #cbd5e1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+body.dark-mode .stat-label {
+    color: var(--text-muted-dark);
+}
+
+/* Fix Section Titles */
+body.dark-mode .section-title {
+    color: var(--text-dark);
+}
+
+/* Fix Quick Actions */
+body.dark-mode .quick-action-card {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+    color: var(--text-dark);
+    box-shadow: var(--shadow-dark);
+}
+
+body.dark-mode .quick-action-card:hover {
+    box-shadow: var(--shadow-hover-dark);
+    border-color: var(--theme-primary);
+}
+
+body.dark-mode .quick-action-card h4 {
+    color: var(--text-dark);
+}
+
+body.dark-mode .quick-action-card p {
+    color: var(--text-muted-dark);
+}
+
+/* Fix Course Cards */
+body.dark-mode .course-card {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+    box-shadow: var(--shadow-dark);
+}
+
+body.dark-mode .course-card:hover {
+    box-shadow: var(--shadow-hover-dark);
+}
+
+body.dark-mode .course-info {
+    border-bottom-color: var(--border-dark);
+}
+
+body.dark-mode .course-info span {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .course-info span i {
+    color: var(--theme-accent);
+}
+
+body.dark-mode .course-stats {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .course-stats .stat-label {
+    color: var(--text-muted-dark);
+}
+
+/* Fix Schedule */
+body.dark-mode .schedule-container {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+    box-shadow: var(--shadow-dark);
+}
+
+body.dark-mode .day-header {
+    border-bottom-color: var(--border-dark);
+}
+
+body.dark-mode .schedule-item {
+    border-bottom-color: var(--border-dark);
+}
+
+body.dark-mode .schedule-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .schedule-course {
+    color: var(--text-dark);
+}
+
+body.dark-mode .schedule-location {
+    color: var(--text-muted-dark);
+}
+
+/* Fix Activity Container */
+body.dark-mode .activity-container {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+    box-shadow: var(--shadow-dark);
+}
+
+body.dark-mode .activity-item {
+    border-bottom-color: var(--border-dark);
+}
+
+body.dark-mode .activity-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .activity-icon {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--theme-accent);
+}
+
+body.dark-mode .activity-content h4 {
+    color: var(--text-dark);
+}
+
+body.dark-mode .activity-content p {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .activity-time {
+    color: var(--text-muted-dark);
+}
+
+/* Fix Students Table */
+body.dark-mode .students-container {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+    box-shadow: var(--shadow-dark);
+}
+
+body.dark-mode .students-table th {
+    background: var(--border-dark);
+    color: var(--text-dark);
+    border-color: var(--border-dark);
+}
+
+body.dark-mode .students-table td {
+    border-color: var(--border-dark);
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .students-table tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .btn-icon {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--theme-accent);
+}
+
+/* Fix Assignment Cards */
+body.dark-mode .assignment-card {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+    box-shadow: var(--shadow-dark);
+}
+
+body.dark-mode .assignment-header h4 {
+    color: var(--text-dark);
+}
+
+body.dark-mode .assignment-info span {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .assignment-info span i {
+    color: var(--theme-accent);
+}
+
+body.dark-mode .progress-label {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .progress-bar {
+    background-color: var(--border-dark);
+}
+
+/* Fix Grades Table */
+body.dark-mode .grades-container {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+    box-shadow: var(--shadow-dark);
+}
+
+body.dark-mode .grades-table th {
+    background: var(--border-dark);
+    color: var(--text-dark);
+    border-color: var(--border-dark);
+}
+
+body.dark-mode .grades-table td {
+    border-color: var(--border-dark);
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .grades-table tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .grade-input {
+    background: var(--dark-color);
+    border-color: var(--border-dark);
+    color: var(--text-dark);
+}
+
+body.dark-mode .grade-input:focus {
+    border-color: var(--theme-primary);
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+}
+
+/* Fix Profile Section */
+body.dark-mode .profile-subtitle {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .profile-summary-card {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+    box-shadow: var(--shadow-dark);
+}
+
+body.dark-mode .profile-details-card {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+    box-shadow: var(--shadow-dark);
+}
+
+body.dark-mode .avatar-container {
+    border-color: var(--border-dark);
+}
+
+body.dark-mode .avatar-container:hover {
+    border-color: var(--theme-primary);
+}
+
+body.dark-mode .profile-name {
+    color: var(--text-dark);
+}
+
+body.dark-mode .profile-id {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .profile-stat {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .profile-stat:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .stat-label {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .card-header {
+    border-bottom-color: var(--border-dark);
+}
+
+body.dark-mode .card-header h4 {
+    color: var(--text-dark);
+}
+
+body.dark-mode .form-label {
+    color: var(--text-dark);
+}
+
+body.dark-mode .form-label i {
+    color: var(--theme-accent);
+}
+
+body.dark-mode .form-control {
+    background: var(--dark-color);
+    border-color: var(--border-dark);
+    color: var(--text-dark);
+}
+
+body.dark-mode .form-control:focus {
+    background: var(--dark-color);
+    border-color: var(--theme-primary);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+}
+
+body.dark-mode .form-control:read-only {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .form-actions {
+    border-top-color: var(--border-dark);
+}
+
+body.dark-mode .btn-secondary {
+    border-color: var(--border-dark);
+    color: var(--text-muted-dark);
+    background: var(--card-dark);
+}
+
+body.dark-mode .btn-secondary:hover {
+    border-color: var(--theme-primary);
+    color: var(--theme-primary);
+    background: rgba(67, 97, 238, 0.1);
+}
+
+body.dark-mode .btn-edit {
+    border-color: var(--theme-primary);
+    color: var(--theme-primary);
+}
+
+body.dark-mode .btn-edit:hover {
+    background: var(--theme-primary);
+    color: white;
+}
+
+body.dark-mode .btn-cancel {
+    border-color: var(--text-muted-dark);
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .btn-cancel:hover {
+    background: var(--text-muted-dark);
+    color: var(--dark-color);
+}
+
+/* Fix Settings */
+body.dark-mode .settings-card {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+    box-shadow: var(--shadow-dark);
+}
+
+body.dark-mode .settings-card h4 {
+    color: var(--text-dark);
+}
+
+body.dark-mode .settings-option {
+    border-bottom-color: var(--border-dark);
+}
+
+body.dark-mode .option-info h5 {
+    color: var(--text-dark);
+}
+
+body.dark-mode .option-info p {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .toggle-switch .slider {
+    background-color: var(--border-dark);
+}
+
+body.dark-mode .toggle-switch input:checked + .slider {
+    background-color: var(--theme-primary);
+}
+
+/* Fix Status Badges */
+body.dark-mode .status-badge.active {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+body.dark-mode .status-badge.warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}
+
+/* Fix Form Controls in Student Filters and Grade Actions */
+body.dark-mode .student-filters .form-control,
+body.dark-mode .grade-actions .form-control {
+    background: var(--dark-color);
+    border-color: var(--border-dark);
+    color: var(--text-dark);
+}
+
+body.dark-mode .student-filters .form-control:focus,
+body.dark-mode .grade-actions .form-control:focus {
+    border-color: var(--theme-primary);
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+}
+
+/* Enhanced Smooth Transitions */
+.theme-transition * {
+    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Enhanced Dark Mode Loading Animation */
+@keyframes darkModeFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+body.dark-mode .stat-card,
+body.dark-mode .course-card,
+body.dark-mode .schedule-container,
+body.dark-mode .quick-action-card,
+body.dark-mode .assignment-card,
+body.dark-mode .settings-card,
+body.dark-mode .profile-summary-card,
+body.dark-mode .profile-details-card {
+    animation: darkModeFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Staggered animation delays */
+body.dark-mode .stat-card:nth-child(1) { animation-delay: 0.1s; }
+body.dark-mode .stat-card:nth-child(2) { animation-delay: 0.15s; }
+body.dark-mode .stat-card:nth-child(3) { animation-delay: 0.2s; }
+body.dark-mode .stat-card:nth-child(4) { animation-delay: 0.25s; }
+
+body.dark-mode .quick-action-card:nth-child(1) { animation-delay: 0.1s; }
+body.dark-mode .quick-action-card:nth-child(2) { animation-delay: 0.15s; }
+body.dark-mode .quick-action-card:nth-child(3) { animation-delay: 0.2s; }
+body.dark-mode .quick-action-card:nth-child(4) { animation-delay: 0.25s; }
+
+/* Enhanced Theme Switch Animation */
+.theme-switch-container {
+    position: relative;
+    overflow: hidden;
+}
+
+.theme-switch-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.6s ease;
+}
+
+body.dark-mode .theme-switch-container::before {
+    left: 100%;
+}
+
+/* Fix for icons in dark mode */
+body.dark-mode .fas,
+body.dark-mode .far,
+body.dark-mode .fab {
+    color: inherit;
+}
+
+/* Fix for form elements */
+body.dark-mode select.form-control,
+body.dark-mode input.form-control,
+body.dark-mode textarea.form-control {
+    background: var(--dark-color) !important;
+    border-color: var(--border-dark) !important;
+    color: var(--text-dark) !important;
+}
+
+body.dark-mode select.form-control:focus,
+body.dark-mode input.form-control:focus,
+body.dark-mode textarea.form-control:focus {
+    border-color: var(--theme-primary) !important;
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2) !important;
+}
+
+/* Fix for table hover states */
+body.dark-mode .students-table tr:hover td,
+body.dark-mode .grades-table tr:hover td {
+    color: var(--text-dark) !important;
+}
+
+/* Enhanced scrollbar for dark mode */
+body.dark-mode::-webkit-scrollbar-track {
+    background: var(--border-dark);
+}
+
+body.dark-mode::-webkit-scrollbar-thumb {
+    background: var(--theme-primary);
+    border-radius: 10px;
+}
+
+body.dark-mode::-webkit-scrollbar-thumb:hover {
+    background: var(--theme-secondary);
+}
+
+/* Theme Color Options */
+.theme-colors {
+    display: flex;
+    gap: 8px;
+}
+
+.color-option {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: var(--transition);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+}
+
+.color-option.active {
+    border-color: #1e293b;
+    transform: scale(1.1);
+}
+
+body.dark-mode .color-option.active {
+    border-color: #e2e8f0;
+}
+
+/* Enhanced Dark Mode Transitions */
+.theme-transition * {
+    transition: background-color 0.3s ease, 
+                color 0.3s ease, 
+                border-color 0.3s ease, 
+                box-shadow 0.3s ease !important;
+}
+
+/* Settings specific dark mode enhancements */
+body.dark-mode .settings-card {
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+}
+
+body.dark-mode .settings-option {
+    border-bottom-color: var(--border-dark);
+}
+
+/* Improved toggle switch in dark mode */
+body.dark-mode .toggle-switch .slider {
+    background-color: #475569;
+}
+
+body.dark-mode .toggle-switch input:checked + .slider {
+    background-color: var(--theme-primary);
+}
+
+/* Theme color picker in dark mode */
+body.dark-mode .color-option {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .dashboard-container {
@@ -153,14 +856,6 @@ body {
     font-weight: 500;
 }
 
-.menu-item:hover, .menu-item.active {
-    background: linear-gradient(135deg, rgba(67, 97, 238, 0.2), rgba(63, 55, 201, 0.1));
-    border-left-color: #64b5f6;
-    color: white;
-    transform: translateX(4px);
-    box-shadow: 0 4px 15px rgba(67, 97, 238, 0.2);
-}
-
 .menu-item i {
     margin-right: 14px;
     font-size: 1.2rem;
@@ -252,7 +947,6 @@ body {
 }
 
 .search-btn {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     border: none;
     width: 38px;
     height: 38px;
@@ -340,16 +1034,6 @@ body {
     overflow: hidden;
 }
 
-.stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-}
-
 .stat-card:hover {
     transform: translateY(-8px);
     box-shadow: var(--shadow-hover);
@@ -426,20 +1110,6 @@ body {
 .quick-action-card:hover {
     transform: translateY(-5px);
     box-shadow: var(--shadow-hover);
-    border-color: var(--instructor-primary);
-}
-
-.action-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--instructor-primary), var(--instructor-secondary));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 16px;
-    color: white;
-    font-size: 1.5rem;
 }
 
 .quick-action-card h4 {
@@ -463,18 +1133,6 @@ body {
     font-size: 1.4rem;
     letter-spacing: -0.5px;
     transition: var(--transition);
-}
-
-.section-title::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 6px;
-    height: 24px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    border-radius: 10px;
 }
 
 .section-header {
@@ -511,7 +1169,6 @@ body {
 
 .course-header {
     padding: 20px 24px;
-    background: linear-gradient(135deg, var(--instructor-primary), var(--instructor-secondary));
     color: white;
     position: relative;
     overflow: hidden;
@@ -583,15 +1240,6 @@ body {
     text-align: center;
 }
 
-.course-stats .stat-value {
-    display: block;
-    font-weight: 700;
-    font-size: 1.2rem;
-    color: var(--instructor-primary);
-    background: none;
-    -webkit-text-fill-color: var(--instructor-primary);
-}
-
 .course-stats .stat-label {
     display: block;
     font-size: 0.8rem;
@@ -633,7 +1281,6 @@ body {
     margin-bottom: 16px;
     padding-bottom: 12px;
     border-bottom: 2px solid #e2e8f0;
-    color: var(--instructor-primary);
     font-size: 1.1rem;
     display: flex;
     align-items: center;
@@ -668,7 +1315,6 @@ body {
 
 .schedule-time {
     font-weight: 600;
-    color: var(--instructor-primary);
     min-width: 140px;
     font-size: 0.95rem;
 }
@@ -734,7 +1380,6 @@ body {
     align-items: center;
     justify-content: center;
     margin-right: 16px;
-    color: var(--instructor-primary);
     flex-shrink: 0;
 }
 
@@ -829,7 +1474,7 @@ body {
 
 .btn-icon:hover {
     background: #f1f5f9;
-    color: var(--instructor-primary);
+    color: var(--theme-primary);
 }
 
 /* Assignment Cards */
@@ -860,7 +1505,6 @@ body {
 }
 
 .assignment-course {
-    background: var(--instructor-primary);
     color: white;
     padding: 4px 8px;
     border-radius: 6px;
@@ -913,7 +1557,6 @@ body {
 .progress {
     height: 100%;
     border-radius: 10px;
-    background: linear-gradient(90deg, var(--instructor-primary), var(--instructor-secondary));
     position: relative;
     transition: width 1s ease-in-out;
 }
@@ -988,8 +1631,8 @@ body {
 
 .grade-input:focus {
     outline: none;
-    border-color: var(--instructor-primary);
-    box-shadow: 0 0 0 2px rgba(44, 85, 48, 0.1);
+    border-color: var(--theme-primary);
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
 }
 
 /* Profile Section */
@@ -1037,7 +1680,7 @@ body {
 }
 
 .avatar-container:hover {
-    border-color: var(--instructor-primary);
+    border-color: var(--theme-primary);
     transform: scale(1.05);
 }
 
@@ -1058,7 +1701,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(44, 85, 48, 0.8);
+    background: rgba(67, 97, 238, 0.8);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1102,7 +1745,6 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: linear-gradient(135deg, var(--instructor-primary), var(--instructor-secondary));
     color: white;
     padding: 8px 16px;
     border-radius: 20px;
@@ -1131,14 +1773,6 @@ body {
     transform: translateY(-2px);
 }
 
-.stat-number {
-    display: block;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--instructor-primary);
-    margin-bottom: 4px;
-}
-
 .stat-label {
     font-size: 0.8rem;
     color: #64748b;
@@ -1151,7 +1785,7 @@ body {
     border-radius: var(--border-radius);
     padding: 32px;
     box-shadow: var(--shadow);
-    border: 1px solid #f1f5f9;
+    border: 1px solid #f1f5f9);
     grid-column: 2;
     grid-row: 1 / span 2;
     transition: var(--transition);
@@ -1176,8 +1810,8 @@ body {
 
 .btn-edit {
     background: transparent;
-    border: 2px solid var(--instructor-primary);
-    color: var(--instructor-primary);
+    border: 2px solid var(--theme-primary);
+    color: var(--theme-primary);
     padding: 10px 20px;
     border-radius: 12px;
     font-weight: 600;
@@ -1190,7 +1824,7 @@ body {
 }
 
 .btn-edit:hover {
-    background: var(--instructor-primary);
+    background: var(--theme-primary);
     color: white;
     transform: translateY(-2px);
 }
@@ -1221,7 +1855,7 @@ body {
 }
 
 .form-label i {
-    color: var(--instructor-primary);
+    color: var(--theme-primary);
     width: 16px;
 }
 
@@ -1238,9 +1872,9 @@ body {
 
 .form-control:focus {
     outline: none;
-    border-color: var(--instructor-primary);
+    border-color: var(--theme-primary);
     background: white;
-    box-shadow: 0 0 0 3px rgba(44, 85, 48, 0.1);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
 }
 
 .form-control:read-only {
@@ -1364,7 +1998,7 @@ body {
 }
 
 input:checked + .slider {
-    background-color: var(--instructor-primary);
+    background-color: var(--theme-primary);
 }
 
 input:checked + .slider:before {
@@ -1373,7 +2007,6 @@ input:checked + .slider:before {
 
 /* Enhanced Buttons */
 .btn-primary {
-    background: linear-gradient(135deg, var(--instructor-primary), var(--instructor-secondary));
     border: none;
     padding: 14px 28px;
     border-radius: 12px;
@@ -1381,7 +2014,7 @@ input:checked + .slider:before {
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
-    box-shadow: 0 4px 15px rgba(44, 85, 48, 0.3);
+    box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
     font-size: 0.95rem;
     letter-spacing: 0.5px;
     display: inline-flex;
@@ -1391,7 +2024,7 @@ input:checked + .slider:before {
 
 .btn-primary:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(44, 85, 48, 0.4);
+    box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
 }
 
 .btn-primary:disabled {
@@ -1416,9 +2049,9 @@ input:checked + .slider:before {
 }
 
 .btn-secondary:hover {
-    border-color: var(--instructor-primary);
-    color: var(--instructor-primary);
-    background: rgba(44, 85, 48, 0.05);
+    border-color: var(--theme-primary);
+    color: var(--theme-primary);
+    background: rgba(67, 97, 238, 0.05);
 }
 
 .btn-sm {
@@ -1434,258 +2067,6 @@ input:checked + .slider:before {
 
 .content-section.active {
     display: block;
-}
-
-/* Dark Mode Styles */
-body.dark-mode {
-    background-color: var(--dark-color);
-    color: var(--text-dark);
-}
-
-body.dark-mode .main-content {
-    background: var(--dark-color);
-}
-
-body.dark-mode .header {
-    background: var(--card-dark);
-    border-bottom-color: var(--border-dark);
-    color: var(--text-dark);
-    box-shadow: var(--shadow-dark);
-}
-
-body.dark-mode .page-title {
-    color: var(--text-dark);
-}
-
-body.dark-mode .search-bar {
-    background: var(--card-dark);
-    border-color: var(--border-dark);
-    box-shadow: var(--shadow-dark);
-}
-
-body.dark-mode .search-input {
-    color: var(--text-dark);
-    background: transparent;
-}
-
-body.dark-mode .search-input::placeholder {
-    color: var(--text-muted-dark);
-}
-
-body.dark-mode .search-icon {
-    color: var(--text-muted-dark);
-}
-
-body.dark-mode .search-bar:focus-within {
-    border-color: var(--instructor-primary);
-    box-shadow: 0 8px 25px rgba(44, 85, 48, 0.2);
-}
-
-body.dark-mode .stat-card {
-    background: linear-gradient(135deg, var(--card-dark), #1a2438);
-    border-color: var(--border-dark);
-    color: var(--text-dark);
-    box-shadow: var(--shadow-dark);
-}
-
-body.dark-mode .stat-card:hover {
-    box-shadow: var(--shadow-hover-dark);
-}
-
-body.dark-mode .stat-value {
-    background: linear-gradient(135deg, var(--text-dark), #cbd5e1);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-body.dark-mode .stat-label {
-    color: var(--text-muted-dark);
-}
-
-body.dark-mode .section-title {
-    color: var(--text-dark);
-}
-
-body.dark-mode .quick-action-card,
-body.dark-mode .course-card,
-body.dark-mode .schedule-container,
-body.dark-mode .activity-container,
-body.dark-mode .students-container,
-body.dark-mode .assignment-card,
-body.dark-mode .grades-container,
-body.dark-mode .profile-summary-card,
-body.dark-mode .profile-details-card,
-body.dark-mode .settings-card {
-    background: var(--card-dark);
-    border-color: var(--border-dark);
-    color: var(--text-dark);
-    box-shadow: var(--shadow-dark);
-}
-
-body.dark-mode .quick-action-card:hover,
-body.dark-mode .course-card:hover {
-    box-shadow: var(--shadow-hover-dark);
-}
-
-body.dark-mode .quick-action-card h4,
-body.dark-mode .course-stats .stat-value,
-body.dark-mode .schedule-course,
-body.dark-mode .activity-content h4,
-body.dark-mode .assignment-header h4,
-body.dark-mode .profile-name,
-body.dark-mode .card-header h4,
-body.dark-mode .settings-card h4,
-body.dark-mode .option-info h5 {
-    color: var(--text-dark);
-}
-
-body.dark-mode .quick-action-card p,
-body.dark-mode .course-info span,
-body.dark-mode .course-stats .stat-label,
-body.dark-mode .schedule-location,
-body.dark-mode .activity-content p,
-body.dark-mode .assignment-info span,
-body.dark-mode .profile-id,
-body.dark-mode .option-info p {
-    color: var(--text-muted-dark);
-}
-
-body.dark-mode .course-stats {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-body.dark-mode .activity-icon {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--instructor-accent);
-}
-
-body.dark-mode .students-table th,
-body.dark-mode .grades-table th {
-    background: var(--border-dark);
-    color: var(--text-dark);
-    border-color: var(--border-dark);
-}
-
-body.dark-mode .students-table td,
-body.dark-mode .grades-table td {
-    border-color: var(--border-dark);
-    color: var(--text-muted-dark);
-}
-
-body.dark-mode .students-table tr:hover,
-body.dark-mode .grades-table tr:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-body.dark-mode .grade-input {
-    background: var(--dark-color);
-    border-color: var(--border-dark);
-    color: var(--text-dark);
-}
-
-body.dark-mode .grade-input:focus {
-    border-color: var(--instructor-primary);
-    box-shadow: 0 0 0 2px rgba(44, 85, 48, 0.2);
-}
-
-body.dark-mode .form-control {
-    background: var(--dark-color);
-    border-color: var(--border-dark);
-    color: var(--text-dark);
-}
-
-body.dark-mode .form-control:focus {
-    background: var(--dark-color);
-    border-color: var(--instructor-primary);
-    box-shadow: 0 0 0 3px rgba(44, 85, 48, 0.2);
-}
-
-body.dark-mode .form-control:read-only {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-muted-dark);
-}
-
-body.dark-mode .form-label {
-    color: var(--text-dark);
-}
-
-body.dark-mode .card-header,
-body.dark-mode .form-actions {
-    border-color: var(--border-dark);
-}
-
-body.dark-mode .btn-secondary {
-    border-color: var(--border-dark);
-    color: var(--text-muted-dark);
-    background: var(--card-dark);
-}
-
-body.dark-mode .btn-secondary:hover {
-    border-color: var(--instructor-primary);
-    color: var(--instructor-primary);
-    background: rgba(44, 85, 48, 0.1);
-}
-
-body.dark-mode .btn-edit {
-    border-color: var(--instructor-primary);
-    color: var(--instructor-primary);
-}
-
-body.dark-mode .btn-edit:hover {
-    background: var(--instructor-primary);
-    color: white;
-}
-
-body.dark-mode .btn-cancel {
-    border-color: var(--text-muted-dark);
-    color: var(--text-muted-dark);
-}
-
-body.dark-mode .btn-cancel:hover {
-    background: var(--text-muted-dark);
-    color: var(--dark-color);
-}
-
-body.dark-mode .profile-stat {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-body.dark-mode .profile-stat:hover {
-    background: rgba(255, 255, 255, 0.08);
-}
-
-body.dark-mode .progress-bar {
-    background-color: var(--border-dark);
-}
-
-body.dark-mode .avatar-container {
-    border-color: var(--border-dark);
-}
-
-body.dark-mode .avatar-container:hover {
-    border-color: var(--instructor-primary);
-}
-
-body.dark-mode .toggle-switch .slider {
-    background: var(--border-dark);
-}
-
-body.dark-mode .status-badge.active {
-    background: rgba(16, 185, 129, 0.2);
-    color: #34d399;
-}
-
-body.dark-mode .status-badge.warning {
-    background: rgba(245, 158, 11, 0.2);
-    color: #fbbf24;
-}
-
-body.dark-mode ::-webkit-scrollbar-track {
-    background: var(--border-dark);
-}
-
-body.dark-mode ::-webkit-scrollbar-thumb {
-    background: var(--instructor-primary);
 }
 
 /* Animations */

@@ -1,8 +1,355 @@
+// Enhanced Dark Mode and Theme Management with Smooth Transitions
+function initializeDarkMode() {
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    let themeColorOptions = document.querySelectorAll('.color-option');
+    
+    // Load saved theme preferences
+    const savedTheme = localStorage.getItem('theme') || 
+                      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const savedColor = localStorage.getItem('theme-color') || '#4361ee';
+    
+    console.log('Initializing theme with:', { savedTheme, savedColor });
+    
+    // Apply saved theme with smooth transition
+    setTimeout(() => {
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            if (darkModeToggle) darkModeToggle.checked = true;
+        }
+        
+        // Apply saved color
+        applyThemeColor(savedColor);
+        setActiveColorOption(savedColor);
+    }, 100);
+    
+    // Dark mode toggle event
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('change', function() {
+            if (this.checked) {
+                enableDarkModeSmoothly();
+            } else {
+                disableDarkModeSmoothly();
+            }
+        });
+    }
+    
+    // Theme color selection events - with better error handling
+    function setupThemeColorListeners() {
+        themeColorOptions = document.querySelectorAll('.color-option');
+        console.log('Setting up listeners for', themeColorOptions.length, 'color options');
+        
+        themeColorOptions.forEach(option => {
+            // Remove existing listeners to prevent duplicates
+            option.replaceWith(option.cloneNode(true));
+        });
+        
+        // Re-query after clone
+        themeColorOptions = document.querySelectorAll('.color-option');
+        
+        themeColorOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const color = this.getAttribute('data-color');
+                console.log('Color option clicked:', color);
+                applyThemeColorSmoothly(color);
+                setActiveColorOption(color);
+                localStorage.setItem('theme-color', color);
+            });
+        });
+    }
+    
+    // Initial setup
+    setupThemeColorListeners();
+    
+    // Re-setup listeners when settings section is shown (in case of dynamic loading)
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('[data-section="settings"]')) {
+            setTimeout(setupThemeColorListeners, 100);
+        }
+    });
+}
+
+// Make sure the theme color is applied when switching between light/dark mode
+function enableDarkModeSmoothly() {
+    document.body.classList.add('theme-transition');
+    document.body.classList.add('dark-mode');
+    localStorage.setItem('theme', 'dark');
+    
+    // Re-apply theme color after mode change
+    const currentColor = localStorage.getItem('theme-color') || '#4361ee';
+    setTimeout(() => {
+        applyThemeColor(currentColor);
+    }, 300);
+    
+    setTimeout(() => {
+        document.body.classList.remove('theme-transition');
+    }, 600);
+}
+
+function disableDarkModeSmoothly() {
+    document.body.classList.add('theme-transition');
+    document.body.classList.remove('dark-mode');
+    localStorage.setItem('theme', 'light');
+    
+    // Re-apply theme color after mode change
+    const currentColor = localStorage.getItem('theme-color') || '#4361ee';
+    setTimeout(() => {
+        applyThemeColor(currentColor);
+    }, 300);
+    
+    setTimeout(() => {
+        document.body.classList.remove('theme-transition');
+    }, 600);
+}
+
+function applyThemeColorSmoothly(color) {
+    const root = document.documentElement;
+    
+    // Add transition for color changes
+    root.style.setProperty('--transition', 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)');
+    
+    // Update CSS variables based on the selected color
+    switch(color) {
+        case '#2c5530': // Instructor Green
+            root.style.setProperty('--theme-primary', '#2c5530');
+            root.style.setProperty('--theme-primary-dark', '#244328');
+            root.style.setProperty('--theme-secondary', '#4a7c59');
+            root.style.setProperty('--theme-accent', '#6b8e4e');
+            root.style.setProperty('--primary-color', '#2c5530');
+            root.style.setProperty('--primary-dark', '#244328');
+            root.style.setProperty('--secondary-color', '#4a7c59');
+            root.style.setProperty('--accent-color', '#6b8e4e');
+            root.style.setProperty('--instructor-primary', '#2c5530');
+            root.style.setProperty('--instructor-secondary', '#4a7c59');
+            root.style.setProperty('--instructor-accent', '#6b8e4e');
+            break;
+        case '#8b5cf6': // Purple
+            root.style.setProperty('--theme-primary', '#8b5cf6');
+            root.style.setProperty('--theme-primary-dark', '#7c3aed');
+            root.style.setProperty('--theme-secondary', '#a78bfa');
+            root.style.setProperty('--theme-accent', '#c4b5fd');
+            root.style.setProperty('--primary-color', '#8b5cf6');
+            root.style.setProperty('--primary-dark', '#7c3aed');
+            root.style.setProperty('--secondary-color', '#a78bfa');
+            root.style.setProperty('--accent-color', '#c4b5fd');
+            root.style.setProperty('--instructor-primary', '#8b5cf6');
+            root.style.setProperty('--instructor-secondary', '#a78bfa');
+            root.style.setProperty('--instructor-accent', '#c4b5fd');
+            break;
+        case '#ef4444': // Red
+            root.style.setProperty('--theme-primary', '#ef4444');
+            root.style.setProperty('--theme-primary-dark', '#dc2626');
+            root.style.setProperty('--theme-secondary', '#f87171');
+            root.style.setProperty('--theme-accent', '#fca5a5');
+            root.style.setProperty('--primary-color', '#ef4444');
+            root.style.setProperty('--primary-dark', '#dc2626');
+            root.style.setProperty('--secondary-color', '#f87171');
+            root.style.setProperty('--accent-color', '#fca5a5');
+            root.style.setProperty('--instructor-primary', '#ef4444');
+            root.style.setProperty('--instructor-secondary', '#f87171');
+            root.style.setProperty('--instructor-accent', '#fca5a5');
+            break;
+        case '#f59e0b': // Amber
+            root.style.setProperty('--theme-primary', '#f59e0b');
+            root.style.setProperty('--theme-primary-dark', '#d97706');
+            root.style.setProperty('--theme-secondary', '#fbbf24');
+            root.style.setProperty('--theme-accent', '#fcd34d');
+            root.style.setProperty('--primary-color', '#f59e0b');
+            root.style.setProperty('--primary-dark', '#d97706');
+            root.style.setProperty('--secondary-color', '#fbbf24');
+            root.style.setProperty('--accent-color', '#fcd34d');
+            root.style.setProperty('--instructor-primary', '#f59e0b');
+            root.style.setProperty('--instructor-secondary', '#fbbf24');
+            root.style.setProperty('--instructor-accent', '#fcd34d');
+            break;
+        case '#800000': // Maroon
+            root.style.setProperty('--theme-primary', '#800000');
+            root.style.setProperty('--theme-primary-dark', '#660000');
+            root.style.setProperty('--theme-secondary', '#a52a2a');
+            root.style.setProperty('--theme-accent', '#cd5c5c');
+            root.style.setProperty('--primary-color', '#800000');
+            root.style.setProperty('--primary-dark', '#660000');
+            root.style.setProperty('--secondary-color', '#a52a2a');
+            root.style.setProperty('--accent-color', '#cd5c5c');
+            root.style.setProperty('--instructor-primary', '#800000');
+            root.style.setProperty('--instructor-secondary', '#a52a2a');
+            root.style.setProperty('--instructor-accent', '#cd5c5c');
+            break;
+        default: // Default Blue
+            root.style.setProperty('--theme-primary', '#4361ee');
+            root.style.setProperty('--theme-primary-dark', '#3a56d4');
+            root.style.setProperty('--theme-secondary', '#3f37c9');
+            root.style.setProperty('--theme-accent', '#4895ef');
+            root.style.setProperty('--primary-color', '#4361ee');
+            root.style.setProperty('--primary-dark', '#3a56d4');
+            root.style.setProperty('--secondary-color', '#3f37c9');
+            root.style.setProperty('--accent-color', '#4895ef');
+            root.style.setProperty('--instructor-primary', '#4361ee');
+            root.style.setProperty('--instructor-secondary', '#3f37c9');
+            root.style.setProperty('--instructor-accent', '#4895ef');
+    }
+    
+    // Show notification
+    showNotification('Theme color updated to ' + getColorName(color), 'info');
+    
+    // Reset transition after color change
+    setTimeout(() => {
+        root.style.setProperty('--transition', 'all 0.3s ease');
+    }, 400);
+}
+
+function applyThemeColor(color) {
+    const root = document.documentElement;
+    
+    // Update CSS variables based on the selected color
+    switch(color) {
+        case '#2c5530': // Instructor Green
+            root.style.setProperty('--theme-primary', '#2c5530');
+            root.style.setProperty('--theme-primary-dark', '#244328');
+            root.style.setProperty('--theme-secondary', '#4a7c59');
+            root.style.setProperty('--theme-accent', '#6b8e4e');
+            root.style.setProperty('--primary-color', '#2c5530');
+            root.style.setProperty('--primary-dark', '#244328');
+            root.style.setProperty('--secondary-color', '#4a7c59');
+            root.style.setProperty('--accent-color', '#6b8e4e');
+            root.style.setProperty('--instructor-primary', '#2c5530');
+            root.style.setProperty('--instructor-secondary', '#4a7c59');
+            root.style.setProperty('--instructor-accent', '#6b8e4e');
+            break;
+        case '#8b5cf6': // Purple
+            root.style.setProperty('--theme-primary', '#8b5cf6');
+            root.style.setProperty('--theme-primary-dark', '#7c3aed');
+            root.style.setProperty('--theme-secondary', '#a78bfa');
+            root.style.setProperty('--theme-accent', '#c4b5fd');
+            root.style.setProperty('--primary-color', '#8b5cf6');
+            root.style.setProperty('--primary-dark', '#7c3aed');
+            root.style.setProperty('--secondary-color', '#a78bfa');
+            root.style.setProperty('--accent-color', '#c4b5fd');
+            root.style.setProperty('--instructor-primary', '#8b5cf6');
+            root.style.setProperty('--instructor-secondary', '#a78bfa');
+            root.style.setProperty('--instructor-accent', '#c4b5fd');
+            break;
+        case '#ef4444': // Red
+            root.style.setProperty('--theme-primary', '#ef4444');
+            root.style.setProperty('--theme-primary-dark', '#dc2626');
+            root.style.setProperty('--theme-secondary', '#f87171');
+            root.style.setProperty('--theme-accent', '#fca5a5');
+            root.style.setProperty('--primary-color', '#ef4444');
+            root.style.setProperty('--primary-dark', '#dc2626');
+            root.style.setProperty('--secondary-color', '#f87171');
+            root.style.setProperty('--accent-color', '#fca5a5');
+            root.style.setProperty('--instructor-primary', '#ef4444');
+            root.style.setProperty('--instructor-secondary', '#f87171');
+            root.style.setProperty('--instructor-accent', '#fca5a5');
+            break;
+        case '#f59e0b': // Amber
+            root.style.setProperty('--theme-primary', '#f59e0b');
+            root.style.setProperty('--theme-primary-dark', '#d97706');
+            root.style.setProperty('--theme-secondary', '#fbbf24');
+            root.style.setProperty('--theme-accent', '#fcd34d');
+            root.style.setProperty('--primary-color', '#f59e0b');
+            root.style.setProperty('--primary-dark', '#d97706');
+            root.style.setProperty('--secondary-color', '#fbbf24');
+            root.style.setProperty('--accent-color', '#fcd34d');
+            root.style.setProperty('--instructor-primary', '#f59e0b');
+            root.style.setProperty('--instructor-secondary', '#fbbf24');
+            root.style.setProperty('--instructor-accent', '#fcd34d');
+            break;
+        case '#800000': // Maroon
+            root.style.setProperty('--theme-primary', '#800000');
+            root.style.setProperty('--theme-primary-dark', '#660000');
+            root.style.setProperty('--theme-secondary', '#a52a2a');
+            root.style.setProperty('--theme-accent', '#cd5c5c');
+            root.style.setProperty('--primary-color', '#800000');
+            root.style.setProperty('--primary-dark', '#660000');
+            root.style.setProperty('--secondary-color', '#a52a2a');
+            root.style.setProperty('--accent-color', '#cd5c5c');
+            root.style.setProperty('--instructor-primary', '#800000');
+            root.style.setProperty('--instructor-secondary', '#a52a2a');
+            root.style.setProperty('--instructor-accent', '#cd5c5c');
+            break;
+        default: // Default Blue
+            root.style.setProperty('--theme-primary', '#4361ee');
+            root.style.setProperty('--theme-primary-dark', '#3a56d4');
+            root.style.setProperty('--theme-secondary', '#3f37c9');
+            root.style.setProperty('--theme-accent', '#4895ef');
+            root.style.setProperty('--primary-color', '#4361ee');
+            root.style.setProperty('--primary-dark', '#3a56d4');
+            root.style.setProperty('--secondary-color', '#3f37c9');
+            root.style.setProperty('--accent-color', '#4895ef');
+            root.style.setProperty('--instructor-primary', '#4361ee');
+            root.style.setProperty('--instructor-secondary', '#3f37c9');
+            root.style.setProperty('--instructor-accent', '#4895ef');
+    }
+}
+
+// Helper function to get color name
+function getColorName(color) {
+    const colorMap = {
+        '#4361ee': 'Blue',
+        '#2c5530': 'Green', 
+        '#8b5cf6': 'Purple',
+        '#ef4444': 'Red',
+        '#f59e0b': 'Amber',
+        '#800000': 'Maroon'
+    };
+    return colorMap[color] || 'Custom';
+}
+
+function setActiveColorOption(color) {
+    const colorOptions = document.querySelectorAll('.color-option');
+    colorOptions.forEach(option => {
+        if (option.getAttribute('data-color') === color) {
+            option.classList.add('active');
+        } else {
+            option.classList.remove('active');
+        }
+    });
+}
+
+// System preference listener with smooth transitions
+function watchSystemTheme() {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    mediaQuery.addEventListener('change', (e) => {
+        // Only auto-switch if user hasn't manually set a preference
+        if (!localStorage.getItem('theme')) {
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            if (e.matches) {
+                enableDarkModeSmoothly();
+                if (darkModeToggle) darkModeToggle.checked = true;
+            } else {
+                disableDarkModeSmoothly();
+                if (darkModeToggle) darkModeToggle.checked = false;
+            }
+        }
+    });
+}
+
+// Add keyboard shortcut for dark mode (Ctrl/Cmd + D)
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        if (darkModeToggle) {
+            darkModeToggle.checked = !darkModeToggle.checked;
+            if (darkModeToggle.checked) {
+                enableDarkModeSmoothly();
+            } else {
+                disableDarkModeSmoothly();
+            }
+        }
+    }
+});
+
 // Instructor Dashboard JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize sidebar toggle
     const sidebarToggle = document.querySelector('.sidebar-toggle');
     const sidebar = document.querySelector('.sidebar');
+
+    // Initialize Dark Mode and Theme System
+    initializeDarkMode();
+    watchSystemTheme();
     
     if (sidebarToggle && sidebar) {
         sidebarToggle.addEventListener('click', function() {
@@ -475,34 +822,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // Dark mode toggle
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
-    if (darkModeToggle) {
-        const savedTheme = localStorage.getItem('theme') || 
-                          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        
-        if (savedTheme === 'dark') {
-            document.body.classList.add('dark-mode');
-            darkModeToggle.querySelector('input').checked = true;
-        }
-        
-        darkModeToggle.addEventListener('change', function() {
-            document.body.classList.add('theme-transition');
-            
-            if (this.querySelector('input').checked) {
-                document.body.classList.add('dark-mode');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                document.body.classList.remove('dark-mode');
-                localStorage.setItem('theme', 'light');
-            }
-            
-            setTimeout(() => {
-                document.body.classList.remove('theme-transition');
-            }, 300);
-        });
-    }
+
     
     // Close sidebar when clicking outside on mobile
     document.addEventListener('click', function(event) {
