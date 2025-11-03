@@ -33,56 +33,95 @@ $lastname = 'Donquixote';
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h3>Enroll<span>Sys</span></h3>
+                <div class="logo-container">
+                    <i class="fas fa-graduation-cap logo-icon"></i>
+                    <h3>Enroll<span>Sys</span></h3>
+                </div>
             </div>
             
             <div class="user-profile">
                 @if(!empty($profile_picture) && $profile_picture !== 'default.png')
-                    <img src="{{ asset('profile/' . $profile_picture) }}" alt="User Avatar" class="user-avatar">
+                    <div class="avatar-container">
+                        <img src="{{ asset('profile/' . $profile_picture) }}" alt="User Avatar" class="user-avatar">
+                        <div class="status-indicator"></div>
+                    </div>
                 @else
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=4361ee&color=fff" alt="User Avatar" class="user-avatar">
+                    <div class="avatar-container">
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=4361ee&color=fff" alt="User Avatar" class="user-avatar">
+                        <div class="status-indicator"></div>
+                    </div>
                 @endif
                 
-                <h4 class="user-name">Zeref Dragneel</h4>
-                <p class="user-id">007</p>
+                <div class="user-info">
+                    <h4 class="user-name">Zeref Dragneel</h4>
+                    <p class="user-id">ID: 007</p>
+                    <span class="user-role">Instructor</span>
+                </div>
             </div>
 
             <div class="sidebar-menu">
                 <a class="menu-item active" data-section="dashboard">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                    <span>Dashboard</span>
+                    <div class="menu-icon">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <span class="menu-text">Dashboard</span>
+                    <div class="menu-hover-effect"></div>
                 </a>
                 <a class="menu-item" data-section="courses">
-                    <i class="fas fa-book"></i>
-                    <span>My Courses</span>
+                    <div class="menu-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <span class="menu-text">My Courses</span>
+                    <div class="menu-hover-effect"></div>
                 </a>
                 <a class="menu-item" data-section="schedule">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Teaching Schedule</span>
+                    <div class="menu-icon">
+                        <i class="fas fa-calendar-days"></i>
+                    </div>
+                    <span class="menu-text">Teaching Schedule</span>
+                    <div class="menu-hover-effect"></div>
                 </a>
                 <a class="menu-item" data-section="students">
-                    <i class="fas fa-users"></i>
-                    <span>Students</span>
+                    <div class="menu-icon">
+                        <i class="fas fa-user-group"></i>
+                    </div>
+                    <span class="menu-text">Students</span>
+                    <div class="menu-hover-effect"></div>
                 </a>
                 <a class="menu-item" data-section="assignments">
-                    <i class="fas fa-tasks"></i>
-                    <span>Assignments</span>
+                    <div class="menu-icon">
+                        <i class="fas fa-file-signature"></i>
+                    </div>
+                    <span class="menu-text">Assignments</span>
+                    <div class="menu-hover-effect"></div>
                 </a>
                 <a class="menu-item" data-section="grades">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Grade Management</span>
+                    <div class="menu-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <span class="menu-text">Grade Management</span>
+                    <div class="menu-hover-effect"></div>
                 </a>
                 <a class="menu-item" data-section="profile">
-                    <i class="fas fa-user-circle"></i>
-                    <span>Profile</span>
+                    <div class="menu-icon">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <span class="menu-text">Profile</span>
+                    <div class="menu-hover-effect"></div>
                 </a>
                 <a class="menu-item" data-section="settings">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
+                    <div class="menu-icon">
+                        <i class="fas fa-sliders"></i>
+                    </div>
+                    <span class="menu-text">Settings</span>
+                    <div class="menu-hover-effect"></div>
                 </a>
-                <a class="menu-item" id="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
+                <a class="menu-item logout-item" id="logout-btn">
+                    <div class="menu-icon">
+                        <i class="fas fa-arrow-right-from-bracket"></i>
+                    </div>
+                    <span class="menu-text">Logout</span>
+                    <div class="menu-hover-effect"></div>
                 </a>
             </div>
         </div>
@@ -151,39 +190,43 @@ $lastname = 'Donquixote';
                     </div>
                 </div>
                 
-                <!-- Quick Actions -->
+                <!-- Enhanced Quick Actions -->
                 <h2 class="section-title">Quick Actions</h2>
                 <div class="quick-actions-grid">
                     <div class="quick-action-card" data-action="create-assignment">
                         <div class="action-icon">
-                            <i class="fas fa-plus-circle"></i>
+                            <i class="fas fa-file-circle-plus"></i>
                         </div>
                         <h4>Create Assignment</h4>
                         <p>Create new assignment for your courses</p>
+                        <div class="action-hover-effect"></div>
                     </div>
                     
                     <div class="quick-action-card" data-action="manage-grades">
                         <div class="action-icon">
-                            <i class="fas fa-edit"></i>
+                            <i class="fas fa-pen-to-square"></i>
                         </div>
                         <h4>Input Grades</h4>
                         <p>Update student grades and performance</p>
+                        <div class="action-hover-effect"></div>
                     </div>
                     
                     <div class="quick-action-card" data-action="view-students">
                         <div class="action-icon">
-                            <i class="fas fa-user-graduate"></i>
+                            <i class="fas fa-users-viewfinder"></i>
                         </div>
                         <h4>Student Roster</h4>
                         <p>View and manage student lists</p>
+                        <div class="action-hover-effect"></div>
                     </div>
                     
                     <div class="quick-action-card" data-action="upload-materials">
                         <div class="action-icon">
-                            <i class="fas fa-file-upload"></i>
+                            <i class="fas fa-cloud-arrow-up"></i>
                         </div>
                         <h4>Upload Materials</h4>
                         <p>Share course materials with students</p>
+                        <div class="action-hover-effect"></div>
                     </div>
                 </div>
                 
