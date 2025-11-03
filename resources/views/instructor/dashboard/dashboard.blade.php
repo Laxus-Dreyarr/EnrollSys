@@ -161,18 +161,22 @@ $lastname = 'Donquixote';
                         <div class="stat-icon courses">
                             <i class="fas fa-book"></i>
                         </div>
-                        <h3 class="stat-value">4</h3>
-                        <p class="stat-label">Courses Teaching</p>
+                        <div class="stat-content">
+                            <h3 class="stat-value">4</h3>
+                            <p class="stat-label">Courses Teaching</p>
+                        </div>
                     </div>
                     
                     <div class="stat-card">
                         <div class="stat-icon students">
                             <i class="fas fa-users"></i>
                         </div>
-                        <h3 class="stat-value">127</h3>
-                        <p class="stat-label">Total Students</p>
+                        <div class="stat-content">
+                            <h3 class="stat-value">127</h3>
+                            <p class="stat-label">Total Students</p>
+                        </div>
                     </div>
-                    
+
                     <div class="stat-card">
                         <div class="stat-icon assignments">
                             <i class="fas fa-tasks"></i>
@@ -188,6 +192,7 @@ $lastname = 'Donquixote';
                         <h3 class="stat-value">3</h3>
                         <p class="stat-label">Upcoming Classes</p>
                     </div>
+                    
                 </div>
                 
                 <!-- Enhanced Quick Actions -->
