@@ -129,6 +129,8 @@ Route::get('/instructor', function () {
 });
 Route::middleware(['instructor.auth'])->group(function () {
     Route::get('/instructor-dashboard', [InstructorController::class, 'dashboard'])->name('instructor.dashboard');
+    Route::post('/instructor/ungraded-students', [InstructorController::class, 'getUngradedStudents'])->name('instructor.ungraded-students');
+    Route::post('/instructor/save-grade', [InstructorController::class, 'saveGrade'])->name('instructor.save-grade');
 });
 
 

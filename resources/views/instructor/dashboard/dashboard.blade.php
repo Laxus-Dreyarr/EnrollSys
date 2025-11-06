@@ -75,6 +75,13 @@ $id = $user->info->instructor_id;
                     <span class="menu-text">My Courses</span>
                     <div class="menu-hover-effect"></div>
                 </a>
+                <a class="menu-item" data-section="input-grades">
+                    <div class="menu-icon">
+                        <i class="fas fa-pen-to-square"></i>
+                    </div>
+                    <span class="menu-text">Input Grades</span>
+                    <div class="menu-hover-effect"></div>
+                </a>
                 <a class="menu-item" data-section="schedule">
                     <div class="menu-icon">
                         <i class="fas fa-calendar-days"></i>
@@ -215,6 +222,10 @@ $id = $user->info->instructor_id;
                         <h4>Input Grades</h4>
                         <p>Update student grades and performance</p>
                         <div class="action-hover-effect"></div>
+                    </div>
+                    <!-- Input Grades Section -->
+                    <div id="input-grades-section" class="content-section">
+                        @include('instructor.dashboard.partials.input-grades')
                     </div>
                     
                     <div class="quick-action-card" data-action="view-students">
@@ -944,5 +955,16 @@ $id = $user->info->instructor_id;
     <script src="{{asset('js/jquery.js')}}"></script>
     <script src="{{asset('js/sweetalert2.js')}}"></script>
     <script src="{{asset('js/function/instructor/dashboard.js')}}"></script>
+    <script>
+        // Pass Laravel routes to JavaScript
+        window.laravelRoutes = {
+            ungradedStudents: '{{ route("instructor.ungraded-students") }}',
+            saveGrade: '{{ route("instructor.save-grade") }}'
+        };
+    </script>
+    <script>
+        console.log('Laravel Routes:', window.laravelRoutes);
+        console.log('CSRF Token:', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    </script>
 </body>
 </html>

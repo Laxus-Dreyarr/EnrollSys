@@ -341,6 +341,321 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+// Global notification function
+function showNotification(message, type = 'info') {
+    // Use SweetAlert2 if available
+    if (typeof Swal !== 'undefined') {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+        
+        Toast.fire({
+            icon: type,
+            title: message
+        });
+    } else {
+        // Fallback to browser alert
+        alert(`[${type.toUpperCase()}] ${message}`);
+    }
+}
+
+// Input Grades functionality
+function initializeInputGrades() {
+    console.log('Initializing input grades...');
+    
+    const filterForm = document.getElementById('grade-filter-form');
+    const resetBtn = document.getElementById('reset-filters');
+    const studentsGrid = document.getElementById('students-grid');
+    const loadingContainer = document.getElementById('loading-container');
+    const noStudentsContainer = document.getElementById('no-students-container');
+    
+    // Grade modal elements
+    const gradeModal = document.getElementById('grade-modal');
+    const closeGradeModal = document.getElementById('close-grade-modal');
+    const cancelGrade = document.getElementById('cancel-grade');
+    const gradeForm = document.getElementById('grade-form');
+    
+    // Check if required elements exist
+    if (!filterForm || !studentsGrid) {
+        console.error('Required elements not found');
+        return;
+    }
+    
+    // Load students on page load
+    loadUngradedStudents();
+    
+    // Filter form submission
+    filterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        loadUngradedStudents();
+    });
+    
+    // Reset filters
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            filterForm.reset();
+            loadUngradedStudents();
+        });
+    }
+    
+    // Close modal events
+    if (closeGradeModal) {
+        closeGradeModal.addEventListener('click', closeModal);
+    }
+    
+    if (cancelGrade) {
+        cancelGrade.addEventListener('click', closeModal);
+    }
+    
+    // Grade form submission
+    if (gradeForm) {
+        gradeForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveGrade(e);
+        });
+    }
+    
+    // Close modal when clicking outside
+    if (gradeModal) {
+        gradeModal.addEventListener('click', function(e) {
+            if (e.target === gradeModal) {
+                closeModal();
+            }
+        });
+    }
+    
+    function loadUngradedStudents() {
+        showLoading(true);
+        
+        const formData = new FormData(filterForm);
+        const data = {
+            year_level: formData.get('year_level'),
+            semester: formData.get('semester'),
+            search: formData.get('search'),
+            sort_by: formData.get('sort_by')
+        };
+        
+        console.log('Loading students with data:', data);
+        console.log('API URL:', window.laravelRoutes.ungradedStudents);
+        console.log('CSRF Token:', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        
+        // Use the route from window.laravelRoutes
+        const url = window.laravelRoutes.ungradedStudents;
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Full response data:', data);
+            console.log('Students count:', data.students ? data.students.length : 0);
+            displayStudents(data.students || []);
+            showLoading(false);
+        })
+        .catch(error => {
+            console.error('Error loading students:', error);
+            showLoading(false);
+            showNotification('Error loading students: ' + error.message, 'error');
+        });
+    }
+    
+    function displayStudents(students) {
+        studentsGrid.innerHTML = '';
+        
+        if (!students || students.length === 0) {
+            noStudentsContainer.style.display = 'block';
+            studentsGrid.style.display = 'none';
+            return;
+        }
+        
+        noStudentsContainer.style.display = 'none';
+        studentsGrid.style.display = 'grid';
+        
+        students.forEach(student => {
+            const studentCard = createStudentCard(student);
+            studentsGrid.appendChild(studentCard);
+        });
+    }
+    
+    function createStudentCard(student) {
+        const card = document.createElement('div');
+        card.className = 'student-card';
+        
+        const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(student.firstname + ' ' + student.lastname)}&background=4361ee&color=fff&size=60`;
+        
+        let subjectsHTML = '';
+        if (student.subjects && student.subjects.length > 0) {
+            student.subjects.forEach(subject => {
+                subjectsHTML += `
+                    <div class="subject-item">
+                        <div class="subject-code">${subject.subject_code}</div>
+                        <div class="subject-name">${subject.subject_name}</div>
+                        <div class="subject-meta">
+                            <span>${subject.units} units</span>
+                            <span>${subject.subject_semester}</span>
+                        </div>
+                        <button class="btn-primary btn-grade btn-sm" 
+                                data-student-id="${student.student_db_id}"
+                                data-student-user-id="${student.student_user_id}"
+                                data-firstname="${student.firstname}"
+                                data-lastname="${student.lastname}"
+                                data-middlename="${student.middlename}"
+                                data-id-no="${student.id_no}"
+                                data-year-level="${student.year_level}"
+                                data-subject-id="${subject.subject_id}"
+                                data-subject-code="${subject.subject_code}"
+                                data-subject-name="${subject.subject_name}"
+                                data-subject-units="${subject.units}"
+                                data-subject-year="${subject.subject_year}"
+                                data-subject-semester="${subject.subject_semester}">
+                            <i class="fas fa-pen"></i>
+                            Input Grade
+                        </button>
+                    </div>
+                `;
+            });
+        } else {
+            subjectsHTML = '<p>No subjects found</p>';
+        }
+        
+        card.innerHTML = `
+            <div class="student-header">
+                <img src="${avatarUrl}" alt="Student Avatar" class="student-avatar-small">
+                <div class="student-info">
+                    <h4 class="student-name">${student.firstname} ${student.middlename || ''} ${student.lastname}</h4>
+                    <p class="student-id">ID: ${student.id_no || 'N/A'}</p>
+                    <span class="student-year">${student.year_level || 'N/A'}</span>
+                </div>
+            </div>
+            <div class="student-subjects">
+                ${subjectsHTML}
+            </div>
+        `;
+        
+        // Add event listeners to grade buttons
+        const gradeButtons = card.querySelectorAll('.btn-grade');
+        gradeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                openGradeModal(this.dataset);
+            });
+        });
+        
+        return card;
+    }
+    
+    function openGradeModal(data) {
+        const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.firstname + ' ' + data.lastname)}&background=4361ee&color=fff&size=80`;
+        
+        document.getElementById('student_avatar').src = avatarUrl;
+        document.getElementById('student_full_name').textContent = `${data.firstname} ${data.middlename || ''} ${data.lastname}`;
+        document.getElementById('student_id_display').textContent = `ID: ${data.idNo}`;
+        document.getElementById('student_course').textContent = `Year: ${data.yearLevel}`;
+        
+        document.getElementById('subject_code').textContent = data.subjectCode;
+        document.getElementById('subject_name').textContent = data.subjectName;
+        document.getElementById('subject_units').textContent = data.subjectUnits;
+        document.getElementById('subject_year').textContent = data.subjectYear;
+        document.getElementById('subject_semester').textContent = data.subjectSemester;
+        
+        document.getElementById('grade_student_id').value = data.studentId;
+        document.getElementById('grade_subject_id').value = data.subjectId;
+        document.getElementById('grade').value = '';
+        
+        gradeModal.style.display = 'flex';
+    }
+    
+    function closeModal() {
+        gradeModal.style.display = 'none';
+    }
+    
+    function saveGrade(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(gradeForm);
+        const submitBtn = gradeForm.querySelector('.btn-primary');
+        const originalText = submitBtn.innerHTML;
+        
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        submitBtn.disabled = true;
+        
+        const data = {
+            student_id: formData.get('student_id'),
+            subject_id: formData.get('subject_id'),
+            grade: formData.get('grade')
+        };
+        
+        console.log('Saving grade:', data);
+        
+        // Use the route from window.laravelRoutes
+        const url = window.laravelRoutes.saveGrade;
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                showNotification('Grade saved successfully!', 'success');
+                closeModal();
+                loadUngradedStudents(); // Reload the list
+            } else {
+                showNotification(data.message || 'Error saving grade', 'error');
+            submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error saving grade:', error);
+            showNotification('Error saving grade: ' + error.message, 'error');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    }
+    
+    function showLoading(show) {
+        if (show) {
+            loadingContainer.style.display = 'block';
+            studentsGrid.style.display = 'none';
+            noStudentsContainer.style.display = 'none';
+        } else {
+            loadingContainer.style.display = 'none';
+            studentsGrid.style.display = 'grid';
+        }
+    }
+}
+
 // Instructor Dashboard JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize sidebar toggle
@@ -361,6 +676,46 @@ document.addEventListener('DOMContentLoaded', function() {
     const menuItems = document.querySelectorAll('.menu-item');
     const contentSections = document.querySelectorAll('.content-section');
     const pageTitle = document.querySelector('.page-title');
+
+    const inputGradesSection = document.getElementById('input-grades-section');
+    if (inputGradesSection && inputGradesSection.classList.contains('active')) {
+        setTimeout(initializeInputGrades, 100);
+    }
+
+    // Also listen for section changes
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                const target = mutation.target;
+                if (target.id === 'input-grades-section' && target.classList.contains('active')) {
+                    setTimeout(initializeInputGrades, 100);
+                }
+            }
+        });
+    });
+
+    if (inputGradesSection) {
+        observer.observe(inputGradesSection, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+    }
+
+    //del
+    menuItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const section = this.getAttribute('data-section');
+            if (section === 'input-grades') {
+                // Small delay to ensure section is visible
+                setTimeout(initializeInputGrades, 100);
+            }
+        });
+    });
+    
+    // Also initialize if we're already on the input grades section
+    if (document.getElementById('input-grades-section').classList.contains('active')) {
+        initializeInputGrades();
+    }
     
     menuItems.forEach(item => {
         item.addEventListener('click', function() {
