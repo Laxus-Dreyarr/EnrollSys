@@ -11,7 +11,7 @@ class InstructorAuth
     public function handle(Request $request, Closure $next)
     {
         if (!Auth::guard('instructor')->check()) {
-            return redirect('/')->with('error', 'Please login to access this page.');
+            return redirect('/instructor')->with('error', 'Please login to access this page.');
         }
 
         return $next($request);

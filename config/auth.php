@@ -52,6 +52,12 @@ return [
             'provider' => 'students',
             'login' => '/', // Add this line exiting student login route
         ],
+
+        'instructor' => [ // Add student guard
+            'driver' => 'session',
+            'provider' => 'instructors',
+            'login' => '/instructor', // Add this line exiting student login route
+        ],
     ],
 
     /*
@@ -96,6 +102,11 @@ return [
         'students' => [ // Add admin provider
             'driver' => 'eloquent',
             'model' => App\Models\User::class,
+        ],
+
+        'instructors' => [ // Add admin provider
+            'driver' => 'eloquent',
+            'model' => App\Models\Instructor::class,
         ],
     ],
 

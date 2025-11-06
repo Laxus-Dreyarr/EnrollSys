@@ -1,6 +1,7 @@
 <?php
-$firstname = 'Dofalmingo';
+$firstname = $user->info->firstname;
 $lastname = 'Donquixote';
+$id = $user->info->instructor_id;
 ?>
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -53,8 +54,8 @@ $lastname = 'Donquixote';
                 @endif
                 
                 <div class="user-info">
-                    <h4 class="user-name">Zeref Dragneel</h4>
-                    <p class="user-id">ID: 007</p>
+                    <h4 class="user-name">{{$firstname}}</h4>
+                    <p class="user-id">{{$id}}</p>
                     <span class="user-role">Instructor</span>
                 </div>
             </div>

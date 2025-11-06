@@ -844,7 +844,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
             
             // Send login request
-            fetch('/exe/student', {
+            fetch('/exe/instructor', {
                 method: 'POST',
                 body: formData
             })

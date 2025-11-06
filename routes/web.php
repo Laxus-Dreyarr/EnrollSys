@@ -128,7 +128,7 @@ Route::get('/instructor', function () {
     return view('instructor.index');
 });
 Route::middleware(['instructor.auth'])->group(function () {
-    Route::get('/instructor-dashboard', [InstructorController::class, 'dashboard'])->name('student.dashboard');
+    Route::get('/instructor-dashboard', [InstructorController::class, 'dashboard'])->name('instructor.dashboard');
 });
 
 
@@ -277,7 +277,7 @@ Route::get('/clearOrg', function () {
     return redirect('/org');
 });
 
-//sample
-Route::get('/instructor/d', function () {
-    return view('instructor.dashboard.dashboard'); 
-});
+// //sample
+// Route::get('/instructor/d', function () {
+//     return view('instructor.dashboard.dashboard'); 
+// });

@@ -320,7 +320,6 @@ class InstructorController extends Controller
             return $x;  
         }
 
-         return response()->json(10);
 
         if (Auth::guard('instructor')->attempt([
             'email5' => $request->email,
@@ -335,7 +334,7 @@ class InstructorController extends Controller
     public function dashboard(){
 
         if (!Auth::guard('instructor')->check()) {
-            return redirect('/')->with('error', 'Please login first.');
+            return redirect('/instructor')->with('error', 'Please login first.');
         }
 
         $user = Auth::guard('instructor')->user();
