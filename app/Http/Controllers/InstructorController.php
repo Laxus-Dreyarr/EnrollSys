@@ -282,8 +282,65 @@ class InstructorController extends Controller
                 return $this->sendInstructorOtpForgotPass($request);
             case 'resetPassword_account':
                 return $this->InstructorResetPass($request);
+            case 'login':
+                return $this->InstructorLogin($request);
         }
 
+    }
+
+    private function InstructorLogin(Request $request) {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        $email = $request->email;
+        $password = $request->password;
+
+        if(!$request) {
+            $x = '9';
+            return $x;
+        }
+
+        $y = Instructor::where('email5', $email)->first();
+
+        if(!$y) {
+            $x = '1';
+            return $x;
+        }
+
+
+        if (!Hash::check($password, $y->password)) {
+            $x = 2;
+            return $x;  
+        }
+
+        if($y->is_active == 0) {
+            $x = 0;
+            return $x;  
+        }
+
+         return response()->json(10);
+
+        if (Auth::guard('instructor')->attempt([
+            'email5' => $request->email,
+            'password' => $request->password
+            ])) {
+            $request->session()->regenerate();
+            return response()->json(10);
+        }
+        
+    }
+
+    public function dashboard(){
+
+        if (!Auth::guard('instructor')->check()) {
+            return redirect('/')->with('error', 'Please login first.');
+        }
+
+        $user = Auth::guard('instructor')->user();
+        return view('instructor.dashboard.dashboard', compact('user'));
+        
     }
     
 
