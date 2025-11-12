@@ -78,7 +78,7 @@
 
 <!-- Grade Input Modal -->
 <div class="modal-overlay" id="grade-modal" style="display: none;">
-    <div class="modal-container">
+    <div class="modal-container horizontal-modal">
         <div class="modal-header">
             <h3>Input Grade</h3>
             <button class="close-modal" id="close-grade-modal">
@@ -90,74 +90,89 @@
                 <input type="hidden" id="grade_student_id" name="student_id">
                 <input type="hidden" id="grade_subject_id" name="subject_id">
                 
-                <div class="student-info-card">
-                    <div class="student-avatar">
-                        <img src="https://ui-avatars.com/api/?name=Student+Name&background=4361ee&color=fff" 
-                             alt="Student Avatar" id="student_avatar">
-                    </div>
-                    <div class="student-details">
-                        <h4 id="student_full_name"></h4>
-                        <p class="student-id" id="student_id_display"></p>
-                        <p class="student-course" id="student_course"></p>
-                    </div>
-                </div>
-                
-                <div class="subject-info">
-                    <h5>Subject Information</h5>
-                    <div class="subject-details">
-                        <div class="subject-item">
-                            <span class="label">Subject Code:</span>
-                            <span class="value" id="subject_code"></span>
+                <div class="modal-grid">
+                    <!-- Left Column - Student Info -->
+                    <div class="modal-column student-column">
+                        <div class="student-info-card">
+                            <div class="student-avatar">
+                                <img src="https://ui-avatars.com/api/?name=Student+Name&background=4361ee&color=fff" 
+                                     alt="Student Avatar" id="student_avatar">
+                            </div>
+                            <div class="student-details">
+                                <h4 id="student_full_name"></h4>
+                                <p class="student-id" id="student_id_display"></p>
+                                <p class="student-course" id="student_course"></p>
+                            </div>
                         </div>
-                        <div class="subject-item">
-                            <span class="label">Subject Name:</span>
-                            <span class="value" id="subject_name"></span>
-                        </div>
-                        <div class="subject-item">
-                            <span class="label">Units:</span>
-                            <span class="value" id="subject_units"></span>
-                        </div>
-                        <div class="subject-item">
-                            <span class="label">Year Level:</span>
-                            <span class="value" id="subject_year"></span>
-                        </div>
-                        <div class="subject-item">
-                            <span class="label">Semester:</span>
-                            <span class="value" id="subject_semester"></span>
+                        
+                        <div class="subjects-list-container">
+                            <h5>Available Subjects</h5>
+                            <div class="subjects-list" id="subjects_list">
+                                <!-- Subjects will be populated here -->
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="grade-input-section">
-                    <label for="grade" class="form-label">
-                        <i class="fas fa-pen"></i>
-                        Grade
-                    </label>
-                    <select name="grade" id="grade" class="form-control" required>
-                        <option value="">Select Grade</option>
-                        <option value="1.00">1.00 - Excellent</option>
-                        <option value="1.25">1.25 - Very Good</option>
-                        <option value="1.50">1.50 - Good</option>
-                        <option value="1.75">1.75 - Satisfactory</option>
-                        <option value="2.00">2.00 - Fair</option>
-                        <option value="2.25">2.25 - Pass</option>
-                        <option value="2.50">2.50 - Conditional</option>
-                        <option value="2.75">2.75 - Conditional</option>
-                        <option value="3.00">3.00 - Conditional</option>
-                        <option value="4.00">4.00 - Conditional</option>
-                        <option value="5.00">5.00 - Failed</option>
-                        <option value="INC">INC - Incomplete</option>
-                        <option value="DRP">DRP - Dropped</option>
-                    </select>
-                    <small class="form-text">Select the appropriate grade for the student</small>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="button" class="btn-cancel" id="cancel-grade">Cancel</button>
-                    <button type="submit" class="btn-primary">
-                        <i class="fas fa-save"></i>
-                        Save Grade
-                    </button>
+                    
+                    <!-- Right Column - Grade Input -->
+                    <div class="modal-column grade-column">
+                        <div class="subject-info-card">
+                            <h5>Subject Information</h5>
+                            <div class="subject-details-grid">
+                                <div class="subject-detail-item">
+                                    <span class="label">Subject Code:</span>
+                                    <span class="value" id="subject_code">-</span>
+                                </div>
+                                <div class="subject-detail-item">
+                                    <span class="label">Subject Name:</span>
+                                    <span class="value" id="subject_name">-</span>
+                                </div>
+                                <div class="subject-detail-item">
+                                    <span class="label">Units:</span>
+                                    <span class="value" id="subject_units">-</span>
+                                </div>
+                                <div class="subject-detail-item">
+                                    <span class="label">Year Level:</span>
+                                    <span class="value" id="subject_year">-</span>
+                                </div>
+                                <div class="subject-detail-item">
+                                    <span class="label">Semester:</span>
+                                    <span class="value" id="subject_semester">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="grade-input-card">
+                            <label for="grade" class="form-label">
+                                <i class="fas fa-pen"></i>
+                                Grade
+                            </label>
+                            <select name="grade" id="grade" class="form-control" required>
+                                <option value="">Select Grade</option>
+                                <option value="1.00">1.00 - Excellent</option>
+                                <option value="1.25">1.25 - Very Good</option>
+                                <option value="1.50">1.50 - Good</option>
+                                <option value="1.75">1.75 - Satisfactory</option>
+                                <option value="2.00">2.00 - Fair</option>
+                                <option value="2.25">2.25 - Pass</option>
+                                <option value="2.50">2.50 - Conditional</option>
+                                <option value="2.75">2.75 - Conditional</option>
+                                <option value="3.00">3.00 - Conditional</option>
+                                <option value="4.00">4.00 - Conditional</option>
+                                <option value="5.00">5.00 - Failed</option>
+                                <option value="INC">INC - Incomplete</option>
+                                <option value="DRP">DRP - Dropped</option>
+                            </select>
+                            <small class="form-text">Select the appropriate grade for the student</small>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn-cancel" id="cancel-grade">Cancel</button>
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-save"></i>
+                                Save Grade
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
@@ -523,6 +538,293 @@ body.dark-mode .form-actions {
     border-top-color: var(--border-dark);
 }
 
+/* Horizontal Modal Styles */
+.horizontal-modal {
+    max-width: 900px;
+}
+
+.modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 16px;
+}
+
+.modal-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.student-column {
+    border-right: 1px solid #e2e8f0;
+    padding-right: 24px;
+}
+
+.grade-column {
+    padding-left: 0;
+}
+
+/* Subjects List Styles */
+.subjects-list-container {
+    margin-top: 16px;
+}
+
+.subjects-list-container h5 {
+    margin-bottom: 12px;
+    color: #1e293b;
+    font-size: 1rem;
+}
+
+.subjects-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.subject-option {
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+    background: #f8fafc;
+}
+
+.subject-option:hover {
+    border-color: var(--theme-primary);
+    background: white;
+    transform: translateY(-2px);
+}
+
+.subject-option.active {
+    border-color: var(--theme-primary);
+    background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+    color: white;
+}
+
+.subject-option.active .subject-code,
+.subject-option.active .subject-meta {
+    color: white;
+}
+
+.subject-option-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 4px;
+}
+
+.subject-code {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.subject-meta {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.subject-name {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+/* Subject Info Card */
+.subject-info-card,
+.grade-input-card {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.subject-info-card h5,
+.grade-input-card .form-label {
+    margin-bottom: 16px;
+    color: #1e293b;
+}
+
+.subject-details-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.subject-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.subject-detail-item:last-child {
+    border-bottom: none;
+}
+
+.subject-detail-item .label {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.subject-detail-item .value {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+/* Enhanced Student Card Styles */
+.student-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 16px;
+    cursor: pointer;
+    position: relative;
+}
+
+.student-actions-toggle {
+    margin-left: auto;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    color: #64748b;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.student-actions-toggle:hover {
+    background: var(--theme-primary);
+    color: white;
+}
+
+.subjects-preview {
+    margin-bottom: 12px;
+}
+
+.subject-preview-item {
+    background: #f8fafc;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    border-left: 3px solid var(--theme-primary);
+}
+
+.more-subjects-indicator {
+    text-align: center;
+    padding: 8px;
+    color: #64748b;
+    font-size: 0.85rem;
+    background: #f1f5f9;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.student-subjects-expandable {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.student-subjects-expandable.expanded {
+    max-height: 500px;
+}
+
+.expandable-content {
+    padding-top: 12px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.expandable-content .subject-item {
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 1px solid #e2e8f0;
+    transition: var(--transition);
+}
+
+.expandable-content .subject-item:hover {
+    border-color: var(--theme-primary);
+    transform: translateY(-2px);
+}
+
+.expandable-content .subject-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.expandable-content .subject-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 0.8rem;
+}
+
+.expandable-content .btn-grade {
+    width: 100%;
+}
+
+/* Dark mode styles */
+body.dark-mode .student-column {
+    border-right-color: var(--border-dark);
+}
+
+body.dark-mode .subject-option {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-dark);
+    color: var(--text-dark);
+}
+
+body.dark-mode .subject-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--theme-primary);
+}
+
+body.dark-mode .subject-info-card,
+body.dark-mode .grade-input-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-dark);
+}
+
+body.dark-mode .subject-detail-item {
+    border-bottom-color: var(--border-dark);
+}
+
+body.dark-mode .student-actions-toggle {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .student-actions-toggle:hover {
+    background: var(--theme-primary);
+    color: white;
+}
+
+body.dark-mode .subject-preview-item,
+body.dark-mode .expandable-content .subject-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-dark);
+}
+
+body.dark-mode .more-subjects-indicator {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .expandable-content {
+    border-top-color: var(--border-dark);
+}
+
 @media (max-width: 768px) {
     .filter-row {
         grid-template-columns: 1fr;
@@ -545,6 +847,48 @@ body.dark-mode .form-actions {
     .student-info-card {
         flex-direction: column;
         text-align: center;
+    }
+
+    .horizontal-modal {
+        max-width: 95%;
+        margin: 20px;
+    }
+    
+    .modal-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .student-column {
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0;
+        padding-right: 0;
+        padding-bottom: 20px;
+    }
+    
+    .grade-column {
+        padding-left: 0;
+    }
+    
+    .subjects-list {
+        max-height: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-grid {
+        gap: 16px;
+    }
+    
+    .subject-info-card,
+    .grade-input-card {
+        padding: 16px;
+    }
+    
+    .subject-detail-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
     }
 }
 </style>

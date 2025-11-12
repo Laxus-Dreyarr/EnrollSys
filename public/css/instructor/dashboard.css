@@ -31,6 +31,14 @@
     --theme-primary-dark: #3a56d4;
     --theme-secondary: #3f37c9;
     --theme-accent: #4895ef;
+
+    /* Sidebar specific theme variables */
+    --sidebar-gradient-start: var(--theme-secondary);
+    --sidebar-gradient-middle: var(--theme-primary);
+    --sidebar-gradient-end: var(--theme-accent);
+    
+    /* Alternative: More sophisticated sidebar gradients for different themes */
+    --sidebar-gradient: linear-gradient(180deg, var(--theme-secondary) 0%, var(--theme-primary) 50%, var(--theme-accent) 100%);
 }
 
 * {
@@ -766,20 +774,6 @@ body.dark-mode .color-option {
 .dashboard-container {
     display: flex;
     min-height: 100vh;
-}
-
-/* Enhanced Sidebar - Professional Design */
-.sidebar {
-    position: fixed;
-    width: 280px;
-    height: 100vh;
-    background: linear-gradient(180deg, #1a237e 0%, #283593 50%, #303f9f 100%);
-    color: white;
-    transition: var(--transition);
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    overflow-y: auto;
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-header {
@@ -2262,7 +2256,9 @@ body.dark-mode .schedule-container {
     position: fixed;
     width: 300px;
     height: 100vh;
-    background: linear-gradient(180deg, #1a237e 0%, #283593 50%, #303f9f 100%);
+    /* Replace the fixed gradient with theme variables */
+    background: linear-gradient(180deg, 
+        var(--theme-primary) 100%); 
     color: white;
     transition: var(--transition);
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
@@ -2512,6 +2508,152 @@ body.dark-mode .quick-action-card p {
 .quick-action-card:nth-child(3) { animation-delay: 0.3s; }
 .quick-action-card:nth-child(4) { animation-delay: 0.4s; }
 
+/* Enhanced Stat Cards with Background Images */
+.stat-card {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, 
+        rgba(67, 97, 238, 0.03) 0%, 
+        rgba(67, 97, 238, 0.1) 100%);
+    z-index: 1;
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.stat-card:hover::before {
+    opacity: 1;
+}
+
+.card-bg-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.1;
+    transition: var(--transition);
+    z-index: 0;
+}
+
+.stat-card:hover .card-bg-image {
+    opacity: 0.15;
+    transform: scale(1.05);
+}
+
+/* Course Card Background */
+.courses-bg { 
+    background: 
+        /* Actual image URL - uncomment and replace with your preferred image */
+        url('https://images.unsplash.com/photo-1497636577773-f1231844b336?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'),
+        
+        
+        /* Fallback gradient pattern */
+        radial-gradient(circle at 20% 80%, rgba(67, 97, 238, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(100, 181, 246, 0.1) 0%, transparent 50%),
+        linear-gradient(135deg, rgba(67, 97, 238, 0.05) 0%, rgba(100, 181, 246, 0.05) 100%);
+}
+
+/* Students Card Background */
+.students-bg {
+    background: 
+        url('https://images.unsplash.com/photo-1523580494863-6f3031224c94?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'), 
+        radial-gradient(circle at 30% 70%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 70% 30%, rgba(167, 139, 250, 0.1) 0%, transparent 50%),
+        linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(167, 139, 250, 0.05) 100%);
+}
+
+/* Assignments Card Background */
+.assignments-bg {
+    background: 
+        /* url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'), */
+        url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'),
+        radial-gradient(circle at 40% 60%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 60% 40%, rgba(251, 191, 36, 0.1) 0%, transparent 50%),
+        linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(251, 191, 36, 0.05) 100%);
+}
+
+/* Deadlines Card Background */
+.deadlines-bg {
+    background: 
+        /* url('https://images.unsplash.com/photo-1517842645767-c639042777db?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'), */
+        url('https://images.unsplash.com/photo-1517842645767-c639042777db?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'),
+        radial-gradient(circle at 25% 75%, rgba(239, 68, 68, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 75% 25%, rgba(248, 113, 113, 0.1) 0%, transparent 50%),
+        linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(248, 113, 113, 0.05) 100%);
+}
+
+/* Enhanced Stat Content Positioning */
+.stat-card .stat-icon,
+.stat-card .stat-content {
+    position: relative;
+    z-index: 2;
+}
+
+/* Dark Mode Support */
+body.dark-mode .stat-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(26, 36, 56, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .card-bg-image {
+    opacity: 0.08;
+}
+
+body.dark-mode .stat-card:hover .card-bg-image {
+    opacity: 0.12;
+}
+
+/* Enhanced hover effects */
+.stat-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .stat-card:hover {
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Professional animation for card appearance */
+@keyframes cardReveal {
+    0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.stat-card {
+    animation: cardReveal 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Staggered animation for cards */
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+.stat-card:nth-child(4) { animation-delay: 0.4s; }
+
 /* Responsive Design */
 @media (max-width: 1200px) {
     .sidebar {
@@ -2534,7 +2676,6 @@ body.dark-mode .quick-action-card p {
         position: fixed;
         height: 100vh;
         width: 300px;
-        background: linear-gradient(180deg, #1a237e 0%, #283593 100%);
     }
     
     .sidebar.active {
@@ -2790,6 +2931,19 @@ body.dark-mode .quick-action-card p {
     .user-avatar {
         width: 80px;
         height: 80px;
+    }
+
+    .card-bg-image {
+        opacity: 0.1;
+    }
+    
+    .stat-card:hover .card-bg-image {
+        opacity: 0.1;
+        transform: none;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-4px);
     }
 }
 

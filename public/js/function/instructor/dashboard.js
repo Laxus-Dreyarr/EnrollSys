@@ -367,7 +367,7 @@ function showNotification(message, type = 'info') {
     }
 }
 
-// Input Grades functionality - FIXED VERSION
+// Input Grades functionality - UPDATED VERSION WITH HORIZONTAL MODAL
 function initializeInputGrades() {
     console.log('Initializing Input Grades section...');
 
@@ -503,13 +503,30 @@ function initializeInputGrades() {
         
         const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(student.firstname + ' ' + student.lastname)}&background=4361ee&color=fff&size=60`;
         
-        let subjectsHTML = '';
+        // Create subjects preview (limited to 2 subjects initially)
+        let subjectsPreviewHTML = '';
+        let allSubjectsHTML = '';
+        
         if (student.subjects && student.subjects.length > 0) {
+            // Preview subjects (show first 2)
+            const previewSubjects = student.subjects.slice(0, 2);
+            previewSubjects.forEach(subject => {
+                subjectsPreviewHTML += `
+                    <div class="subject-preview-item">
+                        <span class="subject-code">${subject.subject_code || 'N/A'}</span>
+                        <span class="subject-name">${subject.subject_name || 'N/A'}</span>
+                    </div>
+                `;
+            });
+            
+            // All subjects for expandable section
             student.subjects.forEach(subject => {
-                subjectsHTML += `
-                    <div class="subject-item">
-                        <div class="subject-code">${subject.subject_code || 'N/A'}</div>
-                        <div class="subject-name">${subject.subject_name || 'N/A'}</div>
+                allSubjectsHTML += `
+                    <div class="subject-item" data-subject-id="${subject.subject_id}">
+                        <div class="subject-header">
+                            <div class="subject-code">${subject.subject_code || 'N/A'}</div>
+                            <div class="subject-name">${subject.subject_name || 'N/A'}</div>
+                        </div>
                         <div class="subject-meta">
                             <span>${subject.units || '0'} units</span>
                             <span>${subject.subject_semester || 'N/A'}</span>
@@ -534,8 +551,18 @@ function initializeInputGrades() {
                     </div>
                 `;
             });
+            
+            // Show more indicator if there are more than 2 subjects
+            if (student.subjects.length > 2) {
+                subjectsPreviewHTML += `
+                    <div class="more-subjects-indicator">
+                        +${student.subjects.length - 2} more subjects
+                    </div>
+                `;
+            }
         } else {
-            subjectsHTML = '<div class="subject-item">No subjects found</div>';
+            subjectsPreviewHTML = '<div class="no-subjects">No subjects found</div>';
+            allSubjectsHTML = '<div class="no-subjects">No subjects found</div>';
         }
         
         card.innerHTML = `
@@ -546,51 +573,131 @@ function initializeInputGrades() {
                     <p class="student-id">ID: ${student.id_no || 'N/A'}</p>
                     <span class="student-year">${student.year_level || 'N/A'}</span>
                 </div>
+                <div class="student-actions-toggle">
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
             </div>
-            <div class="student-subjects">
-                ${subjectsHTML}
+            
+            <div class="subjects-preview">
+                ${subjectsPreviewHTML}
+            </div>
+            
+            <div class="student-subjects-expandable">
+                <div class="expandable-content">
+                    ${allSubjectsHTML}
+                </div>
             </div>
         `;
+        
+        // Add event listeners
+        const toggleBtn = card.querySelector('.student-actions-toggle');
+        const expandableSection = card.querySelector('.student-subjects-expandable');
+        
+        if (toggleBtn && expandableSection) {
+            toggleBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                expandableSection.classList.toggle('expanded');
+                const icon = this.querySelector('.toggle-icon');
+                icon.classList.toggle('fa-chevron-down');
+                icon.classList.toggle('fa-chevron-up');
+            });
+        }
         
         // Add event listeners to grade buttons
         const gradeButtons = card.querySelectorAll('.btn-grade');
         gradeButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                openGradeModal(this.dataset);
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                openGradeModal(this.dataset, student.subjects);
             });
         });
         
         return card;
     }
     
-    function openGradeModal(data) {
+    function openGradeModal(data, allSubjects = []) {
         console.log('Opening grade modal with data:', data);
         
         const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.firstname + ' ' + data.lastname)}&background=4361ee&color=fff&size=80`;
         
-        // Update modal content
+        // Update student info
         document.getElementById('student_avatar').src = avatarUrl;
         document.getElementById('student_full_name').textContent = `${data.firstname} ${data.middlename || ''} ${data.lastname}`.trim();
         document.getElementById('student_id_display').textContent = `ID: ${data.idNo}`;
         document.getElementById('student_course').textContent = `Year: ${data.yearLevel}`;
         
-        document.getElementById('subject_code').textContent = data.subjectCode || 'N/A';
-        document.getElementById('subject_name').textContent = data.subjectName || 'N/A';
-        document.getElementById('subject_units').textContent = data.subjectUnits || '0';
-        document.getElementById('subject_year').textContent = data.subjectYear || 'N/A';
-        document.getElementById('subject_semester').textContent = data.subjectSemester || 'N/A';
+        // Populate subjects list
+        const subjectsList = document.getElementById('subjects_list');
+        subjectsList.innerHTML = '';
         
-        // Make sure we're using the correct field names
+        if (allSubjects && allSubjects.length > 0) {
+            allSubjects.forEach(subject => {
+                const subjectOption = document.createElement('div');
+                subjectOption.className = 'subject-option';
+                if (subject.subject_id == data.subjectId) {
+                    subjectOption.classList.add('active');
+                }
+                
+                subjectOption.innerHTML = `
+                    <div class="subject-option-header">
+                        <div class="subject-code">${subject.subject_code || 'N/A'}</div>
+                        <div class="subject-meta">${subject.units || '0'} units</div>
+                    </div>
+                    <div class="subject-name">${subject.subject_name || 'N/A'}</div>
+                `;
+                
+                subjectOption.addEventListener('click', function() {
+                    // Remove active class from all options
+                    document.querySelectorAll('.subject-option').forEach(opt => {
+                        opt.classList.remove('active');
+                    });
+                    
+                    // Add active class to clicked option
+                    this.classList.add('active');
+                    
+                    // Update subject details
+                    updateSubjectDetails(subject);
+                    
+                    // Update hidden fields
+                    document.getElementById('grade_subject_id').value = subject.subject_id;
+                });
+                
+                subjectsList.appendChild(subjectOption);
+            });
+        } else {
+            subjectsList.innerHTML = '<div class="no-subjects">No subjects available</div>';
+        }
+        
+        // Update with initial subject data
+        updateSubjectDetails({
+            subject_code: data.subjectCode,
+            subject_name: data.subjectName,
+            units: data.subjectUnits,
+            subject_year: data.subjectYear,
+            subject_semester: data.subjectSemester
+        });
+        
+        // Set hidden fields
         document.getElementById('grade_student_id').value = data.studentId || data.student_db_id;
         document.getElementById('grade_subject_id').value = data.subjectId;
         document.getElementById('grade').value = '';
         
         // Show modal
+        const gradeModal = document.getElementById('grade-modal');
         gradeModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
     
+    function updateSubjectDetails(subject) {
+        document.getElementById('subject_code').textContent = subject.subject_code || 'N/A';
+        document.getElementById('subject_name').textContent = subject.subject_name || 'N/A';
+        document.getElementById('subject_units').textContent = subject.units || '0';
+        document.getElementById('subject_year').textContent = subject.subject_year || 'N/A';
+        document.getElementById('subject_semester').textContent = subject.subject_semester || 'N/A';
+    }
+    
     function closeModal() {
+        const gradeModal = document.getElementById('grade-modal');
         gradeModal.style.display = 'none';
         document.body.style.overflow = 'auto';
     }

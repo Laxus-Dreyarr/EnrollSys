@@ -48,7 +48,7 @@ $id = $user->info->instructor_id;
                     </div>
                 @else
                     <div class="avatar-container">
-                        <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=4361ee&color=fff" alt="User Avatar" class="user-avatar">
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=none&color=fff" alt="User Avatar" class="user-avatar">
                         <div class="status-indicator"></div>
                     </div>
                 @endif
@@ -166,6 +166,8 @@ $id = $user->info->instructor_id;
                 <!-- Stats Overview -->
                 <div class="stats-grid">
                     <div class="stat-card">
+                        <!-- Background Image Container -->
+                        <div class="card-bg-image courses-bg"></div>
                         <div class="stat-icon courses">
                             <i class="fas fa-book"></i>
                         </div>
@@ -176,6 +178,8 @@ $id = $user->info->instructor_id;
                     </div>
                     
                     <div class="stat-card">
+                        <!-- Background Image Container -->
+                        <div class="card-bg-image students-bg"></div>
                         <div class="stat-icon students">
                             <i class="fas fa-users"></i>
                         </div>
@@ -186,21 +190,28 @@ $id = $user->info->instructor_id;
                     </div>
 
                     <div class="stat-card">
+                        <!-- Background Image Container -->
+                        <div class="card-bg-image assignments-bg"></div>
                         <div class="stat-icon assignments">
                             <i class="fas fa-tasks"></i>
                         </div>
-                        <h3 class="stat-value">8</h3>
-                        <p class="stat-label">Pending Grading</p>
+                        <div class="stat-content">
+                            <h3 class="stat-value">8</h3>
+                            <p class="stat-label">Pending Grading</p>
+                        </div>
                     </div>
                     
                     <div class="stat-card">
+                        <!-- Background Image Container -->
+                        <div class="card-bg-image deadlines-bg"></div>
                         <div class="stat-icon deadlines">
                             <i class="fas fa-calendar-day"></i>
                         </div>
-                        <h3 class="stat-value">3</h3>
-                        <p class="stat-label">Upcoming Classes</p>
+                        <div class="stat-content">
+                            <h3 class="stat-value">3</h3>
+                            <p class="stat-label">Upcoming Classes</p>
+                        </div>
                     </div>
-                    
                 </div>
                 
                 <!-- Enhanced Quick Actions -->
