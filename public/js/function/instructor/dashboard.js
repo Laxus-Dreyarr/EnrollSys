@@ -649,7 +649,7 @@ function initializeInputGrades() {
             showNotification('Error saving grade: ' + error.message, 'error');
         })
         .finally(() => {
-            submitBtn.innerHTML = originalText;
+            submitBtn.innerHTML = '<i class="fas fa-save"></i>Save Grade';
             submitBtn.disabled = false;
         });
     }
