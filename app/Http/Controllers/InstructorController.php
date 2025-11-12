@@ -345,31 +345,18 @@ class InstructorController extends Controller
     public function getUngradedStudents(Request $request)
     {
         try {
-            $instructor = Auth::guard('instructor')->user();
-            
-            Log::info('Fetching ungraded students for instructor:', [
-                'instructor_id' => $instructor->instructor_id,
-                'request_data' => $request->all()
-            ]);
-            
             $yearLevel = $request->input('year_level');
-            $semester = $request->input('semester');
             $search = $request->input('search');
             $sortBy = $request->input('sort_by', 'lastname');
 
-            // For now, let's get all students who are enrolled but not graded
-            // This is a simplified query - you'll need to adjust based on your actual database structure
-            
-            $query = DB::table('students as s')
+            // Get all students who are enrolled in subjects and don't have grades yet
+            // Exclude students with year_level = 'NONE'
+            $query = DB::table('enrolled_sub as es')
+                ->join('students as s', 'es.student_id', '=', 's.id')
                 ->join('user_info as ui', 's.student_id', '=', 'ui.id')
-                ->join('enrollments as e', 's.id', '=', 'e.student_id')
-                ->join('subjects as sub', 'e.subject_id', '=', 'sub.id')
-                ->leftJoin('enrolled_sub as es', function($join) {
-                    $join->on('e.student_id', '=', 'es.student_id')
-                        ->on('e.subject_id', '=', 'es.subject_id');
-                })
-                ->whereNull('es.id') // Only students without grades
-                ->where('e.status', 'Enrolled') // Only currently enrolled
+                ->join('subjects as sub', 'es.subject_id', '=', 'sub.id')
+                ->whereNull('es.grade') // Only students without grades
+                ->where('s.year_level', '!=', 'NONE') // Exclude students with year_level = 'NONE'
                 ->select(
                     's.id as student_db_id',
                     's.student_id as student_user_id',
@@ -384,25 +371,24 @@ class InstructorController extends Controller
                     'sub.units',
                     'sub.year_level as subject_year',
                     'sub.semester as subject_semester',
-                    'e.enrollment_date'
+                    'es.date_enrolled'
                 )
                 ->distinct();
 
-            // Apply filters
-            if ($yearLevel) {
-                $query->where('sub.year_level', $yearLevel);
+            // Apply year level filter
+            if ($yearLevel && $yearLevel !== '') {
+                $query->where('s.year_level', $yearLevel);
             }
 
-            if ($semester) {
-                $query->where('sub.semester', $semester);
-            }
-
+            // Apply search filter
             if ($search) {
                 $query->where(function($q) use ($search) {
                     $q->where('ui.firstname', 'LIKE', "%{$search}%")
                     ->orWhere('ui.lastname', 'LIKE', "%{$search}%")
                     ->orWhere('ui.middlename', 'LIKE', "%{$search}%")
-                    ->orWhere('s.id_no', 'LIKE', "%{$search}%");
+                    ->orWhere('s.id_no', 'LIKE', "%{$search}%")
+                    ->orWhere('sub.code', 'LIKE', "%{$search}%")
+                    ->orWhere('sub.name', 'LIKE', "%{$search}%");
                 });
             }
 
@@ -421,12 +407,7 @@ class InstructorController extends Controller
             $query->orderBy('ui.firstname')
                 ->orderBy('sub.code');
 
-            // Log the SQL query for debugging
-            Log::info('Ungraded students SQL:', ['sql' => $query->toSql(), 'bindings' => $query->getBindings()]);
-            
             $students = $query->get();
-            
-            Log::info('Found students count:', ['count' => $students->count()]);
 
             // Group students and their subjects
             $groupedStudents = [];
@@ -453,166 +434,26 @@ class InstructorController extends Controller
                     'units' => $student->units,
                     'subject_year' => $student->subject_year,
                     'subject_semester' => $student->subject_semester,
-                    'enrollment_date' => $student->enrollment_date
+                    'date_enrolled' => $student->date_enrolled
                 ];
             }
 
-            $result = [
-                'success' => true,
+            return response()->json([
                 'students' => array_values($groupedStudents)
-            ];
-            
-            Log::info('Final response:', $result);
-
-            return response()->json($result);
+            ]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching ungraded students: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-            return response()->json([
-                'success' => false,
-                'error' => 'Failed to fetch students',
-                'message' => $e->getMessage()
-            ], 500);
+            Log::error('Error fetching ungraded students: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch students'], 500);
         }
     }
 
-    // public function getUngradedStudents(Request $request)
-    // {
-    //     try {
-    //         $instructor = Auth::guard('instructor')->user();
-            
-    //         $yearLevel = $request->input('year_level');
-    //         $semester = $request->input('semester');
-    //         $search = $request->input('search');
-    //         $sortBy = $request->input('sort_by', 'lastname');
-
-    //         // Get subjects taught by this instructor
-    //         $instructorSubjects = DB::table('sections')
-    //             ->where('instructor_id', $instructor->instructor_id)
-    //             ->pluck('subsched_id');
-
-    //         if ($instructorSubjects->isEmpty()) {
-    //             return response()->json(['students' => []]);
-    //         }
-
-    //         // Get subject IDs from subject schedules
-    //         $subjectIds = DB::table('subjectschedules')
-    //             ->whereIn('id', $instructorSubjects)
-    //             ->pluck('subject_id');
-
-    //         if ($subjectIds->isEmpty()) {
-    //             return response()->json(['students' => []]);
-    //         }
-
-    //         // Get enrolled students for these subjects who haven't been graded
-    //         $query = DB::table('enrollments as e')
-    //             ->join('students as s', 'e.student_id', '=', 's.id')
-    //             ->join('user_info as ui', 's.student_id', '=', 'ui.id')
-    //             ->join('subjects as sub', 'e.subject_id', '=', 'sub.id')
-    //             ->leftJoin('enrolled_sub as es', function($join) {
-    //                 $join->on('e.student_id', '=', 'es.student_id')
-    //                     ->on('e.subject_id', '=', 'es.subject_id');
-    //             })
-    //             ->whereIn('e.subject_id', $subjectIds)
-    //             ->whereNull('es.id') // Only students without grades
-    //             ->where('e.status', 'Enrolled') // Only currently enrolled
-    //             ->select(
-    //                 's.id as student_db_id',
-    //                 's.student_id as student_user_id',
-    //                 'ui.firstname',
-    //                 'ui.lastname',
-    //                 'ui.middlename',
-    //                 's.id_no',
-    //                 's.year_level',
-    //                 'sub.id as subject_id',
-    //                 'sub.code as subject_code',
-    //                 'sub.name as subject_name',
-    //                 'sub.units',
-    //                 'sub.year_level as subject_year',
-    //                 'sub.semester as subject_semester',
-    //                 'e.enrollment_date'
-    //             )
-    //             ->distinct();
-
-    //         // Apply filters
-    //         if ($yearLevel) {
-    //             $query->where('sub.year_level', $yearLevel);
-    //         }
-
-    //         if ($semester) {
-    //             $query->where('sub.semester', $semester);
-    //         }
-
-    //         if ($search) {
-    //             $query->where(function($q) use ($search) {
-    //                 $q->where('ui.firstname', 'LIKE', "%{$search}%")
-    //                 ->orWhere('ui.lastname', 'LIKE', "%{$search}%")
-    //                 ->orWhere('ui.middlename', 'LIKE', "%{$search}%")
-    //                 ->orWhere('s.id_no', 'LIKE', "%{$search}%");
-    //             });
-    //         }
-
-    //         // Apply sorting
-    //         switch ($sortBy) {
-    //             case 'firstname':
-    //                 $query->orderBy('ui.firstname');
-    //                 break;
-    //             case 'middlename':
-    //                 $query->orderBy('ui.middlename');
-    //                 break;
-    //             default:
-    //                 $query->orderBy('ui.lastname');
-    //         }
-
-    //         $query->orderBy('ui.firstname')
-    //             ->orderBy('sub.code');
-
-    //         $students = $query->get();
-
-    //         // Group students and their subjects
-    //         $groupedStudents = [];
-    //         foreach ($students as $student) {
-    //             $key = $student->student_db_id;
-                
-    //             if (!isset($groupedStudents[$key])) {
-    //                 $groupedStudents[$key] = [
-    //                     'student_db_id' => $student->student_db_id,
-    //                     'student_user_id' => $student->student_user_id,
-    //                     'firstname' => $student->firstname,
-    //                     'lastname' => $student->lastname,
-    //                     'middlename' => $student->middlename,
-    //                     'id_no' => $student->id_no,
-    //                     'year_level' => $student->year_level,
-    //                     'subjects' => []
-    //                 ];
-    //             }
-                
-    //             $groupedStudents[$key]['subjects'][] = [
-    //                 'subject_id' => $student->subject_id,
-    //                 'subject_code' => $student->subject_code,
-    //                 'subject_name' => $student->subject_name,
-    //                 'units' => $student->units,
-    //                 'subject_year' => $student->subject_year,
-    //                 'subject_semester' => $student->subject_semester,
-    //                 'enrollment_date' => $student->enrollment_date
-    //             ];
-    //         }
-
-    //         return response()->json([
-    //             'students' => array_values($groupedStudents)
-    //         ]);
-
-    //     } catch (\Exception $e) {
-    //         Log::error('Error fetching ungraded students: ' . $e->getMessage());
-    //         return response()->json(['error' => 'Failed to fetch students'], 500);
-    //     }
-    // }
 
     public function saveGrade(Request $request)
     {
         try {
+            Log::info('Save grade request received:', $request->all());
+            
             $validator = Validator::make($request->all(), [
                 'student_id' => 'required|integer',
                 'subject_id' => 'required|integer',
@@ -620,29 +461,53 @@ class InstructorController extends Controller
             ]);
 
             if ($validator->fails()) {
+                Log::error('Validation failed:', $validator->errors()->toArray());
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid input data'
+                    'message' => 'Invalid input data: ' . $validator->errors()->first()
                 ]);
             }
 
             $instructor = Auth::guard('instructor')->user();
+            Log::info('Instructor:', ['instructor_id' => $instructor->instructor_id]);
 
-            // Verify that the instructor teaches this subject
-            $isValidSubject = DB::table('sections as s')
-                ->join('subjectschedules as ss', 's.subsched_id', '=', 'ss.id')
-                ->where('s.instructor_id', $instructor->instructor_id)
-                ->where('ss.subject_id', $request->subject_id)
-                ->exists();
+            // Check if the student-subject combination exists in enrolled_sub
+            $enrollment = DB::table('enrolled_sub')
+                ->where('student_id', $request->student_id)
+                ->where('subject_id', $request->subject_id)
+                ->first();
 
-            if (!$isValidSubject) {
+            Log::info('Enrollment check:', [
+                'student_id' => $request->student_id,
+                'subject_id' => $request->subject_id,
+                'enrollment_found' => !is_null($enrollment)
+            ]);
+
+            if (!$enrollment) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You are not authorized to grade this subject'
+                    'message' => 'Student is not enrolled in this subject'
                 ]);
             }
 
-            // Get student and subject details
+            // Update the grade in enrolled_sub table
+            $updated = DB::table('enrolled_sub')
+                ->where('student_id', $request->student_id)
+                ->where('subject_id', $request->subject_id)
+                ->update([
+                    'grade' => $request->grade
+                ]);
+
+            Log::info('Update result:', ['rows_updated' => $updated]);
+
+            // if (!$updated) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'No rows were updated. Please check if the student and subject exist.'
+            //     ]);
+            // }
+
+            // Get student and subject details for logging
             $student = DB::table('students')
                 ->where('id', $request->student_id)
                 ->first();
@@ -651,49 +516,28 @@ class InstructorController extends Controller
                 ->where('id', $request->subject_id)
                 ->first();
 
-            if (!$student || !$subject) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Student or subject not found'
-                ]);
-            }
+            $stud_info = Student::where('id', $request->student_id)
+                        ->first();
 
-            // Check if grade already exists
-            $existingGrade = DB::table('enrolled_sub')
-                ->where('student_id', $request->student_id)
-                ->where('subject_id', $request->subject_id)
-                ->first();
+            $name = $stud_info->userInfo->firstname;
 
-            if ($existingGrade) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Grade already exists for this student and subject'
-                ]);
-            }
-
-            // Insert the grade
-            DB::table('enrolled_sub')->insert([
-                'student_id' => $request->student_id,
-                'subject_id' => $request->subject_id,
-                'subject_code' => $subject->code,
-                'subject_name' => $subject->name,
-                'units' => $subject->units,
-                'year_level' => $subject->year_level,
-                'semester' => $subject->semester,
-                'grade' => $request->grade,
-                'date_enrolled' => now()
+            Log::info('Student and subject found:', [
+                'student' => ''.$name,
+                'subject' => !is_null($subject)
             ]);
 
             // Log the action
             $clientInfo = $this->collectClientInformation();
             AuditLog::create([
-                'user_id' => $student->student_id,
-                'action' => 'Grade input for subject: ' . $subject->code,
+                'user_id' => $stud_info->id_no ?? 'unknown',
+                'action' => 'Grade input for subject: ' . ($subject->code ?? 'unknown'),
                 'details' => 'Grade: ' . $request->grade . ' - ' . $clientInfo['operating_system'] . '/' . $clientInfo['device_type'] . '/' . $clientInfo['user_agent'],
                 'ip_address' => $clientInfo['ip_address'],
                 'date' => now(),
-                'access_by' => $instructor->instructor_id
+                'access_by' => '107568'
             ]);
+
+            Log::info('Grade saved successfully');
 
             return response()->json([
                 'success' => true,
@@ -702,9 +546,11 @@ class InstructorController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error saving grade: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to save grade'
+                'message' => 'Failed to save grade: ' . $e->getMessage()
             ], 500);
         }
     }

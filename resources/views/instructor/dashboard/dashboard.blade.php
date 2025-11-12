@@ -215,17 +215,13 @@ $id = $user->info->instructor_id;
                         <div class="action-hover-effect"></div>
                     </div>
                     
-                    <div class="quick-action-card" data-action="manage-grades">
+                    <div class="quick-action-card" data-action="input-grades">
                         <div class="action-icon">
                             <i class="fas fa-pen-to-square"></i>
                         </div>
                         <h4>Input Grades</h4>
                         <p>Update student grades and performance</p>
                         <div class="action-hover-effect"></div>
-                    </div>
-                    <!-- Input Grades Section -->
-                    <div id="input-grades-section" class="content-section">
-                        @include('instructor.dashboard.partials.input-grades')
                     </div>
                     
                     <div class="quick-action-card" data-action="view-students">
@@ -313,6 +309,10 @@ $id = $user->info->instructor_id;
                         </div>
                     </div>
                 </div>
+            </div>
+            <!-- Input Grades Section -->
+            <div id="input-grades-section" class="content-section">
+                @include('instructor.dashboard.partials.input-grades')
             </div>
             
             <!-- My Courses Section -->
@@ -432,6 +432,7 @@ $id = $user->info->instructor_id;
                     </div>
                 </div>
             </div>
+
             
             <!-- Schedule Section -->
             <div id="schedule-section" class="content-section">

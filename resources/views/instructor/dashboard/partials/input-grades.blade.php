@@ -23,19 +23,6 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="semester" class="form-label">
-                        <i class="fas fa-calendar-alt"></i>
-                        Semester
-                    </label>
-                    <select name="semester" id="semester" class="form-control">
-                        <option value="">All Semesters</option>
-                        <option value="1st Sem">1st Semester</option>
-                        <option value="2nd Sem">2nd Semester</option>
-                        <option value="Summer">Summer</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
                     <label for="sort_by" class="form-label">
                         <i class="fas fa-sort"></i>
                         Sort By

@@ -367,10 +367,10 @@ function showNotification(message, type = 'info') {
     }
 }
 
-// Input Grades functionality
+// Input Grades functionality - FIXED VERSION
 function initializeInputGrades() {
-    console.log('Initializing input grades...');
-    
+    console.log('Initializing Input Grades section...');
+
     const filterForm = document.getElementById('grade-filter-form');
     const resetBtn = document.getElementById('reset-filters');
     const studentsGrid = document.getElementById('students-grid');
@@ -382,27 +382,31 @@ function initializeInputGrades() {
     const closeGradeModal = document.getElementById('close-grade-modal');
     const cancelGrade = document.getElementById('cancel-grade');
     const gradeForm = document.getElementById('grade-form');
-    
+
     // Check if required elements exist
-    if (!filterForm || !studentsGrid) {
-        console.error('Required elements not found');
+    if (!studentsGrid) {
+        console.error('Students grid element not found');
         return;
     }
     
-    // Load students on page load
+    // Load students on initialization
     loadUngradedStudents();
     
     // Filter form submission
-    filterForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        loadUngradedStudents();
-    });
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            loadUngradedStudents();
+        });
+    }
     
     // Reset filters
     if (resetBtn) {
         resetBtn.addEventListener('click', function() {
-            filterForm.reset();
-            loadUngradedStudents();
+            if (filterForm) {
+                filterForm.reset();
+                loadUngradedStudents();
+            }
         });
     }
     
@@ -417,10 +421,7 @@ function initializeInputGrades() {
     
     // Grade form submission
     if (gradeForm) {
-        gradeForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            saveGrade(e);
-        });
+        gradeForm.addEventListener('submit', saveGrade);
     }
     
     // Close modal when clicking outside
@@ -433,43 +434,39 @@ function initializeInputGrades() {
     }
     
     function loadUngradedStudents() {
+        console.log('Loading ungraded students...');
         showLoading(true);
         
-        const formData = new FormData(filterForm);
-        const data = {
-            year_level: formData.get('year_level'),
-            semester: formData.get('semester'),
-            search: formData.get('search'),
-            sort_by: formData.get('sort_by')
+        const formData = new FormData();
+        const yearLevel = document.getElementById('year_level')?.value;
+        const search = document.getElementById('search')?.value;
+        const sortBy = document.getElementById('sort_by')?.value;
+        
+        const requestData = {
+            year_level: yearLevel || '',
+            search: search || '',
+            sort_by: sortBy || 'lastname'
         };
         
-        console.log('Loading students with data:', data);
-        console.log('API URL:', window.laravelRoutes.ungradedStudents);
-        console.log('CSRF Token:', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        console.log('Request data:', requestData);
         
-        // Use the route from window.laravelRoutes
-        const url = window.laravelRoutes.ungradedStudents;
-        
-        fetch(url, {
+        fetch(window.laravelRoutes.ungradedStudents, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(requestData)
         })
         .then(response => {
-            console.log('Response status:', response.status);
-            console.log('Response headers:', response.headers);
             if (!response.ok) {
-                throw new Error('Network response was not ok: ' + response.status);
+                throw new Error('Network response was not ok');
             }
             return response.json();
         })
         .then(data => {
-            console.log('Full response data:', data);
-            console.log('Students count:', data.students ? data.students.length : 0);
+            console.log('Students data received:', data);
             displayStudents(data.students || []);
             showLoading(false);
         })
@@ -477,6 +474,8 @@ function initializeInputGrades() {
             console.error('Error loading students:', error);
             showLoading(false);
             showNotification('Error loading students: ' + error.message, 'error');
+            // Display empty state on error
+            displayStudents([]);
         });
     }
     
@@ -509,19 +508,19 @@ function initializeInputGrades() {
             student.subjects.forEach(subject => {
                 subjectsHTML += `
                     <div class="subject-item">
-                        <div class="subject-code">${subject.subject_code}</div>
-                        <div class="subject-name">${subject.subject_name}</div>
+                        <div class="subject-code">${subject.subject_code || 'N/A'}</div>
+                        <div class="subject-name">${subject.subject_name || 'N/A'}</div>
                         <div class="subject-meta">
-                            <span>${subject.units} units</span>
-                            <span>${subject.subject_semester}</span>
+                            <span>${subject.units || '0'} units</span>
+                            <span>${subject.subject_semester || 'N/A'}</span>
                         </div>
                         <button class="btn-primary btn-grade btn-sm" 
                                 data-student-id="${student.student_db_id}"
                                 data-student-user-id="${student.student_user_id}"
                                 data-firstname="${student.firstname}"
+                                data-middlename="${student.middlename || ''}"
                                 data-lastname="${student.lastname}"
-                                data-middlename="${student.middlename}"
-                                data-id-no="${student.id_no}"
+                                data-id-no="${student.id_no || 'N/A'}"
                                 data-year-level="${student.year_level}"
                                 data-subject-id="${subject.subject_id}"
                                 data-subject-code="${subject.subject_code}"
@@ -536,7 +535,7 @@ function initializeInputGrades() {
                 `;
             });
         } else {
-            subjectsHTML = '<p>No subjects found</p>';
+            subjectsHTML = '<div class="subject-item">No subjects found</div>';
         }
         
         card.innerHTML = `
@@ -565,28 +564,35 @@ function initializeInputGrades() {
     }
     
     function openGradeModal(data) {
+        console.log('Opening grade modal with data:', data);
+        
         const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.firstname + ' ' + data.lastname)}&background=4361ee&color=fff&size=80`;
         
+        // Update modal content
         document.getElementById('student_avatar').src = avatarUrl;
-        document.getElementById('student_full_name').textContent = `${data.firstname} ${data.middlename || ''} ${data.lastname}`;
+        document.getElementById('student_full_name').textContent = `${data.firstname} ${data.middlename || ''} ${data.lastname}`.trim();
         document.getElementById('student_id_display').textContent = `ID: ${data.idNo}`;
         document.getElementById('student_course').textContent = `Year: ${data.yearLevel}`;
         
-        document.getElementById('subject_code').textContent = data.subjectCode;
-        document.getElementById('subject_name').textContent = data.subjectName;
-        document.getElementById('subject_units').textContent = data.subjectUnits;
-        document.getElementById('subject_year').textContent = data.subjectYear;
-        document.getElementById('subject_semester').textContent = data.subjectSemester;
+        document.getElementById('subject_code').textContent = data.subjectCode || 'N/A';
+        document.getElementById('subject_name').textContent = data.subjectName || 'N/A';
+        document.getElementById('subject_units').textContent = data.subjectUnits || '0';
+        document.getElementById('subject_year').textContent = data.subjectYear || 'N/A';
+        document.getElementById('subject_semester').textContent = data.subjectSemester || 'N/A';
         
-        document.getElementById('grade_student_id').value = data.studentId;
+        // Make sure we're using the correct field names
+        document.getElementById('grade_student_id').value = data.studentId || data.student_db_id;
         document.getElementById('grade_subject_id').value = data.subjectId;
         document.getElementById('grade').value = '';
         
+        // Show modal
         gradeModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
     }
     
     function closeModal() {
         gradeModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
     }
     
     function saveGrade(e) {
@@ -599,46 +605,50 @@ function initializeInputGrades() {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         submitBtn.disabled = true;
         
-        const data = {
-            student_id: formData.get('student_id'),
-            subject_id: formData.get('subject_id'),
+        const gradeData = {
+            student_id: parseInt(formData.get('student_id')),
+            subject_id: parseInt(formData.get('subject_id')),
             grade: formData.get('grade')
         };
         
-        console.log('Saving grade:', data);
+        console.log('Saving grade data:', gradeData);
         
-        // Use the route from window.laravelRoutes
-        const url = window.laravelRoutes.saveGrade;
-        
-        fetch(url, {
+        fetch(window.laravelRoutes.saveGrade, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(gradeData)
         })
         .then(response => {
+            console.log('Response status:', response.status);
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                // Try to get error message from response
+                return response.json().then(errorData => {
+                    throw new Error(errorData.message || 'Network response was not ok');
+                }).catch(() => {
+                    throw new Error('Network response was not ok');
+                });
             }
             return response.json();
         })
         .then(data => {
+            console.log('Save grade response:', data);
             if (data.success) {
                 showNotification('Grade saved successfully!', 'success');
                 closeModal();
                 loadUngradedStudents(); // Reload the list
             } else {
                 showNotification(data.message || 'Error saving grade', 'error');
-            submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
             }
         })
         .catch(error => {
             console.error('Error saving grade:', error);
             showNotification('Error saving grade: ' + error.message, 'error');
+        })
+        .finally(() => {
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         });
@@ -662,6 +672,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const sidebarToggle = document.querySelector('.sidebar-toggle');
     const sidebar = document.querySelector('.sidebar');
 
+    console.log('DOM loaded - checking input grades section...');
+
     // Initialize Dark Mode and Theme System
     initializeDarkMode();
     watchSystemTheme();
@@ -671,14 +683,17 @@ document.addEventListener('DOMContentLoaded', function() {
             sidebar.classList.toggle('active');
         });
     }
-    
+
     // Navigation functionality
     const menuItems = document.querySelectorAll('.menu-item');
     const contentSections = document.querySelectorAll('.content-section');
     const pageTitle = document.querySelector('.page-title');
 
+    // Check if input grades section is active on page load
     const inputGradesSection = document.getElementById('input-grades-section');
+    console.log('Input grades section found:', !!inputGradesSection);
     if (inputGradesSection && inputGradesSection.classList.contains('active')) {
+        console.log('Input grades section is active, initializing...');
         setTimeout(initializeInputGrades, 100);
     }
 
@@ -688,6 +703,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                 const target = mutation.target;
                 if (target.id === 'input-grades-section' && target.classList.contains('active')) {
+                    console.log('Input grades section became active, initializing...');
                     setTimeout(initializeInputGrades, 100);
                 }
             }
@@ -700,28 +716,11 @@ document.addEventListener('DOMContentLoaded', function() {
             attributeFilter: ['class']
         });
     }
-
-    //del
-    menuItems.forEach(item => {
-        item.addEventListener('click', function() {
-            const section = this.getAttribute('data-section');
-            if (section === 'input-grades') {
-                // Small delay to ensure section is visible
-                setTimeout(initializeInputGrades, 100);
-            }
-        });
-    });
-    
-    // Also initialize if we're already on the input grades section
-    if (document.getElementById('input-grades-section').classList.contains('active')) {
-        initializeInputGrades();
-    }
     
     menuItems.forEach(item => {
         item.addEventListener('click', function() {
             if (this.id === 'logout-btn') {
                 if (confirm('Are you sure you want to logout?')) {
-                    // Logout logic here - redirect to logout URL
                     window.location.href = '/logout';
                 }
                 return;
@@ -743,13 +742,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 targetSection.classList.add('active');
                 
                 // Update page title
-                const sectionName = this.querySelector('span').textContent;
+                const sectionName = this.querySelector('.menu-text').textContent;
                 if (pageTitle) {
-                    pageTitle.textContent = sectionName;
+                    pageTitle.textContent = sectionName + ' | Instructor Dashboard';
                 }
+                
+                // Initialize specific section functionality
+                initializeSection(this.getAttribute('data-section'));
             }
         });
     });
+
     
     // Quick Actions
     const quickActionCards = document.querySelectorAll('.quick-action-card');
@@ -763,22 +766,48 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleQuickAction(action) {
         switch(action) {
             case 'create-assignment':
-                // Navigate to assignments section and trigger creation
                 document.querySelector('[data-section="assignments"]').click();
                 setTimeout(() => {
                     const createBtn = document.getElementById('createAssignmentBtn');
                     if (createBtn) createBtn.click();
                 }, 300);
                 break;
-            case 'manage-grades':
-                document.querySelector('[data-section="grades"]').click();
+            case 'input-grades':
+                // Find and click the input-grades menu item
+                const inputGradesMenuItem = document.querySelector('[data-section="input-grades"]');
+                if (inputGradesMenuItem) {
+                    inputGradesMenuItem.click();
+                }
                 break;
             case 'view-students':
                 document.querySelector('[data-section="students"]').click();
                 break;
+            case 'manage-grades':
+                document.querySelector('[data-section="grades"]').click();
+                break;
             case 'upload-materials':
                 showNotification('Upload materials feature coming soon!', 'info');
                 break;
+            case 'upload-materials':
+                showNotification('Upload materials feature coming soon!', 'info');
+                break;
+        }
+    }
+
+    // Initialize section-specific functionality
+    function initializeSection(sectionName) {
+        switch(sectionName) {
+            case 'input-grades':
+                console.log('Initializing input grades section...');
+                setTimeout(initializeInputGrades, 100);
+                break;
+            case 'dashboard':
+                // Initialize dashboard if needed
+                break;
+            case 'courses':
+                // Initialize courses if needed
+                break;
+            // Add other sections as needed
         }
     }
     
