@@ -367,6 +367,32 @@ function showNotification(message, type = 'info') {
     }
 }
 
+// Enhanced mobile subject interactions
+function setupMobileSubjectInteractions() {
+    const subjectOptions = document.querySelectorAll('.subject-option');
+    
+    subjectOptions.forEach(option => {
+        // Enhanced touch handling
+        option.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            this.style.transition = 'all 0.1s ease';
+        }, { passive: false });
+        
+        option.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            this.style.transition = '';
+            
+            // Trigger click event
+            const clickEvent = new MouseEvent('click', {
+                view: window,
+                bubbles: true,
+                cancelable: true
+            });
+            this.dispatchEvent(clickEvent);
+        }, { passive: false });
+    });
+}
+
 // Input Grades functionality - UPDATED VERSION WITH HORIZONTAL MODAL
 function initializeInputGrades() {
     console.log('Initializing Input Grades section...');
@@ -725,9 +751,17 @@ function initializeInputGrades() {
             allSubjects.forEach(subject => {
                 const subjectOption = document.createElement('div');
                 subjectOption.className = 'subject-option';
-                if (subject.subject_id == data.subjectId) {
+                if (parseInt(subject.subject_id) === parseInt(data.subjectId)) {
                     subjectOption.classList.add('active');
                 }
+                
+                // Set all data attributes correctly
+                subjectOption.dataset.subjectId = subject.subject_id;
+                subjectOption.dataset.subjectCode = subject.subject_code;
+                subjectOption.dataset.subjectName = subject.subject_name;
+                subjectOption.dataset.units = subject.units;
+                subjectOption.dataset.subjectYear = subject.subject_year;
+                subjectOption.dataset.subjectSemester = subject.subject_semester;
                 
                 subjectOption.innerHTML = `
                     <div class="subject-option-header">
@@ -737,8 +771,8 @@ function initializeInputGrades() {
                     <div class="subject-name">${subject.subject_name || 'N/A'}</div>
                 `;
                 
-                // Enhanced touch event for mobile
-                const handleSubjectClick = function() {
+                // Add click event listener
+                subjectOption.addEventListener('click', function() {
                     // Remove active class from all options
                     document.querySelectorAll('.subject-option').forEach(opt => {
                         opt.classList.remove('active');
@@ -748,30 +782,34 @@ function initializeInputGrades() {
                     this.classList.add('active');
                     
                     // Update subject details
-                    updateSubjectDetails(subject);
+                    updateSubjectDetails({
+                        subject_code: this.dataset.subjectCode,
+                        subject_name: this.dataset.subjectName,
+                        units: this.dataset.units,
+                        subject_year: this.dataset.subjectYear,
+                        subject_semester: this.dataset.subjectSemester
+                    });
                     
-                    // Update hidden fields
-                    document.getElementById('grade_subject_id').value = subject.subject_id;
+                    // Update hidden subject_id field
+                    document.getElementById('grade_subject_id').value = this.dataset.subjectId;
                     
-                    // On mobile, scroll the subject into view
-                    if (window.innerWidth <= 768) {
-                        this.scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'nearest',
-                            inline: 'nearest'
-                        });
-                    }
-                };
-                
-                // Use both click and touch events for better mobile support
-                subjectOption.addEventListener('click', handleSubjectClick);
-                subjectOption.addEventListener('touchend', function(e) {
-                    e.preventDefault();
-                    handleSubjectClick.call(this);
+                    console.log('Selected subject:', {
+                        subject_id: this.dataset.subjectId,
+                        subject_code: this.dataset.subjectCode,
+                        subject_name: this.dataset.subjectName
+                    });
                 });
                 
                 subjectsList.appendChild(subjectOption);
             });
+
+            // Initialize the first subject as active if none is active
+            setTimeout(() => {
+                const activeSubject = subjectsList.querySelector('.subject-option.active');
+                if (!activeSubject && subjectsList.firstChild) {
+                    subjectsList.firstChild.click();
+                }
+            }, 100);
         } else {
             subjectsList.innerHTML = '<div class="no-subjects">No subjects available</div>';
         }
@@ -790,7 +828,7 @@ function initializeInputGrades() {
         document.getElementById('grade_subject_id').value = data.subjectId;
         document.getElementById('grade').value = '';
         
-        // Show modal with enhanced mobile handling
+        // Show modal
         const gradeModal = document.getElementById('grade-modal');
         gradeModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';

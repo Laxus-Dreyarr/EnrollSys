@@ -1164,6 +1164,122 @@ body.dark-mode .subjects-list::-webkit-scrollbar-thumb:hover {
         width: 44px;
         height: 44px;
     }
+
+    /* Improved subjects list container */
+    .subjects-list-container {
+        margin-top: 12px;
+    }
+    
+    .subjects-list-container h5 {
+        font-size: 1.1rem;
+        margin-bottom: 12px;
+        padding: 0 8px;
+    }
+    
+    .subjects-list {
+        max-height: 250px;
+        gap: 8px;
+        padding: 0 4px;
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+    
+    /* Enhanced subject options for mobile */
+    .subject-option {
+        padding: 16px 12px;
+        min-height: 60px;
+        border-radius: 12px;
+        margin: 0 4px;
+        border: 2px solid #e2e8f0;
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    .subject-option:active {
+        transform: scale(0.98);
+        background: #f1f5f9;
+    }
+    
+    .subject-option-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 6px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .subject-code {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e293b;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .subject-meta {
+        font-size: 0.8rem;
+        color: #64748b;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-weight: 600;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    
+    .subject-name {
+        font-size: 0.9rem;
+        color: #64748b;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 0;
+    }
+    
+    /* Active state for mobile */
+    .subject-option.active {
+        border-color: var(--theme-primary);
+        background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+        transform: scale(0.98);
+    }
+    
+    .subject-option.active .subject-code,
+    .subject-option.active .subject-name,
+    .subject-option.active .subject-meta {
+        color: white;
+    }
+    
+    .subject-option.active .subject-meta {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Improved scrollbar for mobile */
+    .subjects-list::-webkit-scrollbar {
+        width: 3px;
+    }
+    
+    .subjects-list::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+    }
+    
+    .subjects-list::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+    
+    .subjects-list::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1280,6 +1396,41 @@ body.dark-mode .subjects-list::-webkit-scrollbar-thumb:hover {
     .expandable-content {
         padding-top: 16px;
     }
+
+    /* Extra small devices */
+    .subjects-list {
+        max-height: 200px;
+        gap: 6px;
+    }
+    
+    .subject-option {
+        padding: 14px 10px;
+        min-height: 55px;
+        border-radius: 10px;
+    }
+    
+    .subject-option-header {
+        margin-bottom: 4px;
+    }
+    
+    .subject-code {
+        font-size: 0.95rem;
+    }
+    
+    .subject-name {
+        font-size: 0.85rem;
+        -webkit-line-clamp: 2;
+    }
+    
+    .subject-meta {
+        font-size: 0.75rem;
+        padding: 3px 6px;
+    }
+    
+    /* Improved touch targets */
+    .subject-option {
+        min-height: 44px; /* Minimum touch target size */
+    }
 }
 
 /* Enhanced Touch Interactions for Mobile */
@@ -1338,6 +1489,22 @@ body.dark-mode .subjects-list::-webkit-scrollbar-thumb:hover {
     .student-card:active {
         transform: scale(0.99);
     }
+
+    .subject-option {
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    .subject-option:active {
+        background: #f1f5f9;
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+    }
+    
+    .subject-option.active:active {
+        background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+        transform: scale(0.96);
+    }
 }
 
 /* Professional Loading States for Mobile */
@@ -1368,6 +1535,77 @@ body.dark-mode .subjects-list::-webkit-scrollbar-thumb:hover {
     body.dark-mode .modal-container {
         background: var(--card-dark);
     }
+
+    body.dark-mode .subject-option {
+        border-color: var(--border-dark);
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    body.dark-mode .subject-option:active {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    body.dark-mode .subject-option.active {
+        border-color: var(--theme-primary);
+        background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+    }
+    
+    body.dark-mode .subject-meta {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-muted-dark);
+    }
+    
+    body.dark-mode .subject-option.active .subject-meta {
+        background: rgba(255, 255, 255, 0.2);
+    }
+}
+
+/* Improved modal layout for subjects on mobile */
+@media (max-width: 768px) {
+    .modal-column.student-column {
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 20px;
+        margin-bottom: 20px;
+    }
+    
+    body.dark-mode .modal-column.student-column {
+        border-bottom-color: var(--border-dark);
+    }
+    
+    /* Ensure the subjects list doesn't overflow */
+    .subjects-list {
+        min-height: 120px;
+    }
+}
+
+/* Loading state for subjects */
+.subjects-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.subjects-loading .loading-spinner {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+}
+
+/* Empty state for subjects */
+.no-subjects {
+    text-align: center;
+    padding: 40px 20px;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.no-subjects i {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    opacity: 0.5;
 }
 
 /* Print Styles */
