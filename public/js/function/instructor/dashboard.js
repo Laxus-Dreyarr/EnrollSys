@@ -393,7 +393,8 @@ function setupMobileSubjectInteractions() {
     });
 }
 
-// Input Grades functionality - UPDATED VERSION WITH HORIZONTAL MODAL
+// Input Grades functionality - UPDATED VERSION WITH PROPER MODAL PERSISTENCE
+// Input Grades functionality - FIXED VERSION
 function initializeInputGrades() {
     console.log('Initializing Input Grades section...');
 
@@ -409,6 +410,9 @@ function initializeInputGrades() {
     const cancelGrade = document.getElementById('cancel-grade');
     const gradeForm = document.getElementById('grade-form');
 
+    // Track if already initialized to prevent duplicate event listeners
+    let isInitialized = false;
+    
     // Check if required elements exist
     if (!studentsGrid) {
         console.error('Students grid element not found');
@@ -418,16 +422,18 @@ function initializeInputGrades() {
     // Load students on initialization
     loadUngradedStudents();
     
-    // Filter form submission
-    if (filterForm) {
+    // Filter form submission - only attach once
+    if (filterForm && !filterForm.hasAttribute('data-listener-attached')) {
+        filterForm.setAttribute('data-listener-attached', 'true');
         filterForm.addEventListener('submit', function(e) {
             e.preventDefault();
             loadUngradedStudents();
         });
     }
     
-    // Reset filters
-    if (resetBtn) {
+    // Reset filters - only attach once
+    if (resetBtn && !resetBtn.hasAttribute('data-listener-attached')) {
+        resetBtn.setAttribute('data-listener-attached', 'true');
         resetBtn.addEventListener('click', function() {
             if (filterForm) {
                 filterForm.reset();
@@ -436,99 +442,143 @@ function initializeInputGrades() {
         });
     }
     
-    // Close modal events
-    if (closeGradeModal) {
+    // Close modal events - only attach once
+    if (closeGradeModal && !closeGradeModal.hasAttribute('data-listener-attached')) {
+        closeGradeModal.setAttribute('data-listener-attached', 'true');
         closeGradeModal.addEventListener('click', closeModal);
     }
     
-    if (cancelGrade) {
+    if (cancelGrade && !cancelGrade.hasAttribute('data-listener-attached')) {
+        cancelGrade.setAttribute('data-listener-attached', 'true');
         cancelGrade.addEventListener('click', closeModal);
     }
     
-    // Enhanced mobile form submission
-    if (gradeForm) {
-        gradeForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Enhanced mobile loading state
-            const submitBtn = gradeForm.querySelector('.btn-primary');
-            const originalText = submitBtn.innerHTML;
-            
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            submitBtn.disabled = true;
-            
-            // Add visual feedback for mobile
-            if (window.innerWidth <= 768) {
-                submitBtn.style.transform = 'scale(0.98)';
-            }
-            
-            const formData = new FormData(gradeForm);
-            const gradeData = {
-                student_id: parseInt(formData.get('student_id')),
-                subject_id: parseInt(formData.get('subject_id')),
-                grade: formData.get('grade')
-            };
-            
-            console.log('Saving grade data:', gradeData);
-            
-            fetch(window.laravelRoutes.saveGrade, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(gradeData)
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                if (!response.ok) {
-                    return response.json().then(errorData => {
-                        throw new Error(errorData.message || 'Network response was not ok');
-                    }).catch(() => {
-                        throw new Error('Network response was not ok');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Save grade response:', data);
-                if (data.success) {
-                    showNotification('Grade saved successfully!', 'success');
-                    closeModal();
-                    loadUngradedStudents();
-                } else {
-                    showNotification(data.message || 'Error saving grade', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error saving grade:', error);
-                showNotification('Error saving grade: ' + error.message, 'error');
-            })
-            .finally(() => {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-                if (window.innerWidth <= 768) {
-                    submitBtn.style.transform = 'scale(1)';
-                }
-            });
-        });
+    // Grade form submission - only attach once
+    if (gradeForm && !gradeForm.hasAttribute('data-listener-attached')) {
+        gradeForm.setAttribute('data-listener-attached', 'true');
+        gradeForm.addEventListener('submit', handleGradeSubmission);
     }
     
-    // Close modal when clicking outside
-    if (gradeModal) {
+    // Close modal when clicking outside - only attach once
+    if (gradeModal && !gradeModal.hasAttribute('data-listener-attached')) {
+        gradeModal.setAttribute('data-listener-attached', 'true');
         gradeModal.addEventListener('click', function(e) {
             if (e.target === gradeModal) {
                 closeModal();
             }
         });
     }
+
+    // Separate function for grade submission to prevent multiple bindings
+    function handleGradeSubmission(e) {
+        e.preventDefault();
+        
+        const submitBtn = gradeForm.querySelector('.btn-primary');
+        const originalText = submitBtn.innerHTML;
+        
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        submitBtn.disabled = true;
+        
+        if (window.innerWidth <= 768) {
+            submitBtn.style.transform = 'scale(0.98)';
+        }
+        
+        const formData = new FormData(gradeForm);
+        const gradeData = {
+            student_id: parseInt(formData.get('student_id')),
+            subject_id: parseInt(formData.get('subject_id')),
+            grade: formData.get('grade')
+        };
+        
+        console.log('Saving grade data:', gradeData);
+        
+        fetch(window.laravelRoutes.saveGrade, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(gradeData)
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.message || 'Network response was not ok');
+                }).catch(() => {
+                    throw new Error('Network response was not ok');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Save grade response:', data);
+            if (data.success) {
+                handleSuccessfulGradeSubmission(gradeData);
+            } else {
+                showNotification(data.message || 'Error saving grade', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving grade:', error);
+            showNotification('Error saving grade: ' + error.message, 'error');
+        })
+        .finally(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            if (window.innerWidth <= 768) {
+                submitBtn.style.transform = 'scale(1)';
+            }
+        });
+    }
+
+    function handleSuccessfulGradeSubmission(gradeData) {
+        // Remove the graded subject from the modal
+        const gradedSubjectId = document.getElementById('grade_subject_id').value;
+        const gradedSubjectOption = document.querySelector(`.subject-option[data-subject-id="${gradedSubjectId}"]`);
+        
+        // Update the student card in the main grid - ONLY ONCE
+        updateStudentCardAfterGrading(gradeData.student_id, gradeData.subject_id);
+        
+        if (gradedSubjectOption) {
+            gradedSubjectOption.remove();
+            
+            // Check if there are more subjects for this student in the modal
+            const remainingSubjects = document.querySelectorAll('.subject-option');
+            
+            if (remainingSubjects.length > 0) {
+                // Auto-select the next subject and reset the grade input
+                const firstSubject = remainingSubjects[0];
+                firstSubject.click();
+                document.getElementById('grade').value = '';
+                
+                // Show notification only once
+                showNotification('Grade saved! Please select grade for next subject.', 'info');
+                
+                console.log('Remaining subjects:', remainingSubjects.length, '- Keeping modal open');
+            } else {
+                // No more subjects, close modal and reload the student list
+                showNotification('All subjects graded for this student!', 'success');
+                setTimeout(() => {
+                    closeModal();
+                    loadUngradedStudents();
+                }, 1500);
+            }
+        } else {
+            // If for some reason we can't find the subject option, close modal and reload
+            console.warn('Could not find graded subject option in modal');
+            setTimeout(() => {
+                closeModal();
+                loadUngradedStudents();
+            }, 1000);
+        }
+    }
     
     function loadUngradedStudents() {
         console.log('Loading ungraded students...');
         showLoading(true);
         
-        const formData = new FormData();
         const yearLevel = document.getElementById('year_level')?.value;
         const search = document.getElementById('search')?.value;
         const sortBy = document.getElementById('sort_by')?.value;
@@ -565,7 +615,6 @@ function initializeInputGrades() {
             console.error('Error loading students:', error);
             showLoading(false);
             showNotification('Error loading students: ' + error.message, 'error');
-            // Display empty state on error
             displayStudents([]);
         });
     }
@@ -588,14 +637,12 @@ function initializeInputGrades() {
         });
     }
     
-    // Enhanced student card creation for mobile
     function createStudentCard(student) {
         const card = document.createElement('div');
         card.className = 'student-card';
         
         const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(student.firstname + ' ' + student.lastname)}&background=4361ee&color=fff&size=60`;
         
-        // Create subjects preview (limited to 2 subjects initially)
         let subjectsPreviewHTML = '';
         let allSubjectsHTML = '';
         
@@ -644,7 +691,6 @@ function initializeInputGrades() {
                 `;
             });
             
-            // Show more indicator if there are more than 2 subjects
             if (student.subjects.length > 2) {
                 subjectsPreviewHTML += `
                     <div class="more-subjects-indicator">
@@ -693,7 +739,6 @@ function initializeInputGrades() {
                 icon.classList.toggle('fa-chevron-down');
                 icon.classList.toggle('fa-chevron-up');
                 
-                // Smooth scroll to expanded content on mobile
                 if (window.innerWidth <= 768 && expandableSection.classList.contains('expanded')) {
                     setTimeout(() => {
                         expandableSection.scrollIntoView({ 
@@ -704,9 +749,11 @@ function initializeInputGrades() {
                 }
             };
             
-            toggleBtn.addEventListener('click', handleToggle);
-            // Add touch support for mobile
-            toggleBtn.addEventListener('touchend', function(e) {
+            // Remove any existing listeners and add new ones
+            toggleBtn.replaceWith(toggleBtn.cloneNode(true));
+            const newToggleBtn = card.querySelector('.student-actions-toggle');
+            newToggleBtn.addEventListener('click', handleToggle);
+            newToggleBtn.addEventListener('touchend', function(e) {
                 e.preventDefault();
                 handleToggle.call(this, e);
             });
@@ -715,14 +762,17 @@ function initializeInputGrades() {
         // Enhanced grade buttons with better mobile support
         const gradeButtons = card.querySelectorAll('.btn-grade');
         gradeButtons.forEach(button => {
+            // Clone and replace to remove any existing listeners
+            button.replaceWith(button.cloneNode(true));
+            const newButton = card.querySelector(`.btn-grade[data-subject-id="${button.dataset.subjectId}"]`);
+            
             const handleGradeClick = function(e) {
                 e.stopPropagation();
                 openGradeModal(this.dataset, student.subjects);
             };
             
-            button.addEventListener('click', handleGradeClick);
-            // Add touch support
-            button.addEventListener('touchend', function(e) {
+            newButton.addEventListener('click', handleGradeClick);
+            newButton.addEventListener('touchend', function(e) {
                 e.preventDefault();
                 handleGradeClick.call(this, e);
             });
@@ -730,7 +780,93 @@ function initializeInputGrades() {
         
         return card;
     }
+
+    // FIXED: Update student card after grading - removes only the graded subject
+    function updateStudentCardAfterGrading(studentId, subjectId) {
+        console.log('Updating student card after grading:', { studentId, subjectId });
+        
+        // Find the specific student card
+        const studentCards = document.querySelectorAll('.student-card');
+        let removedCount = 0;
+        
+        studentCards.forEach(card => {
+            // Find the grade button for this specific student and subject
+            const gradeButton = card.querySelector(`.btn-grade[data-student-id="${studentId}"][data-subject-id="${subjectId}"]`);
+            
+            if (gradeButton) {
+                // Remove only the specific subject item
+                const subjectItem = gradeButton.closest('.subject-item');
+                if (subjectItem) {
+                    subjectItem.remove();
+                    removedCount++;
+                    console.log('Removed subject from student card:', subjectId);
+                    
+                    // Update the subjects preview for this card
+                    updateSubjectsPreview(card);
+                    
+                    // Check if this student has any more subjects
+                    const remainingSubjects = card.querySelectorAll('.subject-item');
+                    if (remainingSubjects.length === 0) {
+                        // Remove the entire student card if no more subjects
+                        card.remove();
+                        console.log('Removed student card - no more subjects');
+                        
+                        // Check if no students left
+                        const remainingStudents = document.querySelectorAll('.student-card');
+                        if (remainingStudents.length === 0) {
+                            document.getElementById('no-students-container').style.display = 'block';
+                            document.getElementById('students-grid').style.display = 'none';
+                        }
+                    }
+                }
+            }
+        });
+        
+        console.log(`Removed ${removedCount} subject(s) for student ${studentId}`);
+    }
     
+    // FIXED: Update subjects preview in student card
+    function updateSubjectsPreview(card) {
+        const subjectsPreview = card.querySelector('.subjects-preview');
+        const expandableContent = card.querySelector('.expandable-content');
+        
+        if (!subjectsPreview || !expandableContent) return;
+        
+        // Get all remaining subject items
+        const remainingSubjects = expandableContent.querySelectorAll('.subject-item');
+        
+        let previewHTML = '';
+        const previewSubjects = Array.from(remainingSubjects).slice(0, 2);
+        
+        previewSubjects.forEach(subjectItem => {
+            const subjectCode = subjectItem.querySelector('.subject-code')?.textContent || 'N/A';
+            const subjectName = subjectItem.querySelector('.subject-name')?.textContent || 'N/A';
+            
+            previewHTML += `
+                <div class="subject-preview-item">
+                    <span class="subject-code">${subjectCode}</span>
+                    <span class="subject-name">${subjectName}</span>
+                </div>
+            `;
+        });
+        
+        // Show more indicator if there are more than 2 subjects
+        if (remainingSubjects.length > 2) {
+            previewHTML += `
+                <div class="more-subjects-indicator">
+                    +${remainingSubjects.length - 2} more subjects
+                </div>
+            `;
+        }
+        
+        // If no subjects left, show no subjects message
+        if (remainingSubjects.length === 0) {
+            previewHTML = '<div class="no-subjects">All subjects graded</div>';
+        }
+        
+        subjectsPreview.innerHTML = previewHTML;
+    }
+        
     // Enhanced mobile modal handling
     function openGradeModal(data, allSubjects = []) {
         console.log('Opening grade modal with data:', data);
@@ -755,7 +891,6 @@ function initializeInputGrades() {
                     subjectOption.classList.add('active');
                 }
                 
-                // Set all data attributes correctly
                 subjectOption.dataset.subjectId = subject.subject_id;
                 subjectOption.dataset.subjectCode = subject.subject_code;
                 subjectOption.dataset.subjectName = subject.subject_name;
@@ -771,17 +906,13 @@ function initializeInputGrades() {
                     <div class="subject-name">${subject.subject_name || 'N/A'}</div>
                 `;
                 
-                // Add click event listener
                 subjectOption.addEventListener('click', function() {
-                    // Remove active class from all options
                     document.querySelectorAll('.subject-option').forEach(opt => {
                         opt.classList.remove('active');
                     });
                     
-                    // Add active class to clicked option
                     this.classList.add('active');
                     
-                    // Update subject details
                     updateSubjectDetails({
                         subject_code: this.dataset.subjectCode,
                         subject_name: this.dataset.subjectName,
@@ -790,20 +921,12 @@ function initializeInputGrades() {
                         subject_semester: this.dataset.subjectSemester
                     });
                     
-                    // Update hidden subject_id field
                     document.getElementById('grade_subject_id').value = this.dataset.subjectId;
-                    
-                    console.log('Selected subject:', {
-                        subject_id: this.dataset.subjectId,
-                        subject_code: this.dataset.subjectCode,
-                        subject_name: this.dataset.subjectName
-                    });
                 });
                 
                 subjectsList.appendChild(subjectOption);
             });
 
-            // Initialize the first subject as active if none is active
             setTimeout(() => {
                 const activeSubject = subjectsList.querySelector('.subject-option.active');
                 if (!activeSubject && subjectsList.firstChild) {
@@ -814,7 +937,6 @@ function initializeInputGrades() {
             subjectsList.innerHTML = '<div class="no-subjects">No subjects available</div>';
         }
         
-        // Update with initial subject data
         updateSubjectDetails({
             subject_code: data.subjectCode,
             subject_name: data.subjectName,
@@ -823,23 +945,19 @@ function initializeInputGrades() {
             subject_semester: data.subjectSemester
         });
         
-        // Set hidden fields
         document.getElementById('grade_student_id').value = data.studentId || data.student_db_id;
         document.getElementById('grade_subject_id').value = data.subjectId;
         document.getElementById('grade').value = '';
         
-        // Show modal
         const gradeModal = document.getElementById('grade-modal');
         gradeModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
         
-        // Add touch event to close modal when tapping outside on mobile
         if (window.innerWidth <= 768) {
             gradeModal.addEventListener('touchend', handleMobileBackdropTap);
         }
     }
 
-    // Enhanced mobile backdrop tap handler
     function handleMobileBackdropTap(e) {
         if (e.target === document.getElementById('grade-modal')) {
             closeModal();
@@ -854,73 +972,12 @@ function initializeInputGrades() {
         document.getElementById('subject_semester').textContent = subject.subject_semester || 'N/A';
     }
     
-    // Enhanced close modal function for mobile
     function closeModal() {
         const gradeModal = document.getElementById('grade-modal');
         gradeModal.style.display = 'none';
         document.body.style.overflow = 'auto';
         
-        // Remove mobile event listeners
         gradeModal.removeEventListener('touchend', handleMobileBackdropTap);
-    }
-    
-    function saveGrade(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(gradeForm);
-        const submitBtn = gradeForm.querySelector('.btn-primary');
-        const originalText = submitBtn.innerHTML;
-        
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-        submitBtn.disabled = true;
-        
-        const gradeData = {
-            student_id: parseInt(formData.get('student_id')),
-            subject_id: parseInt(formData.get('subject_id')),
-            grade: formData.get('grade')
-        };
-        
-        console.log('Saving grade data:', gradeData);
-        
-        fetch(window.laravelRoutes.saveGrade, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(gradeData)
-        })
-        .then(response => {
-            console.log('Response status:', response.status);
-            if (!response.ok) {
-                // Try to get error message from response
-                return response.json().then(errorData => {
-                    throw new Error(errorData.message || 'Network response was not ok');
-                }).catch(() => {
-                    throw new Error('Network response was not ok');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Save grade response:', data);
-            if (data.success) {
-                showNotification('Grade saved successfully!', 'success');
-                closeModal();
-                loadUngradedStudents(); // Reload the list
-            } else {
-                showNotification(data.message || 'Error saving grade', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error saving grade:', error);
-            showNotification('Error saving grade: ' + error.message, 'error');
-        })
-        .finally(() => {
-            submitBtn.innerHTML = '<i class="fas fa-save"></i>Save Grade';
-            submitBtn.disabled = false;
-        });
     }
     
     function showLoading(show) {
@@ -933,6 +990,8 @@ function initializeInputGrades() {
             studentsGrid.style.display = 'grid';
         }
     }
+
+    
 }
 
 // Instructor Dashboard JavaScript

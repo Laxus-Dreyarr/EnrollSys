@@ -629,7 +629,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 300px;
+    max-height: 400px;
     overflow-y: auto;
     padding-right: 4px;
 }
@@ -921,6 +921,177 @@ body.dark-mode .subjects-list::-webkit-scrollbar-thumb:hover {
     background: var(--text-dark);
 }
 
+/* ===== DARK MODE FIXES FOR GRADE MODAL ===== */
+body.dark-mode .modal-container {
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+    color: var(--text-dark);
+}
+
+body.dark-mode .modal-header h3 {
+    color: var(--text-dark);
+}
+
+body.dark-mode .close-modal {
+    color: var(--text-muted-dark);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .close-modal:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-dark);
+}
+
+/* Student info card in modal */
+body.dark-mode .student-info-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-dark);
+}
+
+body.dark-mode .student-details h4 {
+    color: var(--text-dark);
+}
+
+body.dark-mode .student-details p {
+    color: var(--text-muted-dark);
+}
+
+/* Subjects list container */
+body.dark-mode .subjects-list-container h5 {
+    color: var(--text-dark);
+}
+
+body.dark-mode .subject-option {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--border-dark);
+    color: var(--text-dark);
+}
+
+body.dark-mode .subject-option:hover {
+    border-color: var(--theme-primary);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .subject-option.active {
+    background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+    border-color: var(--theme-primary);
+    color: white;
+}
+
+body.dark-mode .subject-option.active .subject-code,
+body.dark-mode .subject-option.active .subject-name {
+    color: white;
+}
+
+body.dark-mode .subject-code {
+    color: var(--text-dark);
+}
+
+body.dark-mode .subject-name {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .subject-meta {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .subject-option.active .subject-meta {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* Subject info card */
+body.dark-mode .subject-info-card,
+body.dark-mode .grade-input-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-dark);
+}
+
+body.dark-mode .subject-info-card h5,
+body.dark-mode .grade-input-card .form-label {
+    color: var(--text-dark);
+}
+
+body.dark-mode .subject-detail-item .label {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .subject-detail-item .value {
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+/* Form elements */
+body.dark-mode .form-label {
+    color: var(--text-dark);
+}
+
+body.dark-mode .form-label i {
+    color: var(--theme-accent);
+}
+
+body.dark-mode .form-control {
+    background: var(--dark-color);
+    border: 2px solid var(--border-dark);
+    color: var(--text-dark);
+}
+
+body.dark-mode .form-control:focus {
+    background: var(--dark-color);
+    border-color: var(--theme-primary);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    color: var(--text-dark);
+}
+
+body.dark-mode select.form-control {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+}
+
+body.dark-mode .form-text {
+    color: var(--text-muted-dark);
+}
+
+/* Form actions */
+body.dark-mode .form-actions {
+    border-top-color: var(--border-dark);
+}
+
+/* Modal grid borders */
+body.dark-mode .student-column {
+    border-right-color: var(--border-dark);
+}
+
+/* No data states */
+body.dark-mode .no-subjects {
+    color: var(--text-muted-dark);
+}
+
+/* Scrollbar for subjects list in dark mode */
+body.dark-mode .subjects-list::-webkit-scrollbar-track {
+    background: var(--border-dark);
+}
+
+body.dark-mode .subjects-list::-webkit-scrollbar-thumb {
+    background: var(--text-muted-dark);
+}
+
+body.dark-mode .subjects-list::-webkit-scrollbar-thumb:hover {
+    background: var(--text-dark);
+}
+
+/* Ensure select options are visible in dark mode */
+body.dark-mode select.form-control option {
+    background: var(--card-dark);
+    color: var(--text-dark);
+}
+
+/* Fix for the modal overlay background */
+body.dark-mode .modal-overlay {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
 /* Enhanced Mobile Responsiveness */
 @media (max-width: 768px) {
     .grades-filter-container {
@@ -1089,7 +1260,7 @@ body.dark-mode .subjects-list::-webkit-scrollbar-thumb:hover {
     }
     
     .subjects-list {
-        max-height: 200px;
+        min-height: 800px;
         -webkit-overflow-scrolling: touch;
     }
     
@@ -1177,7 +1348,7 @@ body.dark-mode .subjects-list::-webkit-scrollbar-thumb:hover {
     }
     
     .subjects-list {
-        max-height: 250px;
+        min-height: 800px;
         gap: 8px;
         padding: 0 4px;
         -webkit-overflow-scrolling: touch;
@@ -1279,6 +1450,19 @@ body.dark-mode .subjects-list::-webkit-scrollbar-thumb:hover {
     
     .subjects-list::-webkit-scrollbar-thumb:hover {
         background: #94a3b8;
+    }
+
+    body.dark-mode .modal-container {
+        background: var(--card-dark);
+        border: 1px solid var(--border-dark);
+    }
+    
+    body.dark-mode .student-column {
+        border-bottom-color: var(--border-dark);
+    }
+    
+    body.dark-mode .subject-option:active {
+        background: rgba(255, 255, 255, 0.1);
     }
 }
 
@@ -1399,13 +1583,13 @@ body.dark-mode .subjects-list::-webkit-scrollbar-thumb:hover {
 
     /* Extra small devices */
     .subjects-list {
-        max-height: 200px;
-        gap: 6px;
+        min-height: 800px;
+        gap: 8px;
     }
     
     .subject-option {
         padding: 14px 10px;
-        min-height: 55px;
+        min-height: 100px;
         border-radius: 10px;
     }
     
@@ -1574,7 +1758,7 @@ body.dark-mode .subjects-list::-webkit-scrollbar-thumb:hover {
     
     /* Ensure the subjects list doesn't overflow */
     .subjects-list {
-        min-height: 120px;
+        min-height: 800px;
     }
 }
 
