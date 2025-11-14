@@ -576,17 +576,21 @@ function initializeInputGrades() {
     }
     
     function loadUngradedStudents() {
-        console.log('Loading ungraded students...');
+        console.log('Loading students...');
         showLoading(true);
         
         const yearLevel = document.getElementById('year_level')?.value;
         const search = document.getElementById('search')?.value;
         const sortBy = document.getElementById('sort_by')?.value;
+        const subjectSearch = document.getElementById('subject_search')?.value;
+        const gradeStatus = document.getElementById('grade_status')?.value;
         
         const requestData = {
             year_level: yearLevel || '',
             search: search || '',
-            sort_by: sortBy || 'lastname'
+            sort_by: sortBy || 'lastname',
+            subject_search: subjectSearch || '',
+            grade_status: gradeStatus || 'ungraded'
         };
         
         console.log('Request data:', requestData);
@@ -650,25 +654,35 @@ function initializeInputGrades() {
             // Preview subjects (show first 2)
             const previewSubjects = student.subjects.slice(0, 2);
             previewSubjects.forEach(subject => {
+                const isGraded = subject.current_grade !== null;
+                const gradeBadge = isGraded ? `<span class="grade-badge" style="background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">${subject.current_grade}</span>` : '';
+                
                 subjectsPreviewHTML += `
-                    <div class="subject-preview-item">
+                    <div class="subject-preview-item ${isGraded ? 'graded' : ''}">
                         <span class="subject-code">${subject.subject_code || 'N/A'}</span>
                         <span class="subject-name">${subject.subject_name || 'N/A'}</span>
+                        ${gradeBadge}
                     </div>
                 `;
             });
             
             // All subjects for expandable section
             student.subjects.forEach(subject => {
+                const isGraded = subject.current_grade !== null;
+                const gradeBadge = isGraded ? `<span class="grade-badge" style="background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">${subject.current_grade}</span>` : '';
+                const buttonText = isGraded ? 'Edit Grade' : 'Input Grade';
+                const buttonIcon = isGraded ? 'fas fa-edit' : 'fas fa-pen';
+                
                 allSubjectsHTML += `
-                    <div class="subject-item" data-subject-id="${subject.subject_id}">
+                    <div class="subject-item ${isGraded ? 'graded' : ''}" data-subject-id="${subject.subject_id}">
                         <div class="subject-header">
-                            <div class="subject-code">${subject.subject_code || 'N/A'}</div>
+                            <div class="subject-code">${subject.subject_code || 'N/A'} ${gradeBadge}</div>
                             <div class="subject-name">${subject.subject_name || 'N/A'}</div>
                         </div>
                         <div class="subject-meta">
                             <span>${subject.units || '0'} units</span>
                             <span>${subject.subject_semester || 'N/A'}</span>
+                            <span>${isGraded ? 'Graded' : 'Not Graded'}</span>
                         </div>
                         <button class="btn-primary btn-grade btn-sm" 
                                 data-student-id="${student.student_db_id}"
@@ -683,9 +697,10 @@ function initializeInputGrades() {
                                 data-subject-name="${subject.subject_name}"
                                 data-subject-units="${subject.units}"
                                 data-subject-year="${subject.subject_year}"
-                                data-subject-semester="${subject.subject_semester}">
-                            <i class="fas fa-pen"></i>
-                            Input Grade
+                                data-subject-semester="${subject.subject_semester}"
+                                data-current-grade="${subject.current_grade || ''}">
+                            <i class="${buttonIcon}"></i>
+                            ${buttonText}
                         </button>
                     </div>
                 `;
@@ -891,16 +906,24 @@ function initializeInputGrades() {
                     subjectOption.classList.add('active');
                 }
                 
+                // Add graded indicator
+                if (subject.current_grade) {
+                    subjectOption.classList.add('graded');
+                }
+                
                 subjectOption.dataset.subjectId = subject.subject_id;
                 subjectOption.dataset.subjectCode = subject.subject_code;
                 subjectOption.dataset.subjectName = subject.subject_name;
                 subjectOption.dataset.units = subject.units;
                 subjectOption.dataset.subjectYear = subject.subject_year;
                 subjectOption.dataset.subjectSemester = subject.subject_semester;
+                subjectOption.dataset.currentGrade = subject.current_grade || '';
+                
+                const gradeBadge = subject.current_grade ? `<span class="subject-grade-badge">${subject.current_grade}</span>` : '';
                 
                 subjectOption.innerHTML = `
                     <div class="subject-option-header">
-                        <div class="subject-code">${subject.subject_code || 'N/A'}</div>
+                        <div class="subject-code">${subject.subject_code || 'N/A'} ${gradeBadge}</div>
                         <div class="subject-meta">${subject.units || '0'} units</div>
                     </div>
                     <div class="subject-name">${subject.subject_name || 'N/A'}</div>
@@ -922,6 +945,13 @@ function initializeInputGrades() {
                     });
                     
                     document.getElementById('grade_subject_id').value = this.dataset.subjectId;
+                    
+                    // Pre-fill the grade if it exists
+                    if (this.dataset.currentGrade) {
+                        document.getElementById('grade').value = this.dataset.currentGrade;
+                    } else {
+                        document.getElementById('grade').value = '';
+                    }
                 });
                 
                 subjectsList.appendChild(subjectOption);
@@ -947,7 +977,9 @@ function initializeInputGrades() {
         
         document.getElementById('grade_student_id').value = data.studentId || data.student_db_id;
         document.getElementById('grade_subject_id').value = data.subjectId;
-        document.getElementById('grade').value = '';
+        
+        // Pre-fill the grade if it exists in the button data
+        document.getElementById('grade').value = data.currentGrade || '';
         
         const gradeModal = document.getElementById('grade-modal');
         gradeModal.style.display = 'flex';

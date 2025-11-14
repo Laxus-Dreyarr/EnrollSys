@@ -348,14 +348,14 @@ class InstructorController extends Controller
             $yearLevel = $request->input('year_level');
             $search = $request->input('search');
             $sortBy = $request->input('sort_by', 'lastname');
+            $subjectSearch = $request->input('subject_search');
+            $gradeStatus = $request->input('grade_status', 'ungraded');
 
-            // Get all students who are enrolled in subjects and don't have grades yet
-            // Exclude students with year_level = 'NONE'
+            // Base query for enrolled subjects
             $query = DB::table('enrolled_sub as es')
                 ->join('students as s', 'es.student_id', '=', 's.id')
                 ->join('user_info as ui', 's.student_id', '=', 'ui.id')
                 ->join('subjects as sub', 'es.subject_id', '=', 'sub.id')
-                ->whereNull('es.grade') // Only students without grades
                 ->where('s.year_level', '!=', 'NONE') // Exclude students with year_level = 'NONE'
                 ->select(
                     's.id as student_db_id',
@@ -371,24 +371,44 @@ class InstructorController extends Controller
                     'sub.units',
                     'sub.year_level as subject_year',
                     'sub.semester as subject_semester',
-                    'es.date_enrolled'
+                    'es.date_enrolled',
+                    'es.grade as current_grade'
                 )
                 ->distinct();
+
+            // Apply grade status filter
+            switch ($gradeStatus) {
+                case 'ungraded':
+                    $query->whereNull('es.grade');
+                    break;
+                case 'graded':
+                    $query->whereNotNull('es.grade');
+                    break;
+                case 'all':
+                    // No grade filter applied
+                    break;
+            }
 
             // Apply year level filter
             if ($yearLevel && $yearLevel !== '') {
                 $query->where('s.year_level', $yearLevel);
             }
 
-            // Apply search filter
+            // Apply student search filter
             if ($search) {
                 $query->where(function($q) use ($search) {
                     $q->where('ui.firstname', 'LIKE', "%{$search}%")
                     ->orWhere('ui.lastname', 'LIKE', "%{$search}%")
                     ->orWhere('ui.middlename', 'LIKE', "%{$search}%")
-                    ->orWhere('s.id_no', 'LIKE', "%{$search}%")
-                    ->orWhere('sub.code', 'LIKE', "%{$search}%")
-                    ->orWhere('sub.name', 'LIKE', "%{$search}%");
+                    ->orWhere('s.id_no', 'LIKE', "%{$search}%");
+                });
+            }
+
+            // Apply subject search filter
+            if ($subjectSearch) {
+                $query->where(function($q) use ($subjectSearch) {
+                    $q->where('sub.code', 'LIKE', "%{$subjectSearch}%")
+                    ->orWhere('sub.name', 'LIKE', "%{$subjectSearch}%");
                 });
             }
 
@@ -399,6 +419,9 @@ class InstructorController extends Controller
                     break;
                 case 'middlename':
                     $query->orderBy('ui.middlename');
+                    break;
+                case 'subject':
+                    $query->orderBy('sub.code')->orderBy('sub.name');
                     break;
                 default:
                     $query->orderBy('ui.lastname');
@@ -452,7 +475,8 @@ class InstructorController extends Controller
                     'units' => $student->units,
                     'subject_year' => $student->subject_year,
                     'subject_semester' => $student->subject_semester,
-                    'date_enrolled' => $student->date_enrolled
+                    'date_enrolled' => $student->date_enrolled,
+                    'current_grade' => $student->current_grade
                 ];
             }
 
@@ -461,7 +485,7 @@ class InstructorController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching ungraded students: ' . $e->getMessage());
+            Log::error('Error fetching students: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to fetch students'], 500);
         }
     }

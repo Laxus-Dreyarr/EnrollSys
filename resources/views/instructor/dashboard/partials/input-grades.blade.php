@@ -23,6 +23,26 @@
                 </div>
                 
                 <div class="form-group">
+                    <label for="subject_search" class="form-label">
+                        <i class="fas fa-book"></i>
+                        Search Subject
+                    </label>
+                    <input type="text" name="subject_search" id="subject_search" class="form-control" placeholder="Search by subject code or name...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="grade_status" class="form-label">
+                        <i class="fas fa-filter"></i>
+                        Grade Status
+                    </label>
+                    <select name="grade_status" id="grade_status" class="form-control">
+                        <option value="ungraded">Ungraded Only</option>
+                        <option value="graded">Graded Only</option>
+                        <option value="all">All Subjects</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
                     <label for="sort_by" class="form-label">
                         <i class="fas fa-sort"></i>
                         Sort By
@@ -31,6 +51,7 @@
                         <option value="lastname">Last Name</option>
                         <option value="firstname">First Name</option>
                         <option value="middlename">Middle Name</option>
+                        <option value="subject">Subject</option>
                     </select>
                 </div>
                 
@@ -1092,6 +1113,53 @@ body.dark-mode .modal-overlay {
     backdrop-filter: blur(5px);
 }
 
+/* Styles for graded subjects */
+.subject-preview-item.graded {
+    border-left-color: #10b981;
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.expandable-content .subject-item.graded {
+    border-left-color: #10b981;
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.subject-option.graded {
+    border-left-color: #10b981;
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.subject-option.graded .subject-grade-badge {
+    background: #10b981;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.grade-badge {
+    background: #10b981;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+/* Dark mode support for graded subjects */
+body.dark-mode .subject-preview-item.graded {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+body.dark-mode .expandable-content .subject-item.graded {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+body.dark-mode .subject-option.graded {
+    background: rgba(16, 185, 129, 0.1);
+}
+
 /* Enhanced Mobile Responsiveness */
 @media (max-width: 768px) {
     .grades-filter-container {
@@ -1260,7 +1328,7 @@ body.dark-mode .modal-overlay {
     }
     
     .subjects-list {
-        min-height: 800px;
+        min-height: 100px;
         -webkit-overflow-scrolling: touch;
     }
     
@@ -1348,7 +1416,7 @@ body.dark-mode .modal-overlay {
     }
     
     .subjects-list {
-        min-height: 800px;
+        min-height: 100px;
         gap: 8px;
         padding: 0 4px;
         -webkit-overflow-scrolling: touch;
@@ -1358,7 +1426,7 @@ body.dark-mode .modal-overlay {
     /* Enhanced subject options for mobile */
     .subject-option {
         padding: 16px 12px;
-        min-height: 60px;
+        min-height: 150px;
         border-radius: 12px;
         margin: 0 4px;
         border: 2px solid #e2e8f0;
@@ -1494,7 +1562,7 @@ body.dark-mode .modal-overlay {
     
     .subject-option {
         padding: 10px;
-        min-height: 44px;
+        min-height: 150px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -1583,13 +1651,13 @@ body.dark-mode .modal-overlay {
 
     /* Extra small devices */
     .subjects-list {
-        min-height: 800px;
+        min-height: 100px;
         gap: 8px;
     }
     
     .subject-option {
         padding: 14px 10px;
-        min-height: 100px;
+        min-height: 150px;
         border-radius: 10px;
     }
     
@@ -1613,14 +1681,14 @@ body.dark-mode .modal-overlay {
     
     /* Improved touch targets */
     .subject-option {
-        min-height: 44px; /* Minimum touch target size */
+        min-height: 150px; /* Minimum touch target size */
     }
 }
 
 /* Enhanced Touch Interactions for Mobile */
 @media (hover: none) and (pointer: coarse) {
     .subject-option {
-        min-height: 44px;
+        min-height: 150px;
     }
     
     .student-actions-toggle {
@@ -1758,7 +1826,7 @@ body.dark-mode .modal-overlay {
     
     /* Ensure the subjects list doesn't overflow */
     .subjects-list {
-        min-height: 800px;
+        min-height: 100px;
     }
 }
 
