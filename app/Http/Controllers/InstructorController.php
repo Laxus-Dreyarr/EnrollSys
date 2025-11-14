@@ -404,8 +404,26 @@ class InstructorController extends Controller
                     $query->orderBy('ui.lastname');
             }
 
-            $query->orderBy('ui.firstname')
-                ->orderBy('sub.code');
+            // Add ordering by year level and semester
+            $query->orderByRaw("
+                CASE 
+                    WHEN sub.year_level = '1st Year' THEN 1
+                    WHEN sub.year_level = '2nd Year' THEN 2
+                    WHEN sub.year_level = '3rd Year' THEN 3
+                    WHEN sub.year_level = '4th Year' THEN 4
+                    WHEN sub.year_level = '5th Year' THEN 5
+                    ELSE 6
+                END
+            ")
+            ->orderByRaw("
+                CASE 
+                    WHEN sub.semester = '1st Sem' THEN 1
+                    WHEN sub.semester = '2nd Sem' THEN 2
+                    WHEN sub.semester = 'Summer' THEN 3
+                    ELSE 4
+                END
+            ")
+            ->orderBy('sub.code');
 
             $students = $query->get();
 
