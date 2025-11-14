@@ -1160,6 +1160,182 @@ body.dark-mode .subject-option.graded {
     background: rgba(16, 185, 129, 0.1);
 }
 
+/*  */
+/* Light mode - ensure graded subjects have visible text */
+.subject-preview-item.graded .subject-code,
+.subject-preview-item.graded .subject-name {
+    color: #1e293b !important;
+}
+
+.expandable-content .subject-item.graded .subject-code,
+.expandable-content .subject-item.graded .subject-name {
+    color: #1e293b !important;
+}
+
+/* Dark mode - ensure graded subjects have visible text */
+body.dark-mode .subject-preview-item.graded .subject-code,
+body.dark-mode .subject-preview-item.graded .subject-name {
+    color: var(--text-dark) !important;
+}
+
+body.dark-mode .expandable-content .subject-item.graded .subject-code,
+body.dark-mode .expandable-content .subject-item.graded .subject-name {
+    color: var(--text-dark) !important;
+}
+
+/* Fix for grade badge text color in both modes */
+.grade-badge {
+    background: #10b981 !important;
+    color: white !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+}
+
+/* Ensure the grade badge text is always white */
+body.dark-mode .grade-badge,
+body.dark-mode .subject-grade-badge {
+    color: white !important;
+    background: #10b981 !important;
+}
+
+/* ===== FIX FOR MODAL TEXT COLORS ===== */
+
+/* Ensure subject details are visible in dark mode */
+body.dark-mode .subject-detail-item .value {
+    color: var(--text-dark) !important;
+    font-weight: 600;
+}
+
+body.dark-mode .subject-detail-item .label {
+    color: var(--text-muted-dark) !important;
+}
+
+/* Fix form text colors in modal */
+body.dark-mode .form-text {
+    color: var(--text-muted-dark) !important;
+}
+
+/* Ensure select options are visible in dark mode */
+body.dark-mode select.form-control option {
+    background: var(--card-dark) !important;
+    color: var(--text-dark) !important;
+}
+
+body.dark-mode select.form-control {
+    color: var(--text-dark) !important;
+}
+
+/* Fix the subject option text colors in modal */
+body.dark-mode .subject-option .subject-code {
+    color: var(--text-dark) !important;
+}
+
+body.dark-mode .subject-option .subject-name {
+    color: var(--text-muted-dark) !important;
+}
+
+/* Active subject option in modal - ensure text is visible */
+body.dark-mode .subject-option.active .subject-code,
+body.dark-mode .subject-option.active .subject-name {
+    color: white !important;
+}
+
+/* ===== FIX FOR STUDENT CARD TEXT COLORS ===== */
+
+/* Ensure student info is visible in dark mode */
+body.dark-mode .student-info .student-name {
+    color: var(--text-dark) !important;
+}
+
+body.dark-mode .student-info .student-id {
+    color: var(--text-muted-dark) !important;
+}
+
+/* Fix for expandable content text */
+body.dark-mode .expandable-content .subject-header .subject-code {
+    color: var(--text-dark) !important;
+}
+
+body.dark-mode .expandable-content .subject-header .subject-name {
+    color: var(--text-muted-dark) !important;
+}
+
+body.dark-mode .expandable-content .subject-meta {
+    color: var(--text-muted-dark) !important;
+}
+
+/* ===== ENHANCED GRADED SUBJECTS STYLING ===== */
+
+/* Better contrast for graded subjects in light mode */
+.subject-preview-item.graded {
+    border-left-color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.08) !important;
+}
+
+.expandable-content .subject-item.graded {
+    border-left-color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.08) !important;
+}
+
+/* Better contrast for graded subjects in dark mode */
+body.dark-mode .subject-preview-item.graded {
+    border-left-color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.15) !important;
+}
+
+body.dark-mode .expandable-content .subject-item.graded {
+    border-left-color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Fix for the more subjects indicator */
+body.dark-mode .more-subjects-indicator {
+    color: var(--text-muted-dark) !important;
+}
+
+/* Ensure filter form labels are visible */
+body.dark-mode .grades-filter-container .form-label {
+    color: var(--text-dark) !important;
+}
+
+body.dark-mode .grades-filter-container .form-control {
+    color: var(--text-dark) !important;
+    background: var(--dark-color) !important;
+}
+
+body.dark-mode .grades-filter-container .form-control::placeholder {
+    color: var(--text-muted-dark) !important;
+}
+
+/*  */
+/* Immediate fix for available subjects text visibility */
+.subject-option.active {
+    background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)) !important;
+    color: white !important;
+    border-color: var(--theme-primary) !important;
+}
+
+.subject-option.active .subject-code,
+.subject-option.active .subject-name,
+.subject-option.active .subject-meta {
+    color: white !important;
+}
+
+.subject-option:not(.active) .subject-code {
+    color: #1e293b !important;
+}
+
+.subject-option:not(.active) .subject-name {
+    color: #64748b !important;
+}
+
+.subjects-list-container h5 {
+    color: #1e293b !important;
+}
+/*  */
+
 /* Enhanced Mobile Responsiveness */
 @media (max-width: 768px) {
     .grades-filter-container {
@@ -1915,4 +2091,5 @@ body.dark-mode .subject-option.graded {
         animation: none;
     }
 }
+
 </style>
