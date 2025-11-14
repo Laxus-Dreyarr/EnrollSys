@@ -505,6 +505,18 @@ class AdminController extends Controller
                 
             case 'get_audit_logs':
                 return $this->getAuditLogs($request);
+
+            case 'get_enrollment_periods':
+                return $this->getEnrollmentPeriods($request);
+
+            case 'get_enrollment_period':
+                return $this->getEnrollmentPeriod($request);
+
+            case 'save_enrollment_period':
+                return $this->saveEnrollmentPeriod($request);
+
+            case 'delete_enrollment_period':
+                return $this->deleteEnrollmentPeriod($request);
                 
             default:
                 return response()->json(['success' => false, 'message' => 'Invalid action']);
@@ -1258,7 +1270,116 @@ class AdminController extends Controller
     }
 
 
-    //EDIT
+
+    public function getEnrollmentPeriods(Request $request)
+    {
+        try {
+            $periods = DB::table('enrollment_date')
+                ->orderBy('Start', 'desc') // Changed from 'start_date' to 'Start'
+                ->get()
+                ->map(function($period) {
+                    return [
+                        'id' => $period->ID,
+                        'semester' => $period->Semester, // Note the capital 'S'
+                        'academic_year' => $period->academic_year ?? null,
+                        'start_date' => $period->Start, // Note the capital 'S'
+                        'end_date' => $period->End,     // Note the capital 'E'
+                        'is_active' => $period->is_active ?? true,
+                        'admin_id' => $period->admin_id
+                    ];
+                });
+
+            return response()->json(['success' => true, 'enrollment_periods' => $periods]);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch enrollment periods: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to fetch enrollment periods']);
+        }
+    }
+
+    public function getEnrollmentPeriod(Request $request)
+    {
+        try {
+            $period = DB::table('enrollment_date')
+                ->where('ID', $request->enrollment_id)
+                ->first();
+
+            if (!$period) {
+                return response()->json(['success' => false, 'message' => 'Enrollment period not found']);
+            }
+
+            return response()->json([
+                'success' => true,
+                'enrollment_period' => [
+                    'id' => $period->ID,
+                    'semester' => $period->Semester, // Capital 'S'
+                    'academic_year' => $period->academic_year ?? null,
+                    'start_date' => $period->Start, // Capital 'S'
+                    'end_date' => $period->End,     // Capital 'E'
+                    'is_active' => $period->is_active ?? true,
+                    'admin_id' => $period->admin_id
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch enrollment period: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to fetch enrollment period']);
+        }
+    }
+
+    public function saveEnrollmentPeriod(Request $request)
+    {
+        DB::beginTransaction();
+        
+        try {
+            $admin = Auth::guard('admin')->user();
+            
+            $data = [
+                'Semester' => $request->semester, // Capital 'S'
+                'academic_year' => $request->academic_year,
+                'Start' => $request->start_date, // Capital 'S'
+                'End' => $request->end_date,     // Capital 'E'
+                'is_active' => $request->is_active,
+                'admin_id' => $admin->admin_id
+            ];
+
+            if ($request->has('enrollment_id') && $request->enrollment_id) {
+                // Update existing period
+                DB::table('enrollment_date')
+                    ->where('ID', $request->enrollment_id)
+                    ->update($data);
+                    
+                $message = 'Enrollment period updated successfully';
+            } else {
+                // Create new period
+                DB::table('enrollment_date')->insert($data);
+                $message = 'Enrollment period created successfully';
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => $message]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to save enrollment period: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to save enrollment period']);
+        }
+    }
+
+    public function deleteEnrollmentPeriod(Request $request)
+    {
+        try {
+            DB::table('enrollment_date')
+                ->where('ID', $request->enrollment_id)
+                ->delete();
+
+            return response()->json(['success' => true, 'message' => 'Enrollment period deleted successfully']);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to delete enrollment period: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to delete enrollment period']);
+        }
+    }
     
 
 
