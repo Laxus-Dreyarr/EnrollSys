@@ -182,6 +182,7 @@
                                 <option value="5.00">5.00 - Failed</option>
                                 <option value="INC">INC - Incomplete</option>
                                 <option value="DRP">DRP - Dropped</option>
+                                <option value="ND">Not Done - Dropped</option>
                             </select>
                             <small class="form-text">Select the appropriate grade for the student</small>
                         </div>

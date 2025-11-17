@@ -757,6 +757,7 @@
             description: $('#description').val(),
             units: $('#units').val(),
             max_students: $('#maxStudents').val(),
+            curr: $('#curr').val(),
             year_level: $('#yearLevel').val(),
             semester: $('#semester').val(),
             types: subjectTypes,
@@ -1045,6 +1046,7 @@
                 $('#viewSubjectCode').text(subject.code);
                 $('#viewSubjectName').text(subject.name);
                 $('#viewSubjectUnits').text(subject.units);
+                $('#viewSubjectCurriculum').text(subject.curriculum);
                 $('#viewSubjectYearLevel').text(subject.year_level);
                 $('#viewSubjectSemester').text(subject.semester);
                 $('#viewSubjectMaxStudents').text(subject.max_students);
@@ -1109,6 +1111,7 @@
                 $('#editDescription').val(subject.description || '');
                 $('#editUnits').val(subject.units);
                 $('#editMaxStudents').val(subject.max_students);
+                $('#editCurriculum').val(subject.curriculum);
                 $('#editYearLevel').val(subject.year_level);
                 $('#editSemester').val(subject.semester);
                 
@@ -1244,6 +1247,7 @@
             description: $('#editDescription').val(),
             units: $('#editUnits').val(),
             max_students: $('#editMaxStudents').val(),
+            curr: $('#editCurriculum').val(),
             year_level: $('#editYearLevel').val(),
             semester: $('#editSemester').val(),
             types: subjectTypes,

@@ -15,7 +15,7 @@ class Subject extends Model
 
     protected $fillable = [
         'code', 'name', 'description', 'units', 'year_level', 
-        'semester', 'max_students', 'created_by', 'is_active'
+        'semester', 'max_students', 'created_by', 'is_active', 'curriculum'
     ];
 
     public function schedules()

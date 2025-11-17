@@ -478,6 +478,7 @@ class AdminController extends Controller
                         'description' => $subject->description,
                         'units' => $subject->units,
                         'max_students' => $subject->max_students,
+                        'curriculum' => $subject->curriculum,
                         'year_level' => $subject->year_level,
                         'semester' => $subject->semester,
                         'schedules' => $subject->schedules,
@@ -559,6 +560,7 @@ class AdminController extends Controller
                 'year_level' => $request->year_level,
                 'semester' => $request->semester,
                 'max_students' => $request->max_students,
+                'curriculum' => $request->curr,
                 'created_by' => Auth::guard('admin')->id(),
                 'is_active' => 1
             ]);
@@ -821,7 +823,7 @@ class AdminController extends Controller
             $hasConflicts = !empty($conflicts);
 
             // Update subject
-            $subject->update([
+             $subject->update([
                 'code' => $request->code,
                 'name' => $request->name,
                 'description' => $request->description ?? '',
@@ -829,7 +831,9 @@ class AdminController extends Controller
                 'year_level' => $request->year_level,
                 'semester' => $request->semester,
                 'max_students' => $request->max_students,
+                'curriculum' => $request->curr, // Add this line
             ]);
+
 
             // Update prerequisites
             SubjectPrerequisite::where('subject_id', $subject->id)->delete();

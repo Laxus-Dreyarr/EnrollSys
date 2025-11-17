@@ -533,6 +533,10 @@ $profile_picture = $user->profile;
                                 <input type="number" class="form-control" id="maxStudents" name="maxStudents" min="1" required>
                             </div>
                             <div class="col-md-3 mb-3">
+                                <label for="curriculum" class="form-label">Curriculum <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="curr" name="curr" min="1" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
                                 <label for="yearLevel" class="form-label">Year Level <span class="text-danger">*</span></label>
                                 <select class="form-select" id="yearLevel" name="yearLevel" required>
                                     <option value="">Select Year Level</option>
@@ -680,6 +684,10 @@ $profile_picture = $user->profile;
                             <div class="col-md-3 mb-3">
                                 <label for="editMaxStudents" class="form-label">Max Students <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="editMaxStudents" name="maxStudents" min="1" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="editCurriculum" class="form-label">Curriculum <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="editCurriculum" name="curr" min="1" required>
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="editYearLevel" class="form-label">Year Level <span class="text-danger">*</span></label>
@@ -834,6 +842,10 @@ $profile_picture = $user->profile;
                             <div class="col-md-6">
                                 <span class="subject-detail-label">Semester:</span>
                                 <span id="viewSubjectSemester"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="subject-detail-label">Curriculum:</span>
+                                <span id="viewSubjectCurriculum"></span>
                             </div>
                             <div class="col-md-6">
                                 <span class="subject-detail-label">Max Students:</span>
