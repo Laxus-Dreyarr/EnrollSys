@@ -894,7 +894,8 @@ class StudentController extends Controller
             $validator = Validator::make($request->all(), [
                 'school_id' => [
                     'required',
-                    'max:50'
+                    'max:50',
+                    'regex:/^\d{4}-\d+$/'
                 ],
                 'year_level' => [
                     'required'
@@ -905,6 +906,7 @@ class StudentController extends Controller
             ], [
                 'school_id.required' => 'School ID is required.',
                 'school_id.max' => 'School ID must not exceed 50 characters.',
+                'school_id.regex' => 'School ID must be in the format: YYYY-XXXXX (e.g., 2020-30617).',
                 'year_level.required' => 'Please select your year level.',
                 'student_type.required' => 'Please select your student type.'
             ]);
@@ -913,6 +915,26 @@ class StudentController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => $validator->errors()->first()
+                ]);
+            }
+
+            // Extract and validate curriculum year from school ID
+            $schoolId = $request->school_id;
+            $curriculumYear = explode('-', $schoolId)[0];
+            $currentYear = date('Y');
+            
+            // Validate curriculum year range
+            if ($curriculumYear < 2013) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Curriculum year must be 2013 or later.'
+                ]);
+            }
+            
+            if ($curriculumYear > $currentYear) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Curriculum year cannot exceed the current year.'
                 ]);
             }
 
@@ -946,7 +968,8 @@ class StudentController extends Controller
                         'id_no' => $request->school_id,
                         'year_level' => $request->year_level,
                         'status' => 'Not Enrolled',
-                        'is_regular' => $studentType
+                        'is_regular' => $studentType,
+                        'curriculum' => $curriculumYear
                     ]);
 
                 if(!$save) {
@@ -960,9 +983,11 @@ class StudentController extends Controller
                 // Find the student record for this user
                 $studentInfo = Student::where('student_id', $userInfo->id)->first();
 
-                // NEW: Auto-insert subjects for regular students
+                // Auto-insert subjects based on student type
                 if ($studentType == '1') { // Regular student
-                    $this->autoInsertSubjectsForRegularStudent($studentInfo->id, $request->year_level);
+                    $this->autoInsertSubjectsForRegularStudent($studentInfo->id, $request->year_level, $curriculumYear);
+                } elseif ($studentType == '2') { // Irregular student
+                    $this->autoInsertSubjectsForIrregularStudent($studentInfo->id, $curriculumYear);
                 }
 
                 DB::commit();
@@ -990,16 +1015,17 @@ class StudentController extends Controller
         }
     }
 
-    private function autoInsertSubjectsForRegularStudent($studentId, $selectedYearLevel)
+    private function autoInsertSubjectsForRegularStudent($studentId, $selectedYearLevel, $curriculumYear)
     {
         try {
-            // Determine current semester - CHANGE THIS VALUE AS NEEDED
-            $currentSemester = '2nd Sem'; // You can change this to '1st Sem' or '2nd Sem'
+            // Determine current semester
+            $currentSemester = '1st Sem';
             
             Log::info('Auto-inserting subjects for regular student', [
                 'student_id' => $studentId,
                 'selected_year_level' => $selectedYearLevel,
-                'current_semester' => $currentSemester
+                'current_semester' => $currentSemester,
+                'curriculum_year' => $curriculumYear
             ]);
 
             $subjectsToInsert = [];
@@ -1017,12 +1043,27 @@ class StudentController extends Controller
                 return;
             }
 
-            // Filter subjects based on the logic
-            $subjects = $allSubjects->filter(function($subject) use ($selectedYearLevel, $selectedYearIndex, $currentSemester, $yearLevels) {
+            // Filter subjects based on the logic and curriculum
+            $subjects = $allSubjects->filter(function($subject) use ($selectedYearLevel, $selectedYearIndex, $currentSemester, $yearLevels, $curriculumYear) {
                 $subjectYearIndex = array_search($subject->year_level, $yearLevels);
                 
                 if ($subjectYearIndex === false) {
                     return false;
+                }
+
+                // Check curriculum compatibility
+                if ($subject->curriculum) {
+                    $subjectCurriculum = (int)$subject->curriculum;
+                    $studentCurriculum = (int)$curriculumYear;
+                    
+                    if ($subjectCurriculum > $studentCurriculum) {
+                        Log::info('Excluding subject due to curriculum mismatch for regular student', [
+                            'subject_code' => $subject->code,
+                            'subject_curriculum' => $subjectCurriculum,
+                            'student_curriculum' => $studentCurriculum
+                        ]);
+                        return false;
+                    }
                 }
 
                 // Always include subjects from previous years (both semesters)
@@ -1044,17 +1085,24 @@ class StudentController extends Controller
                 return false;
             });
 
-            // Special handling for 4th Year to include summer subjects (regardless of current semester)
+            // Special handling for 4th Year to include summer subjects
             if ($selectedYearLevel === '4th Year') {
-                $summerSubjects = $allSubjects->where('semester', 'Summer');
+                $summerSubjects = $allSubjects->where('semester', 'Summer')
+                    ->filter(function($subject) use ($curriculumYear) {
+                        if ($subject->curriculum) {
+                            $subjectCurriculum = (int)$subject->curriculum;
+                            $studentCurriculum = (int)$curriculumYear;
+                            return $subjectCurriculum <= $studentCurriculum;
+                        }
+                        return true;
+                    });
                 $subjects = $subjects->merge($summerSubjects);
             }
 
-            Log::info('Subjects to be inserted', [
+            Log::info('Regular student subjects to be inserted', [
                 'total_subjects' => $subjects->count(),
                 'current_semester' => $currentSemester,
-                'selected_year_level' => $selectedYearLevel,
-                'subject_codes' => $subjects->pluck('code')->toArray()
+                'selected_year_level' => $selectedYearLevel
             ]);
 
             // Prepare data for insertion
@@ -1076,8 +1124,7 @@ class StudentController extends Controller
                 DB::table('enrolled_sub')->insert($subjectsToInsert);
                 Log::info('Successfully inserted subjects for regular student', [
                     'student_id' => $studentId,
-                    'subjects_count' => count($subjectsToInsert),
-                    'current_semester' => $currentSemester
+                    'subjects_count' => count($subjectsToInsert)
                 ]);
             }
 
@@ -1086,7 +1133,107 @@ class StudentController extends Controller
                 'student_id' => $studentId,
                 'selected_year_level' => $selectedYearLevel
             ]);
-            throw $e; // Re-throw to be handled by the main transaction
+            throw $e;
+        }
+    }
+
+    private function autoInsertSubjectsForIrregularStudent($studentId, $curriculumYear)
+    {
+        try {
+            Log::info('Auto-inserting subjects for irregular student', [
+                'student_id' => $studentId,
+                'curriculum_year' => $curriculumYear
+            ]);
+
+            $subjectsToInsert = [];
+            $now = now();
+
+            // Get all active subjects from 1st to 4th year
+            $allSubjects = Subject::where('is_active', 1)
+                ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year'])
+                ->get();
+
+            Log::info('Total subjects found for irregular student', [
+                'total_subjects' => $allSubjects->count()
+            ]);
+
+            // Filter subjects based on curriculum and exclusion criteria
+            $filteredSubjects = $allSubjects->filter(function($subject) use ($curriculumYear) {
+                // Exclude Capstone Project and Research 2 (IT 433) and Practicum (IT 429)
+                if (in_array($subject->code, ['IT 433', 'IT 429'])) {
+                    Log::info('Excluding subject due to exclusion list', [
+                        'subject_code' => $subject->code,
+                        'subject_name' => $subject->name
+                    ]);
+                    return false;
+                }
+
+                // Handle curriculum comparison
+                if ($subject->curriculum) {
+                    // Convert curriculum values to integers for comparison
+                    $subjectCurriculum = (int)$subject->curriculum;
+                    $studentCurriculum = (int)$curriculumYear;
+                    
+                    // Include subject only if subject curriculum <= student curriculum
+                    if ($subjectCurriculum > $studentCurriculum) {
+                        Log::info('Excluding subject due to curriculum mismatch', [
+                            'subject_code' => $subject->code,
+                            'subject_curriculum' => $subjectCurriculum,
+                            'student_curriculum' => $studentCurriculum
+                        ]);
+                        return false;
+                    }
+                }
+
+                // Include all other subjects
+                Log::info('Including subject for irregular student', [
+                    'subject_code' => $subject->code,
+                    'subject_curriculum' => $subject->curriculum,
+                    'student_curriculum' => $curriculumYear
+                ]);
+                return true;
+            });
+
+            Log::info('Filtered subjects for irregular student', [
+                'filtered_count' => $filteredSubjects->count(),
+                'included_subjects' => $filteredSubjects->pluck('code')->toArray()
+            ]);
+
+            // Prepare data for insertion
+            foreach ($filteredSubjects as $subject) {
+                $subjectsToInsert[] = [
+                    'student_id' => $studentId,
+                    'subject_id' => $subject->id,
+                    'subject_code' => $subject->code,
+                    'subject_name' => $subject->name,
+                    'units' => $subject->units,
+                    'year_level' => $subject->year_level,
+                    'semester' => $subject->semester,
+                    'date_enrolled' => $now
+                ];
+            }
+
+            // Insert into enrolled_sub table
+            if (!empty($subjectsToInsert)) {
+                DB::table('enrolled_sub')->insert($subjectsToInsert);
+                Log::info('Successfully inserted subjects for irregular student', [
+                    'student_id' => $studentId,
+                    'subjects_count' => count($subjectsToInsert),
+                    'curriculum_year' => $curriculumYear
+                ]);
+            } else {
+                Log::warning('No subjects to insert for irregular student', [
+                    'student_id' => $studentId,
+                    'curriculum_year' => $curriculumYear
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error auto-inserting subjects for irregular student: ' . $e->getMessage(), [
+                'student_id' => $studentId,
+                'curriculum_year' => $curriculumYear
+            ]);
+            throw $e;
         }
     }
 

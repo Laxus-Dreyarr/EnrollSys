@@ -15,7 +15,7 @@ class Student extends Authenticatable
     public $timestamps = false;
     
     protected $fillable = [
-        'student_id', 'id_no'
+        'student_id', 'id_no', 'year_level', 'status', 'is_regular', 'curriculum'
     ];
 
     protected $hidden = [
@@ -31,4 +31,12 @@ class Student extends Authenticatable
     {
         return $this->hasMany(Enrollment::class, 'student_id');
     }
+
+    public function enrolledSubjects()
+    {
+        return $this->hasMany(EnrolledSub::class, 'student_id', 'id');
+    }
 }
+
+
+    
