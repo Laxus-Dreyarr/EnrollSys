@@ -169,14 +169,26 @@
                             </label>
                             <select name="grade" id="grade" class="form-control" required>
                                 <option value="">Select Grade</option>
-                                <option value="1.00">1.00 - Excellent</option>
-                                <option value="1.25">1.25 - Very Good</option>
-                                <option value="1.50">1.50 - Good</option>
-                                <option value="1.75">1.75 - Satisfactory</option>
-                                <option value="2.00">2.00 - Fair</option>
-                                <option value="2.25">2.25 - Pass</option>
-                                <option value="2.50">2.50 - Conditional</option>
-                                <option value="2.75">2.75 - Conditional</option>
+                                <option value="1.00">1.0 - Excellent</option>
+                                <option value="1.00">1.1 - Excellent</option>
+                                <option value="1.25">1.2 - Very Good</option>
+                                <option value="1.00">1.3 - Very Good</option>
+                                <option value="1.00">1.4 - Very Good</option>
+                                <option value="1.50">1.5 - Good</option>
+                                <option value="1.00">1.6 - Good</option>
+                                <option value="1.75">1.7 - Satisfactory</option>
+                                <option value="1.00">1.8 - Satisfactory</option>
+                                <option value="1.00">1.9 - Excellent</option>
+                                <option value="2.00">2.0 - Fair</option>
+                                <option value="2.00">2.1 - Fair</option>
+                                <option value="2.00">2.2 - Pass</option>
+                                <option value="2.25">2.3 - Pass</option>
+                                <option value="2.00">2.4 - Pass</option>
+                                <option value="2.50">2.5 - Conditional</option>
+                                <option value="2.00">2.6 - Fair</option>
+                                <option value="2.75">2.7 - Conditional</option>
+                                <option value="2.00">2.8 - Conditional</option>
+                                <option value="2.00">2.9 - Conditional</option>
                                 <option value="3.00">3.00 - Conditional</option>
                                 <option value="4.00">4.00 - Conditional</option>
                                 <option value="5.00">5.00 - Failed</option>
