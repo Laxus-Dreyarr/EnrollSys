@@ -717,12 +717,18 @@ function initializeTooltips() {
 }
 
 // Student info modal functionality
+// Student info modal functionality
 function initializeStudentInfoModal() {
     const studentInfoModal = document.getElementById('studentInfoModal');
     const studentInfoForm = document.getElementById('studentInfoForm');
     
-    if (!studentInfoModal || !studentInfoModal.classList.contains('active')) {
+    if (!studentInfoModal) {
         return;
+    }
+
+    // Populate curriculum dropdown immediately if modal is active
+    if (studentInfoModal.classList.contains('active')) {
+        populateCurriculumDropdown();
     }
 
     // Prevent closing modal by clicking outside
@@ -750,6 +756,80 @@ function initializeStudentInfoModal() {
     schoolIdInput.addEventListener('blur', function() {
         validateSchoolIdCurriculum(this);
     });
+
+    // Populate curriculum dropdown function
+    function populateCurriculumDropdown() {
+        const curriculumSelect = document.getElementById('curriculum');
+        
+        if (!curriculumSelect) {
+            console.error('Curriculum select element not found');
+            return;
+        }
+        
+        console.log('Populating curriculum dropdown...');
+        
+        // Fetch available curricula from the server
+        fetch('/student/curricula', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Curriculum data received:', data);
+            
+            if (data.success && data.curricula) {
+                // Clear existing options except the first one
+                while (curriculumSelect.options.length > 1) {
+                    curriculumSelect.remove(1);
+                }
+                
+                // Add curriculum options
+                data.curricula.forEach(curriculum => {
+                    const option = document.createElement('option');
+                    option.value = curriculum.curriculum_year;
+                    option.textContent = `${curriculum.curriculum_year} Curriculum`;
+                    curriculumSelect.appendChild(option);
+                });
+                
+                console.log('Curriculum dropdown populated with:', data.curricula.length, 'options');
+                
+                // If there's only one curriculum, select it by default
+                if (data.curricula.length === 1) {
+                    curriculumSelect.value = data.curricula[0].curriculum_year;
+                    console.log('Auto-selected curriculum:', data.curricula[0].curriculum_year);
+                }
+            } else {
+                console.error('Failed to load curricula:', data.message);
+                showCurriculumError('Failed to load curriculum options. Please refresh the page.');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading curricula:', error);
+            showCurriculumError('Error loading curriculum options. Please check your connection.');
+            
+            // Fallback: Add a default option
+            const option = document.createElement('option');
+            option.value = '2019';
+            option.textContent = '2019 Curriculum (Default)';
+            curriculumSelect.appendChild(option);
+        });
+    }
+
+    function showCurriculumError(message) {
+        const errorElement = document.getElementById('curriculum_error');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.classList.add('active');
+        }
+    }
 
     function validateSchoolIdFormat(field) {
         const errorElement = document.getElementById(field.id + '_error');
@@ -815,23 +895,27 @@ function initializeStudentInfoModal() {
 
     function showFieldError(field, errorElement, message) {
         field.style.borderColor = 'var(--danger-color)';
-        errorElement.textContent = message;
-        errorElement.classList.add('active');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.classList.add('active');
+        }
     }
 
     function clearFieldError(field) {
         field.style.borderColor = '';
         const errorElement = document.getElementById(field.id + '_error');
-        errorElement.classList.remove('active');
+        if (errorElement) {
+            errorElement.classList.remove('active');
+        }
     }
 
     function validateForm() {
         let isValid = true;
-        const fields = ['school_id', 'year_level', 'student_type'];
+        const fields = ['school_id', 'year_level', 'student_type', 'curriculum'];
         
         fields.forEach(fieldId => {
             const field = document.getElementById(fieldId);
-            if (!validateField(field)) {
+            if (field && !validateField(field)) {
                 isValid = false;
             }
         });
@@ -854,7 +938,10 @@ function initializeStudentInfoModal() {
         formData.append('school_id', document.getElementById('school_id').value);
         formData.append('year_level', document.getElementById('year_level').value);
         formData.append('student_type', document.getElementById('student_type').value);
+        formData.append('curriculum', document.getElementById('curriculum').value);
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        console.log('Submitting student info with curriculum:', document.getElementById('curriculum').value);
 
         // Send request
         fetch('/exe/student', {
@@ -883,6 +970,10 @@ function initializeStudentInfoModal() {
                     const schoolIdInput = document.getElementById('school_id');
                     const schoolIdInputError = document.getElementById('school_id_error');
                     showFieldError(schoolIdInput, schoolIdInputError, data.message);
+                } else if (data.message.includes('curriculum')) {
+                    const curriculumInput = document.getElementById('curriculum');
+                    const curriculumInputError = document.getElementById('curriculum_error');
+                    showFieldError(curriculumInput, curriculumInputError, data.message);
                 } else {
                     // Show generic error
                     Swal.fire({
@@ -1739,6 +1830,12 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeProfilePictureUpload();
     initializeTooltips();
     initializeStudentInfoModal();
+
+    const studentInfoModal = document.getElementById('studentInfoModal');
+    
+    if (studentInfoModal && studentInfoModal.classList.contains('active')) {
+        populateCurriculumDropdown();
+    }
 
     // Search functionality
     function performSearch() {

@@ -189,12 +189,12 @@
                                 <option value="2.75">2.7 - Conditional</option>
                                 <option value="2.00">2.8 - Conditional</option>
                                 <option value="2.00">2.9 - Conditional</option>
-                                <option value="3.00">3.00 - Conditional</option>
-                                <option value="4.00">4.00 - Conditional</option>
-                                <option value="5.00">5.00 - Failed</option>
+                                <option value="3.00">3.0 - Conditional</option>
+                                <option value="4.00">4.0 - Failed</option>
+                                <option value="5.00">5.0 - Failed</option>
                                 <option value="INC">INC - Incomplete</option>
                                 <option value="DRP">DRP - Dropped</option>
-                                <option value="ND">Not Done - Dropped</option>
+                                <option value="ND">ND- Not Done </option>
                             </select>
                             <small class="form-text">Select the appropriate grade for the student</small>
                         </div>

@@ -1061,6 +1061,23 @@ $show_student_form = (strtolower($student_id) === 'none');
                     <div class="form-error" id="student_type_error"></div>
                 </div>
                 
+                <!-- NEW: Curriculum Dropdown -->
+                <div class="form-group">
+                    <label for="curriculum" class="form-label">
+                        <i class="fas fa-book"></i>
+                        Your Curriculum
+                    </label>
+                    <select id="curriculum" name="curriculum" class="form-control" required>
+                        <option value="">Select Curriculum</option>
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                    <div class="form-error" id="curriculum_error"></div>
+                    <small class="form-text text-muted" style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+                        <i class="fas fa-info-circle"></i>
+                        Your curriculum determines which subjects will be available for enrollment.
+                    </small>
+                </div>
+                
                 <div class="form-actions">
                     <button type="submit" class="btn-primary btn-full">
                         <i class="fas fa-save"></i>

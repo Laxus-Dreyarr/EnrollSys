@@ -204,6 +204,9 @@ Route::middleware(['student.auth'])->group(function () {
 
     Route::get('/student/enrollment/irregular-subjects', [StudentController::class, 'getIrregularEnrollmentSubjects']);
     Route::post('/student/enrollment/enroll-irregular', [StudentController::class, 'enrollIrregularSubjects']);
+
+    // New route for fetching curricula
+    Route::get('/student/curricula', [StudentController::class, 'getAvailableCurricula']);
 });
 
 // Debug route - remove after testing
