@@ -125,11 +125,36 @@ $show_student_form = (strtolower($student_id) === 'none');
                         <div class="stat-icon grades">
                             <i class="fa-solid fa-plus"></i>
                         </div>
-                        <h3 class="stat-value">Enroll Now</h3>
-                        <p class="stat-label">October 22, 2025</p>
-                        <input type="text" id="is-regular" value="{{ $is_regular }}" hidden>
+                        <h3 class="stat-value">
+                            @if($user->user_information->student->status === 'None' || !$isEnrollmentActive)
+                                Enrollment Not Available
+                            @else
+                                Enroll Now
+                            @endif
+                        </h3>
+                        <p class="stat-label">
+                            @if($enrollmentPeriod)
+                                {{ \Carbon\Carbon::parse($enrollmentPeriod->start)->format('F j, Y') }} - {{ \Carbon\Carbon::parse($enrollmentPeriod->end)->format('F j, Y') }}
+                            @else
+                                No active enrollment period
+                            @endif
+                        </p>
+                        
+                        <!-- Debug information (you can remove this after testing) -->
+                        <div style="display: none;" class="debug-info">
+                            <p>Student Status: {{ $user->user_information->student->status }}</p>
+                            <p>Is Enrollment Active: {{ $isEnrollmentActive ? 'Yes' : 'No' }}</p>
+                            <p>Enrollment Period: {{ $enrollmentPeriod ? $enrollmentPeriod->semester . ' ' . $enrollmentPeriod->academic_year : 'None' }}</p>
+                            <p>Student ID: {{ $user->user_information->student->id }}</p>
+                        </div>
+                        
+                        <input type="text" id="is-regular" value="{{ $user->user_information->student->is_regular }}" hidden>
+                        <input type="text" id="student-status" value="{{ $user->user_information->student->status }}" hidden>
+                        <input type="text" id="is-enrollment-active" value="{{ $isEnrollmentActive ? '1' : '0' }}" hidden>
+                        <input type="text" id="enrollment-period" value="{{ $enrollmentPeriod ? '1' : '0' }}" hidden>
                     </div>
 
+                    <!-- Rest of your stat cards remain the same -->
                     <div class="stat-card">
                         <div class="stat-icon courses">
                             <i class="fas fa-book"></i>

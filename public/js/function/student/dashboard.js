@@ -1340,11 +1340,9 @@ function initializeEnhancedEnrollmentModal() {
         });
     }
 
-    // Display subjects in enhanced modal - UPDATED VERSION (FIXED SELECTION PERSISTENCE)
+    // In the displayEnhancedSubjects function, update to handle failed subjects:
     function displayEnhancedSubjects(data) {
         console.log('Displaying enhanced subjects with data:', data);
-        console.log('Current max units:', enhancedMaxUnits);
-        console.log('Currently selected subjects:', Array.from(enhancedSelectedSubjects));
         
         if (!data || typeof data !== 'object') {
             console.error('Invalid data received:', data);
@@ -1373,13 +1371,14 @@ function initializeEnhancedEnrollmentModal() {
 
         enhancedIsRegular = data.is_regular;
         
-        // UPDATE MAX UNITS DISPLAY (but don't reset the value)
+        // UPDATE MAX UNITS DISPLAY
         if (maxUnitsElement) {
             maxUnitsElement.textContent = enhancedMaxUnits;
         }
         
-        // USE COMPLETED SUBJECTS FROM DATA - IMPORTANT!
-        const completedSubjects = data.completed_subjects || [];
+        // USE PASSED SUBJECTS FROM DATA
+        const passedSubjects = data.passed_subjects || [];
+        const failedSubjects = data.failed_subjects || [];
         
         if (subjects.length === 0) {
             showEnhancedEmptyState();
@@ -1398,18 +1397,21 @@ function initializeEnhancedEnrollmentModal() {
                 return;
             }
 
-            const hasPrerequisites = subject.prerequisites && subject.prerequisites.length > 0;
-            const prerequisitesMet = hasPrerequisites ? 
-                subject.prerequisites.every(prereq => completedSubjects.includes(prereq.id)) : 
-                true;
+            // Use the prerequisite information from server
+            const hasPrerequisites = subject.has_prerequisites;
+            const prerequisitesMet = subject.prerequisites_met;
+            const isFailedSubject = subject.is_failed_subject;
+            const previousGrade = subject.previous_grade;
             
-            const isSelectable = enhancedIsRegular || (!hasPrerequisites || prerequisitesMet);
+            // For failed subjects, they are always selectable (need to be retaken)
+            // For other subjects, check prerequisites
+            const isSelectable = isFailedSubject ? true : (enhancedIsRegular || (!hasPrerequisites || prerequisitesMet));
             
-            // Check if this subject is already selected - IMPORTANT: This preserves selection during search/filter
+            // Check if this subject is already selected
             const isSelected = enhancedSelectedSubjects.has(subject.id.toString());
             
             subjectsHTML += `
-                <div class="enhanced-subject-card ${isSelected ? 'selected' : ''} ${!isSelectable ? 'disabled' : ''}" data-id="${subject.id}">
+                <div class="enhanced-subject-card ${isSelected ? 'selected' : ''} ${!isSelectable ? 'disabled' : ''} ${isFailedSubject ? 'failed-subject' : ''}" data-id="${subject.id}">
                     <div class="enhanced-subject-header">
                         <div class="enhanced-subject-code">${subject.code}</div>
                         <div class="enhanced-subject-meta">
@@ -1430,17 +1432,36 @@ function initializeEnhancedEnrollmentModal() {
                         </div>
                     ` : ''}
                     
-                    ${hasPrerequisites && !prerequisitesMet ? `
-                        <div class="enhanced-prerequisite-info">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            Requires prerequisites: ${subject.prerequisites.map(p => p.code).join(', ')}
+                    ${isFailedSubject ? `
+                        <div class="enhanced-failed-subject-info">
+                            <i class="fas fa-redo-alt"></i>
+                            <strong>Needs Retaking:</strong> 
+                            Previous grade: ${previousGrade}
+                            <br><small>This subject must be retaken to meet program requirements</small>
                         </div>
                     ` : ''}
                     
-                    ${!enhancedIsRegular && hasPrerequisites && prerequisitesMet ? `
+                    ${!isFailedSubject && hasPrerequisites && !prerequisitesMet ? `
+                        <div class="enhanced-prerequisite-info failed">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <strong>Cannot enroll:</strong> 
+                            Prerequisites not met: ${subject.prerequisites.map(p => p.code).join(', ')}
+                            <br><small>You must pass these prerequisites with a grade of 3.0 or better</small>
+                        </div>
+                    ` : ''}
+                    
+                    ${!isFailedSubject && !enhancedIsRegular && hasPrerequisites && prerequisitesMet ? `
                         <div class="enhanced-prerequisite-success">
                             <i class="fas fa-check-circle"></i>
-                            Prerequisites met: ${subject.prerequisites.map(p => p.code).join(', ')}
+                            <strong>Ready to enroll!</strong> 
+                            Prerequisites completed: ${subject.prerequisites.map(p => p.code).join(', ')}
+                        </div>
+                    ` : ''}
+                    
+                    ${!isFailedSubject && !hasPrerequisites ? `
+                        <div class="enhanced-prerequisite-success">
+                            <i class="fas fa-check-circle"></i>
+                            <strong>Ready to enroll!</strong> No prerequisites required
                         </div>
                     ` : ''}
                     
@@ -1452,7 +1473,7 @@ function initializeEnhancedEnrollmentModal() {
                                 ${!isSelectable ? 'disabled' : ''}
                                 onchange="enhancedToggleSubject(${subject.id}, ${subject.units || 0}, ${!isSelectable})">
                             <label for="enhanced_subject_${subject.id}" class="enhanced-checkbox-label">
-                                ${isSelectable ? 'Select for Enrollment' : 'Not Available'}
+                                ${isSelectable ? (isFailedSubject ? 'Retake Subject' : 'Select for Enrollment') : 'Prerequisites Not Met'}
                             </label>
                         </div>
                     </div>
@@ -1461,9 +1482,6 @@ function initializeEnhancedEnrollmentModal() {
         });
         
         subjectsGrid.innerHTML = subjectsHTML;
-        
-        // For irregular students, we don't reset the selection - it's already preserved in enhancedSelectedSubjects
-        // The checkboxes will reflect the current state of enhancedSelectedSubjects
         
         console.log('Subjects rendered. Current selection count:', enhancedSelectedSubjects.size);
         console.log('Current total units:', enhancedTotalUnits);
@@ -2106,57 +2124,90 @@ document.addEventListener('DOMContentLoaded', function() {
     // Updated enroll now button to use enhanced modal
     const enrollNowBtn = document.getElementById('d-stat-card-enroll');
     if (enrollNowBtn) {
-        enrollNowBtn.addEventListener('click', function() {
-            const isIrregular = document.getElementById('is-regular').value == 2;
-            console.log('Enroll Now clicked - Is irregular:', isIrregular);
-            
-            if (isIrregular) {
-                // For irregular students, check if they have submitted past subjects
-                console.log('Checking past subjects for irregular student...');
-                
-                fetch('/student/enrollment/check-past-subjects', {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Past subjects check response:', data);
-                    if (data.success) {
-                        if (data.has_submitted) {
-                            // Student has submitted past subjects, proceed with enhanced enrollment
-                            console.log('Irregular student has submitted past subjects, opening enhanced enrollment modal');
-                            enhancedEnrollmentModal.openModal();
-                        } else {
-                            // Student hasn't submitted past subjects, show the irregular modal
-                            console.log('Irregular student needs to submit past subjects first');
-                            if (window.irregularModal) {
-                                window.irregularModal.loadAllSubjects();
-                                window.irregularModal.modal.classList.add('active');
-                            }
-                        }
-                    } else {
-                        console.error('Error checking past subjects:', data.message);
-                        showNotification('Error checking enrollment status: ' + data.message, 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error checking past subjects:', error);
-                    showNotification('Network error checking enrollment status. Please try again.', 'error');
-                });
-            } else {
-                // Regular student - proceed with enhanced modal
-                console.log('Regular student, opening enhanced enrollment modal');
-                enhancedEnrollmentModal.openModal();
-            }
+        const studentStatus = document.getElementById('student-status')?.value;
+        const isEnrollmentActive = document.getElementById('is-enrollment-active')?.value === '1';
+        const hasEnrollmentPeriod = document.getElementById('enrollment-period')?.value === '1';
+        
+        console.log('Enrollment button conditions:', {
+            studentStatus,
+            isEnrollmentActive,
+            hasEnrollmentPeriod
         });
+        
+        // Check if enrollment should be disabled
+        if (studentStatus === 'None' || !isEnrollmentActive || !hasEnrollmentPeriod) {
+            enrollNowBtn.style.cursor = 'not-allowed';
+            enrollNowBtn.style.opacity = '0.6';
+            
+            enrollNowBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (studentStatus === 'None') {
+                    showNotification('Your student status is not eligible for enrollment.', 'error');
+                } else if (!hasEnrollmentPeriod) {
+                    showNotification('There is no active enrollment period at the moment.', 'error');
+                } else if (!isEnrollmentActive) {
+                    showNotification('Enrollment is currently not active. Please check the enrollment dates.', 'error');
+                }
+            });
+        } else {
+            // Enable enrollment functionality
+            enrollNowBtn.style.cursor = 'pointer';
+            enrollNowBtn.style.opacity = '1';
+            
+            enrollNowBtn.addEventListener('click', function() {
+                const isIrregular = document.getElementById('is-regular').value == 2;
+                console.log('Enroll Now clicked - Is irregular:', isIrregular);
+                
+                if (isIrregular) {
+                    // For irregular students, check if they have submitted past subjects
+                    console.log('Checking past subjects for irregular student...');
+                    
+                    fetch('/student/enrollment/check-past-subjects', {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Past subjects check response:', data);
+                        if (data.success) {
+                            if (data.has_submitted) {
+                                // Student has submitted past subjects, proceed with enhanced enrollment
+                                console.log('Irregular student has submitted past subjects, opening enhanced enrollment modal');
+                                enhancedEnrollmentModal.openModal();
+                            } else {
+                                // Student hasn't submitted past subjects, show the irregular modal
+                                console.log('Irregular student needs to submit past subjects first');
+                                if (window.irregularModal) {
+                                    window.irregularModal.loadAllSubjects();
+                                    window.irregularModal.modal.classList.add('active');
+                                }
+                            }
+                        } else {
+                            console.error('Error checking past subjects:', data.message);
+                            showNotification('Error checking enrollment status: ' + data.message, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking past subjects:', error);
+                        showNotification('Network error checking enrollment status. Please try again.', 'error');
+                    });
+                } else {
+                    // Regular student - proceed with enhanced modal
+                    console.log('Regular student, opening enhanced enrollment modal');
+                    enhancedEnrollmentModal.openModal();
+                }
+            });
+        }
     }
 
     // Close enrollment modal
@@ -2320,11 +2371,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         ` : ''}
                         
                         ${hasPrerequisites && !prerequisitesMet ? `
-                            <div class="prerequisite-warning">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                Requires prerequisites: ${subject.prerequisites.map(p => p.code).join(', ')}
-                            </div>
-                        ` : ''}
+                            <div class="enhanced-prerequisite-info failed">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <strong>Cannot enroll:</strong> 
+                            Prerequisites not met or failed: ${subject.prerequisites.map(p => p.code).join(', ')}
+                            <br><small>You must pass these prerequisites with a grade of 3.0 or better</small>
+                        </div>
+                    ` : ''}
                         
                         ${!isRegular && hasPrerequisites && prerequisitesMet ? `
                             <div class="prerequisite-success">
