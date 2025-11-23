@@ -1635,30 +1635,19 @@ class StudentController extends Controller
                 'failed_subjects' => $failedSubjects
             ]);
             
+            // In the getEnrollmentSubjects method, update the subject query to include sections:
             if ($student->is_regular == 1) {
-                // Regular student logic - show next semester subjects
+                // Regular student logic
                 $subjects = Subject::where('year_level', $yearLevel)
                     ->where('semester', $currentSemester)
                     ->where('is_active', 1)
-                    ->whereNotIn('id', $passedSubjects) // Only exclude passed subjects, allow failed ones
-                    ->with(['schedules', 'prerequisites'])
+                    ->with(['schedules' => function($query) {
+                        $query->select('id', 'subject_id', 'Section', 'day', 'start_time', 'end_time', 'room');
+                    }, 'prerequisites'])
                     ->get();
-
-                Log::info('Regular student subjects', [
-                    'count' => $subjects->count(),
-                    'year_level' => $yearLevel,
-                    'semester' => $currentSemester
-                ]);
             } else {
-                // Irregular student logic - show subjects where prerequisites are met with PASSING grades
-                // AND include failed subjects that need to be retaken
+                // Irregular student logic
                 $subjects = $this->getAvailableSubjectsForIrregular($student, $yearLevel, $currentSemester, $passedSubjects, $allTakenSubjects, $failedSubjects);
-                
-                Log::info('Irregular student subjects', [
-                    'total_available' => $subjects->count(),
-                    'year_level' => $yearLevel,
-                    'semester' => $currentSemester
-                ]);
             }
             
             // Calculate total units for the semester
@@ -1701,7 +1690,8 @@ class StudentController extends Controller
                                 'day' => $schedule->day,
                                 'start_time' => $schedule->start_time,
                                 'end_time' => $schedule->end_time,
-                                'room' => $schedule->room
+                                'room' => $schedule->room,
+                                'section' => $schedule->Section // Ensure section is included
                             ];
                         }) : [],
                         'prerequisites' => $subject->prerequisites ? $subject->prerequisites->map(function($prereq) {
@@ -1798,7 +1788,8 @@ class StudentController extends Controller
             
             $validator = Validator::make($request->all(), [
                 'subjects' => 'required|array',
-                'subjects.*' => 'exists:subjects,id'
+                'subjects.*.subjectId' => 'required|exists:subjects,id',
+                'subjects.*.section' => 'required|string'
             ]);
             
             if ($validator->fails()) {
@@ -1829,9 +1820,12 @@ class StudentController extends Controller
             $enrollmentRequest->request_date = now();
             $enrollmentRequest->save();
             
-            // Create enrollment records for each subject
-            foreach ($request->subjects as $subjectId) {
-                $sectionId = $this->getOrCreateDefaultSection($subjectId);
+            // Create enrollment records for each subject with selected section
+            foreach ($request->subjects as $enrollmentData) {
+                $subjectId = $enrollmentData['subjectId'];
+                $selectedSection = $enrollmentData['section'];
+                
+                $sectionId = $this->getOrCreateSection($subjectId, $selectedSection);
                 
                 if (!$sectionId) {
                     DB::rollback();
@@ -1875,6 +1869,56 @@ class StudentController extends Controller
                 'success' => false,
                 'message' => 'Enrollment failed: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    private function getOrCreateSection($subjectId, $sectionName)
+    {
+        try {
+            // First, try to get existing section for this subject and section name
+            $section = Section::where('subsched_id', function($query) use ($subjectId, $sectionName) {
+                $query->select('id')
+                    ->from('subjectschedules')
+                    ->where('subject_id', $subjectId)
+                    ->where('Section', $sectionName)
+                    ->limit(1);
+            })->first();
+
+            if ($section) {
+                return $section->id;
+            }
+
+            // If no section exists, create one
+            $subjectSchedule = SubjectSchedule::where('subject_id', $subjectId)
+                ->where('Section', $sectionName)
+                ->first();
+            
+            if (!$subjectSchedule) {
+                // Create a default schedule for this section
+                $subjectSchedule = new SubjectSchedule();
+                $subjectSchedule->subject_id = $subjectId;
+                $subjectSchedule->Section = $sectionName;
+                $subjectSchedule->Type = 'Lecture';
+                $subjectSchedule->day = 'Monday';
+                $subjectSchedule->start_time = '08:00:00';
+                $subjectSchedule->end_time = '09:30:00';
+                $subjectSchedule->room = 'TBA';
+                $subjectSchedule->save();
+            }
+
+            // Create the section
+            $section = new Section();
+            $section->subsched_id = $subjectSchedule->id;
+            $section->section_name = $sectionName;
+            $section->max_students = 50;
+            $section->current_students = 0;
+            $section->save();
+
+            return $section->id;
+
+        } catch (\Exception $e) {
+            Log::error('Section creation error: ' . $e->getMessage());
+            return null;
         }
     }
 

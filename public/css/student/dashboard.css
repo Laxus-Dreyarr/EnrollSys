@@ -3907,6 +3907,33 @@ body.dark-mode .prerequisite-info {
     display: inline-block;
 }
 
+.enhanced-schedule-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.enhanced-schedule-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(67, 97, 238, 0.1);
+    border: 1px solid rgba(67, 97, 238, 0.2);
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin: 2px 4px 2px 0;
+    font-size: 0.8rem;
+    color: var(--primary-color);
+}
+
+.enhanced-schedule-badge i {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
 .enhanced-subject-footer {
     display: flex;
     justify-content: space-between;
@@ -4652,6 +4679,58 @@ body.dark-mode .enhanced-mobile-filter-close {
 
 .enhanced-failed-subject-info strong {
     color: #c53030;
+}
+
+/* Section Selection Styles */
+.enhanced-subject-section-selection {
+    margin: 10px 0;
+    padding: 8px;
+    background: rgba(67, 97, 238, 0.05);
+    border-radius: 6px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.enhanced-subject-section-selection label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.enhanced-section-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: white;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.enhanced-section-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.enhanced-section-select:disabled {
+    background-color: var(--bg-secondary);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+/* Active section highlight */
+.enhanced-schedule-item.active-section .enhanced-schedule-badge {
+    background: var(--success-color) !important;
+    color: white !important;
+    border-color: var(--success-color) !important;
+}
+
+/* Section filter styles */
+.enhanced-filter-group:has(#enhancedSectionFilter) {
+    min-width: 150px;
 }
 
 /* Enhanced Mobile Responsiveness */

@@ -69,10 +69,10 @@ function initializeIrregularModal() {
         
         // Close mobile panels when clicking outside
         document.addEventListener('click', (e) => {
-            if (!mobileFilterPanel.contains(e.target) && !mobileFilterToggle.contains(e.target)) {
+            if (mobileFilterPanel && !mobileFilterPanel.contains(e.target) && !mobileFilterToggle.contains(e.target)) {
                 closeMobileFilters();
             }
-            if (!mobileSearchPanel.contains(e.target) && !mobileSearchToggle.contains(e.target)) {
+            if (mobileSearchPanel && !mobileSearchPanel.contains(e.target) && !mobileSearchToggle.contains(e.target)) {
                 closeMobileSearch();
             }
         });
@@ -717,7 +717,6 @@ function initializeTooltips() {
 }
 
 // Student info modal functionality
-// Student info modal functionality
 function initializeStudentInfoModal() {
     const studentInfoModal = document.getElementById('studentInfoModal');
     const studentInfoForm = document.getElementById('studentInfoForm');
@@ -1157,19 +1156,23 @@ function initializeEnhancedEnrollmentModal() {
     const enrollmentStudentType = document.getElementById('enhancedEnrollmentStudentType');
     const maxUnitsElement = document.getElementById('enhancedMaxUnits');
 
+    const sectionFilter = document.getElementById('enhancedSectionFilter');
+    const mobileSectionFilter = document.getElementById('enhancedMobileSectionFilter');
+
     let enhancedAllSubjects = [];
-    let enhancedSelectedSubjects = new Set();
+    let enhancedSelectedSubjects = new Map(); // Changed from Set to Map to store section data
     let enhancedCurrentFilters = {
         subjectFilter: 'all',
         sortBy: 'code',
-        search: ''
+        search: '',
+        section: 'all'
     };
 
+    let availableSections = new Set();
     let enhancedTotalUnits = 0;
     let enhancedIsRegular = true;
-    let enhancedMaxUnits = 0; // Will be set dynamically from server data
-    let originalMaxUnits = 0; // Store the original max units from server
-
+    let enhancedMaxUnits = 0;
+    let originalMaxUnits = 0;
     let enhancedCompletedSubjects = [];
 
     // Initialize modal
@@ -1186,6 +1189,14 @@ function initializeEnhancedEnrollmentModal() {
         mobileSubjectFilter.addEventListener('change', handleMobileFilterChange);
         mobileSortFilter.addEventListener('change', handleMobileFilterChange);
         clearSearchBtn.addEventListener('click', clearSearch);
+
+        // Section filter events - ADD THESE
+        if (sectionFilter) {
+            sectionFilter.addEventListener('change', handleFilterChange);
+        }
+        if (mobileSectionFilter) {
+            mobileSectionFilter.addEventListener('change', handleMobileFilterChange);
+        }
 
         // Selection actions
         quickSelectAllBtn.addEventListener('click', selectAllVisible);
@@ -1226,6 +1237,7 @@ function initializeEnhancedEnrollmentModal() {
     function handleFilterChange() {
         enhancedCurrentFilters.subjectFilter = subjectFilter.value;
         enhancedCurrentFilters.sortBy = sortFilter.value;
+        enhancedCurrentFilters.section = sectionFilter ? sectionFilter.value : 'all'; // FIX: Check if sectionFilter exists
         syncMobileFilters();
         filterAndDisplaySubjects();
     }
@@ -1233,6 +1245,7 @@ function initializeEnhancedEnrollmentModal() {
     function handleMobileFilterChange() {
         enhancedCurrentFilters.subjectFilter = mobileSubjectFilter.value;
         enhancedCurrentFilters.sortBy = mobileSortFilter.value;
+        enhancedCurrentFilters.section = mobileSectionFilter ? mobileSectionFilter.value : 'all'; // FIX: Check if mobileSectionFilter exists
         syncDesktopFilters();
         filterAndDisplaySubjects();
         closeMobileFilters();
@@ -1241,11 +1254,13 @@ function initializeEnhancedEnrollmentModal() {
     function syncMobileFilters() {
         if (mobileSubjectFilter) mobileSubjectFilter.value = enhancedCurrentFilters.subjectFilter;
         if (mobileSortFilter) mobileSortFilter.value = enhancedCurrentFilters.sortBy;
+        if (mobileSectionFilter) mobileSectionFilter.value = enhancedCurrentFilters.section;
     }
 
     function syncDesktopFilters() {
         if (subjectFilter) subjectFilter.value = enhancedCurrentFilters.subjectFilter;
         if (sortFilter) sortFilter.value = enhancedCurrentFilters.sortBy;
+        if (sectionFilter) sectionFilter.value = enhancedCurrentFilters.section;
     }
 
     function clearSearch() {
@@ -1280,10 +1295,11 @@ function initializeEnhancedEnrollmentModal() {
         if (enhancedCurrentFilters.subjectFilter !== 'all') count++;
         if (enhancedCurrentFilters.sortBy !== 'code') count++;
         if (enhancedCurrentFilters.search !== '') count++;
+        if (enhancedCurrentFilters.section !== 'all') count++; // ADD: Count section filter
         filterCount.textContent = count;
     }
 
-    // Load subjects for enhanced modal - UPDATED
+    // Load subjects for enhanced modal
     function loadEnhancedEnrollmentSubjects() {
         showLoadingState();
         
@@ -1318,13 +1334,9 @@ function initializeEnhancedEnrollmentModal() {
                 };
                 
                 enhancedAllSubjects = processedData.subjects || [];
-                
-                // STORE COMPLETED SUBJECTS - ADD THIS
                 enhancedCompletedSubjects = data.completed_subjects || [];
-                
-                // SET AND PRESERVE MAX UNITS
                 enhancedMaxUnits = data.total_units || 0;
-                originalMaxUnits = data.total_units || 0; // Store original value
+                originalMaxUnits = data.total_units || 0;
                 
                 console.log('Max units set to:', enhancedMaxUnits);
                 console.log('Completed subjects stored:', enhancedCompletedSubjects.length);
@@ -1340,7 +1352,7 @@ function initializeEnhancedEnrollmentModal() {
         });
     }
 
-    // In the displayEnhancedSubjects function, update to handle failed subjects:
+    // displayEnhancedSubjects function to include section selection
     function displayEnhancedSubjects(data) {
         console.log('Displaying enhanced subjects with data:', data);
         
@@ -1349,6 +1361,9 @@ function initializeEnhancedEnrollmentModal() {
             showEnhancedError('Invalid response from server');
             return;
         }
+
+        // Clear available sections
+        availableSections.clear();
 
         // Ensure subjects is an array
         let subjects = data.subjects || [];
@@ -1397,6 +1412,15 @@ function initializeEnhancedEnrollmentModal() {
                 return;
             }
 
+            // Collect all available sections for this subject
+            if (subject.schedules && subject.schedules.length > 0) {
+                subject.schedules.forEach(schedule => {
+                    if (schedule.section) {
+                        availableSections.add(schedule.section);
+                    }
+                });
+            }
+
             // Use the prerequisite information from server
             const hasPrerequisites = subject.has_prerequisites;
             const prerequisitesMet = subject.prerequisites_met;
@@ -1407,9 +1431,19 @@ function initializeEnhancedEnrollmentModal() {
             // For other subjects, check prerequisites
             const isSelectable = isFailedSubject ? true : (enhancedIsRegular || (!hasPrerequisites || prerequisitesMet));
             
-            // Check if this subject is already selected
-            const isSelected = enhancedSelectedSubjects.has(subject.id.toString());
+            // Check if this subject is already selected - FIX: Use Map correctly
+            const selectedData = enhancedSelectedSubjects.get(subject.id.toString());
+            const isSelected = !!selectedData;
             
+            // Get available sections for this subject
+            const subjectSections = subject.schedules ? 
+                [...new Set(subject.schedules.map(s => s.section).filter(Boolean))] : 
+                ['A']; // Default section if none specified
+            
+            // Default to first available section
+            const defaultSection = subjectSections[0] || 'A';
+            const currentSection = selectedData ? selectedData.section : defaultSection;
+
             subjectsHTML += `
                 <div class="enhanced-subject-card ${isSelected ? 'selected' : ''} ${!isSelectable ? 'disabled' : ''} ${isFailedSubject ? 'failed-subject' : ''}" data-id="${subject.id}">
                     <div class="enhanced-subject-header">
@@ -1422,12 +1456,34 @@ function initializeEnhancedEnrollmentModal() {
                     <div class="enhanced-subject-name">${subject.name || 'No name'}</div>
                     <div class="enhanced-subject-description">${subject.description || 'No description available'}</div>
                     
+                    <!-- Section Selection -->
+                    <div class="enhanced-subject-section-selection">
+                        <label for="enhanced_subject_section_${subject.id}">Select Section:</label>
+                        <select id="enhanced_subject_section_${subject.id}" class="enhanced-section-select" 
+                                ${!isSelectable ? 'disabled' : ''} 
+                                onchange="enhancedChangeSection(${subject.id}, this.value)">
+                            ${subjectSections.map(section => `
+                                <option value="${section}" ${section === currentSection ? 'selected' : ''}>
+                                    Section ${section}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    
                     ${subject.schedules && subject.schedules.length > 0 ? `
                         <div class="enhanced-subject-schedule">
+                            <div class="enhanced-schedule-header">
+                                <i class="fas fa-calendar-alt"></i>
+                                <strong>Available Schedules:</strong>
+                            </div>
                             ${subject.schedules.map(schedule => `
-                                <span class="enhanced-schedule-badge">
-                                    ${schedule.day} ${schedule.start_time} - ${schedule.end_time} (${schedule.room})
-                                </span>
+                                <div class="enhanced-schedule-item ${schedule.section === currentSection ? 'active-section' : ''}">
+                                    <span class="enhanced-schedule-badge">
+                                        <i class="fas fa-users"></i>
+                                        Section ${schedule.section || 'A'} - 
+                                        ${schedule.day} ${schedule.start_time} - ${schedule.end_time} (${schedule.room})
+                                    </span>
+                                </div>
                             `).join('')}
                         </div>
                     ` : ''}
@@ -1471,7 +1527,7 @@ function initializeEnhancedEnrollmentModal() {
                                 id="enhanced_subject_${subject.id}" 
                                 ${isSelected ? 'checked' : ''}
                                 ${!isSelectable ? 'disabled' : ''}
-                                onchange="enhancedToggleSubject(${subject.id}, ${subject.units || 0}, ${!isSelectable})">
+                                onchange="enhancedToggleSubject(${subject.id}, ${subject.units || 0}, ${!isSelectable}, '${currentSection}')">
                             <label for="enhanced_subject_${subject.id}" class="enhanced-checkbox-label">
                                 ${isSelectable ? (isFailedSubject ? 'Retake Subject' : 'Select for Enrollment') : 'Prerequisites Not Met'}
                             </label>
@@ -1483,17 +1539,153 @@ function initializeEnhancedEnrollmentModal() {
         
         subjectsGrid.innerHTML = subjectsHTML;
         
+        // Populate section filter dropdown
+        updateSectionFilter();
+        
         console.log('Subjects rendered. Current selection count:', enhancedSelectedSubjects.size);
         console.log('Current total units:', enhancedTotalUnits);
     }
 
-    // Filter and display subjects based on current filters - UPDATED (no state reset)
+    // Function to update section filter dropdown
+    function updateSectionFilter() {
+        if (!sectionFilter) return;
+        
+        // Clear existing options except "All Sections"
+        while (sectionFilter.options.length > 1) {
+            sectionFilter.remove(1);
+        }
+        
+        // Add available sections
+        const sortedSections = Array.from(availableSections).sort();
+        sortedSections.forEach(section => {
+            const option = document.createElement('option');
+            option.value = section;
+            option.textContent = `Section ${section}`;
+            sectionFilter.appendChild(option);
+        });
+        
+        // Also update mobile section filter if it exists
+        if (mobileSectionFilter) {
+            while (mobileSectionFilter.options.length > 1) {
+                mobileSectionFilter.remove(1);
+            }
+            sortedSections.forEach(section => {
+                const option = document.createElement('option');
+                option.value = section;
+                option.textContent = `Section ${section}`;
+                mobileSectionFilter.appendChild(option);
+            });
+        }
+    }
+
+    // Function to change section for a subject
+    window.enhancedChangeSection = function(subjectId, section) {
+        const selectedData = enhancedSelectedSubjects.get(subjectId.toString());
+        if (selectedData) {
+            // Update the section in the selected subjects map
+            enhancedSelectedSubjects.set(subjectId.toString(), {
+                subjectId: subjectId,
+                section: section,
+                units: selectedData.units
+            });
+            
+            // Update the visual indication of active section
+            const subjectElement = document.querySelector(`.enhanced-subject-card[data-id="${subjectId}"]`);
+            if (subjectElement) {
+                const scheduleItems = subjectElement.querySelectorAll('.enhanced-schedule-item');
+                scheduleItems.forEach(item => {
+                    const badge = item.querySelector('.enhanced-schedule-badge');
+                    if (badge && badge.textContent.includes(`Section ${section}`)) {
+                        item.classList.add('active-section');
+                    } else {
+                        item.classList.remove('active-section');
+                    }
+                });
+            }
+            
+            console.log(`Changed section for subject ${subjectId} to ${section}`);
+        }
+    };
+
+    // FIXED: Enhanced toggle subject function with proper section handling
+    window.enhancedToggleSubject = function(subjectId, units, isDisabled, section = 'A') {
+        console.log(`Enhanced toggle subject called: ${subjectId}, units: ${units}, isDisabled: ${isDisabled}, section: ${section}`);
+        
+        if (isDisabled) {
+            const checkbox = document.getElementById(`enhanced_subject_${subjectId}`);
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+            return;
+        }
+        
+        const checkbox = document.getElementById(`enhanced_subject_${subjectId}`);
+        if (!checkbox) {
+            console.error('Enhanced checkbox not found for subject:', subjectId);
+            return;
+        }
+        
+        const subjectItem = checkbox.closest('.enhanced-subject-card');
+        const isNowChecked = checkbox.checked;
+        
+        // Get the selected section from the dropdown
+        const sectionSelect = document.getElementById(`enhanced_subject_section_${subjectId}`);
+        const selectedSection = sectionSelect ? sectionSelect.value : section;
+        
+        console.log(`Enhanced subject ${subjectId} is now ${isNowChecked ? 'checked' : 'unchecked'}, section: ${selectedSection}, current totalUnits: ${enhancedTotalUnits}`);
+        
+        if (isNowChecked) {
+            // Checkbox was just CHECKED - ADD subject
+            const newTotal = enhancedTotalUnits + parseInt(units);
+            console.log(`Would be ${newTotal} units, max is ${enhancedMaxUnits}`);
+            
+            if (newTotal > enhancedMaxUnits) {
+                showNotification(`Cannot exceed maximum of ${enhancedMaxUnits} units for this semester. Current: ${enhancedTotalUnits} units`, 'error');
+                checkbox.checked = false;
+                return;
+            }
+            
+            // FIX: Store subject with section data in Map
+            enhancedSelectedSubjects.set(subjectId.toString(), {
+                subjectId: subjectId,
+                section: selectedSection,
+                units: parseInt(units)
+            });
+            enhancedTotalUnits = newTotal;
+            if (subjectItem) subjectItem.classList.add('selected');
+            console.log(`ENHANCED SELECTED subject ${subjectId}, section ${selectedSection}, added ${units} units. Total: ${enhancedTotalUnits}`);
+        } else {
+            // Checkbox was just UNCHECKED - REMOVE subject
+            if (enhancedSelectedSubjects.has(subjectId.toString())) {
+                enhancedSelectedSubjects.delete(subjectId.toString());
+                enhancedTotalUnits -= parseInt(units);
+                console.log(`ENHANCED DESELECTED subject ${subjectId}, removed ${units} units. Total: ${enhancedTotalUnits}`);
+            }
+            if (subjectItem) subjectItem.classList.remove('selected');
+        }
+        
+        // Update the UI
+        updateEnhancedSelectionInfo();
+        
+        console.log('Enhanced currently selected subjects:', Array.from(enhancedSelectedSubjects.entries()));
+        console.log('Enhanced total units:', enhancedTotalUnits);
+    };
+
+    // FIXED: filter and display function to handle section filtering properly
     function filterAndDisplaySubjects() {
         updateFilterCount();
         
         let filteredSubjects = enhancedAllSubjects;
         
-        // Apply subject filter
+        // FIX: Apply section filter first and properly
+        if (enhancedCurrentFilters.section !== 'all') {
+            filteredSubjects = filteredSubjects.filter(subject => {
+                if (!subject.schedules || subject.schedules.length === 0) return false;
+                return subject.schedules.some(schedule => schedule.section === enhancedCurrentFilters.section);
+            });
+        }
+        
+        // Apply subject type filter
         if (enhancedCurrentFilters.subjectFilter !== 'all') {
             filteredSubjects = filteredSubjects.filter(subject => {
                 if (enhancedCurrentFilters.subjectFilter === 'available') {
@@ -1504,12 +1696,6 @@ function initializeEnhancedEnrollmentModal() {
                     return enhancedIsRegular || (!hasPrerequisites || prerequisitesMet);
                 } else if (enhancedCurrentFilters.subjectFilter === 'with-prerequisites') {
                     return subject.prerequisites && subject.prerequisites.length > 0;
-                } else if (enhancedCurrentFilters.subjectFilter === 'prerequisites-met') {
-                    const hasPrerequisites = subject.prerequisites && subject.prerequisites.length > 0;
-                    const prerequisitesMet = hasPrerequisites ? 
-                        subject.prerequisites.every(prereq => enhancedCompletedSubjects.includes(prereq.id)) : 
-                        true;
-                    return hasPrerequisites && prerequisitesMet;
                 }
                 return true;
             });
@@ -1532,26 +1718,23 @@ function initializeEnhancedEnrollmentModal() {
                     return (a.name || '').localeCompare(b.name || '');
                 case 'units':
                     return (b.units || 0) - (a.units || 0);
-                case 'year_level':
-                    return (a.year_level || '').localeCompare(b.year_level || '');
                 case 'code':
                 default:
                     return (a.code || '').localeCompare(b.code || '');
             }
         });
         
-        // Create a mock data object for display - INCLUDING COMPLETED SUBJECTS
+        // Create a mock data object for display
         const displayData = {
             subjects: filteredSubjects,
             is_regular: enhancedIsRegular,
             year_level: enrollmentYearLevel ? enrollmentYearLevel.textContent : '-',
             semester: enrollmentSemester ? enrollmentSemester.textContent : '-',
-            total_units: enhancedMaxUnits, // Preserve the max units value
-            completed_subjects: enhancedCompletedSubjects // Preserve completed subjects
+            total_units: enhancedMaxUnits,
+            completed_subjects: enhancedCompletedSubjects,
+            passed_subjects: [],
+            failed_subjects: []
         };
-        
-        // Note: We don't reset selection state here - it's preserved in enhancedSelectedSubjects
-        console.log('Filtering subjects. Current selection preserved:', enhancedSelectedSubjects.size);
         
         displayEnhancedSubjects(displayData);
     }
@@ -1580,99 +1763,84 @@ function initializeEnhancedEnrollmentModal() {
         }
     }
 
-    // Toggle subject selection for enhanced modal - UPDATED VERSION
-    window.enhancedToggleSubject = function(subjectId, units, isDisabled) {
-        console.log(`Enhanced toggle subject called: ${subjectId}, units: ${units}, isDisabled: ${isDisabled}`);
-        console.log(`Current max units: ${enhancedMaxUnits}, current total: ${enhancedTotalUnits}`);
-        
-        if (isDisabled) {
-            const checkbox = document.getElementById(`enhanced_subject_${subjectId}`);
-            if (checkbox) {
-                checkbox.checked = false;
-            }
-            return;
-        }
-        
-        const checkbox = document.getElementById(`enhanced_subject_${subjectId}`);
-        if (!checkbox) {
-            console.error('Enhanced checkbox not found for subject:', subjectId);
-            return;
-        }
-        
-        const subjectItem = checkbox.closest('.enhanced-subject-card');
-        const isNowChecked = checkbox.checked;
-        
-        console.log(`Enhanced subject ${subjectId} is now ${isNowChecked ? 'checked' : 'unchecked'}, current totalUnits: ${enhancedTotalUnits}`);
-        
-        if (isNowChecked) {
-            // Checkbox was just CHECKED - ADD subject
-            const newTotal = enhancedTotalUnits + parseInt(units);
-            console.log(`Would be ${newTotal} units, max is ${enhancedMaxUnits}`);
-            
-            if (newTotal > enhancedMaxUnits) {
-                showNotification(`Cannot exceed maximum of ${enhancedMaxUnits} units for this semester. Current: ${enhancedTotalUnits} units`, 'error');
-                checkbox.checked = false;
-                return;
-            }
-            
-            enhancedSelectedSubjects.add(subjectId.toString());
-            enhancedTotalUnits = newTotal;
-            if (subjectItem) subjectItem.classList.add('selected');
-            console.log(`ENHANCED SELECTED subject ${subjectId}, added ${units} units. Total: ${enhancedTotalUnits}`);
-        } else {
-            // Checkbox was just UNCHECKED - REMOVE subject
-            if (enhancedSelectedSubjects.has(subjectId.toString())) {
-                enhancedSelectedSubjects.delete(subjectId.toString());
-                enhancedTotalUnits -= parseInt(units);
-                console.log(`ENHANCED DESELECTED subject ${subjectId}, removed ${units} units. Total: ${enhancedTotalUnits}`);
-            }
-            if (subjectItem) subjectItem.classList.remove('selected');
-        }
-        
-        // Update the UI
-        updateEnhancedSelectionInfo();
-        
-        console.log('Enhanced currently selected subjects:', Array.from(enhancedSelectedSubjects));
-        console.log('Enhanced total units:', enhancedTotalUnits);
-    };
-
-    // Select all visible subjects
+    // FIXED: Select all visible subjects with proper section handling
     function selectAllVisible() {
         const visibleSubjectElements = subjectsGrid.querySelectorAll('.enhanced-subject-card:not(.disabled)');
+        let selectedCount = 0;
+        
         visibleSubjectElements.forEach(card => {
             const subjectId = card.getAttribute('data-id');
             const checkbox = card.querySelector('input[type="checkbox"]');
+            const sectionSelect = card.querySelector('.enhanced-section-select');
             const subject = enhancedAllSubjects.find(s => s.id == subjectId);
             
             if (subject && checkbox && !checkbox.checked) {
-                // Use the enhancedToggleSubject function to ensure proper state management
-                checkbox.checked = true;
-                window.enhancedToggleSubject(subject.id, subject.units, false);
+                // Get the current section from dropdown
+                const currentSection = sectionSelect ? sectionSelect.value : 'A';
+                
+                // Calculate new total units
+                const newTotal = enhancedTotalUnits + parseInt(subject.units || 0);
+                
+                // Check if we can add this subject without exceeding max units
+                if (newTotal <= enhancedMaxUnits) {
+                    checkbox.checked = true;
+                    
+                    // Store in Map with section data
+                    enhancedSelectedSubjects.set(subjectId.toString(), {
+                        subjectId: parseInt(subjectId),
+                        section: currentSection,
+                        units: parseInt(subject.units || 0)
+                    });
+                    
+                    enhancedTotalUnits = newTotal;
+                    card.classList.add('selected');
+                    selectedCount++;
+                    
+                    console.log(`Select All: Added subject ${subjectId}, section ${currentSection}, units ${subject.units}`);
+                }
             }
         });
+        
+        if (selectedCount > 0) {
+            updateEnhancedSelectionInfo();
+            console.log(`Select All completed: ${selectedCount} subjects selected`);
+        } else {
+            showNotification('No available subjects can be selected without exceeding unit limit', 'warning');
+        }
     }
 
-    // Deselect all visible subjects
+    // FIXED: Deselect all visible subjects
     function deselectAllVisible() {
         const visibleSubjectElements = subjectsGrid.querySelectorAll('.enhanced-subject-card');
+        
         visibleSubjectElements.forEach(card => {
             const subjectId = card.getAttribute('data-id');
             const checkbox = card.querySelector('input[type="checkbox"]');
             const subject = enhancedAllSubjects.find(s => s.id == subjectId);
             
             if (subject && checkbox && checkbox.checked) {
-                // Use the enhancedToggleSubject function to ensure proper state management
                 checkbox.checked = false;
-                window.enhancedToggleSubject(subject.id, subject.units, false);
+                
+                // Remove from Map if exists
+                if (enhancedSelectedSubjects.has(subjectId.toString())) {
+                    const selectedData = enhancedSelectedSubjects.get(subjectId.toString());
+                    enhancedSelectedSubjects.delete(subjectId.toString());
+                    enhancedTotalUnits -= parseInt(selectedData.units);
+                }
+                
+                card.classList.remove('selected');
             }
         });
+        
+        updateEnhancedSelectionInfo();
+        console.log('Deselect All completed');
     }
 
-    // Submit enrollment for enhanced modal
+    // FIXED: Submit enrollment with proper section data
     function submitEnrollment() {
         console.log('Enhanced submit enrollment clicked');
         console.log('Enhanced selected subjects count:', enhancedSelectedSubjects.size);
-        console.log('Enhanced selected subjects:', Array.from(enhancedSelectedSubjects));
+        console.log('Enhanced selected subjects:', Array.from(enhancedSelectedSubjects.entries()));
         console.log('Enhanced total units:', enhancedTotalUnits);
         
         if (enhancedSelectedSubjects.size === 0) {
@@ -1692,8 +1860,11 @@ function initializeEnhancedEnrollmentModal() {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
         submitBtn.disabled = true;
         
-        // Convert Set to Array for submission
-        const subjectsArray = Array.from(enhancedSelectedSubjects);
+        // Convert Map to Array for submission - now including section data
+        const subjectsArray = Array.from(enhancedSelectedSubjects.values()).map(item => ({
+            subjectId: item.subjectId,
+            section: item.section
+        }));
         
         console.log('Enhanced submitting enrollment with subjects:', subjectsArray);
         console.log('Enhanced total units to submit:', enhancedTotalUnits);

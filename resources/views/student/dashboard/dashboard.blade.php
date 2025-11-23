@@ -1274,6 +1274,13 @@ $show_student_form = (strtolower($student_id) === 'none');
                                 <option value="units">Units</option>
                             </select>
                         </div>
+                        <div class="enhanced-filter-group">
+                            <label>Section</label>
+                            <select id="enhancedSectionFilter" class="enhanced-filter-select">
+                                <option value="all">All Sections</option>
+                                <!-- Sections will be populated dynamically -->
+                            </select>
+                        </div>
                         <div class="enhanced-filter-group enhanced-search-group">
                             <label>Search</label>
                             <div class="enhanced-search-input-wrapper">
@@ -1321,6 +1328,13 @@ $show_student_form = (strtolower($student_id) === 'none');
                                     <option value="code">Subject Code</option>
                                     <option value="name">Subject Name</option>
                                     <option value="units">Units</option>
+                                </select>
+                            </div>
+                            <div class="enhanced-mobile-filter-group">
+                                <label>Section</label>
+                                <select id="enhancedMobileSectionFilter" class="enhanced-filter-select">
+                                    <option value="all">All Sections</option>
+                                    <!-- Sections will be populated dynamically -->
                                 </select>
                             </div>
                         </div>
