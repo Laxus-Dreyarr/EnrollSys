@@ -1787,15 +1787,25 @@ class StudentController extends Controller
             $student = $user->user_information->student;
             
             $validator = Validator::make($request->all(), [
-                'subjects' => 'required|array',
-                'subjects.*.subjectId' => 'required|exists:subjects,id',
-                'subjects.*.section' => 'required|string'
+                'subjects' => 'required|string', // We'll parse this JSON
+                'fhe_file' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120', // 5MB max
+                'total_units' => 'required|integer'
             ]);
             
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid subjects selected'
+                    'message' => 'Invalid data submitted: ' . $validator->errors()->first()
+                ]);
+            }
+            
+            // Parse subjects from JSON string
+            $subjects = json_decode($request->subjects, true);
+            
+            if (!is_array($subjects)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid subjects data'
                 ]);
             }
             
@@ -1813,6 +1823,22 @@ class StudentController extends Controller
                 ]);
             }
             
+            // Handle FHE file upload
+            if ($request->hasFile('fhe_file')) {
+                $fheFile = $request->file('fhe_file');
+                $fileName = 'fhe_' . $student->id . '_' . time() . '.' . $fheFile->getClientOriginalExtension();
+                $filePath = $fheFile->storeAs('documents/fhe', $fileName, 'public');
+                
+                // Save to documents table
+                DB::table('documents')->insert([
+                    'student_id' => $student->id,
+                    'type' => 'FHE',
+                    'file_path' => $filePath,
+                    'upload_date' => now()->format('Y-m-d H:i:s'),
+                    'status' => 'Pending'
+                ]);
+            }
+            
             // Create enrollment request
             $enrollmentRequest = new EnrollmentRequest();
             $enrollmentRequest->student_id = $student->id;
@@ -1821,7 +1847,7 @@ class StudentController extends Controller
             $enrollmentRequest->save();
             
             // Create enrollment records for each subject with selected section
-            foreach ($request->subjects as $enrollmentData) {
+            foreach ($subjects as $enrollmentData) {
                 $subjectId = $enrollmentData['subjectId'];
                 $selectedSection = $enrollmentData['section'];
                 

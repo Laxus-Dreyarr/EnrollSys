@@ -1143,15 +1143,15 @@ $show_student_form = (strtolower($student_id) === 'none');
                 <!-- Progress Indicator -->
                 <div class="enhanced-enrollment-progress-section">
                     <div class="enhanced-enrollment-progress-steps">
-                        <div class="enhanced-progress-step active">
+                        <div class="enhanced-progress-step active" data-step="1">
                             <div class="enhanced-step-number">1</div>
                             <span class="enhanced-step-label">Select Subjects</span>
                         </div>
-                        <div class="enhanced-progress-step">
+                        <div class="enhanced-progress-step" data-step="2">
                             <div class="enhanced-step-number">2</div>
-                            <span class="enhanced-step-label">Review Schedule</span>
+                            <span class="enhanced-step-label">Upload FHE File</span>
                         </div>
-                        <div class="enhanced-progress-step">
+                        <div class="enhanced-progress-step" data-step="3">
                             <div class="enhanced-step-number">3</div>
                             <span class="enhanced-step-label">Confirm Enrollment</span>
                         </div>
@@ -1358,7 +1358,69 @@ $show_student_form = (strtolower($student_id) === 'none');
                         <p>All subjects for this semester have been enrolled or no available subjects match your criteria.</p>
                     </div>
                 </div>
+                <!--  -->
+                <!-- FHE Upload Section (Step 2) - NOW OUTSIDE MAIN CONTENT -->
+                <div class="enhanced-enrollment-fhe-section" id="enhancedFheSection" style="display: none;">
+                    <div class="enhanced-fhe-upload-container">
+                        <div class="enhanced-fhe-header">
+                            <div class="enhanced-fhe-icon">
+                                <i class="fas fa-file-upload"></i>
+                            </div>
+                            <div class="enhanced-fhe-title">
+                                <h3>Upload FHE File</h3>
+                                <p>Please upload your FHE (Faculty Head Endorsement) file to proceed with enrollment</p>
+                            </div>
+                        </div>
+
+                        <div class="enhanced-fhe-upload-area" id="enhancedFheUploadArea">
+                            <div class="enhanced-fhe-drop-zone" id="enhancedFheDropZone">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <h4>Drag & Drop your FHE file here</h4>
+                                <p>Supported formats: PDF, JPG, PNG, DOC, DOCX</p>
+                                <p class="enhanced-fhe-max-size">Max file size: 5MB</p>
+                                <button type="button" class="enhanced-btn-primary enhanced-fhe-browse-btn" id="enhancedFheBrowseBtn">
+                                    <i class="fas fa-folder-open"></i>
+                                    Browse Files
+                                </button>
+                            </div>
+                            <input type="file" id="enhancedFheFileInput" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display: none;">
+                            
+                            <div class="enhanced-fhe-preview" id="enhancedFhePreview" style="display: none;">
+                                <div class="enhanced-fhe-preview-content">
+                                    <div class="enhanced-fhe-file-info">
+                                        <i class="fas fa-file-pdf enhanced-fhe-file-icon"></i>
+                                        <div class="enhanced-fhe-file-details">
+                                            <h5 id="enhancedFheFileName">document.pdf</h5>
+                                            <span id="enhancedFheFileSize">2.5 MB</span>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="enhanced-fhe-remove-btn" id="enhancedFheRemoveBtn">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="enhanced-fhe-upload-progress" id="enhancedFheUploadProgress" style="display: none;">
+                                    <div class="enhanced-fhe-progress-bar">
+                                        <div class="enhanced-fhe-progress-fill" id="enhancedFheProgressFill"></div>
+                                    </div>
+                                    <span class="enhanced-fhe-progress-text" id="enhancedFheProgressText">0%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="enhanced-fhe-requirements">
+                            <h5>FHE File Requirements:</h5>
+                            <ul>
+                                <li><i class="fas fa-check"></i> File must be clear and readable</li>
+                                <li><i class="fas fa-check"></i> Must contain faculty head signature</li>
+                                <li><i class="fas fa-check"></i> Must be for the current semester</li>
+                                <li><i class="fas fa-check"></i> File size should not exceed 5MB</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <!--  -->
             </div>
+            
             
             <!-- Enhanced Footer -->
             <div class="enhanced-enrollment-modal-footer">
@@ -1372,7 +1434,15 @@ $show_student_form = (strtolower($student_id) === 'none');
                             <i class="fas fa-arrow-left"></i>
                             Cancel
                         </button>
-                        <button class="enhanced-btn-primary" id="enhancedSubmitEnrollment" disabled>
+                        <button class="enhanced-btn-secondary" id="enhancedBackStep" style="display: none;">
+                            <i class="fas fa-arrow-left"></i>
+                            Back
+                        </button>
+                        <button class="enhanced-btn-primary" id="enhancedNextStep">
+                            <i class="fas fa-arrow-right"></i>
+                            Next Step
+                        </button>
+                        <button class="enhanced-btn-primary" id="enhancedSubmitEnrollment" disabled style="display: none;">
                             <i class="fas fa-paper-plane"></i>
                             Submit Enrollment
                             <span class="enhanced-btn-badge" id="enhancedSubmitCount">0</span>

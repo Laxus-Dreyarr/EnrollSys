@@ -1136,7 +1136,6 @@ function initializeEnhancedEnrollmentModal() {
     const clearSearchBtn = document.getElementById('enhancedClearSearch');
     const quickSelectAllBtn = document.getElementById('enhancedQuickSelectAll');
     const quickDeselectAllBtn = document.getElementById('enhancedQuickDeselectAll');
-    const saveBtn = document.getElementById('enhancedSubmitEnrollment');
     const selectedCount = document.getElementById('enhancedSelectedCount');
     const totalUnits = document.getElementById('enhancedTotalUnits');
     const currentYearLevel = document.getElementById('enhancedCurrentYearLevel');
@@ -1159,8 +1158,28 @@ function initializeEnhancedEnrollmentModal() {
     const sectionFilter = document.getElementById('enhancedSectionFilter');
     const mobileSectionFilter = document.getElementById('enhancedMobileSectionFilter');
 
+    // New elements for step navigation and FHE upload
+    const nextStepBtn = document.getElementById('enhancedNextStep');
+    const backStepBtn = document.getElementById('enhancedBackStep');
+    const submitBtn = document.getElementById('enhancedSubmitEnrollment');
+    const cancelBtn = document.getElementById('enhancedCancelEnrollment');
+    const fheSection = document.getElementById('enhancedFheSection');
+    const progressSteps = document.querySelectorAll('.enhanced-progress-step');
+    
+    // FHE Upload elements
+    const fheDropZone = document.getElementById('enhancedFheDropZone');
+    const fheBrowseBtn = document.getElementById('enhancedFheBrowseBtn');
+    const fheFileInput = document.getElementById('enhancedFheFileInput');
+    const fhePreview = document.getElementById('enhancedFhePreview');
+    const fheFileName = document.getElementById('enhancedFheFileName');
+    const fheFileSize = document.getElementById('enhancedFheFileSize');
+    const fheRemoveBtn = document.getElementById('enhancedFheRemoveBtn');
+    const fheUploadProgress = document.getElementById('enhancedFheUploadProgress');
+    const fheProgressFill = document.getElementById('enhancedFheProgressFill');
+    const fheProgressText = document.getElementById('enhancedFheProgressText');
+
     let enhancedAllSubjects = [];
-    let enhancedSelectedSubjects = new Map(); // Changed from Set to Map to store section data
+    let enhancedSelectedSubjects = new Map();
     let enhancedCurrentFilters = {
         subjectFilter: 'all',
         sortBy: 'code',
@@ -1174,10 +1193,16 @@ function initializeEnhancedEnrollmentModal() {
     let enhancedMaxUnits = 0;
     let originalMaxUnits = 0;
     let enhancedCompletedSubjects = [];
+    
+    // New variables for step management and FHE file
+    let currentStep = 1;
+    let fheFile = null;
+    let isFheUploaded = false;
 
     // Initialize modal
     function init() {
         attachEventListeners();
+        updateStepNavigation();
     }
 
     function attachEventListeners() {
@@ -1190,7 +1215,7 @@ function initializeEnhancedEnrollmentModal() {
         mobileSortFilter.addEventListener('change', handleMobileFilterChange);
         clearSearchBtn.addEventListener('click', clearSearch);
 
-        // Section filter events - ADD THESE
+        // Section filter events
         if (sectionFilter) {
             sectionFilter.addEventListener('change', handleFilterChange);
         }
@@ -1201,7 +1226,6 @@ function initializeEnhancedEnrollmentModal() {
         // Selection actions
         quickSelectAllBtn.addEventListener('click', selectAllVisible);
         quickDeselectAllBtn.addEventListener('click', deselectAllVisible);
-        saveBtn.addEventListener('click', submitEnrollment);
 
         // Mobile interactions
         mobileSearchToggle.addEventListener('click', toggleMobileSearch);
@@ -1209,9 +1233,21 @@ function initializeEnhancedEnrollmentModal() {
         mobileFilterToggle.addEventListener('click', toggleMobileFilters);
         mobileFilterClose.addEventListener('click', closeMobileFilters);
 
-        // Close modal
-        document.getElementById('enhancedCloseEnrollmentModal').addEventListener('click', closeModal);
-        document.getElementById('enhancedCancelEnrollment').addEventListener('click', closeModal);
+        // Step navigation
+        nextStepBtn.addEventListener('click', goToNextStep);
+        backStepBtn.addEventListener('click', goToPreviousStep);
+        submitBtn.addEventListener('click', submitEnrollment);
+        cancelBtn.addEventListener('click', closeModal);
+
+        // FHE Upload events
+        fheBrowseBtn.addEventListener('click', () => fheFileInput.click());
+        fheFileInput.addEventListener('change', handleFheFileSelect);
+        fheRemoveBtn.addEventListener('click', removeFheFile);
+        
+        // Drag and drop for FHE
+        fheDropZone.addEventListener('dragover', handleFheDragOver);
+        fheDropZone.addEventListener('dragleave', handleFheDragLeave);
+        fheDropZone.addEventListener('drop', handleFheDrop);
         
         // Close mobile panels when clicking outside
         document.addEventListener('click', (e) => {
@@ -1222,6 +1258,170 @@ function initializeEnhancedEnrollmentModal() {
                 closeMobileSearch();
             }
         });
+    }
+
+    // Step Navigation Functions
+    function updateStepNavigation() {
+        // Update progress steps
+        progressSteps.forEach(step => {
+            const stepNumber = parseInt(step.getAttribute('data-step'));
+            if (stepNumber === currentStep) {
+                step.classList.add('active');
+            } else {
+                step.classList.remove('active');
+            }
+        });
+
+        // Show/hide sections based on current step
+        const mainContent = document.querySelector('.enhanced-enrollment-main-content');
+        if (currentStep === 1) {
+            mainContent.style.display = 'block';
+            fheSection.style.display = 'none';
+            backStepBtn.style.display = 'none';
+            nextStepBtn.style.display = 'flex';
+            submitBtn.style.display = 'none';
+            nextStepBtn.disabled = enhancedSelectedSubjects.size === 0;
+        } else if (currentStep === 2) {
+            mainContent.style.display = 'none';
+            fheSection.style.display = 'block';
+            backStepBtn.style.display = 'flex';
+            nextStepBtn.style.display = 'none';
+            submitBtn.style.display = 'flex';
+            submitBtn.disabled = !isFheUploaded;
+        }
+
+        // Update button texts based on step
+        if (currentStep === 1) {
+            nextStepBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Next Step';
+        }
+    }
+
+    function goToNextStep() {
+        if (currentStep === 1 && enhancedSelectedSubjects.size > 0) {
+            currentStep = 2;
+            updateStepNavigation();
+        }
+    }
+
+    function goToPreviousStep() {
+        if (currentStep === 2) {
+            currentStep = 1;
+            updateStepNavigation();
+        }
+    }
+
+    // FHE Upload Functions
+    function handleFheFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            processFheFile(file);
+        }
+    }
+
+    function handleFheDragOver(event) {
+        event.preventDefault();
+        fheDropZone.classList.add('dragover');
+    }
+
+    function handleFheDragLeave(event) {
+        event.preventDefault();
+        fheDropZone.classList.remove('dragover');
+    }
+
+    function handleFheDrop(event) {
+        event.preventDefault();
+        fheDropZone.classList.remove('dragover');
+        
+        const files = event.dataTransfer.files;
+        if (files.length > 0) {
+            processFheFile(files[0]);
+        }
+    }
+
+    function processFheFile(file) {
+        // Validate file
+        if (!validateFheFile(file)) {
+            return;
+        }
+
+        fheFile = file;
+        
+        // Show preview
+        showFhePreview(file);
+        
+        // Simulate upload process
+        simulateFheUpload();
+    }
+
+    function validateFheFile(file) {
+        const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        const maxSize = 5 * 1024 * 1024; // 5MB
+
+        if (!validTypes.includes(file.type)) {
+            showNotification('Please select a valid file type (PDF, JPG, PNG, DOC, DOCX)', 'error');
+            return false;
+        }
+
+        if (file.size > maxSize) {
+            showNotification('File size must be less than 5MB', 'error');
+            return false;
+        }
+
+        return true;
+    }
+
+    function showFhePreview(file) {
+        const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+        
+        // Determine file type icon
+        let fileIcon = 'fas fa-file';
+        if (file.type.includes('pdf')) {
+            fileIcon = 'fas fa-file-pdf';
+        } else if (file.type.includes('image')) {
+            fileIcon = 'fas fa-file-image';
+        } else if (file.type.includes('word')) {
+            fileIcon = 'fas fa-file-word';
+        }
+
+        fheFileName.textContent = file.name;
+        fheFileSize.textContent = `${fileSize} MB`;
+        fhePreview.querySelector('.enhanced-fhe-file-icon').className = fileIcon;
+        
+        fhePreview.style.display = 'block';
+        fheDropZone.style.display = 'none';
+    }
+
+    function simulateFheUpload() {
+        fheUploadProgress.style.display = 'block';
+        let progress = 0;
+        
+        const interval = setInterval(() => {
+            progress += Math.random() * 10;
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(interval);
+                
+                // Upload complete
+                setTimeout(() => {
+                    isFheUploaded = true;
+                    submitBtn.disabled = false;
+                    showNotification('FHE file uploaded successfully!', 'success');
+                }, 500);
+            }
+            
+            fheProgressFill.style.width = `${progress}%`;
+            fheProgressText.textContent = `${Math.round(progress)}%`;
+        }, 100);
+    }
+
+    function removeFheFile() {
+        fheFile = null;
+        isFheUploaded = false;
+        fhePreview.style.display = 'none';
+        fheUploadProgress.style.display = 'none';
+        fheDropZone.style.display = 'block';
+        fheFileInput.value = '';
+        submitBtn.disabled = true;
     }
 
     function handleSearch(e) {
@@ -1750,15 +1950,20 @@ function initializeEnhancedEnrollmentModal() {
         if (unitsSummary) unitsSummary.textContent = `${units} units`;
         if (submitCount) submitCount.textContent = count;
         
+        // Update next step button state
+        if (nextStepBtn) {
+            nextStepBtn.disabled = count === 0 || units > enhancedMaxUnits;
+        }
+        
         // Update save button state
-        if (saveBtn) {
-            saveBtn.disabled = count === 0 || units > enhancedMaxUnits;
+        if (submitBtn) {
+            submitBtn.disabled = count === 0 || units > enhancedMaxUnits || !isFheUploaded;
             
             // Add warning if over unit limit
             if (units > enhancedMaxUnits) {
-                saveBtn.title = `Maximum ${enhancedMaxUnits} units allowed. Current: ${units} units`;
+                submitBtn.title = `Maximum ${enhancedMaxUnits} units allowed. Current: ${units} units`;
             } else {
-                saveBtn.title = '';
+                submitBtn.title = '';
             }
         }
     }
@@ -1840,11 +2045,15 @@ function initializeEnhancedEnrollmentModal() {
     function submitEnrollment() {
         console.log('Enhanced submit enrollment clicked');
         console.log('Enhanced selected subjects count:', enhancedSelectedSubjects.size);
-        console.log('Enhanced selected subjects:', Array.from(enhancedSelectedSubjects.entries()));
-        console.log('Enhanced total units:', enhancedTotalUnits);
+        console.log('Enhanced FHE file:', fheFile);
         
         if (enhancedSelectedSubjects.size === 0) {
             showNotification('Please select at least one subject', 'error');
+            return;
+        }
+        
+        if (!isFheUploaded || !fheFile) {
+            showNotification('Please upload your FHE file before submitting', 'error');
             return;
         }
         
@@ -1853,12 +2062,15 @@ function initializeEnhancedEnrollmentModal() {
             return;
         }
         
-        const submitBtn = saveBtn;
+        const submitBtn = document.getElementById('enhancedSubmitEnrollment');
         const originalText = submitBtn.innerHTML;
         
         // Show loading state
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
         submitBtn.disabled = true;
+        
+        // Create FormData to handle file upload
+        const formData = new FormData();
         
         // Convert Map to Array for submission - now including section data
         const subjectsArray = Array.from(enhancedSelectedSubjects.values()).map(item => ({
@@ -1866,18 +2078,21 @@ function initializeEnhancedEnrollmentModal() {
             section: item.section
         }));
         
+        // Append data to FormData
+        formData.append('subjects', JSON.stringify(subjectsArray));
+        formData.append('fhe_file', fheFile);
+        formData.append('total_units', enhancedTotalUnits.toString());
+        
         console.log('Enhanced submitting enrollment with subjects:', subjectsArray);
         console.log('Enhanced total units to submit:', enhancedTotalUnits);
+        console.log('Enhanced FHE file:', fheFile.name);
         
         fetch('/student/enrollment/enroll', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
-            body: JSON.stringify({
-                subjects: subjectsArray
-            })
+            body: formData
         })
         .then(response => {
             console.log('Enhanced response status:', response.status);
@@ -1914,6 +2129,9 @@ function initializeEnhancedEnrollmentModal() {
         if (modal) {
             modal.classList.add('active');
             loadEnhancedEnrollmentSubjects();
+            // Reset step to 1 when opening modal
+            currentStep = 1;
+            updateStepNavigation();
         }
     }
 
@@ -1922,7 +2140,13 @@ function initializeEnhancedEnrollmentModal() {
             modal.classList.remove('active');
             enhancedSelectedSubjects.clear();
             enhancedTotalUnits = 0;
+            fheFile = null;
+            isFheUploaded = false;
+            removeFheFile(); // Reset FHE file state
             updateEnhancedSelectionInfo();
+            // Reset to step 1
+            currentStep = 1;
+            updateStepNavigation();
         }
     }
 
