@@ -2023,35 +2023,33 @@ class StudentController extends Controller
             $user = Auth::guard('student')->user();
             $student = $user->user_information->student;
 
-            // Verify payment is completed
-            $payment = DB::table('payments')
-                ->where('payment_intent_id', $request->payment_intent_id)
-                ->where('student_id', $student->id)
-                ->where('status', 'succeeded')
-                ->first();
-
-            if (!$payment) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Payment not verified. Please complete payment first.'
-                ]);
-            }
-
-            // Your existing enrollment logic here, but now with verified payment
-            // This would include creating enrollment records, updating student status, etc.
-
             DB::beginTransaction();
 
-            // Handle FHE file upload (your existing logic)
+            // Handle FHE file upload
             if ($request->hasFile('fhe_file')) {
                 $fheFile = $request->file('fhe_file');
-                $fileName = 'fhe_' . $student->id . '_' . time() . '.' . $fheFile->getClientOriginalExtension();
-                $filePath = $fheFile->storeAs('documents/fhe', $fileName, 'public');
+                $fheFileName = 'fhe_' . $student->id . '_' . time() . '.' . $fheFile->getClientOriginalExtension();
+                $fheFilePath = $fheFile->storeAs('documents/fhe', $fheFileName, 'public');
                 
                 DB::table('documents')->insert([
                     'student_id' => $student->id,
                     'type' => 'FHE',
-                    'file_path' => $filePath,
+                    'file_path' => $fheFilePath,
+                    'upload_date' => now()->format('Y-m-d H:i:s'),
+                    'status' => 'Pending'
+                ]);
+            }
+
+            // Handle payment receipt upload
+            if ($request->hasFile('payment_receipt')) {
+                $receiptFile = $request->file('payment_receipt');
+                $receiptFileName = 'payment_receipt_' . $student->id . '_' . time() . '.' . $receiptFile->getClientOriginalExtension();
+                $receiptFilePath = $receiptFile->storeAs('documents/payment_receipts', $receiptFileName, 'public');
+                
+                DB::table('payments')->insert([
+                    'student_id' => $student->id,
+                    'type' => 'PAYMENT_RECEIPT',
+                    'file_path' => $receiptFilePath,
                     'upload_date' => now()->format('Y-m-d H:i:s'),
                     'status' => 'Pending',
                     'created_at' => now(),
@@ -2100,7 +2098,7 @@ class StudentController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Enrollment submitted successfully! Your enrollment is now pending approval.'
+                'message' => 'Enrollment submitted successfully! Your enrollment and payment receipt are pending verification.'
             ]);
 
         } catch (\Exception $e) {

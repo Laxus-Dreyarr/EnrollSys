@@ -11,19 +11,19 @@ class CreatePaymentsTable extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('student_id');
-            $table->string('payment_intent_id');
+            $table->string('payment_intent_id')->unique();
+            $table->string('client_key');
+            $table->string('transaction_id')->nullable();
             $table->decimal('amount', 8, 2);
             $table->string('currency')->default('PHP');
-            $table->string('payment_method');
-            $table->string('status');
-            $table->json('payment_details')->nullable();
-            $table->string('receipt_url')->nullable();
+            $table->string('payment_method')->nullable();
+            $table->string('status'); // pending, succeeded, failed
             $table->timestamp('paid_at')->nullable();
+            $table->text('payment_details')->nullable();
             $table->timestamps();
 
-            $table->foreign('student_id')->references('id')->on('students');
-            $table->index('payment_intent_id');
-            $table->index('status');
+            $table->foreign('student_id')->references('id')->on('students')->onDelete('cascade');
+            $table->index(['student_id', 'status']);
         });
     }
 

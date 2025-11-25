@@ -1423,16 +1423,16 @@ $show_student_form = (strtolower($student_id) === 'none');
                     </div>
                 </div>
 
-                <!-- Payment Section (Step 3) -->
+                <!-- Payment Receipt Upload Section (Step 3) -->
                 <div class="enhanced-enrollment-payment-section" id="enhancedPaymentSection" style="display: none;">
                     <div class="enhanced-payment-container">
                         <div class="enhanced-payment-header">
                             <div class="enhanced-payment-icon">
-                                <i class="fas fa-credit-card"></i>
+                                <i class="fas fa-receipt"></i>
                             </div>
                             <div class="enhanced-payment-title">
-                                <h3>Organizational Fee Payment</h3>
-                                <p>Pay ₱150 organizational fee via GCash to complete your enrollment</p>
+                                <h3>Payment Receipt Upload</h3>
+                                <p>Upload your GCash payment receipt screenshot to complete enrollment</p>
                             </div>
                         </div>
 
@@ -1452,61 +1452,101 @@ $show_student_form = (strtolower($student_id) === 'none');
                             </div>
                         </div>
 
-                        <div class="enhanced-payment-methods">
-                            <h4>Select Payment Method</h4>
-                            <div class="enhanced-payment-options">
-                                <div class="enhanced-payment-option active" data-method="gcash">
-                                    <div class="enhanced-payment-option-icon">
-                                        <img src="https://upload.wikimedia.org/wikipedia/commons/1/1f/GCash_logo.svg" alt="GCash" style="height: 24px;">
+                        <div class="enhanced-payment-instructions">
+                            <h4>Payment Instructions:</h4>
+                            <div class="enhanced-payment-steps">
+                                <div class="enhanced-payment-step">
+                                    <div class="enhanced-step-number">1</div>
+                                    <div class="enhanced-step-content">
+                                        <strong>Pay via GCash</strong>
+                                        <p>Send ₱150.00 to GCash Number: <strong>0912-345-6789</strong></p>
                                     </div>
-                                    <div class="enhanced-payment-option-info">
-                                        <h5>GCash</h5>
-                                        <p>Pay using your GCash wallet</p>
+                                </div>
+                                <div class="enhanced-payment-step">
+                                    <div class="enhanced-step-number">2</div>
+                                    <div class="enhanced-step-content">
+                                        <strong>Take Screenshot</strong>
+                                        <p>Take a clear screenshot of your GCash payment receipt</p>
                                     </div>
-                                    <div class="enhanced-payment-option-check">
-                                        <i class="fas fa-check"></i>
+                                </div>
+                                <div class="enhanced-payment-step">
+                                    <div class="enhanced-step-number">3</div>
+                                    <div class="enhanced-step-content">
+                                        <strong>Upload Receipt</strong>
+                                        <p>Upload the screenshot using the form below</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="enhanced-payment-action">
-                            <button class="enhanced-btn-primary enhanced-pay-now-btn" id="enhancedPayNowBtn">
-                                <i class="fas fa-lock"></i>
-                                Pay ₱150 via GCash
-                            </button>
-                            <p class="enhanced-payment-security-note">
-                                <i class="fas fa-shield-alt"></i>
-                                Your payment is secure and encrypted
-                            </p>
-                        </div>
-
-                        <div class="enhanced-payment-processing" id="enhancedPaymentProcessing" style="display: none;">
-                            <div class="enhanced-payment-loading">
-                                <div class="enhanced-payment-spinner"></div>
-                                <h4>Processing Payment</h4>
-                                <p>Please wait while we process your payment...</p>
+                        <!-- Receipt Upload Area -->
+                        <div class="enhanced-payment-upload-container">
+                            <div class="enhanced-payment-upload-area" id="enhancedPaymentUploadArea">
+                                <div class="enhanced-payment-drop-zone" id="enhancedPaymentDropZone">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                    <h4>Upload GCash Payment Receipt</h4>
+                                    <p>Drag & Drop your payment receipt screenshot here</p>
+                                    <p class="enhanced-payment-max-size">Supported formats: JPG, PNG, PDF | Max file size: 5MB</p>
+                                    <button type="button" class="enhanced-btn-primary enhanced-payment-browse-btn" id="enhancedPaymentBrowseBtn">
+                                        <i class="fas fa-upload"></i>
+                                        Choose File
+                                    </button>
+                                </div>
+                                <input type="file" id="enhancedPaymentFileInput" accept=".jpg,.jpeg,.png,.pdf" style="display: none;">
+                                
+                                <div class="enhanced-payment-preview" id="enhancedPaymentPreview" style="display: none;">
+                                    <div class="enhanced-payment-preview-content">
+                                        <div class="enhanced-payment-file-info">
+                                            <i class="fas fa-file-image enhanced-payment-file-icon"></i>
+                                            <div class="enhanced-payment-file-details">
+                                                <h5 id="enhancedPaymentFileName">receipt.jpg</h5>
+                                                <span id="enhancedPaymentFileSize">2.5 MB</span>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="enhanced-payment-remove-btn" id="enhancedPaymentRemoveBtn">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="enhanced-payment-upload-progress" id="enhancedPaymentUploadProgress" style="display: none;">
+                                        <div class="enhanced-payment-progress-bar">
+                                            <div class="enhanced-payment-progress-fill" id="enhancedPaymentProgressFill"></div>
+                                        </div>
+                                        <span class="enhanced-payment-progress-text" id="enhancedPaymentProgressText">0%</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="enhanced-payment-success" id="enhancedPaymentSuccess" style="display: none;">
-                            <div class="enhanced-payment-success-icon">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                            <h4>Payment Successful!</h4>
-                            <p>Your organizational fee has been paid successfully.</p>
-                            <div class="enhanced-payment-details">
-                                <div class="enhanced-payment-detail">
-                                    <span>Amount Paid:</span>
-                                    <span>₱150.00</span>
+                        <div class="enhanced-payment-requirements">
+                            <h5>Receipt Requirements:</h5>
+                            <ul>
+                                <li><i class="fas fa-check"></i> Must show GCash transaction details clearly</li>
+                                <li><i class="fas fa-check"></i> Transaction amount must be ₱150.00</li>
+                                <li><i class="fas fa-check"></i> Recipient number must be 0912-345-6789</li>
+                                <li><i class="fas fa-check"></i> File must be clear and readable</li>
+                                <li><i class="fas fa-check"></i> File size should not exceed 5MB</li>
+                            </ul>
+                        </div>
+
+                        <!-- Payment Verification Status -->
+                        <div class="enhanced-payment-verification" id="enhancedPaymentVerification" style="display: none;">
+                            <div class="enhanced-verification-status">
+                                <div class="enhanced-verification-icon">
+                                    <i class="fas fa-check-circle"></i>
                                 </div>
-                                <div class="enhanced-payment-detail">
-                                    <span>Payment Method:</span>
-                                    <span>GCash</span>
-                                </div>
-                                <div class="enhanced-payment-detail">
-                                    <span>Transaction ID:</span>
-                                    <span id="enhancedPaymentTransactionId">-</span>
+                                <div class="enhanced-verification-content">
+                                    <h4>Payment Receipt Uploaded Successfully!</h4>
+                                    <p>Your payment receipt has been submitted for verification.</p>
+                                    <div class="enhanced-verification-details">
+                                        <div class="enhanced-verification-detail">
+                                            <span>File Name:</span>
+                                            <span id="enhancedVerificationFileName">receipt.jpg</span>
+                                        </div>
+                                        <div class="enhanced-verification-detail">
+                                            <span>Uploaded:</span>
+                                            <span id="enhancedVerificationTime">Just now</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
