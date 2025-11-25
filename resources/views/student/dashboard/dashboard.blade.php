@@ -1134,9 +1134,9 @@ $show_student_form = (strtolower($student_id) === 'none');
                         <p class="enhanced-enrollment-modal-subtitle">Complete your enrollment in 4 simple steps</p>
                     </div>
                 </div>
-                <button type="button" class="enhanced-enrollment-close-modal" id="enhancedCloseEnrollmentModal" aria-label="Close modal">
+                <!-- <button type="button" class="enhanced-enrollment-close-modal" id="enhancedCloseEnrollmentModal" aria-label="Close modal">
                     <i class="fas fa-times"></i>
-                </button>
+                </button> -->
             </div>
             
             <div class="enhanced-enrollment-modal-content">

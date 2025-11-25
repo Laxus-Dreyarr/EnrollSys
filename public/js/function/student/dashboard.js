@@ -1801,7 +1801,7 @@ function initializeEnhancedEnrollmentModal() {
         filterCount.textContent = count;
     }
 
-    // Load subjects for enhanced modal
+    // In the loadEnhancedEnrollmentSubjects function
     function loadEnhancedEnrollmentSubjects() {
         showLoadingState();
         
@@ -1822,14 +1822,20 @@ function initializeEnhancedEnrollmentModal() {
             console.log('Enhanced enrollment data received:', data);
             
             if (data.success) {
-                // Convert subjects object to array if needed
+                // Check if there's an existing enrollment request
+                if (data.has_existing_request) {
+                    showNotification(`You cannot enroll at this time. You have an existing enrollment request with status: ${data.existing_status}`, 'error');
+                    closeModal();
+                    return;
+                }
+                
+                // Continue with normal processing...
                 let subjectsArray = data.subjects;
                 if (subjectsArray && typeof subjectsArray === 'object' && !Array.isArray(subjectsArray)) {
                     console.log('Converting subjects object to array');
                     subjectsArray = Object.values(subjectsArray);
                 }
                 
-                // Create a new data object with the array
                 const processedData = {
                     ...data,
                     subjects: subjectsArray || []
@@ -1845,7 +1851,13 @@ function initializeEnhancedEnrollmentModal() {
                 
                 displayEnhancedSubjects(processedData);
             } else {
-                showEnhancedError('Failed to load subjects: ' + (data.message || 'Unknown error'));
+                // Check if it's an existing request error
+                if (data.has_existing_request) {
+                    showNotification(data.message, 'error');
+                    closeModal();
+                } else {
+                    showEnhancedError('Failed to load subjects: ' + (data.message || 'Unknown error'));
+                }
             }
         })
         .catch(error => {
@@ -2857,54 +2869,97 @@ document.addEventListener('DOMContentLoaded', function() {
             enrollNowBtn.style.opacity = '1';
             
             enrollNowBtn.addEventListener('click', function() {
-                const isIrregular = document.getElementById('is-regular').value == 2;
-                console.log('Enroll Now clicked - Is irregular:', isIrregular);
+                const studentStatus = document.getElementById('student-status')?.value;
+                const isEnrollmentActive = document.getElementById('is-enrollment-active')?.value === '1';
+                const hasEnrollmentPeriod = document.getElementById('enrollment-period')?.value === '1';
                 
-                if (isIrregular) {
-                    // For irregular students, check if they have submitted past subjects
-                    console.log('Checking past subjects for irregular student...');
+                console.log('Enrollment button conditions:', {
+                    studentStatus,
+                    isEnrollmentActive,
+                    hasEnrollmentPeriod
+                });
+                
+                // Check if enrollment should be disabled
+                if (studentStatus === 'None' || !isEnrollmentActive || !hasEnrollmentPeriod) {
+                    enrollNowBtn.style.cursor = 'not-allowed';
+                    enrollNowBtn.style.opacity = '0.6';
                     
-                    fetch('/student/enrollment/check-past-subjects', {
-                        method: 'GET',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    enrollNowBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        if (studentStatus === 'None') {
+                            showNotification('Your student status is not eligible for enrollment.', 'error');
+                        } else if (!hasEnrollmentPeriod) {
+                            showNotification('There is no active enrollment period at the moment.', 'error');
+                        } else if (!isEnrollmentActive) {
+                            showNotification('Enrollment is currently not active. Please check the enrollment dates.', 'error');
                         }
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Past subjects check response:', data);
-                        if (data.success) {
-                            if (data.has_submitted) {
-                                // Student has submitted past subjects, proceed with enhanced enrollment
-                                console.log('Irregular student has submitted past subjects, opening enhanced enrollment modal');
-                                enhancedEnrollmentModal.openModal();
-                            } else {
-                                // Student hasn't submitted past subjects, show the irregular modal
-                                console.log('Irregular student needs to submit past subjects first');
-                                if (window.irregularModal) {
-                                    window.irregularModal.loadAllSubjects();
-                                    window.irregularModal.modal.classList.add('active');
-                                }
-                            }
-                        } else {
-                            console.error('Error checking past subjects:', data.message);
-                            showNotification('Error checking enrollment status: ' + data.message, 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error checking past subjects:', error);
-                        showNotification('Network error checking enrollment status. Please try again.', 'error');
                     });
                 } else {
-                    // Regular student - proceed with enhanced modal
-                    console.log('Regular student, opening enhanced enrollment modal');
-                    enhancedEnrollmentModal.openModal();
+                    // Enable enrollment functionality
+                    enrollNowBtn.style.cursor = 'pointer';
+                    enrollNowBtn.style.opacity = '1';
+                    
+                    enrollNowBtn.addEventListener('click', function() {
+                        const isIrregular = document.getElementById('is-regular').value == 2;
+                        console.log('Enroll Now clicked - Is irregular:', isIrregular);
+                        
+                        // FIRST CHECK FOR EXISTING ENROLLMENT REQUEST
+                        checkExistingEnrollmentRequest().then(hasExistingRequest => {
+                            if (hasExistingRequest) {
+                                // Don't proceed if there's an existing request
+                                return;
+                            }
+                            
+                            if (isIrregular) {
+                                // For irregular students, check if they have submitted past subjects
+                                console.log('Checking past subjects for irregular student...');
+                                
+                                fetch('/student/enrollment/check-past-subjects', {
+                                    method: 'GET',
+                                    headers: {
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                    }
+                                })
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error(`HTTP error! status: ${response.status}`);
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    console.log('Past subjects check response:', data);
+                                    if (data.success) {
+                                        if (data.has_submitted) {
+                                            // Student has submitted past subjects, proceed with enhanced enrollment
+                                            console.log('Irregular student has submitted past subjects, opening enhanced enrollment modal');
+                                            enhancedEnrollmentModal.openModal();
+                                        } else {
+                                            // Student hasn't submitted past subjects, show the irregular modal
+                                            console.log('Irregular student needs to submit past subjects first');
+                                            if (window.irregularModal) {
+                                                window.irregularModal.loadAllSubjects();
+                                                window.irregularModal.modal.classList.add('active');
+                                            }
+                                        }
+                                    } else {
+                                        console.error('Error checking past subjects:', data.message);
+                                        showNotification('Error checking enrollment status: ' + data.message, 'error');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error checking past subjects:', error);
+                                    showNotification('Network error checking enrollment status. Please try again.', 'error');
+                                });
+                            } else {
+                                // Regular student - proceed with enhanced modal
+                                console.log('Regular student, opening enhanced enrollment modal');
+                                enhancedEnrollmentModal.openModal();
+                            }
+                        });
+                    });
                 }
             });
         }
@@ -2969,6 +3024,29 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('Error loading subjects:', error);
             showEnrollmentError('Network error. Please check your connection and try again. Error: ' + error.message);
+        });
+    }
+
+    // Add this helper function to check for existing enrollment requests
+    function checkExistingEnrollmentRequest() {
+        return fetch('/student/enrollment/check-existing-request', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.has_existing_request) {
+                showNotification(`You already have an existing enrollment request with status: ${data.existing_status}. Please wait for it to be processed.`, 'error');
+                return true;
+            }
+            return false;
+        })
+        .catch(error => {
+            console.error('Error checking existing enrollment request:', error);
+            return false;
         });
     }
 

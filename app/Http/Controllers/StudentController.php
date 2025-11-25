@@ -1597,6 +1597,15 @@ class StudentController extends Controller
                 'year_level' => $student->year_level
             ]);
 
+            // CHECK FOR EXISTING ENROLLMENT REQUEST FIRST
+            $existingRequest = $this->hasExistingEnrollmentRequest($student->id);
+            if ($existingRequest) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You already have an existing enrollment request with status: ' . $existingRequest->status
+                ]);
+            }
+
             // Get student's year level
             $yearLevel = $student->year_level;
             
@@ -1820,7 +1829,7 @@ class StudentController extends Controller
             if ($existingRequest) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You already have a pending enrollment request. Please wait for approval.'
+                    'message' => 'You already have an existing enrollment request with status: ' . $existingRequest->status
                 ]);
             }
             
@@ -2108,6 +2117,21 @@ class StudentController extends Controller
                 'success' => false,
                 'message' => 'Enrollment failed: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    private function hasExistingEnrollmentRequest($studentId)
+    {
+        try {
+            $existingRequest = EnrollmentRequest::where('student_id', $studentId)
+                ->whereIn('status', ['Pending', 'Approved', 'Rejected'])
+                ->first();
+                
+            return $existingRequest ? $existingRequest : false;
+            
+        } catch (\Exception $e) {
+            Log::error('Error checking existing enrollment request: ' . $e->getMessage());
+            return false;
         }
     }
 

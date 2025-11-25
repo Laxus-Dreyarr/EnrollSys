@@ -209,6 +209,8 @@ Route::middleware(['student.auth'])->group(function () {
     Route::get('/student/curricula', [StudentController::class, 'getAvailableCurricula']);
 
     Route::post('/student/enrollment/final-enroll', [StudentController::class, 'finalEnroll']);
+
+    Route::get('/student/enrollment/check-existing-request', [StudentController::class, 'checkExistingEnrollmentRequest']);
 });
 
 // Debug route - remove after testing
