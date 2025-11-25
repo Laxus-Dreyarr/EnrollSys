@@ -844,7 +844,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
             
             // Send login request
-            fetch('/exe/student', {
+            fetch('/exe/org', {
                 method: 'POST',
                 body: formData
             })
@@ -871,6 +871,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (successMessage) {
                         successMessage.textContent = 'Login Successfully!';
                         successMessage.style.display = 'block';
+                        setTimeout(() => {
+                            window.location.href = '/org-dashboard';
+                        }, 3000);
                     }
                 }
             })

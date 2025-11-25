@@ -249,6 +249,10 @@ Route::get('/debug-student-data', function() {
 
 
 //Org Routes
+Route::middleware(['org.auth'])->group(function () {
+    Route::get('/org-dashboard', [OrgController::class, 'dashboard'])->name('org.dashboard');
+    
+});
 Route::get('/org', function () {
     return view('org.index');
 });

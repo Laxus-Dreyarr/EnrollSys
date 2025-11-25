@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Model;
 
-class Organization extends Model
+class Organization extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, Notifiable;
 
     protected $table = 'organization';
     protected $primaryKey = 'org_id';
@@ -19,12 +21,14 @@ class Organization extends Model
     ];
 
     protected $hidden = [
-        'password',
+        'password', 'remember_token',
     ];
+    // Specify the guard for this model
+    protected $guard = 'org';
 
     public function info()
     {
-        return $this->hasOne(OrgInfo::class, 'org_id', 'organization_id');
+        return $this->hasOne(OrgInfo::class, 'organization_id', 'org_id');
     }
 
     public function organizationFees()

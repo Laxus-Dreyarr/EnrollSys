@@ -267,8 +267,64 @@ class OrgController extends Controller
                 return $this->sendOrgOtpForgotPass($request);
             case 'resetPassword_account':
                 return $this->OrgResetPass($request);
+            case 'login':
+                return $this->loginStudent($request);
         }
 
+    }
+
+    private function loginStudent(Request $request) {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        $email = $request->email;
+        $password = $request->password;
+
+        if(!$request) {
+            $x = '9';
+            return $x;
+        }
+
+        $y = Organization::where('email4', $email)->first();
+
+        if(!$y) {
+            $x = '1';
+            return $x;
+        }
+
+        if (!Hash::check($password, $y->password)) {
+            $x = 2;
+            return $x;  
+        }
+
+        if($y->is_active == 0) {
+            $x = 0;
+            return $x;  
+        }
+
+        if (Auth::guard('org')->attempt([
+            'email4' => $request->email,
+            'password' => $request->password
+            ])) {
+            $request->session()->regenerate();
+            return response()->json(10);
+        }
+        
+    }
+
+    public function dashboard()
+    {
+        if (!Auth::guard('org')->check()) {
+            return redirect('/org')->with('error', 'Please login first.');
+        }
+
+        $user = Auth::guard('org')->user();
+        
+        // Check if there's an active enrollment period
+        
+        return view('org.dashboard.org-dashboard', compact('user'));
     }
     
 

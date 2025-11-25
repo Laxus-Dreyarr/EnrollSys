@@ -58,6 +58,12 @@ return [
             'provider' => 'instructors',
             'login' => '/instructor', // Add this line exiting student login route
         ],
+
+        'org' => [ // Add student guard
+            'driver' => 'session',
+            'provider' => 'orgs',
+            'login' => '/org', // Add this line exiting student login route
+        ],
     ],
 
     /*
@@ -107,6 +113,11 @@ return [
         'instructors' => [ // Add admin provider
             'driver' => 'eloquent',
             'model' => App\Models\Instructor::class,
+        ],
+
+        'orgs' => [ // Add admin provider
+            'driver' => 'eloquent',
+            'model' => App\Models\Organization::class,
         ],
     ],
 
