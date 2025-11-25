@@ -1131,7 +1131,7 @@ $show_student_form = (strtolower($student_id) === 'none');
                     </div>
                     <div>
                         <h2 class="enhanced-enrollment-modal-title">Course Enrollment</h2>
-                        <p class="enhanced-enrollment-modal-subtitle">Select subjects for the current semester enrollment</p>
+                        <p class="enhanced-enrollment-modal-subtitle">Complete your enrollment in 4 simple steps</p>
                     </div>
                 </div>
                 <button type="button" class="enhanced-enrollment-close-modal" id="enhancedCloseEnrollmentModal" aria-label="Close modal">
@@ -1149,11 +1149,15 @@ $show_student_form = (strtolower($student_id) === 'none');
                         </div>
                         <div class="enhanced-progress-step" data-step="2">
                             <div class="enhanced-step-number">2</div>
-                            <span class="enhanced-step-label">Upload FHE File</span>
+                            <span class="enhanced-step-label">Upload FHE</span>
                         </div>
                         <div class="enhanced-progress-step" data-step="3">
                             <div class="enhanced-step-number">3</div>
-                            <span class="enhanced-step-label">Confirm Enrollment</span>
+                            <span class="enhanced-step-label">Payment</span>
+                        </div>
+                        <div class="enhanced-progress-step" data-step="4">
+                            <div class="enhanced-step-number">4</div>
+                            <span class="enhanced-step-label">Confirm</span>
                         </div>
                     </div>
                 </div>
@@ -1415,6 +1419,161 @@ $show_student_form = (strtolower($student_id) === 'none');
                                 <li><i class="fas fa-check"></i> Must be for the current semester</li>
                                 <li><i class="fas fa-check"></i> File size should not exceed 5MB</li>
                             </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Section (Step 3) -->
+                <div class="enhanced-enrollment-payment-section" id="enhancedPaymentSection" style="display: none;">
+                    <div class="enhanced-payment-container">
+                        <div class="enhanced-payment-header">
+                            <div class="enhanced-payment-icon">
+                                <i class="fas fa-credit-card"></i>
+                            </div>
+                            <div class="enhanced-payment-title">
+                                <h3>Organizational Fee Payment</h3>
+                                <p>Pay ₱150 organizational fee via GCash to complete your enrollment</p>
+                            </div>
+                        </div>
+
+                        <div class="enhanced-payment-summary">
+                            <div class="enhanced-payment-breakdown">
+                                <h4>Payment Summary</h4>
+                                <div class="enhanced-payment-items">
+                                    <div class="enhanced-payment-item">
+                                        <span>Organizational Fee</span>
+                                        <span>₱150.00</span>
+                                    </div>
+                                    <div class="enhanced-payment-item total">
+                                        <span>Total Amount</span>
+                                        <span>₱150.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="enhanced-payment-methods">
+                            <h4>Select Payment Method</h4>
+                            <div class="enhanced-payment-options">
+                                <div class="enhanced-payment-option active" data-method="gcash">
+                                    <div class="enhanced-payment-option-icon">
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/1/1f/GCash_logo.svg" alt="GCash" style="height: 24px;">
+                                    </div>
+                                    <div class="enhanced-payment-option-info">
+                                        <h5>GCash</h5>
+                                        <p>Pay using your GCash wallet</p>
+                                    </div>
+                                    <div class="enhanced-payment-option-check">
+                                        <i class="fas fa-check"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="enhanced-payment-action">
+                            <button class="enhanced-btn-primary enhanced-pay-now-btn" id="enhancedPayNowBtn">
+                                <i class="fas fa-lock"></i>
+                                Pay ₱150 via GCash
+                            </button>
+                            <p class="enhanced-payment-security-note">
+                                <i class="fas fa-shield-alt"></i>
+                                Your payment is secure and encrypted
+                            </p>
+                        </div>
+
+                        <div class="enhanced-payment-processing" id="enhancedPaymentProcessing" style="display: none;">
+                            <div class="enhanced-payment-loading">
+                                <div class="enhanced-payment-spinner"></div>
+                                <h4>Processing Payment</h4>
+                                <p>Please wait while we process your payment...</p>
+                            </div>
+                        </div>
+
+                        <div class="enhanced-payment-success" id="enhancedPaymentSuccess" style="display: none;">
+                            <div class="enhanced-payment-success-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h4>Payment Successful!</h4>
+                            <p>Your organizational fee has been paid successfully.</p>
+                            <div class="enhanced-payment-details">
+                                <div class="enhanced-payment-detail">
+                                    <span>Amount Paid:</span>
+                                    <span>₱150.00</span>
+                                </div>
+                                <div class="enhanced-payment-detail">
+                                    <span>Payment Method:</span>
+                                    <span>GCash</span>
+                                </div>
+                                <div class="enhanced-payment-detail">
+                                    <span>Transaction ID:</span>
+                                    <span id="enhancedPaymentTransactionId">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confirmation Section (Step 4) -->
+                <div class="enhanced-enrollment-confirmation-section" id="enhancedConfirmationSection" style="display: none;">
+                    <div class="enhanced-confirmation-container">
+                        <div class="enhanced-confirmation-header">
+                            <div class="enhanced-confirmation-icon">
+                                <i class="fas fa-clipboard-check"></i>
+                            </div>
+                            <div class="enhanced-confirmation-title">
+                                <h3>Confirm Enrollment</h3>
+                                <p>Review your enrollment details before submitting</p>
+                            </div>
+                        </div>
+
+                        <div class="enhanced-confirmation-summary">
+                            <div class="enhanced-confirmation-items">
+                                <div class="enhanced-confirmation-item">
+                                    <div class="enhanced-confirmation-item-icon">
+                                        <i class="fas fa-book"></i>
+                                    </div>
+                                    <div class="enhanced-confirmation-item-content">
+                                        <h5>Selected Subjects</h5>
+                                        <div id="enhancedConfirmationSubjectsList">
+                                            <!-- Subjects will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="enhanced-confirmation-item">
+                                    <div class="enhanced-confirmation-item-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div class="enhanced-confirmation-item-content">
+                                        <h5>FHE Document</h5>
+                                        <span id="enhancedConfirmationFheFile">document.pdf</span>
+                                    </div>
+                                </div>
+
+                                <div class="enhanced-confirmation-item">
+                                    <div class="enhanced-confirmation-item-icon">
+                                        <i class="fas fa-credit-card"></i>
+                                    </div>
+                                    <div class="enhanced-confirmation-item-content">
+                                        <h5>Payment</h5>
+                                        <div class="enhanced-confirmation-payment-status">
+                                            <i class="fas fa-check-circle"></i>
+                                            <span>₱150.00 paid via GCash</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="enhanced-confirmation-actions">
+                            <button class="enhanced-btn-secondary" id="enhancedEditEnrollment">
+                                <i class="fas fa-edit"></i>
+                                Edit Details
+                            </button>
+                            <button class="enhanced-btn-primary" id="enhancedFinalSubmitEnrollment">
+                                <i class="fas fa-paper-plane"></i>
+                                Submit Enrollment
+                            </button>
                         </div>
                     </div>
                 </div>

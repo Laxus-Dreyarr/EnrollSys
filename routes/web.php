@@ -207,6 +207,11 @@ Route::middleware(['student.auth'])->group(function () {
 
     // New route for fetching curricula
     Route::get('/student/curricula', [StudentController::class, 'getAvailableCurricula']);
+
+
+    Route::post('/student/enrollment/create-payment-intent', [StudentController::class, 'createPaymentIntent']);
+    Route::post('/student/enrollment/confirm-payment', [StudentController::class, 'confirmPayment']);
+    Route::post('/student/enrollment/final-enroll', [StudentController::class, 'finalEnroll']);
 });
 
 // Debug route - remove after testing

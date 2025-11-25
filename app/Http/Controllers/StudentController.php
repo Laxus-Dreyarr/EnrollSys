@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Log;
 use App\Mail\PasswordResetOtp;
 use Illuminate\Support\Str;
 use Jenssegers\Agent\Agent;
+use Illuminate\Support\Facades\Http;
 
 class StudentController extends Controller
 {
@@ -1891,6 +1892,220 @@ class StudentController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('Enrollment error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Enrollment failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    private $paymongoSecretKey = 'sk_test_p2AqozyTfsgpqEePGv4A1pVF';
+
+
+    public function createPaymentIntent(Request $request)
+    {
+        try {
+            $user = Auth::guard('student')->user();
+            $student = $user->user_information->student;
+
+            $response = Http::withBasicAuth($this->paymongoSecretKey, '')
+                ->post('https://api.paymongo.com/v1/payment_intents', [
+                    'data' => [
+                        'attributes' => [
+                            'amount' => $request->amount,
+                            'payment_method_allowed' => ['gcash'],
+                            'payment_method_options' => [
+                                'card' => [
+                                    'request_three_d_secure' => 'any'
+                                ]
+                            ],
+                            'currency' => 'PHP',
+                            'description' => 'Organizational Fee - ' . $student->id_no,
+                            'metadata' => [
+                                'student_id' => $student->id,
+                                'student_name' => $user->user_information->firstname . ' ' . $user->user_information->lastname
+                            ]
+                        ]
+                    ]
+                ]);
+
+            $data = $response->json();
+
+            if (isset($data['data'])) {
+                $paymentIntent = $data['data'];
+
+                // Create payment record
+                DB::table('payments')->insert([
+                    'student_id' => $student->id,
+                    'payment_intent_id' => $paymentIntent['id'],
+                    'amount' => $request->amount / 100, // Convert back to pesos
+                    'currency' => 'PHP',
+                    'payment_method' => 'gcash',
+                    'status' => 'pending',
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'clientSecret' => $paymentIntent['attributes']['client_key'],
+                    'paymentIntentId' => $paymentIntent['id']
+                ]);
+            } else {
+                throw new \Exception('Failed to create payment intent: ' . ($data['errors'][0]['detail'] ?? 'Unknown error'));
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Payment intent creation error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment initialization failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function confirmPayment(Request $request)
+    {
+        try {
+            $user = Auth::guard('student')->user();
+            $student = $user->user_information->student;
+
+            // Verify payment with Paymongo
+            $response = Http::withBasicAuth($this->paymongoSecretKey, '')
+                ->get('https://api.paymongo.com/v1/payment_intents/' . $request->paymentIntentId);
+
+            $data = $response->json();
+
+            if (isset($data['data'])) {
+                $paymentIntent = $data['data'];
+                $status = $paymentIntent['attributes']['status'];
+
+                // Update payment record
+                DB::table('payments')
+                    ->where('payment_intent_id', $request->paymentIntentId)
+                    ->where('student_id', $student->id)
+                    ->update([
+                        'status' => $status,
+                        'payment_details' => json_encode($paymentIntent),
+                        'receipt_url' => $paymentIntent['attributes']['next_action']['redirect']['url'] ?? null,
+                        'paid_at' => $status === 'succeeded' ? now() : null,
+                        'updated_at' => now()
+                    ]);
+
+                if ($status === 'succeeded') {
+                    return response()->json([
+                        'success' => true,
+                        'transactionId' => $request->paymentIntentId,
+                        'message' => 'Payment confirmed successfully'
+                    ]);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Payment not completed: ' . $status
+                    ]);
+                }
+            } else {
+                throw new \Exception('Payment verification failed');
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Payment confirmation error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment confirmation failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function finalEnroll(Request $request)
+    {
+        try {
+            $user = Auth::guard('student')->user();
+            $student = $user->user_information->student;
+
+            // Verify payment is completed
+            $payment = DB::table('payments')
+                ->where('payment_intent_id', $request->payment_intent_id)
+                ->where('student_id', $student->id)
+                ->where('status', 'succeeded')
+                ->first();
+
+            if (!$payment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment not verified. Please complete payment first.'
+                ]);
+            }
+
+            // Your existing enrollment logic here, but now with verified payment
+            // This would include creating enrollment records, updating student status, etc.
+
+            DB::beginTransaction();
+
+            // Handle FHE file upload (your existing logic)
+            if ($request->hasFile('fhe_file')) {
+                $fheFile = $request->file('fhe_file');
+                $fileName = 'fhe_' . $student->id . '_' . time() . '.' . $fheFile->getClientOriginalExtension();
+                $filePath = $fheFile->storeAs('documents/fhe', $fileName, 'public');
+                
+                DB::table('documents')->insert([
+                    'student_id' => $student->id,
+                    'type' => 'FHE',
+                    'file_path' => $filePath,
+                    'upload_date' => now()->format('Y-m-d H:i:s'),
+                    'status' => 'Pending',
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+
+            // Create enrollment request
+            $enrollmentRequest = new EnrollmentRequest();
+            $enrollmentRequest->student_id = $student->id;
+            $enrollmentRequest->status = 'Pending';
+            $enrollmentRequest->request_date = now();
+            $enrollmentRequest->save();
+
+            // Create enrollment records for each subject
+            $subjects = json_decode($request->subjects, true);
+            foreach ($subjects as $enrollmentData) {
+                $subjectId = $enrollmentData['subjectId'];
+                $selectedSection = $enrollmentData['section'];
+                
+                $sectionId = $this->getOrCreateSection($subjectId, $selectedSection);
+                
+                if ($sectionId) {
+                    $enrollment = new Enrollment();
+                    $enrollment->student_id = $student->id;
+                    $enrollment->subject_id = $subjectId;
+                    $enrollment->section_id = $sectionId;
+                    $enrollment->status = 'Enrolled';
+                    $enrollment->enrollment_date = now();
+                    $enrollment->save();
+
+                    // Update section student count
+                    $section = Section::find($sectionId);
+                    if ($section) {
+                        $section->current_students += 1;
+                        $section->save();
+                    }
+                }
+            }
+
+            // Update student status
+            $student->status = 'Pending';
+            $student->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Enrollment submitted successfully! Your enrollment is now pending approval.'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Final enrollment error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Enrollment failed: ' . $e->getMessage()

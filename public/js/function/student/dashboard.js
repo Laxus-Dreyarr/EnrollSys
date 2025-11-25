@@ -1178,6 +1178,18 @@ function initializeEnhancedEnrollmentModal() {
     const fheProgressFill = document.getElementById('enhancedFheProgressFill');
     const fheProgressText = document.getElementById('enhancedFheProgressText');
 
+    // New variables for payment step
+    const paymentSection = document.getElementById('enhancedPaymentSection');
+    const confirmationSection = document.getElementById('enhancedConfirmationSection');
+    const payNowBtn = document.getElementById('enhancedPayNowBtn');
+    const paymentProcessing = document.getElementById('enhancedPaymentProcessing');
+    const paymentSuccess = document.getElementById('enhancedPaymentSuccess');
+    const paymentTransactionId = document.getElementById('enhancedPaymentTransactionId');
+    const finalSubmitBtn = document.getElementById('enhancedFinalSubmitEnrollment');
+    const editEnrollmentBtn = document.getElementById('enhancedEditEnrollment');
+    const confirmationSubjectsList = document.getElementById('enhancedConfirmationSubjectsList');
+    const confirmationFheFile = document.getElementById('enhancedConfirmationFheFile');
+
     let enhancedAllSubjects = [];
     let enhancedSelectedSubjects = new Map();
     let enhancedCurrentFilters = {
@@ -1193,16 +1205,21 @@ function initializeEnhancedEnrollmentModal() {
     let enhancedMaxUnits = 0;
     let originalMaxUnits = 0;
     let enhancedCompletedSubjects = [];
+
+    // Paymongo configuration
+    const PAYMONGO_PUBLIC_KEY = 'pk_test_irtrpF947Hn95spAszT41BW8';
+    const ORGANIZATIONAL_FEE = 150.00;
     
-    // New variables for step management and FHE file
+    // New variables for step management, FHE file and payment
     let currentStep = 1;
-    let fheFile = null;
-    let isFheUploaded = false;
+    let paymentIntentId = null;
+    let isPaymentCompleted = false;
 
     // Initialize modal
     function init() {
         attachEventListeners();
         updateStepNavigation();
+        initializePaymongo();
     }
 
     function attachEventListeners() {
@@ -1248,6 +1265,17 @@ function initializeEnhancedEnrollmentModal() {
         fheDropZone.addEventListener('dragover', handleFheDragOver);
         fheDropZone.addEventListener('dragleave', handleFheDragLeave);
         fheDropZone.addEventListener('drop', handleFheDrop);
+
+        // Payment events
+        payNowBtn.addEventListener('click', processPayment);
+        finalSubmitBtn.addEventListener('click', submitFinalEnrollment);
+        editEnrollmentBtn.addEventListener('click', goToStepOne);
+
+        // Step navigation
+        nextStepBtn.addEventListener('click', goToNextStep);
+        backStepBtn.addEventListener('click', goToPreviousStep);
+        submitBtn.addEventListener('click', goToNextStep); // Now goes to payment step
+        cancelBtn.addEventListener('click', closeModal);
         
         // Close mobile panels when clicking outside
         document.addEventListener('click', (e) => {
@@ -1277,6 +1305,8 @@ function initializeEnhancedEnrollmentModal() {
         if (currentStep === 1) {
             mainContent.style.display = 'block';
             fheSection.style.display = 'none';
+            paymentSection.style.display = 'none';
+            confirmationSection.style.display = 'none';
             backStepBtn.style.display = 'none';
             nextStepBtn.style.display = 'flex';
             submitBtn.style.display = 'none';
@@ -1284,15 +1314,30 @@ function initializeEnhancedEnrollmentModal() {
         } else if (currentStep === 2) {
             mainContent.style.display = 'none';
             fheSection.style.display = 'block';
+            paymentSection.style.display = 'none';
+            confirmationSection.style.display = 'none';
+            backStepBtn.style.display = 'flex';
+            nextStepBtn.style.display = 'flex'; // Change this to show next button
+            submitBtn.style.display = 'none';   // Hide submit button
+            nextStepBtn.disabled = !isFheUploaded; // Enable only if FHE uploaded
+        } else if (currentStep === 3) {
+            mainContent.style.display = 'none';
+            fheSection.style.display = 'none';
+            paymentSection.style.display = 'block';
+            confirmationSection.style.display = 'none';
             backStepBtn.style.display = 'flex';
             nextStepBtn.style.display = 'none';
-            submitBtn.style.display = 'flex';
-            submitBtn.disabled = !isFheUploaded;
-        }
-
-        // Update button texts based on step
-        if (currentStep === 1) {
-            nextStepBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Next Step';
+            submitBtn.style.display = 'none';
+            updatePaymentUI();
+        } else if (currentStep === 4) {
+            mainContent.style.display = 'none';
+            fheSection.style.display = 'none';
+            paymentSection.style.display = 'none';
+            confirmationSection.style.display = 'block';
+            backStepBtn.style.display = 'flex';
+            nextStepBtn.style.display = 'none';
+            submitBtn.style.display = 'none';
+            updateConfirmationUI();
         }
     }
 
@@ -1300,14 +1345,25 @@ function initializeEnhancedEnrollmentModal() {
         if (currentStep === 1 && enhancedSelectedSubjects.size > 0) {
             currentStep = 2;
             updateStepNavigation();
+        } else if (currentStep === 2 && isFheUploaded) {
+            currentStep = 3; // Go to payment step, not submit
+            updateStepNavigation();
+        } else if (currentStep === 3 && isPaymentCompleted) {
+            currentStep = 4; // Go to confirmation after payment
+            updateStepNavigation();
         }
     }
 
     function goToPreviousStep() {
-        if (currentStep === 2) {
-            currentStep = 1;
+        if (currentStep > 1) {
+            currentStep--;
             updateStepNavigation();
         }
+    }
+
+    function goToStepOne() {
+        currentStep = 1;
+        updateStepNavigation();
     }
 
     // FHE Upload Functions
@@ -1370,6 +1426,233 @@ function initializeEnhancedEnrollmentModal() {
         return true;
     }
 
+    // Payment Functions
+    function initializePaymongo() {
+        // Load Paymongo.js if not already loaded
+        if (typeof window.Paymongo === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://js.paymongo.com/v1/paymongo.js';
+            script.onload = () => {
+                window.Paymongo.init(PAYMONGO_PUBLIC_KEY);
+            };
+            document.head.appendChild(script);
+        } else {
+            window.Paymongo.init(PAYMONGO_PUBLIC_KEY);
+        }
+    }
+
+    async function processPayment() {
+        try {
+            // Show processing state
+            payNowBtn.disabled = true;
+            payNowBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            paymentProcessing.style.display = 'block';
+
+            // Create payment intent on server
+            const response = await fetch('/student/enrollment/create-payment-intent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    amount: ORGANIZATIONAL_FEE * 100, // Convert to centavos
+                    currency: 'PHP',
+                    description: 'Organizational Fee Payment'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.clientSecret) {
+                // Initialize Paymongo
+                const paymongo = window.Paymongo(data.clientSecret);
+                
+                // Create payment method (GCash)
+                const paymentMethod = await paymongo.createPaymentMethod({
+                    type: 'gcash'
+                });
+
+                if (paymentMethod.error) {
+                    throw new Error(paymentMethod.error.message);
+                }
+
+                // Confirm payment
+                const paymentResult = await paymongo.confirmPayment({
+                    paymentMethodId: paymentMethod.id
+                });
+
+                if (paymentResult.error) {
+                    throw new Error(paymentResult.error.message);
+                }
+
+                // Payment successful
+                handlePaymentSuccess(paymentResult, data.paymentIntentId);
+                
+            } else {
+                throw new Error(data.message || 'Failed to create payment intent');
+            }
+
+        } catch (error) {
+            console.error('Payment processing error:', error);
+            showNotification('Payment failed: ' + error.message, 'error');
+            resetPaymentUI();
+        }
+    }
+
+    function handlePaymentSuccess(paymentData, paymentIntentId) {
+        // Update payment record on server
+        fetch('/student/enrollment/confirm-payment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                paymentIntentId: paymentIntentId,
+                paymentData: paymentData
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                isPaymentCompleted = true;
+                paymentTransactionId.textContent = data.transactionId;
+                paymentProcessing.style.display = 'none';
+                paymentSuccess.style.display = 'block';
+                paymentIntentId = data.paymentIntentId;
+                
+                showNotification('Payment completed successfully!', 'success');
+                
+                // Enable next step after a short delay
+                setTimeout(() => {
+                    goToNextStep(); // This will go to confirmation step
+                }, 2000);
+            } else {
+                throw new Error(data.message || 'Payment confirmation failed');
+            }
+        })
+        .catch(error => {
+            console.error('Payment confirmation error:', error);
+            showNotification('Payment confirmation failed: ' + error.message, 'error');
+            resetPaymentUI();
+        });
+    }
+
+    function handlePaymentFailure(errorData) {
+        console.error('Payment failed:', errorData);
+        showNotification('Payment was cancelled or failed. Please try again.', 'error');
+        resetPaymentUI();
+    }
+
+    function resetPaymentUI() {
+        payNowBtn.disabled = false;
+        payNowBtn.innerHTML = '<i class="fas fa-lock"></i> Pay ₱150 via GCash';
+        paymentProcessing.style.display = 'none';
+        paymentSuccess.style.display = 'none';
+    }
+
+    function updatePaymentUI() {
+        // Reset payment state when entering payment step
+        if (!isPaymentCompleted) {
+            resetPaymentUI();
+        }
+    }
+
+    function updateConfirmationUI() {
+        // Populate confirmation subjects list
+        let subjectsHTML = '';
+        enhancedSelectedSubjects.forEach((data, subjectId) => {
+            const subject = enhancedAllSubjects.find(s => s.id == subjectId);
+            if (subject) {
+                subjectsHTML += `
+                    <div class="enhanced-confirmation-subject">
+                        <span class="enhanced-confirmation-subject-code">${subject.code}</span>
+                        <span class="enhanced-confirmation-subject-name">${subject.name}</span>
+                        <span class="enhanced-confirmation-subject-section">Section ${data.section}</span>
+                    </div>
+                `;
+            }
+        });
+        confirmationSubjectsList.innerHTML = subjectsHTML;
+
+        // Update FHE file name
+        if (fheFile) {
+            confirmationFheFile.textContent = fheFile.name;
+        }
+    }
+
+    // Final enrollment submission
+    function submitFinalEnrollment() {
+        console.log('Final enrollment submission with payment verification');
+        
+        if (!isPaymentCompleted) {
+            showNotification('Please complete the payment before submitting enrollment.', 'error');
+            return;
+        }
+
+        const submitBtn = finalSubmitBtn;
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        submitBtn.disabled = true;
+        
+        // Create FormData with all enrollment data including payment
+        const formData = new FormData();
+        
+        // Convert Map to Array for submission
+        const subjectsArray = Array.from(enhancedSelectedSubjects.values()).map(item => ({
+            subjectId: item.subjectId,
+            section: item.section
+        }));
+        
+        // Append all data
+        formData.append('subjects', JSON.stringify(subjectsArray));
+        formData.append('fhe_file', fheFile);
+        formData.append('total_units', enhancedTotalUnits.toString());
+        formData.append('payment_intent_id', paymentIntentId);
+        formData.append('is_payment_completed', isPaymentCompleted.toString());
+        
+        console.log('Final enrollment submission with payment:', paymentIntentId);
+        
+        fetch('/student/enrollment/final-enroll', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Final enrollment response:', data);
+            if (data.success) {
+                showNotification(data.message || 'Enrollment submitted successfully!', 'success');
+                closeModal();
+                
+                // Refresh the page
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showNotification(data.message || 'Enrollment failed. Please try again.', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Final enrollment error:', error);
+            showNotification('Enrollment failed. Please try again. Error: ' + error.message, 'error');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    }
+
     function showFhePreview(file) {
         const fileSize = (file.size / (1024 * 1024)).toFixed(2);
         
@@ -1401,10 +1684,10 @@ function initializeEnhancedEnrollmentModal() {
                 progress = 100;
                 clearInterval(interval);
                 
-                // Upload complete
+                // Upload complete - enable next step but don't submit
                 setTimeout(() => {
                     isFheUploaded = true;
-                    submitBtn.disabled = false;
+                    nextStepBtn.disabled = false; // Enable next button
                     showNotification('FHE file uploaded successfully!', 'success');
                 }, 500);
             }
