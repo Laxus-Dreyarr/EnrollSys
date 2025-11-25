@@ -1383,7 +1383,7 @@ $show_student_form = (strtolower($student_id) === 'none');
                                 <p>Supported formats: PDF, JPG, PNG, DOC, DOCX</p>
                                 <p class="enhanced-fhe-max-size">Max file size: 5MB</p>
                                 <button type="button" class="enhanced-btn-primary enhanced-fhe-browse-btn" id="enhancedFheBrowseBtn">
-                                    <i class="fas fa-folder-open"></i>
+                                    <i class="fas fa-folder-open" style="color:white"></i>
                                     Browse Files
                                 </button>
                             </div>
@@ -1488,7 +1488,7 @@ $show_student_form = (strtolower($student_id) === 'none');
                                     <p>Drag & Drop your payment receipt screenshot here</p>
                                     <p class="enhanced-payment-max-size">Supported formats: JPG, PNG, PDF | Max file size: 5MB</p>
                                     <button type="button" class="enhanced-btn-primary enhanced-payment-browse-btn" id="enhancedPaymentBrowseBtn">
-                                        <i class="fas fa-upload"></i>
+                                        <i class="fa fa-upload" style="font-size:24px;color:white"></i>
                                         Choose File
                                     </button>
                                 </div>

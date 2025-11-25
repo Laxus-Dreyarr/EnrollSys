@@ -3290,7 +3290,7 @@ body.dark-mode .prerequisite-info {
 .enhanced-enrollment-progress-steps {
     display: flex;
     justify-content: center;
-    gap: 40px;
+    gap: 20px;
 }
 
 .enhanced-progress-step {
@@ -6500,6 +6500,577 @@ body.dark-mode .schedule-container {
 .irregular-subcategory-item:focus {
     outline: 2px solid #4361ee;
     outline-offset: 2px;
+}
+
+/* Darkmode feature5 */
+/* Enhanced Professional Dark Mode Styles for Enrollment Modal */
+body.dark-mode .enhanced-enrollment-modal-overlay {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+}
+
+body.dark-mode .enhanced-enrollment-modal-container {
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Enhanced Header Dark Mode */
+body.dark-mode .enhanced-enrollment-modal-header {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .enhanced-enrollment-title-icon {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+}
+
+/* Enhanced Progress Steps Dark Mode */
+body.dark-mode .enhanced-enrollment-progress-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-progress-step .enhanced-step-number {
+    background: var(--border-dark);
+    color: var(--text-muted-dark);
+    border: 2px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-progress-step.active .enhanced-step-number {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.2);
+}
+
+body.dark-mode .enhanced-step-label {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .enhanced-progress-step.active .enhanced-step-label {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+body.dark-mode .enhanced-progress-step::after {
+    background: var(--border-dark);
+}
+
+body.dark-mode .enhanced-progress-step.active::after {
+    background: var(--primary-color);
+}
+
+/* Enhanced Student Summary Dark Mode */
+body.dark-mode .enhanced-enrollment-student-summary {
+    background: var(--card-dark);
+    border-bottom: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-student-avatar {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+body.dark-mode .enhanced-student-details h4 {
+    color: var(--text-dark);
+}
+
+body.dark-mode .enhanced-student-id {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .enhanced-student-badge {
+    background: rgba(67, 97, 238, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(67, 97, 238, 0.3);
+}
+
+body.dark-mode .enhanced-stat-value {
+    color: var(--primary-color);
+}
+
+body.dark-mode .enhanced-stat-label {
+    color: var(--text-muted-dark);
+}
+
+/* Enhanced Info Card Dark Mode */
+body.dark-mode .enhanced-enrollment-info-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-info-item {
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+    backdrop-filter: blur(10px);
+}
+
+body.dark-mode .enhanced-info-item:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
+
+body.dark-mode .enhanced-info-icon {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+body.dark-mode .enhanced-info-label {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .enhanced-info-value {
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+/* Enhanced Quick Actions Dark Mode */
+body.dark-mode .enhanced-enrollment-quick-actions {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-quick-action-btn {
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+    color: var(--text-dark);
+    backdrop-filter: blur(10px);
+}
+
+body.dark-mode .enhanced-quick-action-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+}
+
+/* Enhanced Filters Dark Mode */
+body.dark-mode .enhanced-enrollment-desktop-filters {
+    background: var(--card-dark);
+    border-bottom: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-filter-group label {
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+body.dark-mode .enhanced-filter-select,
+body.dark-mode .enhanced-search-input-wrapper input {
+    background: var(--dark-color);
+    border: 1px solid var(--border-dark);
+    color: var(--text-dark);
+    backdrop-filter: blur(10px);
+}
+
+body.dark-mode .enhanced-filter-select:focus,
+body.dark-mode .enhanced-search-input-wrapper input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+body.dark-mode .enhanced-search-input-wrapper i {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .enhanced-clear-search {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .enhanced-clear-search:hover {
+    background: var(--border-dark);
+}
+
+/* Enhanced Subject Cards Dark Mode */
+body.dark-mode .enhanced-subject-card {
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+    color: var(--text-dark);
+    backdrop-filter: blur(10px);
+}
+
+body.dark-mode .enhanced-subject-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .enhanced-subject-card.selected {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(67, 97, 238, 0.05) 100%);
+    box-shadow: 0 0 0 1px var(--primary-color), 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .enhanced-subject-card::before {
+    background: transparent;
+}
+
+body.dark-mode .enhanced-subject-card.selected::before {
+    background: var(--primary-color);
+}
+
+body.dark-mode .enhanced-subject-code {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+body.dark-mode .enhanced-subject-name {
+    color: var(--text-dark);
+}
+
+body.dark-mode .enhanced-subject-description {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .enhanced-subject-units {
+    background: var(--primary-color);
+    color: white;
+}
+
+body.dark-mode .enhanced-subject-level {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .enhanced-subject-footer {
+    border-top: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-checkbox-label {
+    color: var(--text-muted-dark);
+}
+
+/* Enhanced Section Selection Dark Mode */
+body.dark-mode .enhanced-subject-section-selection {
+    background: rgba(67, 97, 238, 0.05);
+    border-left: 3px solid var(--primary-color);
+}
+
+body.dark-mode .enhanced-section-select {
+    background: var(--dark-color);
+    border: 1px solid var(--border-dark);
+    color: var(--text-dark);
+}
+
+body.dark-mode .enhanced-section-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+/* Enhanced Schedule Dark Mode */
+body.dark-mode .enhanced-schedule-badge {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-dark);
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .enhanced-schedule-item.active-section .enhanced-schedule-badge {
+    background: var(--success-color);
+    color: white;
+    border-color: var(--success-color);
+}
+
+/* Enhanced Prerequisite Info Dark Mode */
+body.dark-mode .enhanced-prerequisite-info {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fbbf24;
+}
+
+body.dark-mode .enhanced-prerequisite-success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+}
+
+body.dark-mode .enhanced-failed-subject-info {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+}
+
+/* Enhanced Footer Dark Mode */
+body.dark-mode .enhanced-enrollment-modal-footer {
+    background: var(--card-dark);
+    border-top: 1px solid var(--border-dark);
+    backdrop-filter: blur(10px);
+}
+
+body.dark-mode .enhanced-summary-count {
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+body.dark-mode .enhanced-summary-units {
+    color: var(--text-muted-dark);
+}
+
+/* Enhanced Button Dark Mode */
+body.dark-mode .enhanced-btn-secondary {
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+    color: var(--text-dark);
+    backdrop-filter: blur(10px);
+}
+
+body.dark-mode .enhanced-btn-secondary:hover {
+    background: var(--border-dark);
+    color: var(--text-dark);
+    border-color: var(--text-muted-dark);
+}
+
+body.dark-mode .enhanced-btn-primary {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+body.dark-mode .enhanced-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+}
+
+body.dark-mode .enhanced-btn-primary:disabled {
+    background: var(--border-dark);
+    color: var(--text-muted-dark);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Enhanced FHE Section Dark Mode */
+body.dark-mode .enhanced-enrollment-fhe-section {
+    background: var(--card-dark);
+    border-bottom: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-fhe-drop-zone {
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px dashed var(--border-dark);
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .enhanced-fhe-drop-zone:hover,
+body.dark-mode .enhanced-fhe-drop-zone.dragover {
+    border-color: var(--primary-color);
+    background: rgba(67, 97, 238, 0.05);
+}
+
+body.dark-mode .enhanced-fhe-preview {
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-fhe-file-details h5 {
+    color: var(--text-dark);
+}
+
+body.dark-mode .enhanced-fhe-requirements {
+    background: rgba(14, 165, 233, 0.1);
+    border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+body.dark-mode .enhanced-fhe-requirements h5 {
+    color: #7dd3fc;
+}
+
+/* Enhanced Payment Section Dark Mode */
+body.dark-mode .enhanced-enrollment-payment-section {
+    background: var(--card-dark);
+    border-bottom: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-payment-container {
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-payment-summary {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+body.dark-mode .enhanced-payment-item {
+    border-bottom: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-payment-drop-zone {
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px dashed var(--border-dark);
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .enhanced-payment-drop-zone:hover,
+body.dark-mode .enhanced-payment-drop-zone.dragover {
+    border-color: var(--primary-color);
+    background: rgba(67, 97, 238, 0.05);
+}
+
+body.dark-mode .enhanced-payment-preview {
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-payment-requirements {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Enhanced Confirmation Section Dark Mode */
+body.dark-mode .enhanced-enrollment-confirmation-section {
+    background: var(--card-dark);
+    border-bottom: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-confirmation-container {
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-confirmation-item {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+body.dark-mode .enhanced-confirmation-subject {
+    border-bottom: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-confirmation-subject-code {
+    color: var(--text-dark);
+}
+
+body.dark-mode .enhanced-confirmation-subject-name {
+    color: var(--text-muted-dark);
+}
+
+/* Enhanced Mobile Components Dark Mode */
+body.dark-mode .enhanced-enrollment-mobile-filter-bar {
+    background: var(--card-dark);
+    border-bottom: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-mobile-filter-btn {
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+    color: var(--text-dark);
+}
+
+body.dark-mode .enhanced-enrollment-mobile-filters {
+    background: var(--card-dark);
+    border-top: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-mobile-filter-header {
+    border-bottom: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-enrollment-mobile-search {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--border-dark);
+}
+
+body.dark-mode .enhanced-mobile-search-bar input {
+    background: var(--dark-color);
+    border: 1px solid var(--border-dark);
+    color: var(--text-dark);
+}
+
+/* Enhanced Loading States Dark Mode */
+body.dark-mode .enhanced-enrollment-loading-state p {
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .enhanced-loading-spinner {
+    border: 3px solid var(--border-dark);
+    border-top: 3px solid var(--primary-color);
+}
+
+/* Enhanced Empty State Dark Mode */
+body.dark-mode .enhanced-enrollment-empty-state {
+    color: var(--text-dark);
+}
+
+body.dark-mode .enhanced-empty-state-icon {
+    background: var(--border-dark);
+    color: var(--text-muted-dark);
+}
+
+body.dark-mode .enhanced-enrollment-empty-state h4 {
+    color: var(--text-dark);
+}
+
+body.dark-mode .enhanced-enrollment-empty-state p {
+    color: var(--text-muted-dark);
+}
+
+/* Enhanced Checkbox Dark Mode */
+body.dark-mode .enhanced-subject-checkbox input[type="checkbox"] {
+    accent-color: var(--primary-color);
+}
+
+/* Professional Scrollbar for Dark Mode */
+body.dark-mode .enhanced-enrollment-modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+body.dark-mode .enhanced-enrollment-modal-content::-webkit-scrollbar-track {
+    background: var(--border-dark);
+    border-radius: 4px;
+}
+
+body.dark-mode .enhanced-enrollment-modal-content::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+}
+
+body.dark-mode .enhanced-enrollment-modal-content::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
+}
+
+/* Enhanced Focus States for Accessibility */
+body.dark-mode .enhanced-btn-primary:focus,
+body.dark-mode .enhanced-btn-secondary:focus,
+body.dark-mode .enhanced-filter-select:focus,
+body.dark-mode .enhanced-search-input-wrapper input:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Smooth Transitions */
+body.dark-mode .enhanced-subject-card,
+body.dark-mode .enhanced-info-item,
+body.dark-mode .enhanced-quick-action-btn,
+body.dark-mode .enhanced-btn-primary,
+body.dark-mode .enhanced-btn-secondary {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Professional Text Hierarchy */
+body.dark-mode .enhanced-enrollment-modal-title {
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .enhanced-enrollment-modal-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Enhanced Card Shadows for Depth */
+body.dark-mode .enhanced-subject-card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .enhanced-subject-card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .enhanced-subject-card.selected {
+    box-shadow: 0 0 0 1px var(--primary-color), 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 /* Print Styles */

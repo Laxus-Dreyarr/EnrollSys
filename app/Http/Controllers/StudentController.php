@@ -1165,73 +1165,37 @@ class StudentController extends Controller
 
             // Get all active subjects for the curriculum
             $allSubjects = Subject::where('is_active', 1)
+                ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year'])
                 ->where('curriculum_id', $curriculumId)
                 ->get();
 
-            // Rest of your existing regular student logic remains the same...
-            // [Keep your existing year level progression logic here]
-            
-            $yearLevels = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'];
-            $selectedYearIndex = array_search($selectedYearLevel, $yearLevels);
-            
-            if ($selectedYearIndex === false) {
-                Log::error('Invalid year level selected: ' . $selectedYearLevel);
-                return;
-            }
+            Log::info('Total subjects found for irregular student', [
+                'total_subjects' => $allSubjects->count(),
+                'curriculum_id' => $curriculumId,
+                'selected_curriculum_year' => $selectedCurriculumYear
+            ]);
 
-            // Filter subjects based on the logic and curriculum
-            $subjects = $allSubjects->filter(function($subject) use ($selectedYearLevel, $selectedYearIndex, $currentSemester, $yearLevels, $curriculumId) {
-                $subjectYearIndex = array_search($subject->year_level, $yearLevels);
-                
-                if ($subjectYearIndex === false) {
-                    return false;
-                }
-
-                // Check curriculum compatibility
-                if ($subject->curriculum_id != $curriculumId) {
-                    Log::info('Excluding subject due to curriculum mismatch for regular student', [
+            // Filter subjects based on exclusion criteria
+            $filteredSubjects = $allSubjects->filter(function($subject) {
+                // Exclude Capstone Project and Research 2 (IT 433) and Practicum (IT 429)
+                if (in_array($subject->code, ['IT500', 'IT100'])) {
+                    Log::info('Excluding subject due to exclusion list', [
                         'subject_code' => $subject->code,
-                        'subject_curriculum' => $subject->curriculum_id,
-                        'student_curriculum' => $curriculumId
+                        'subject_name' => $subject->name
                     ]);
                     return false;
                 }
-
-                // Always include subjects from previous years (both semesters)
-                if ($subjectYearIndex < $selectedYearIndex) {
-                    return true;
-                }
-
-                // Handle current year based on semester
-                if ($subjectYearIndex === $selectedYearIndex) {
-                    if ($currentSemester === '2nd Sem') {
-                        // For 2nd Sem: Include current year's 1st Sem subjects
-                        return $subject->semester === '1st Sem';
-                    } else {
-                        // For 1st Sem: Don't include any current year subjects
-                        return false;
-                    }
-                }
-
-                return false;
+                return true;
             });
 
-            // Special handling for 4th Year to include summer subjects
-            if ($selectedYearLevel === '4th Year') {
-                $summerSubjects = $allSubjects->where('semester', 'Summer')
-                    ->where('curriculum_id', $curriculumId);
-                $subjects = $subjects->merge($summerSubjects);
-            }
-
-            Log::info('Regular student subjects to be inserted', [
-                'total_subjects' => $subjects->count(),
-                'current_semester' => $currentSemester,
-                'selected_year_level' => $selectedYearLevel,
-                'curriculum_year' => $selectedCurriculumYear
+            Log::info('Filtered subjects for irregular student', [
+                'filtered_count' => $filteredSubjects->count(),
+                'included_subjects' => $filteredSubjects->pluck('code')->toArray(),
+                'selected_curriculum_year' => $selectedCurriculumYear
             ]);
 
             // Prepare data for insertion
-            foreach ($subjects as $subject) {
+            foreach ($filteredSubjects as $subject) {
                 $subjectsToInsert[] = [
                     'student_id' => $studentId,
                     'subject_id' => $subject->id,
@@ -1247,10 +1211,15 @@ class StudentController extends Controller
             // Insert into enrolled_sub table
             if (!empty($subjectsToInsert)) {
                 DB::table('enrolled_sub')->insert($subjectsToInsert);
-                Log::info('Successfully inserted subjects for regular student', [
+                Log::info('Successfully inserted subjects for irregular student', [
                     'student_id' => $studentId,
                     'subjects_count' => count($subjectsToInsert),
-                    'curriculum_year' => $selectedCurriculumYear
+                    'selected_curriculum_year' => $selectedCurriculumYear
+                ]);
+            } else {
+                Log::warning('No subjects to insert for irregular student', [
+                    'student_id' => $studentId,
+                    'selected_curriculum_year' => $selectedCurriculumYear
                 ]);
             }
 
@@ -1333,7 +1302,7 @@ class StudentController extends Controller
             // Filter subjects based on exclusion criteria
             $filteredSubjects = $allSubjects->filter(function($subject) {
                 // Exclude Capstone Project and Research 2 (IT 433) and Practicum (IT 429)
-                if (in_array($subject->code, ['IT 433', 'IT 429'])) {
+                if (in_array($subject->code, ['IT500', 'IT100'])) {
                     Log::info('Excluding subject due to exclusion list', [
                         'subject_code' => $subject->code,
                         'subject_name' => $subject->name
@@ -2419,7 +2388,6 @@ class StudentController extends Controller
             $allSubjects = Subject::where('is_active', 1)
                 ->where('semester', $semester)
                 ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year'])
-                ->whereNotIn('code', ['IT 433', 'IT 429'])
                 ->whereNotIn('id', $passedSubjects) // Only exclude passed subjects, not failed ones
                 ->with(['schedules', 'prerequisites'])
                 ->get();

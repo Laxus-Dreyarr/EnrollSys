@@ -1784,7 +1784,7 @@ body.dark-mode .color-option {
     border-radius: var(--border-radius);
     padding: 32px;
     box-shadow: var(--shadow);
-    border: 1px solid #f1f5f9);
+    border: 1px solid (#f1f5f9);
     grid-column: 2;
     grid-row: 1 / span 2;
     transition: var(--transition);
