@@ -1,3 +1,238 @@
+// Theme Color Picker Functionality
+function initializeThemeColorPicker() {
+    const colorOptions = document.querySelectorAll('.color-option');
+    const savedThemeColor = localStorage.getItem('themeColor') || '#4361ee';
+    
+    // Apply saved theme color on page load
+    applyThemeColor(savedThemeColor);
+    setActiveColorOption(savedThemeColor);
+    updateCurrentThemeName(savedThemeColor);
+    
+    // Add click event listeners to color options
+    colorOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const selectedColor = this.getAttribute('data-color');
+            applyThemeColor(selectedColor);
+            setActiveColorOption(selectedColor);
+            saveThemeColor(selectedColor);
+            updateCurrentThemeName(selectedColor);
+            
+            // Show enhanced notification
+            showThemeNotification(`Theme updated to ${getColorName(selectedColor)}`, 'success');
+        });
+        
+        // Add keyboard accessibility
+        option.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                this.click();
+            }
+        });
+        
+        // Make color options focusable for accessibility
+        option.setAttribute('tabindex', '0');
+    });
+}
+
+// Update current theme name display
+function updateCurrentThemeName(color) {
+    const themeNameElement = document.getElementById('current-theme-name');
+    if (themeNameElement) {
+        themeNameElement.textContent = getColorName(color);
+        themeNameElement.style.color = color;
+    }
+}
+
+// Apply theme color to CSS variables
+function applyThemeColor(color) {
+    // Add transition class for smooth color change
+    document.body.classList.add('theme-color-transition');
+    
+    // Calculate color variants for sidebar
+    const sidebarColor1 = shadeColor(color, -60); // Darkest
+    const sidebarColor2 = shadeColor(color, -40); // Medium
+    const sidebarColor3 = shadeColor(color, -20); // Lightest
+    const sidebarAccent = shadeColor(color, 10);  // Accent color
+    const sidebarHover = `rgba(${hexToRgb(color).join(', ')}, 0.2)`;
+    const sidebarActive = `rgba(${hexToRgb(color).join(', ')}, 0.3)`;
+    const sidebarBorder = `rgba(${hexToRgb(color).join(', ')}, 0.1)`;
+    
+    // Update CSS variables for sidebar
+    const root = document.documentElement;
+    root.style.setProperty('--sidebar-gradient-1', sidebarColor1);
+    root.style.setProperty('--sidebar-gradient-2', sidebarColor2);
+    root.style.setProperty('--sidebar-gradient-3', sidebarColor3);
+    root.style.setProperty('--sidebar-accent-color', sidebarAccent);
+    root.style.setProperty('--sidebar-border-color', sidebarBorder);
+    root.style.setProperty('--sidebar-menu-hover', sidebarHover);
+    root.style.setProperty('--sidebar-menu-active', sidebarActive);
+    
+    // Update main theme colors (existing functionality)
+    const darkerColor = shadeColor(color, -20);
+    const lighterColor = shadeColor(color, 10);
+    
+    root.style.setProperty('--primary-color', color);
+    root.style.setProperty('--primary-dark', darkerColor);
+    root.style.setProperty('--secondary-color', darkerColor);
+    root.style.setProperty('--accent-color', lighterColor);
+    
+    // Update avatar background color if using default avatar
+    updateAvatarBackground(color);
+    
+    // Update meta theme color for mobile browsers
+    updateMetaThemeColor(color);
+    
+    // Remove transition class after animation completes
+    setTimeout(() => {
+        document.body.classList.remove('theme-color-transition');
+    }, 400);
+}
+
+// Update avatar background color for default avatars
+function updateAvatarBackground(color) {
+    const dynamicAvatar = document.getElementById('dynamic-avatar');
+    if (dynamicAvatar) {
+        // Extract the first name and last name from the current src or use defaults
+        const currentSrc = dynamicAvatar.src;
+        const firstName = "{{ $firstname ?? 'User' }}";
+        const lastName = "{{ $lastname ?? '' }}";
+        
+        // Create new avatar URL with updated background color
+        const newAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName + ' ' + lastName)}&background=${color.replace('#', '')}&color=fff&size=150`;
+        
+        dynamicAvatar.src = newAvatarUrl;
+    }
+}
+
+// Helper function to convert hex to RGB array
+function hexToRgb(hex) {
+    // Remove the # if present
+    hex = hex.replace(/^#/, '');
+    
+    // Parse the hex values
+    let r, g, b;
+    
+    if (hex.length === 3) {
+        r = parseInt(hex.charAt(0) + hex.charAt(0), 16);
+        g = parseInt(hex.charAt(1) + hex.charAt(1), 16);
+        b = parseInt(hex.charAt(2) + hex.charAt(2), 16);
+    } else {
+        r = parseInt(hex.substring(0, 2), 16);
+        g = parseInt(hex.substring(2, 4), 16);
+        b = parseInt(hex.substring(4, 6), 16);
+    }
+    
+    return [r, g, b];
+}
+
+
+
+// Update meta theme color
+function updateMetaThemeColor(color) {
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (!metaThemeColor) {
+        metaThemeColor = document.createElement('meta');
+        metaThemeColor.name = 'theme-color';
+        document.head.appendChild(metaThemeColor);
+    }
+    metaThemeColor.setAttribute('content', color);
+}
+
+function updateDynamicElements(color) {
+    // Update any elements that might have inline theme colors
+    const themeElements = document.querySelectorAll('[data-theme-color]');
+    themeElements.forEach(element => {
+        element.style.backgroundColor = color;
+    });
+}
+
+// Set active state on color option
+function setActiveColorOption(color) {
+    const colorOptions = document.querySelectorAll('.color-option');
+    colorOptions.forEach(option => {
+        option.classList.remove('active');
+        if (option.getAttribute('data-color') === color) {
+            option.classList.add('active');
+        }
+    });
+}
+
+// Save theme color to localStorage
+function saveThemeColor(color) {
+    localStorage.setItem('themeColor', color);
+}
+
+// Utility function to shade colors
+function shadeColor(color, percent) {
+    const num = parseInt(color.replace("#", ""), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+    const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
+    const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+    
+    return "#" + (
+        0x1000000 +
+        (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+        (B < 255 ? B < 1 ? 0 : B : 255)
+    ).toString(16).slice(1);
+}
+
+// Get color name for notification
+function getColorName(color) {
+    const colorMap = {
+        '#4361ee': 'Blue',
+        '#2c5530': 'Green', 
+        '#8b5cf6': 'Purple',
+        '#ef4444': 'Red',
+        '#f59e0b': 'Orange',
+        '#800000': 'Maroon'
+    };
+    return colorMap[color] || 'Custom';
+}
+
+// Enhanced notification function for theme changes
+// Enhanced notification for theme changes including sidebar
+function showThemeNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `theme-notification ${type}`;
+    notification.innerHTML = `
+        <i class="fas fa-palette"></i>
+        <span>${message}</span>
+        <small>Sidebar and interface colors updated</small>
+    `;
+    
+    notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: ${type === 'success' ? 'var(--success-color)' : 'var(--danger-color)'};
+        color: white;
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: var(--shadow-hover);
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-weight: 500;
+        animation: slideInRight 0.3s ease;
+        max-width: 300px;
+        border-left: 4px solid var(--primary-color);
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+
 // Enhanced Irregular Student Modal Functionality
 function initializeIrregularModal() {
     const modal = document.getElementById('irregularSubjectsModal');
@@ -2531,6 +2766,8 @@ function initializeEnhancedEnrollmentModal() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+
+    initializeThemeColorPicker();
     // Toggle sidebar on mobile
     const sidebarToggle = document.querySelector('.sidebar-toggle');
     const sidebar = document.querySelector('.sidebar');

@@ -37,16 +37,20 @@ $show_student_form = (strtolower($student_id) === 'none');
 <body>
     <div class="dashboard-container">
         <!-- Sidebar -->
-        <div class="sidebar">
+        <div class="sidebar" id="main-sidebar">
             <div class="sidebar-header">
-                <h3>Enroll<span>Sys</span></h3>
+                <h3>Enroll<span class="logo-accent">Sys</span></h3>
             </div>
             
             <div class="user-profile">
                 @if(!empty($profile_picture) && $profile_picture !== 'default.png')
                     <img src="{{ asset('profile/' . $profile_picture) }}" alt="User Avatar" class="user-avatar">
                 @else
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=4361ee&color=fff" alt="User Avatar" class="user-avatar">
+
+                    <div class="avatar-container">
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=none&color=fff" alt="User Avatar" class="user-avatar">
+                        <div class="status-indicator"></div>
+                    </div>
                 @endif
                 
                 <h4 class="user-name">{{ $firstname ?? 'User' }}</h4>
@@ -163,13 +167,6 @@ $show_student_form = (strtolower($student_id) === 'none');
                         <p class="stat-label">Enrolled Courses</p>
                     </div>
                     
-                    <div class="stat-card">
-                        <div class="stat-icon deadlines">
-                            <i class="fas fa-calendar-day"></i>
-                        </div>
-                        <h3 class="stat-value">3</h3>
-                        <p class="stat-label">Upcoming Enrollment</p>
-                    </div>
                     
                     <div class="stat-card">
                         <div class="stat-icon attendance">
@@ -1025,6 +1022,36 @@ $show_student_form = (strtolower($student_id) === 'none');
                             <option selected>Medium</option>
                             <option>Large</option>
                         </select>
+                    </div>
+
+                    <div class="settings-option theme-picker">
+                        <div class="option-info">
+                            <h5>Theme Color</h5>
+                            <p>Choose your preferred accent color for the interface</p>
+                            <div class="current-theme-info">
+                                <small>Current: <span id="current-theme-name">Blue</span></small>
+                            </div>
+                        </div>
+                        <div class="theme-colors">
+                            <div class="color-option" data-color="#4361ee" style="background-color: #4361ee;" title="Blue Theme">
+                                <div class="color-tooltip">Blue</div>
+                            </div>
+                            <div class="color-option" data-color="#2c5530" style="background-color: #2c5530;" title="Green Theme">
+                                <div class="color-tooltip">Green</div>
+                            </div>
+                            <div class="color-option" data-color="#8b5cf6" style="background-color: #8b5cf6;" title="Purple Theme">
+                                <div class="color-tooltip">Purple</div>
+                            </div>
+                            <div class="color-option" data-color="#ef4444" style="background-color: #ef4444;" title="Red Theme">
+                                <div class="color-tooltip">Red</div>
+                            </div>
+                            <div class="color-option" data-color="#f59e0b" style="background-color: #f59e0b;" title="Orange Theme">
+                                <div class="color-tooltip">Orange</div>
+                            </div>
+                            <div class="color-option" data-color="#800000" style="background-color: #800000;" title="Maroon Theme">
+                                <div class="color-tooltip">Maroon</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
