@@ -7302,6 +7302,150 @@ body.dark-mode .current-theme-info {
     backdrop-filter: blur(10px);
 }
 
+/* Enhanced Enrollment Modal - Theme Color Support */
+.enhanced-enrollment-modal-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
+}
+
+.enhanced-enrollment-title-icon {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.enhanced-student-avatar {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)) !important;
+}
+
+.enhanced-student-badge.regular {
+    background: rgba(var(--primary-color-rgb), 0.1) !important;
+    color: var(--primary-color) !important;
+    border: 1px solid rgba(var(--primary-color-rgb), 0.3) !important;
+}
+
+.enhanced-stat-value {
+    color: var(--primary-color) !important;
+}
+
+.enhanced-info-icon {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)) !important;
+}
+
+.enhanced-quick-action-btn:hover {
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.enhanced-subject-code {
+    color: var(--primary-color) !important;
+}
+
+.enhanced-subject-units {
+    background: var(--primary-color) !important;
+}
+
+.enhanced-subject-card.selected {
+    border-color: var(--primary-color) !important;
+    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.05) 0%, rgba(var(--primary-color-rgb), 0.02) 100%) !important;
+}
+
+.enhanced-subject-card.selected::before {
+    background: var(--primary-color) !important;
+}
+
+.enhanced-subject-checkbox input[type="checkbox"] {
+    accent-color: var(--primary-color) !important;
+}
+
+.enhanced-btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)) !important;
+}
+
+.enhanced-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-dark), var(--secondary-color)) !important;
+}
+
+.enhanced-progress-step.active .enhanced-step-number {
+    background: var(--primary-color) !important;
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3) !important;
+}
+
+.enhanced-progress-step.active .enhanced-step-label {
+    color: var(--primary-color) !important;
+}
+
+.enhanced-progress-step.active::after {
+    background: var(--primary-color) !important;
+}
+
+/* FHE Upload Section */
+.enhanced-fhe-icon {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)) !important;
+}
+
+.enhanced-fhe-drop-zone:hover,
+.enhanced-fhe-drop-zone.dragover {
+    border-color: var(--primary-color) !important;
+    background: rgba(var(--primary-color-rgb), 0.05) !important;
+}
+
+.enhanced-fhe-progress-fill {
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-dark)) !important;
+}
+
+/* Payment Section */
+.enhanced-payment-icon {
+    background: linear-gradient(135deg, var(--success-color), #059669) !important;
+}
+
+.enhanced-payment-drop-zone:hover,
+.enhanced-payment-drop-zone.dragover {
+    border-color: var(--primary-color) !important;
+    background: rgba(var(--primary-color-rgb), 0.05) !important;
+}
+
+/* Confirmation Section */
+.enhanced-confirmation-icon {
+    background: linear-gradient(135deg, var(--accent-color), var(--primary-dark)) !important;
+}
+
+.enhanced-confirmation-item-icon {
+    color: var(--primary-color) !important;
+}
+
+/* Section Selection */
+.enhanced-section-select:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1) !important;
+}
+
+.enhanced-schedule-badge {
+    background: rgba(var(--primary-color-rgb), 0.1) !important;
+    border: 1px solid rgba(var(--primary-color-rgb), 0.2) !important;
+    color: var(--primary-color) !important;
+}
+
+/* Mobile Filters */
+.enhanced-filter-count {
+    background: var(--primary-color) !important;
+}
+
+/* Dark Mode Support for Enhanced Modal */
+body.dark-mode .enhanced-enrollment-modal-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)) !important;
+}
+
+body.dark-mode .enhanced-student-badge.regular {
+    background: rgba(var(--primary-color-rgb), 0.15) !important;
+    color: var(--primary-color) !important;
+}
+
+body.dark-mode .enhanced-subject-card.selected {
+    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.1) 0%, rgba(var(--primary-color-rgb), 0.05) 100%) !important;
+}
+
+body.dark-mode .enhanced-btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)) !important;
+}
+
 /* Print Styles */
 @media print {
     .irregular-modal-overlay {
