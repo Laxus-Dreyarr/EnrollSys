@@ -432,6 +432,11 @@ class AdminController extends Controller
             case 'get_stats':
                 $stats = $this->get_statistics();
                 return response()->json(['success' => true, 'stats' => $stats]);
+            case 'get_curriculums':
+                return $this->getCurriculums($request);
+                
+            case 'create_curriculum':
+                return $this->createCurriculum($request);
                 
             case 'get_prerequisites':
                 $prerequisites = Subject::where('is_active', 1)
@@ -460,37 +465,32 @@ class AdminController extends Controller
                 return response()->json(['success' => true, 'subjects' => $subjects]);
                 
             case 'get_subject':
-                $subjectId = $request->input('subject_id');
-                $subject = Subject::with(['schedules', 'prerequisites'])
-                    ->where('id', $subjectId)
-                    ->first();
-                    
-                if (!$subject) {
-                    return response()->json(['success' => false, 'message' => 'Subject not found']);
+                $curriculumId = $request->input('curriculum_id');
+    
+                $query = Subject::with(['schedules', 'prerequisites'])
+                    ->where('is_active', 1);
+                
+                // Filter by curriculum if provided
+                if ($curriculumId) {
+                    $query->where('curriculum_id', $curriculumId);
                 }
                 
-                return response()->json([
-                    'success' => true, 
-                    'subject' => [
-                        'id' => $subject->id,
-                        'code' => $subject->code,
-                        'name' => $subject->name,
-                        'description' => $subject->description,
-                        'units' => $subject->units,
-                        'max_students' => $subject->max_students,
-                        'curriculum' => $subject->curriculum,
-                        'year_level' => $subject->year_level,
-                        'semester' => $subject->semester,
-                        'schedules' => $subject->schedules,
-                        'prerequisites' => $subject->prerequisites->map(function($prereq) {
-                            return [
-                                'id' => $prereq->id,
-                                'code' => $prereq->code,
-                                'name' => $prereq->name
-                            ];
-                        })
-                    ]
-                ]);
+                $subjects = $query->orderBy('year_level')
+                    ->get()
+                    ->map(function($subject) {
+                        return [
+                            'id' => $subject->id,
+                            'code' => $subject->code,
+                            'name' => $subject->name,
+                            'units' => $subject->units,
+                            'year_level' => $subject->year_level,
+                            'semester' => $subject->semester,
+                            'curriculum' => $subject->curriculum,
+                            'schedules' => $subject->schedules,
+                            'prerequisites' => $subject->prerequisites
+                        ];
+                    });
+                return response()->json(['success' => true, 'subjects' => $subjects]);
                 
             case 'create_subject':
                 return $this->createSubject($request);
@@ -716,6 +716,48 @@ class AdminController extends Controller
         }
         
         return array_slice($suggestions, 0, 5); // Return top 5 suggestions
+    }
+
+    private function getCurriculums(Request $request)
+    {
+        try {
+            $curriculums = DB::table('curriculum')
+                ->select('id', 'curriculum_year', 'is_active')
+                ->orderBy('curriculum_year', 'desc')
+                ->get();
+                
+            return response()->json(['success' => true, 'curriculums' => $curriculums]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch curriculums: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to fetch curriculums']);
+        }
+    }
+
+    private function createCurriculum(Request $request)
+    {
+        try {
+            $curriculumYear = $request->input('curriculum_year');
+            
+            // Check if curriculum year already exists
+            $exists = DB::table('curriculum')
+                ->where('curriculum_year', $curriculumYear)
+                ->exists();
+                
+            if ($exists) {
+                return response()->json(['success' => false, 'message' => 'Curriculum year already exists']);
+            }
+            
+            // Create new curriculum
+            DB::table('curriculum')->insert([
+                'curriculum_year' => $curriculumYear,
+                'is_active' => 1
+            ]);
+            
+            return response()->json(['success' => true, 'message' => 'Curriculum created successfully']);
+        } catch (\Exception $e) {
+            Log::error('Failed to create curriculum: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to create curriculum']);
+        }
     }
 
     // public function createSubject(Request $request)

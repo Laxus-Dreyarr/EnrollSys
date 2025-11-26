@@ -457,8 +457,8 @@ body.dark-mode .status-indicator {
 /* Professional Stats Grid */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px;
     margin-bottom: 36px;
 }
 
@@ -1321,6 +1321,97 @@ select:focus,
 textarea:focus {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
+}
+
+
+.stat-value {
+    transition: all 0.3s ease;
+}
+
+.theme-color-transition * {
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+}
+
+.schedule-item {
+    animation: fadeInUp 0.5s ease;
+}
+
+/* Payment Activity Styles */
+.schedule-item.payment-activity {
+    border-left: 4px solid #4361ee;
+    background: rgba(67, 97, 238, 0.05);
+    margin-bottom: 12px;
+    border-radius: 0 8px 8px 0;
+}
+
+.payment-icon {
+    color: #4361ee;
+    margin-right: 8px;
+}
+
+.payment-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.btn-view-receipt,
+.btn-verify-payment {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-view-receipt {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.btn-view-receipt:hover {
+    background: #dee2e6;
+}
+
+.btn-verify-payment {
+    background: #28a745;
+    color: white;
+}
+
+.btn-verify-payment:hover {
+    background: #218838;
+}
+
+/* Schedule item enhancements */
+.schedule-details {
+    flex: 1;
+}
+
+.schedule-course {
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.schedule-location {
+    color: #6c757d;
+    font-size: 14px;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Print Styles */

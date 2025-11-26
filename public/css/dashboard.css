@@ -1,8 +1,19 @@
 :root {
-            --primary-color: #4361ee;
+            /* --primary-color: #4361ee;
             --primary-dark: #3a56d4;
             --secondary-color: #3f37c9;
             --accent-color: #4895ef;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --gray-color: #6c757d;
+            --light-gray: #e9ecef;
+            --success-color: #4bb543;
+            --error-color: #ff3333;
+            --warning-color: #ffcc00; */
+            --primary-color: #8d3d3d;
+            --primary-dark: #6d0f0f;
+            --secondary-color: #740505;
+            --accent-color: #7e1f1f;
             --light-color: #f8f9fa;
             --dark-color: #212529;
             --gray-color: #6c757d;
@@ -27,8 +38,8 @@
             --swal2-background: #1e1e2d;
             --swal2-title-color: #ffffff;
             --swal2-text-color: #cdcdcd;
-            --swal2-confirm-button-background: #3699FF;
-            --swal2-confirm-button-border-color: #3699FF;
+            --swal2-confirm-button-background: #8f2424;
+            --swal2-confirm-button-border-color: #8f2424;
             --swal2-cancel-button-background: #6c757d;
             --swal2-popup-border-radius: 10px;
             --swal2-font-size: 16px;
@@ -37,7 +48,7 @@
 
         /* create custom classes */
         .my-custom-swal {
-        background: linear-gradient(45deg, #667eea, #764ba2) !important;
+        background: linear-gradient(45deg, maroon, #764ba2) !important;
         border-radius: 20px !important;
         color: white !important;
         }
@@ -342,7 +353,7 @@
         
         .subject-detail-label {
             font-weight: 600;
-            color: #4361ee;
+            color: rgb(151, 47, 47);
         }
         
         .schedule-table {

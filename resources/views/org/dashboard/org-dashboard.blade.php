@@ -121,7 +121,7 @@ $show_student_form = (strtolower($org_id) === 'none');
                         <div class="stat-icon courses">
                             <i class="fas fa-user-graduate"></i>
                         </div>
-                        <h3 class="stat-value">15</h3>
+                        <h3 class="stat-value">0</h3> <!-- Will be updated by JS -->
                         <p class="stat-label">Pending Enrollment Requests</p>
                     </div>
                     
@@ -129,7 +129,7 @@ $show_student_form = (strtolower($org_id) === 'none');
                         <div class="stat-icon grades">
                             <i class="fas fa-money-check"></i>
                         </div>
-                        <h3 class="stat-value">8</h3>
+                        <h3 class="stat-value">0</h3> <!-- Will be updated by JS -->
                         <p class="stat-label">Pending Payment Verifications</p>
                     </div>
                     
@@ -137,7 +137,7 @@ $show_student_form = (strtolower($org_id) === 'none');
                         <div class="stat-icon attendance">
                             <i class="fas fa-users"></i>
                         </div>
-                        <h3 class="stat-value">127</h3>
+                        <h3 class="stat-value">0</h3> <!-- Will be updated by JS -->
                         <p class="stat-label">Total Students</p>
                     </div>
 
@@ -145,40 +145,18 @@ $show_student_form = (strtolower($org_id) === 'none');
                         <div class="stat-icon deadlines">
                             <i class="fas fa-check-circle"></i>
                         </div>
-                        <h3 class="stat-value">42</h3>
+                        <h3 class="stat-value">0</h3> <!-- Will be updated by JS -->
                         <p class="stat-label">Approved This Week</p>
                     </div>
                 </div>
                 
                 <!-- Recent Activity -->
                 <h2 class="section-title">Recent Activity</h2>
+                <h2 class="section-title">Pending Payment Verifications</h2>
                 <div class="schedule-container">
                     <div class="schedule-day">
                         <h4 class="day-header">Today, {{ \Carbon\Carbon::now()->format('F j, Y') }}</h4>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-time">10:30 AM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">New enrollment request from John Smith</div>
-                                <div class="schedule-location">BS in Information Technology - 3rd Year</div>
-                            </div>
-                        </div>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-time">09:15 AM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Payment verified for Sarah Johnson</div>
-                                <div class="schedule-location">GCash Receipt #GC-789123</div>
-                            </div>
-                        </div>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-time">08:45 AM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Enrollment approved for Michael Brown</div>
-                                <div class="schedule-location">5 subjects enrolled</div>
-                            </div>
-                        </div>
+                        <!-- Payment activities will be dynamically inserted here -->
                     </div>
                 </div>
 
@@ -842,5 +820,6 @@ $show_student_form = (strtolower($org_id) === 'none');
     <script src="{{asset('js/jquery.js')}}"></script>
     <script src="{{asset('js/sweetalert2.js')}}"></script>
     <script src="{{asset('js/function/org/dashboard/dashboard.js')}}"></script>
+    <script src="{{asset('js/function/org/dashboard/org-dashboard-data.js')}}"></script>
 </body>
 </html>

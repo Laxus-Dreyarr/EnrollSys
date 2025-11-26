@@ -118,10 +118,10 @@ $profile_picture = $user->profile;
                                         <i class="fas fa-users fa-2x text-white"></i>
                                     </div>
                                 </div>
-                                <div class="mt-3">
+                                <!-- <div class="mt-3">
                                     <span class="text-success"><i class="fas fa-arrow-up"></i> 5.2%</span>
                                     <span class="text-muted ms-2">Since last month</span>
-                                </div>
+                                </div> -->
                             </div>
                         </div>
                     </div>
@@ -137,10 +137,10 @@ $profile_picture = $user->profile;
                                         <i class="fas fa-chalkboard-teacher fa-2x text-white"></i>
                                     </div>
                                 </div>
-                                <div class="mt-3">
+                                <!-- <div class="mt-3">
                                     <span class="text-success"><i class="fas fa-arrow-up"></i> 2.1%</span>
                                     <span class="text-muted ms-2">Since last month</span>
-                                </div>
+                                </div> -->
                             </div>
                         </div>
                     </div>
@@ -156,10 +156,10 @@ $profile_picture = $user->profile;
                                         <i class="fas fa-book fa-2x text-white"></i>
                                     </div>
                                 </div>
-                                <div class="mt-3">
+                                <!-- <div class="mt-3">
                                     <span class="text-success"><i class="fas fa-arrow-up"></i> 3.7%</span>
                                     <span class="text-muted ms-2">Since last month</span>
-                                </div>
+                                </div> -->
                             </div>
                         </div>
                     </div>
@@ -194,10 +194,10 @@ $profile_picture = $user->profile;
                                         <i class="fas fa-file-alt fa-2x text-white"></i>
                                     </div>
                                 </div>
-                                <div class="mt-3">
+                                <!-- <div class="mt-3">
                                     <span class="text-success"><i class="fas fa-arrow-up"></i> 8.3%</span>
                                     <span class="text-muted ms-2">Since last month</span>
-                                </div>
+                                </div> -->
                             </div>
                         </div>
                     </div>
@@ -224,13 +224,24 @@ $profile_picture = $user->profile;
                     <div class="tab-pane fade" id="subjects">
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
-                                <h5 class="mb-2 mb-md-0">Manage Subjects</h5>
+                                <div class="d-flex align-items-center">
+                                    <h5 class="mb-2 mb-md-0 me-3">Manage Subjects</h5>
+                                    <!-- Curriculum Toggle Button -->
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="curriculumDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Curriculum: <span id="selectedCurriculum">Select Curriculum</span>
+                                        </button>
+                                        <ul class="dropdown-menu" id="curriculumList">
+                                            <!-- Curriculum options will be loaded here -->
+                                        </ul>
+                                    </div>
+                                </div>
                                 <div class="d-flex">
                                     <div class="search-container me-2">
                                         <i class="fas fa-search search-icon"></i>
                                         <input type="text" class="form-control search-input" placeholder="Search subjects..." id="subjectSearch">
                                     </div>
-                                    <button id="plus_sign" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSubjectModal">
+                                    <button style="background-color: maroon;" id="plus_sign" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSubjectModal">
                                         <i class="fas fa-plus me-1"></i> <span class="d-none d-md-inline">Create Subject</span>
                                     </button>
                                 </div>
@@ -244,6 +255,7 @@ $profile_picture = $user->profile;
                                                 <th>Subject Name</th>
                                                 <th>Units</th>
                                                 <th>Year/Semester</th>
+                                                <th>Curriculum</th>
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
@@ -367,7 +379,7 @@ $profile_picture = $user->profile;
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
                                 <h5 class="mb-2 mb-md-0">Enrollment Period Management</h5>
-                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#enrollmentModal">
+                                <button style="background-color: maroon" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#enrollmentModal">
                                     <i class="fas fa-plus me-1"></i> <span class="d-none d-md-inline">Set Enrollment Period</span>
                                 </button>
                             </div>
@@ -544,10 +556,6 @@ $profile_picture = $user->profile;
                                 </select>
                             </div>
                             <div class="col-md-3 mb-3">
-                                <label for="curriculum" class="form-label">Curriculum <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="curr" name="curr" min="1" required>
-                            </div>
-                            <div class="col-md-3 mb-3">
                                 <label for="semester" class="form-label">Semester <span class="text-danger">*</span></label>
                                 <select class="form-select" id="semester" name="semester" required>
                                     <option value="">Select Semester</option>
@@ -649,6 +657,55 @@ $profile_picture = $user->profile;
         </div>
     </div>
 
+    <!-- Create Curriculum Modal -->
+    <div class="modal fade" id="createCurriculumModal" tabindex="-1" aria-labelledby="createCurriculumModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createCurriculumModalLabel">Create New Curriculum</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createCurriculumForm">
+                        <div class="mb-3">
+                            <label for="curriculumYear" class="form-label">Curriculum Year</label>
+                            <input type="text" class="form-control" id="curriculumYear" placeholder="e.g., 2024" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="createCurriculumBtn">Create Curriculum</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Curriculum Modal -->
+    <div class="modal fade" id="createCurriculumModal" tabindex="-1" aria-labelledby="createCurriculumModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createCurriculumModalLabel">Create New Curriculum</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createCurriculumForm">
+                        <div class="mb-3">
+                            <label for="curriculumYear" class="form-label">Curriculum Year</label>
+                            <input type="text" class="form-control" id="curriculumYear" placeholder="e.g., 2024" required>
+                            <div class="form-text">Enter the curriculum year (e.g., 2024, 2025)</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveCurriculumBtn">Save Curriculum</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Edit Subject Modal -->
     <div class="modal fade" id="editSubjectModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -684,10 +741,6 @@ $profile_picture = $user->profile;
                             <div class="col-md-3 mb-3">
                                 <label for="editMaxStudents" class="form-label">Max Students <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="editMaxStudents" name="maxStudents" min="1" required>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="editCurriculum" class="form-label">Curriculum <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="editCurriculum" name="curr" min="1" required>
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="editYearLevel" class="form-label">Year Level <span class="text-danger">*</span></label>
@@ -844,10 +897,6 @@ $profile_picture = $user->profile;
                                 <span id="viewSubjectSemester"></span>
                             </div>
                             <div class="col-md-6">
-                                <span class="subject-detail-label">Curriculum:</span>
-                                <span id="viewSubjectCurriculum"></span>
-                            </div>
-                            <div class="col-md-6">
                                 <span class="subject-detail-label">Max Students:</span>
                                 <span id="viewSubjectMaxStudents"></span>
                             </div>
@@ -947,8 +996,8 @@ $profile_picture = $user->profile;
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveEnrollmentBtn">Save Enrollment Period</button>
+                    <button type="button" style="background-color: maroon;" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" style="background-color: maroon;" class="btn btn-primary" id="saveEnrollmentBtn">Save Enrollment Period</button>
                 </div>
             </div>
         </div>

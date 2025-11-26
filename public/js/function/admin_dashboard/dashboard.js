@@ -64,6 +64,8 @@
         //     }
         // }
 
+        
+
         async function insertsupabase(){
             const data = {
                 table_name: 'subject',  // make sure these variables are defined
@@ -282,6 +284,20 @@
 
         loadSubjects();
         loadStatistics();
+
+        loadCurriculums();
+
+        $(document).on('click', '.curriculum-item', function(e) {
+            e.preventDefault();
+            const curriculumId = $(this).data('id');
+            const curriculumYear = $(this).data('year');
+            selectCurriculum(curriculumId, curriculumYear);
+        });
+        
+        // Create curriculum button
+        $('#createCurriculumBtn').click(function() {
+            createCurriculum();
+        });
                                 
         // Show notification to user
         showNotification('New subject has been added!');
@@ -748,6 +764,11 @@
             alert('All schedule types must match the selected subject types');
             return;
         }
+
+        if (!selectedCurriculum) {
+            alert('Please select a curriculum first');
+            return;
+        }
         
         // Collect form data
         const formData = {
@@ -914,16 +935,113 @@
         });
     }
 
-    function loadSubjects() {
+    // Global variable to store selected curriculum
+    let selectedCurriculum = null;
+
+    // Function to load curriculums
+    function loadCurriculums() {
+        $.post('/admin/ajax/get-stats', {action: 'get_curriculums', _token: $('meta[name="csrf-token"]').attr('content')}, function(response) {
+            if (response.success) {
+                const curriculumList = $('#curriculumList');
+                curriculumList.empty();
+                
+                // Add "Create New" option
+                curriculumList.append(`
+                    <li><a class="dropdown-item text-primary" href="#" data-bs-toggle="modal" data-bs-target="#createCurriculumModal">
+                        <i class="fas fa-plus me-2"></i>Create New Curriculum
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                `);
+                
+                response.curriculums.forEach(function(curriculum) {
+                    const isActive = curriculum.is_active ? ' <span class="badge bg-success">Active</span>' : '';
+                    curriculumList.append(`
+                        <li><a class="dropdown-item curriculum-item" href="#" data-id="${curriculum.id}" data-year="${curriculum.curriculum_year}">
+                            ${curriculum.curriculum_year}${isActive}
+                        </a></li>
+                    `);
+                });
+                
+                // Set default selection to the first active curriculum
+                const activeCurriculum = response.curriculums.find(c => c.is_active);
+                if (activeCurriculum) {
+                    selectCurriculum(activeCurriculum.id, activeCurriculum.curriculum_year);
+                } else if (response.curriculums.length > 0) {
+                    selectCurriculum(response.curriculums[0].id, response.curriculums[0].curriculum_year);
+                }
+            }
+        }, 'json').fail(function(xhr, status, error) {
+            console.error('Error loading curriculums:', error);
+        });
+    }
+
+    // Function to select a curriculum
+    function selectCurriculum(curriculumId, curriculumYear) {
+        selectedCurriculum = curriculumId;
+        $('#selectedCurriculum').text(curriculumYear);
         
-        $.post('/admin/ajax/get-stats', {action: 'get_subjects', _token: $('meta[name="csrf-token"]').attr('content')}, function(response) {
-            
+        // Update the create subject form
+        $('#curr').val(curriculumId);
+        
+        // Reload subjects for the selected curriculum
+        loadSubjects();
+    }
+
+    // Function to create new curriculum
+    function createCurriculum() {
+        const curriculumYear = $('#curriculumYear').val();
+        
+        if (!curriculumYear) {
+            alert('Please enter a curriculum year');
+            return;
+        }
+        
+        $.post('/admin/ajax/get-stats', {
+            action: 'create_curriculum',
+            curriculum_year: curriculumYear,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        }, function(response) {
+            if (response.success) {
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Curriculum created successfully!',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#0d6efd',
+                    background: '#1a1a2e',
+                    color: '#ffffff'
+                }).then((result) => {
+                    $('#createCurriculumModal').modal('hide');
+                    $('#createCurriculumForm')[0].reset();
+                    loadCurriculums();
+                });
+            } else {
+                alert('Error: ' + response.message);
+            }
+        }, 'json').fail(function(xhr, status, error) {
+            console.error('Error creating curriculum:', error);
+            alert('Failed to create curriculum');
+        });
+    }
+
+    function loadSubjects() {
+        const data = {
+            action: 'get_subjects',
+            _token: $('meta[name="csrf-token"]').attr('content')
+        };
+        
+        // Add curriculum filter if selected
+        if (selectedCurriculum) {
+            data.curriculum_id = selectedCurriculum;
+        }
+        
+        $.post('/admin/ajax/get-stats', data, function(response) {
             if (response.success) {
                 const tbody = $('#subjectsTableBody');
                 tbody.empty();
                 
                 if (response.subjects.length === 0) {
-                    tbody.append('<tr><td colspan="5" class="text-center">No subjects found</td></tr>');
+                    tbody.append('<tr><td colspan="6" class="text-center">No subjects found for selected curriculum</td></tr>');
                     return;
                 }
                 
@@ -934,6 +1052,7 @@
                             <td>${subject.name}</td>
                             <td>${subject.units}</td>
                             <td>${subject.year_level} / ${subject.semester}</td>
+                            <td>${subject.curriculum || 'N/A'}</td>
                             <td id="_student_btn">
                                 <button id="_view" class="btn btn-sm btn-outline-info" onclick="viewSubject(${subject.id})">
                                     <i class="fas fa-eye"></i> View
@@ -951,13 +1070,11 @@
                 });
             } else {
                 console.error('Server returned error:', response.message);
-                $('#subjectsTableBody').html('<tr><td colspan="5" class="text-center text-danger">Error loading subjects</td></tr>');
+                $('#subjectsTableBody').html('<tr><td colspan="6" class="text-center text-danger">Error loading subjects</td></tr>');
             }
         }, 'json').fail(function(xhr, status, error) {
             console.error('AJAX Error:', error);
-            console.error('Status:', status);
-            console.error('Response:', xhr.responseText);
-            $('#subjectsTableBody').html('<tr><td colspan="5" class="text-center text-danger">Failed to load subjects</td></tr>');
+            $('#subjectsTableBody').html('<tr><td colspan="6" class="text-center text-danger">Failed to load subjects</td></tr>');
         });
     }
 

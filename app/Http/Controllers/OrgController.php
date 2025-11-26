@@ -662,6 +662,187 @@ class OrgController extends Controller
             return $x;
     }
 
+    public function getDashboardData()
+    {
+        if (!Auth::guard('org')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        try {
+            // Get current organization
+            $org = Auth::guard('org')->user();
+            
+            // Pending Enrollment Requests
+            $pendingEnrollmentRequests = DB::table('enrollmentrequests')
+                ->where('status', 'Pending')
+                ->count();
+
+            // Pending Payment Verifications
+            $pendingPaymentVerifications = DB::table('payments')
+                ->where('status', 'Pending')
+                ->count();
+
+            // Total Students (all students in the system)
+            $totalStudents = DB::table('students')->count();
+
+            // Approved This Week (enrollment requests approved in the current week)
+            $approvedThisWeek = DB::table('enrollmentrequests')
+                ->where('status', 'Approved')
+                ->whereBetween('processed_date', [
+                    now()->startOfWeek(),
+                    now()->endOfWeek()
+                ])
+                ->count();
+
+            // Recent Activity - Students with Pending Payment Verifications
+            $recentActivities = DB::table('payments')
+                ->join('students', 'payments.student_id', '=', 'students.id')
+                ->where('payments.status', 'Pending')
+                ->where('payments.type', 'PAYMENT_RECEIPT')
+                ->select(
+                    'payments.upload_date',
+                    'students.id_no',
+                    'students.year_level',
+                    'payments.file_path',
+                    DB::raw('(SELECT CONCAT(firstname, " ", lastname) FROM admin_info WHERE admin_id = 107568) as processed_by')
+                )
+                ->orderBy('payments.upload_date', 'desc')
+                ->limit(5)
+                ->get()
+                ->map(function($payment) {
+                    return [
+                        'time' => date('h:i A', strtotime($payment->upload_date)),
+                        'action' => 'Payment Verification Required',
+                        'details' => "Student ID: {$payment->id_no} - {$payment->year_level}",
+                        'date' => $payment->upload_date,
+                        'student_id' => $payment->id_no,
+                        'year_level' => $payment->year_level,
+                        'file_path' => $payment->file_path,
+                        'processed_by' => $payment->processed_by
+                    ];
+                });
+
+            // If no pending payments, show a message
+            if ($recentActivities->isEmpty()) {
+                $recentActivities = collect([
+                    [
+                        'time' => '--:--',
+                        'action' => 'No Pending Payments',
+                        'details' => 'All payments have been verified',
+                        'date' => now(),
+                        'student_id' => null,
+                        'year_level' => null,
+                        'file_path' => null,
+                        'processed_by' => null
+                    ]
+                ]);
+            }
+
+            // Quick Actions data
+            $processingRate = $totalStudents > 0 ? 
+                round((($totalStudents - $pendingEnrollmentRequests) / $totalStudents) * 100) : 0;
+            
+            $verificationRate = ($pendingPaymentVerifications + $approvedThisWeek) > 0 ? 
+                round(($approvedThisWeek / ($pendingPaymentVerifications + $approvedThisWeek)) * 100) : 0;
+            
+            $activeStudentsRate = 92; // This would need more complex calculation
+
+            return response()->json([
+                'stats' => [
+                    'pendingEnrollmentRequests' => $pendingEnrollmentRequests,
+                    'pendingPaymentVerifications' => $pendingPaymentVerifications,
+                    'totalStudents' => $totalStudents,
+                    'approvedThisWeek' => $approvedThisWeek
+                ],
+                'recentActivities' => $recentActivities,
+                'quickActions' => [
+                    'processingRate' => $processingRate,
+                    'verificationRate' => $verificationRate,
+                    'activeStudentsRate' => $activeStudentsRate,
+                    'pendingRequests' => $pendingEnrollmentRequests,
+                    'pendingPayments' => $pendingPaymentVerifications
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching org dashboard data: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch dashboard data'], 500);
+        }
+    }
+
+    public function verifyPayment(Request $request)
+    {
+        if (!Auth::guard('org')->check()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        try {
+            $request->validate([
+                'student_id' => 'required|string'
+            ]);
+
+            $studentId = $request->student_id;
+
+            // Update payment status to Approved
+            $updated = DB::table('payments')
+                ->where('student_id', function($query) use ($studentId) {
+                    $query->select('id')
+                        ->from('students')
+                        ->where('id_no', $studentId);
+                })
+                ->where('status', 'Pending')
+                ->update([
+                    'status' => 'Approved',
+                    'updated_at' => now()->toDateTimeString()
+                ]);
+
+            if ($updated) {
+                // Log the activity
+                $clientInfo = $this->collectClientInformation();
+                $ipaddress = $this->getClientDeviceInfo();
+
+                AuditLog::create([
+                    'user_id' => $studentId,
+                    'action' => 'Payment verified by organization',
+                    'details' => $clientInfo['operating_system'] . '/' . $clientInfo['device_type'] . '/' . $clientInfo['user_agent'],
+                    'ip_address' => $ipaddress['ip_address'],
+                    'date' => now()->toDateTimeString(),
+                    'access_by' => Auth::guard('org')->user()->org_id
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Payment verified successfully'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No pending payment found for this student'
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error verifying payment: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to verify payment'
+            ], 500);
+        }
+    }
+
+    private function formatActivityAction($action)
+    {
+        if (str_contains($action, 'New Student Account Created')) {
+            return 'New student account created';
+        } elseif (str_contains($action, 'Grade input')) {
+            return 'Grade input for subject';
+        } elseif (str_contains($action, 'Enrollment')) {
+            return 'Enrollment activity';
+        } else {
+            return $action;
+        }
+    }
+
 
 
 }//End of Class
