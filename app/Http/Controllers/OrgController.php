@@ -313,19 +313,6 @@ class OrgController extends Controller
         }
         
     }
-
-    public function dashboard()
-    {
-        if (!Auth::guard('org')->check()) {
-            return redirect('/org')->with('error', 'Please login first.');
-        }
-
-        $user = Auth::guard('org')->user();
-        
-        // Check if there's an active enrollment period
-        
-        return view('org.dashboard.org-dashboard', compact('user'));
-    }
     
 
 
@@ -662,6 +649,19 @@ class OrgController extends Controller
             return $x;
     }
 
+    public function dashboard()
+    {
+        if (!Auth::guard('org')->check()) {
+            return redirect('/org')->with('error', 'Please login first.');
+        }
+
+        $user = Auth::guard('org')->user();
+        
+        // Check if there's an active enrollment period
+        
+        return view('org.dashboard.org-dashboard', compact('user'));
+    }
+
     public function getDashboardData()
     {
         if (!Auth::guard('org')->check()) {
@@ -830,6 +830,8 @@ class OrgController extends Controller
         }
     }
 
+
+
     private function formatActivityAction($action)
     {
         if (str_contains($action, 'New Student Account Created')) {
@@ -840,6 +842,50 @@ class OrgController extends Controller
             return 'Enrollment activity';
         } else {
             return $action;
+        }
+    }
+
+    // Student Management
+
+    public function getStudentsData()
+    {
+        if (!Auth::guard('org')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        try {
+            // Fetch students with their basic information
+            $students = DB::table('students')
+                ->select(
+                    'students.id',
+                    'students.id_no',
+                    'students.year_level',
+                    'students.status',
+                    'students.curriculum',
+                    'students.is_regular'
+                )
+                ->where('students.id_no', '!=', 'None') // Exclude invalid student records
+                ->orderBy('students.id_no', 'asc')
+                ->get()
+                ->map(function($student) {
+                    return [
+                        'id' => $student->id,
+                        'student_id' => $student->id_no,
+                        'year_level' => $student->year_level,
+                        'status' => $student->status,
+                        'curriculum' => $student->curriculum,
+                        'is_regular' => $student->is_regular ? 'Regular' : 'Irregular',
+                        'program' => 'BS Information Technology' // Default program since it's not stored in students table
+                    ];
+                });
+
+            return response()->json([
+                'students' => $students
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching students data: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch students data'], 500);
         }
     }
 

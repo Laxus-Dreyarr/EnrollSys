@@ -259,6 +259,9 @@ Route::middleware(['org.auth'])->group(function () {
     Route::get('/org-dashboard', [OrgController::class, 'dashboard'])->name('org.dashboard');
     Route::get('/org-dashboard/data', [OrgController::class, 'getDashboardData'])->name('org.dashboard.data');
     Route::post('/org/verify-payment', [OrgController::class, 'verifyPayment'])->name('org.verify.payment');
+
+    // Students Management
+    Route::get('/org-dashboard/students', [OrgController::class, 'getStudentsData'])->name('org.students.data');
 });
 Route::get('/org', function () {
     return view('org.index');

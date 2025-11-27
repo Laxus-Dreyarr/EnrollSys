@@ -28,8 +28,8 @@ $show_student_form = (strtolower($org_id) === 'none');
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="{{ asset('style/google-fonts.css') }}" rel="stylesheet">
     <link href="{{ asset('style/bootstrap.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/student/dashboard.css') }}">
     <link rel="stylesheet" href="{{ asset('css/org/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/student/dashboard.css') }}">
 </head>
 <body>
     <div class="dashboard-container">
@@ -67,7 +67,7 @@ $show_student_form = (strtolower($org_id) === 'none');
                     <i class="fas fa-money-check"></i>
                     <span>Payment Verification</span>
                 </a>
-                <a class="menu-item" data-section="students">
+                <a class="menu-item" data-section="students" onclick="student()"> 
                     <i class="fas fa-users"></i>
                     <span>Students</span>
                 </a>
@@ -75,7 +75,7 @@ $show_student_form = (strtolower($org_id) === 'none');
                     <i class="fas fa-user-circle"></i>
                     <span>Profile</span>
                 </a>
-                <a class="menu-item" data-section="settings">
+                <a class="menu-item" data-section="settings" onclick="settings_clk()">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
                 </a>
@@ -488,109 +488,281 @@ $show_student_form = (strtolower($org_id) === 'none');
             </div>
             
             <!-- Students Section -->
-            <div id="students-section" class="content-section">
-                <h2 class="section-title">Student Management</h2>
+            <div id="students-section-0926" class="content-section student-management-section">
+                <div class="section-header-0926">
+                    <h2 class="section-title-0926">Student Management</h2>
+                    <div class="section-actions-0926">
+                        <button class="btn-primary-0926" id="add-student-btn-0926">
+                            <i class="fas fa-plus"></i>
+                            Add Student
+                        </button>
+                        <button class="btn-secondary-0926" id="export-students-btn-0926">
+                            <i class="fas fa-download"></i>
+                            Export
+                        </button>
+                    </div>
+                </div>
                 
-                <div class="schedule-container">
-                    <!-- Student Search and Filters -->
-                    <div class="search-filters">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" placeholder="Search students by name or ID..." id="student-search">
+                <div class="student-container-0926">
+                    <!-- Enhanced Search and Filters -->
+                    <div class="search-filters-0926">
+                        <div class="search-wrapper-0926">
+                            <div class="search-box-0926">
+                                <i class="fas fa-search search-icon-0926"></i>
+                                <input type="text" 
+                                    placeholder="Search students by name, ID, or program..." 
+                                    id="student-search-0926"
+                                    class="search-input-0926">
+                                <button class="search-clear-0926" id="clear-search-0926">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <button class="filter-toggle-0926" id="filter-toggle-0926">
+                                <i class="fas fa-filter"></i>
+                                <span class="filter-text-0926">Filters</span>
+                                <span class="filter-count-0926" id="active-filters-count-0926">0</span>
+                            </button>
                         </div>
-                        <div class="filter-options">
-                            <select id="program-filter">
-                                <option value="">All Programs</option>
-                                <option value="bsit">BS Information Technology</option>
-                                <option value="bscs">BS Computer Science</option>
-                                <option value="bsis">BS Information Systems</option>
-                            </select>
-                            <select id="year-level-filter">
-                                <option value="">All Year Levels</option>
-                                <option value="1">1st Year</option>
-                                <option value="2">2nd Year</option>
-                                <option value="3">3rd Year</option>
-                                <option value="4">4th Year</option>
-                            </select>
-                            <select id="status-filter">
-                                <option value="">All Status</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                                <option value="pending">Pending</option>
-                            </select>
+
+                        <!-- Collapsible Filter Options -->
+                        <div class="filter-options-0926" id="filter-options-0926">
+                            <div class="filter-group-0926">
+                                <label class="filter-label-0926">Program</label>
+                                <select id="program-filter-0926" class="filter-select-0926">
+                                    <option value="">All Programs</option>
+                                    <option value="bsit">BS Information Technology</option>
+                                    <option value="bscs">BS Computer Science</option>
+                                    <option value="bsis">BS Information Systems</option>
+                                </select>
+                            </div>
+                            <div class="filter-group-0926">
+                                <label class="filter-label-0926">Year Level</label>
+                                <select id="year-level-filter-0926" class="filter-select-0926">
+                                    <option value="">All Year Levels</option>
+                                    <option value="1">1st Year</option>
+                                    <option value="2">2nd Year</option>
+                                    <option value="3">3rd Year</option>
+                                    <option value="4">4th Year</option>
+                                </select>
+                            </div>
+                            <div class="filter-group-0926">
+                                <label class="filter-label-0926">Status</label>
+                                <select id="status-filter-0926" class="filter-select-0926">
+                                    <option value="">All Status</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="pending">Pending</option>
+                                </select>
+                            </div>
+                            <div class="filter-actions-0926">
+                                <button class="btn-secondary-0926" id="reset-filters-0926">
+                                    Reset
+                                </button>
+                                <button class="btn-primary-0926" id="apply-filters-0926">
+                                    Apply Filters
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Students Grid -->
-                    <div class="students-grid">
-                        <div class="student-card">
-                            <div class="student-avatar">
-                                <img src="https://ui-avatars.com/api/?name=John+Smith&background=4361ee&color=fff" alt="John Smith">
+                    <!-- Results Header -->
+                    <div class="results-header-0926">
+                        <div class="results-count-0926">
+                            Showing <span id="students-count-0926">3</span> students
+                        </div>
+                        <div class="view-toggle-0926">
+                            <button class="view-btn-0926 active" data-view="grid">
+                                <i class="fas fa-th"></i>
+                            </button>
+                            <button class="view-btn-0926" data-view="list">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Students Grid/List -->
+                    <div class="students-container-0926" id="students-container-0926">
+                        <!-- Grid View -->
+                        <div class="students-grid-0926 active" id="grid-view-0926">
+                            <div class="student-card-0926">
+                                <div class="card-header-0926">
+                                    <div class="student-avatar-0926">
+                                        <img src="https://ui-avatars.com/api/?name=C+J&background=4361ee&color=fff" 
+                                            alt="John Smith"
+                                            class="avatar-img-0926">
+                                        <div class="status-indicator-0926 active"></div>
+                                    </div>
+                                    <div class="student-basic-info-0926">
+                                        <h4 class="student-name-0926">Carl James Duallo</h4>
+                                        <p class="student-id-0926">2020-30617</p>
+                                    </div>
+                                    <div class="card-actions-0926">
+                                        <div class="dropdown-0926">
+                                            <button class="dropdown-toggle-0926">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <div class="dropdown-menu-0926">
+                                                <button class="dropdown-item-0926 view-student-0926" data-id="1">
+                                                    <i class="fas fa-eye"></i> View Details
+                                                </button>
+                                                <button class="dropdown-item-0926 edit-student-0926" data-id="1">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </button>
+                                                <button class="dropdown-item-0926 deactivate-student-0926" data-id="1">
+                                                    <i class="fas fa-user-slash"></i> Deactivate
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body-0926">
+                                    <div class="info-row-0926">
+                                        <i class="fas fa-graduation-cap"></i>
+                                        <span class="student-program-0926">BS Information Technology</span>
+                                    </div>
+                                    <div class="info-row-0926">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <span class="student-year-0926">3rd Year</span>
+                                    </div>
+                                    <div class="info-row-0926">
+                                        <i class="fas fa-clock"></i>
+                                        <span class="enrollment-date-0926">Enrolled: Nov 15, 2025</span>
+                                    </div>
+                                </div>
+                                <div class="card-footer-0926">
+                                    <span class="status-badge-0926 active">Officially Enrolled</span>
+                                    <div class="quick-actions-0926">
+                                        <button class="btn-action-0926 view-student-0926" data-id="1" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn-action-0926 edit-student-0926" data-id="1" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="student-info">
-                                <h4>John Michael Smith</h4>
-                                <p class="student-id">2020-30617</p>
-                                <p class="student-program">BS Information Technology</p>
-                                <p class="student-year">3rd Year</p>
-                            </div>
-                            <div class="student-status">
-                                <span class="status-badge active">Active</span>
-                                <div class="student-actions">
-                                    <button class="btn-action view-student" data-id="1">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-action edit-student" data-id="1">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
+
+                            <div class="student-card-0926">
+                                <div class="card-header-0926">
+                                    <div class="student-avatar-0926">
+                                        <img src="https://ui-avatars.com/api/?name=R+I&background=4361ee&color=fff" 
+                                            alt="Sarah Johnson"
+                                            class="avatar-img-0926">
+                                        <div class="status-indicator-0926 active"></div>
+                                    </div>
+                                    <div class="student-basic-info-0926">
+                                        <h4 class="student-name-0926">Raziel Insigne</h4>
+                                        <p class="student-id-0926">2021-45128</p>
+                                    </div>
+                                    <div class="card-actions-0926">
+                                        <div class="dropdown-0926">
+                                            <button class="dropdown-toggle-0926">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <div class="dropdown-menu-0926">
+                                                <button class="dropdown-item-0926 view-student-0926" data-id="2">
+                                                    <i class="fas fa-eye"></i> View Details
+                                                </button>
+                                                <button class="dropdown-item-0926 edit-student-0926" data-id="2">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </button>
+                                                <button class="dropdown-item-0926 deactivate-student-0926" data-id="2">
+                                                    <i class="fas fa-user-slash"></i> Deactivate
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body-0926">
+                                    <div class="info-row-0926">
+                                        <i class="fas fa-graduation-cap"></i>
+                                        <span class="student-program-0926">BS Information Technology</span>
+                                    </div>
+                                    <div class="info-row-0926">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <span class="student-year-0926">2nd Year</span>
+                                    </div>
+                                    <div class="info-row-0926">
+                                        <i class="fas fa-clock"></i>
+                                        <span class="enrollment-date-0926">Enrolled: Nov 20, 2025</span>
+                                    </div>
+                                </div>
+                                <div class="card-footer-0926">
+                                    <span class="status-badge-0926 active" style="background: #b88123ff; color: white">Pending</span>
+                                    <div class="quick-actions-0926">
+                                        <button class="btn-action-0926 view-student-0926" data-id="2" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn-action-0926 edit-student-0926" data-id="2" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="student-card">
-                            <div class="student-avatar">
-                                <img src="https://ui-avatars.com/api/?name=Sarah+Johnson&background=4361ee&color=fff" alt="Sarah Johnson">
-                            </div>
-                            <div class="student-info">
-                                <h4>Sarah Marie Johnson</h4>
-                                <p class="student-id">2021-45128</p>
-                                <p class="student-program">BS Computer Science</p>
-                                <p class="student-year">2nd Year</p>
-                            </div>
-                            <div class="student-status">
-                                <span class="status-badge active">Active</span>
-                                <div class="student-actions">
-                                    <button class="btn-action view-student" data-id="2">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-action edit-student" data-id="2">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                </div>
-                            </div>
+                        <!-- List View (Hidden by default) -->
+                        <div class="students-list-0926" id="list-view-0926">
+                            <table class="students-table-0926">
+                                <thead>
+                                    <tr>
+                                        <th class="student-col-0926">Student</th>
+                                        <th class="program-col-0926">Program</th>
+                                        <th class="year-col-0926">Year Level</th>
+                                        <th class="status-col-0926">Status</th>
+                                        <th class="actions-col-0926">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div class="student-cell-0926">
+                                                <img src="https://ui-avatars.com/api/?name=John+Smith&background=4361ee&color=fff" 
+                                                    alt="John Smith"
+                                                    class="avatar-sm-0926">
+                                                <div>
+                                                    <div class="student-name-0926">John Michael Smith</div>
+                                                    <div class="student-id-0926">2020-30617</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>BS Information Technology</td>
+                                        <td>3rd Year</td>
+                                        <td><span class="status-badge-0926 active">Pending</span></td>
+                                        <td>
+                                            <div class="table-actions-0926">
+                                                <button class="btn-action-0926 view-student-0926" data-id="1" title="View">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn-action-0926 edit-student-0926" data-id="1" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!-- Additional rows would go here -->
+                                </tbody>
+                            </table>
                         </div>
+                    </div>
 
-                        <div class="student-card">
-                            <div class="student-avatar">
-                                <img src="https://ui-avatars.com/api/?name=Michael+Brown&background=4361ee&color=fff" alt="Michael Brown">
-                            </div>
-                            <div class="student-info">
-                                <h4>Michael Anthony Brown</h4>
-                                <p class="student-id">2019-28745</p>
-                                <p class="student-program">BS Information Systems</p>
-                                <p class="student-year">4th Year</p>
-                            </div>
-                            <div class="student-status">
-                                <span class="status-badge pending">Pending</span>
-                                <div class="student-actions">
-                                    <button class="btn-action view-student" data-id="3">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-action approve-student" data-id="3">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                </div>
-                            </div>
+                    <!-- Pagination -->
+                    <div class="pagination-0926">
+                        <button class="page-btn-0926 prev-0926" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                            Previous
+                        </button>
+                        <div class="page-numbers-0926">
+                            <button class="page-number-0926 active">1</button>
+                            <button class="page-number-0926">2</button>
+                            <button class="page-number-0926">3</button>
+                            <span class="page-ellipsis-0926">...</span>
+                            <button class="page-number-0926">10</button>
                         </div>
+                        <button class="page-btn-0926 next-0926">
+                            Next
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -817,9 +989,12 @@ $show_student_form = (strtolower($org_id) === 'none');
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Student Management -->
+    <script src="{{ asset('js/function/org/dashboard/org-students.js') }}"></script>
     <script src="{{asset('js/jquery.js')}}"></script>
     <script src="{{asset('js/sweetalert2.js')}}"></script>
     <script src="{{asset('js/function/org/dashboard/dashboard.js')}}"></script>
     <script src="{{asset('js/function/org/dashboard/org-dashboard-data.js')}}"></script>
+    
 </body>
 </html>
