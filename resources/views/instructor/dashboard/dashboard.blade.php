@@ -82,13 +82,6 @@ $id = $user->info->instructor_id;
                     <span class="menu-text">Input Grades</span>
                     <div class="menu-hover-effect"></div>
                 </a>
-                <a class="menu-item" data-section="schedule">
-                    <div class="menu-icon">
-                        <i class="fas fa-calendar-days"></i>
-                    </div>
-                    <span class="menu-text">Teaching Schedule</span>
-                    <div class="menu-hover-effect"></div>
-                </a>
                 <a class="menu-item" data-section="students">
                     <div class="menu-icon">
                         <i class="fas fa-user-group"></i>
@@ -100,7 +93,7 @@ $id = $user->info->instructor_id;
                     <div class="menu-icon">
                         <i class="fas fa-file-signature"></i>
                     </div>
-                    <span class="menu-text">Assignments</span>
+                    <span class="menu-text">Enrollment Request</span>
                     <div class="menu-hover-effect"></div>
                 </a>
                 <a class="menu-item" data-section="grades">
@@ -197,7 +190,7 @@ $id = $user->info->instructor_id;
                         </div>
                         <div class="stat-content">
                             <h3 class="stat-value">8</h3>
-                            <p class="stat-label">Pending Grading</p>
+                            <p class="stat-label">Pending Request</p>
                         </div>
                     </div>
                     
