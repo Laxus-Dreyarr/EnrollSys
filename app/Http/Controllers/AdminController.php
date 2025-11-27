@@ -446,11 +446,28 @@ class AdminController extends Controller
                 return response()->json(['success' => true, 'prerequisites' => $prerequisites]);
                 
             case 'get_subjects':
-                $subjects = Subject::with(['schedules', 'prerequisites'])
-                    ->where('is_active', 1)
-                    ->orderBy('year_level')
+                $curriculumId = $request->input('curriculum_id');
+                Log::info('Fetching subjects with curriculum_id: ' . $curriculumId); // Debug
+    
+                // Build query with curriculum filter
+                $query = Subject::with(['schedules', 'prerequisites'])
+                    ->where('is_active', 1);
+                
+                // Add curriculum filter if provided
+                if ($curriculumId) {
+                    $query->where('curriculum_id', $curriculumId); // Use 'curriculum' column which stores curriculum_id The Bug is the $query->where('curriculum') so I change it to curriculum_id
+                }
+                
+                $subjects = $query->orderBy('year_level')
+                    ->orderBy('semester')
+                    ->orderBy('code')
                     ->get()
                     ->map(function($subject) {
+                        // Get curriculum year from curriculum table
+                        $curriculumYear = DB::table('curriculum')
+                            ->where('id', $subject->curriculum)
+                            ->value('curriculum_year');
+                        
                         return [
                             'id' => $subject->id,
                             'code' => $subject->code,
@@ -458,27 +475,32 @@ class AdminController extends Controller
                             'units' => $subject->units,
                             'year_level' => $subject->year_level,
                             'semester' => $subject->semester,
+                            'curriculum' => $subject->curriculum, // curriculum id
+                            'curriculum_year' => $curriculumYear, // curriculum year for display
                             'schedules' => $subject->schedules,
                             'prerequisites' => $subject->prerequisites
                         ];
                     });
+                
                 return response()->json(['success' => true, 'subjects' => $subjects]);
                 
             case 'get_subject':
+                $subjectId = $request->input('subject_id');
                 $curriculumId = $request->input('curriculum_id');
-    
-                $query = Subject::with(['schedules', 'prerequisites'])
-                    ->where('is_active', 1);
                 
-                // Filter by curriculum if provided
-                if ($curriculumId) {
-                    $query->where('curriculum_id', $curriculumId);
-                }
-                
-                $subjects = $query->orderBy('year_level')
-                    ->get()
-                    ->map(function($subject) {
-                        return [
+                if ($subjectId) {
+                    // Get single subject
+                    $subject = Subject::with(['schedules', 'prerequisites'])
+                        ->where('id', $subjectId)
+                        ->where('is_active', 1)
+                        ->first();
+                        
+                    if ($subject) {
+                        $curriculumYear = DB::table('curriculum')
+                            ->where('id', $subject->curriculum)
+                            ->value('curriculum_year');
+                            
+                        $subjectData = [
                             'id' => $subject->id,
                             'code' => $subject->code,
                             'name' => $subject->name,
@@ -486,11 +508,51 @@ class AdminController extends Controller
                             'year_level' => $subject->year_level,
                             'semester' => $subject->semester,
                             'curriculum' => $subject->curriculum,
+                            'curriculum_year' => $curriculumYear,
+                            'max_students' => $subject->max_students,
+                            'description' => $subject->description,
                             'schedules' => $subject->schedules,
                             'prerequisites' => $subject->prerequisites
                         ];
-                    });
-                return response()->json(['success' => true, 'subjects' => $subjects]);
+                        
+                        return response()->json(['success' => true, 'subject' => $subjectData]);
+                    }
+                    
+                    return response()->json(['success' => false, 'message' => 'Subject not found']);
+                } else {
+                    // Get all subjects with curriculum filter
+                    $query = Subject::with(['schedules', 'prerequisites'])
+                        ->where('is_active', 1);
+                        
+                    if ($curriculumId) {
+                        $query->where('curriculum', $curriculumId);
+                    }
+                    
+                    $subjects = $query->orderBy('year_level')
+                        ->orderBy('semester')
+                        ->orderBy('code')
+                        ->get()
+                        ->map(function($subject) {
+                            $curriculumYear = DB::table('curriculum')
+                                ->where('id', $subject->curriculum)
+                                ->value('curriculum_year');
+                                
+                            return [
+                                'id' => $subject->id,
+                                'code' => $subject->code,
+                                'name' => $subject->name,
+                                'units' => $subject->units,
+                                'year_level' => $subject->year_level,
+                                'semester' => $subject->semester,
+                                'curriculum' => $subject->curriculum,
+                                'curriculum_year' => $curriculumYear,
+                                'schedules' => $subject->schedules,
+                                'prerequisites' => $subject->prerequisites
+                            ];
+                        });
+                        
+                    return response()->json(['success' => true, 'subjects' => $subjects]);
+                }
                 
             case 'create_subject':
                 return $this->createSubject($request);

@@ -1035,6 +1035,9 @@
             data.curriculum_id = selectedCurriculum;
         }
         
+        console.log('Loading subjects with curriculum_id:', selectedCurriculum); // Debug log
+        console.log('Sending request with data:', data); // Debug
+        
         $.post('/admin/ajax/get-stats', data, function(response) {
             if (response.success) {
                 const tbody = $('#subjectsTableBody');
@@ -1052,7 +1055,7 @@
                             <td>${subject.name}</td>
                             <td>${subject.units}</td>
                             <td>${subject.year_level} / ${subject.semester}</td>
-                            <td>${subject.curriculum || 'N/A'}</td>
+                            <td>${subject.curriculum_year || 'N/A'}</td> <!-- Fixed to show curriculum year -->
                             <td id="_student_btn">
                                 <button id="_view" class="btn btn-sm btn-outline-info" onclick="viewSubject(${subject.id})">
                                     <i class="fas fa-eye"></i> View
