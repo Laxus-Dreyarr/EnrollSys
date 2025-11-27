@@ -838,6 +838,206 @@ class InstructorController extends Controller
         return $instructorID;
     }
 
+
+    // Enrollment request
+    public function getEnrollmentRequests(Request $request)
+    {
+        try {
+            $instructor = Auth::guard('instructor')->user();
+            
+            // Get pending enrollment requests with student details
+            $requests = DB::table('enrollmentrequests as er')
+                ->join('students as s', 'er.student_id', '=', 's.id')
+                ->join('user_info as ui', 's.student_id', '=', 'ui.id')
+                ->leftJoin('documents as d', function($join) {
+                    $join->on('s.id', '=', 'd.student_id')
+                        ->where('d.type', 'FHE')
+                        ->where('d.status', 'Pending');
+                })
+                ->leftJoin('payments as p', function($join) {
+                    $join->on('s.id', '=', 'p.student_id')
+                        ->where('p.type', 'PAYMENT_RECEIPT')
+                        ->where('p.status', 'Pending');
+                })
+                ->where('er.status', 'Pending')
+                ->select(
+                    'er.id as request_id',
+                    'er.student_id',
+                    'er.request_date',
+                    's.id_no',
+                    's.year_level',
+                    's.curriculum',
+                    's.is_regular',
+                    'ui.firstname',
+                    'ui.lastname',
+                    'ui.middlename',
+                    'd.file_path as fhe_document',
+                    'p.file_path as payment_receipt',
+                    DB::raw('(SELECT COUNT(*) FROM enrollments WHERE student_id = s.id AND status = "Enrolled") as enrolled_subjects_count')
+                )
+                ->get();
+
+            // Get enrolled subjects for each student
+            foreach ($requests as $request) {
+                $subjects = DB::table('enrollments as e')
+                    ->join('subjects as sub', 'e.subject_id', '=', 'sub.id')
+                    ->join('sections as sec', 'e.section_id', '=', 'sec.id')
+                    ->where('e.student_id', $request->student_id)
+                    ->where('e.status', 'Enrolled')
+                    ->select(
+                        'sub.code as subject_code',
+                        'sub.name as subject_name',
+                        'sub.units',
+                        'sub.year_level',
+                        'sub.semester',
+                        'sec.section_name'
+                    )
+                    ->get();
+                
+                $request->subjects = $subjects;
+            }
+
+            return response()->json([
+                'requests' => $requests
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching enrollment requests: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch enrollment requests'], 500);
+        }
+    }
+
+    public function approveEnrollment(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'request_id' => 'required|integer',
+                'student_id' => 'required|integer'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid input data'
+                ]);
+            }
+
+            $instructor = Auth::guard('instructor')->user();
+
+            // Update enrollment request
+            DB::table('enrollmentrequests')
+                ->where('id', $request->request_id)
+                ->update([
+                    'status' => 'Approved',
+                    'instructor_id' => $instructor->instructor_id,
+                    'processed_date' => now()
+                ]);
+
+            // Update student status
+            DB::table('students')
+                ->where('id', $request->student_id)
+                ->update([
+                    'status' => 'Officially Enrolled'
+                ]);
+
+            // Create notification for student
+            DB::table('notifications')->insert([
+                'user_id' => $request->student_id,
+                'title' => 'Enrollment Approved',
+                'message' => 'Your enrollment request has been approved. You are now officially enrolled.',
+                'is_read' => 0,
+                'created_at' => now()
+            ]);
+
+            // Log the action
+            $clientInfo = $this->collectClientInformation();
+            AuditLog::create([
+                'user_id' => $request->student_id,
+                'action' => 'Enrollment request approved by instructor',
+                'details' => 'Student ID: ' . $request->student_id . ' - ' . $clientInfo['operating_system'] . '/' . $clientInfo['device_type'] . '/' . $clientInfo['user_agent'],
+                'ip_address' => $clientInfo['ip_address'],
+                'date' => now(),
+                'access_by' => $instructor->instructor_id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Enrollment approved successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error approving enrollment: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to approve enrollment'
+            ], 500);
+        }
+    }
+
+    public function rejectEnrollment(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'request_id' => 'required|integer',
+                'student_id' => 'required|integer',
+                'rejection_reason' => 'required|string'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid input data'
+                ]);
+            }
+
+            $instructor = Auth::guard('instructor')->user();
+
+            // Update enrollment request
+            DB::table('enrollmentrequests')
+                ->where('id', $request->request_id)
+                ->update([
+                    'status' => 'Rejected',
+                    'instructor_id' => $instructor->instructor_id,
+                    'rejection_reason' => $request->rejection_reason,
+                    'processed_date' => now()
+                ]);
+
+            // Create notification for student
+            DB::table('notifications')->insert([
+                'user_id' => $request->student_id,
+                'title' => 'Enrollment Rejected',
+                'message' => 'Your enrollment request has been rejected. Reason: ' . $request->rejection_reason,
+                'is_read' => 0,
+                'created_at' => now()
+            ]);
+
+            // Log the action
+            $clientInfo = $this->collectClientInformation();
+            AuditLog::create([
+                'user_id' => $request->student_id,
+                'action' => 'Enrollment request rejected by instructor',
+                'details' => 'Student ID: ' . $request->student_id . ' - Reason: ' . $request->rejection_reason . ' - ' . $clientInfo['operating_system'] . '/' . $clientInfo['device_type'] . '/' . $clientInfo['user_agent'],
+                'ip_address' => $clientInfo['ip_address'],
+                'date' => now(),
+                'access_by' => $instructor->instructor_id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Enrollment rejected successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error rejecting enrollment: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reject enrollment'
+            ], 500);
+        }
+    }
+
+    // End of enrollment request
+
     private function checkEmailExists(Request $request) 
     {
         try {

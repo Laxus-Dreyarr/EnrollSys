@@ -1,3 +1,375 @@
+// Enrollment Request
+// Enrollment Requests functionality
+function initializeEnrollmentRequests() {
+    console.log('Initializing Enrollment Requests section...');
+    loadEnrollmentRequests();
+    
+    // Set up event listeners for accept/reject buttons
+    setupEnrollmentRequestListeners();
+}
+
+function loadEnrollmentRequests() {
+    const requestsContainer = document.getElementById('enrollment-requests-container');
+    const loadingContainer = document.getElementById('enrollment-requests-loading');
+    const noRequestsContainer = document.getElementById('no-enrollment-requests');
+    
+    if (!requestsContainer) return;
+    
+    showEnrollmentRequestsLoading(true);
+    
+    fetch(window.laravelRoutes.getEnrollmentRequests, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Enrollment requests data received:', data);
+        displayEnrollmentRequests(data.requests || []);
+        showEnrollmentRequestsLoading(false);
+    })
+    .catch(error => {
+        console.error('Error loading enrollment requests:', error);
+        showEnrollmentRequestsLoading(false);
+        showNotification('Error loading enrollment requests: ' + error.message, 'error');
+        displayEnrollmentRequests([]);
+    });
+}
+
+function displayEnrollmentRequests(requests) {
+    const requestsContainer = document.getElementById('enrollment-requests-container');
+    const noRequestsContainer = document.getElementById('no-enrollment-requests');
+    const requestsList = document.getElementById('enrollment-requests-list');
+    const requestDetails = document.getElementById('enrollment-request-details');
+    
+    if (!requestsContainer || !requestsList) return;
+    
+    requestsList.innerHTML = '';
+    requestDetails.innerHTML = '';
+    
+    if (!requests || requests.length === 0) {
+        noRequestsContainer.style.display = 'block';
+        requestsContainer.style.display = 'none';
+        return;
+    }
+    
+    noRequestsContainer.style.display = 'none';
+    requestsContainer.style.display = 'grid';
+    
+    requests.forEach(request => {
+        const requestItem = createRequestItem(request);
+        requestsList.appendChild(requestItem);
+    });
+}
+
+function createRequestItem(request) {
+    const item = document.createElement('div');
+    item.className = 'enrollment-request-item';
+    item.dataset.requestId = request.request_id;
+    item.dataset.studentId = request.student_id;
+    
+    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(request.firstname + ' ' + request.lastname)}&background=4361ee&color=fff&size=40`;
+    
+    const studentType = request.is_regular === 1 ? 'Regular' : 'Irregular';
+    const subjectsCount = request.enrolled_subjects_count || 0;
+    
+    item.innerHTML = `
+        <div class="request-item-header">
+            <img src="${avatarUrl}" alt="Student Avatar" class="request-avatar">
+            <div class="request-student-info">
+                <h4 class="student-name">${request.firstname} ${request.middlename || ''} ${request.lastname}</h4>
+                <p class="student-id">ID: ${request.id_no}</p>
+            </div>
+            <div class="request-status-badge pending">Pending</div>
+        </div>
+        <div class="request-item-details">
+            <div class="request-meta">
+                <span class="meta-item">
+                    <i class="fas fa-calendar"></i>
+                    ${request.year_level}
+                </span>
+                <span class="meta-item">
+                    <i class="fas fa-book"></i>
+                    ${studentType}
+                </span>
+                <span class="meta-item">
+                    <i class="fas fa-graduation-cap"></i>
+                    ${subjectsCount} Subjects
+                </span>
+            </div>
+            <div class="request-date">
+                Requested: ${new Date(request.request_date).toLocaleDateString()}
+            </div>
+        </div>
+    `;
+    
+    item.addEventListener('click', function() {
+        // Remove active class from all items
+        document.querySelectorAll('.enrollment-request-item').forEach(i => {
+            i.classList.remove('active');
+        });
+        
+        // Add active class to clicked item
+        this.classList.add('active');
+        
+        // Load request details
+        loadRequestDetails(request);
+    });
+    
+    return item;
+}
+
+function loadRequestDetails(request) {
+    const requestDetails = document.getElementById('enrollment-request-details');
+    if (!requestDetails) return;
+    
+    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(request.firstname + ' ' + request.lastname)}&background=4361ee&color=fff&size=80`;
+    const studentType = request.is_regular === 1 ? 'Regular' : 'Irregular';
+    
+    let subjectsHTML = '';
+    if (request.subjects && request.subjects.length > 0) {
+        request.subjects.forEach(subject => {
+            subjectsHTML += `
+                <div class="subject-enrollment-item">
+                    <div class="subject-header">
+                        <div class="subject-code">${subject.subject_code}</div>
+                        <div class="subject-meta">
+                            ${subject.units} units • ${subject.semester} • ${subject.section_name}
+                        </div>
+                    </div>
+                    <div class="subject-name">${subject.subject_name}</div>
+                    <div class="subject-year">${subject.year_level}</div>
+                </div>
+            `;
+        });
+    } else {
+        subjectsHTML = '<div class="no-subjects">No subjects found for enrollment</div>';
+    }
+    
+    let documentsHTML = '';
+    if (request.fhe_document) {
+        documentsHTML += `
+            <div class="document-item">
+                <i class="fas fa-file-pdf"></i>
+                <span>FHE Document</span>
+                <a href="/${request.fhe_document}" target="_blank" class="btn-view-document">
+                    <i class="fas fa-eye"></i> View
+                </a>
+            </div>
+        `;
+    }
+    
+    if (request.payment_receipt) {
+        documentsHTML += `
+            <div class="document-item">
+                <i class="fas fa-receipt"></i>
+                <span>Payment Receipt</span>
+                <a href="/${request.payment_receipt}" target="_blank" class="btn-view-document">
+                    <i class="fas fa-eye"></i> View
+                </a>
+            </div>
+        `;
+    }
+    
+    if (!documentsHTML) {
+        documentsHTML = '<div class="no-documents">No documents submitted</div>';
+    }
+    
+    requestDetails.innerHTML = `
+        <div class="request-details-header">
+            <img src="${avatarUrl}" alt="Student Avatar" class="details-avatar">
+            <div class="details-student-info">
+                <h3>${request.firstname} ${request.middlename || ''} ${request.lastname}</h3>
+                <p class="student-id">ID: ${request.id_no}</p>
+                <div class="student-meta">
+                    <span class="meta-badge year-level">${request.year_level}</span>
+                    <span class="meta-badge student-type ${studentType.toLowerCase()}">${studentType}</span>
+                    <span class="meta-badge curriculum">${request.curriculum} Curriculum</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="request-details-content">
+            <div class="details-section">
+                <h4>Subjects for Enrollment</h4>
+                <div class="subjects-enrollment-list">
+                    ${subjectsHTML}
+                </div>
+            </div>
+            
+            <div class="details-section">
+                <h4>Submitted Documents</h4>
+                <div class="documents-list">
+                    ${documentsHTML}
+                </div>
+            </div>
+            
+            <div class="request-actions">
+                <button class="btn-accept" data-request-id="${request.request_id}" data-student-id="${request.student_id}">
+                    <i class="fas fa-check"></i> Accept Enrollment
+                </button>
+                <button class="btn-reject" data-request-id="${request.request_id}" data-student-id="${request.student_id}">
+                    <i class="fas fa-times"></i> Reject Enrollment
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Add event listeners to action buttons
+    setupRequestActionButtons();
+}
+
+function setupRequestActionButtons() {
+    const acceptBtn = document.querySelector('.btn-accept');
+    const rejectBtn = document.querySelector('.btn-reject');
+    
+    if (acceptBtn) {
+        acceptBtn.addEventListener('click', handleAcceptEnrollment);
+    }
+    
+    if (rejectBtn) {
+        rejectBtn.addEventListener('click', handleRejectEnrollment);
+    }
+}
+
+function handleAcceptEnrollment(e) {
+    const requestId = e.target.dataset.requestId;
+    const studentId = e.target.dataset.studentId;
+    
+    if (!requestId || !studentId) {
+        showNotification('Invalid request data', 'error');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to approve this enrollment request?')) {
+        return;
+    }
+    
+    const btn = e.target;
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Approving...';
+    btn.disabled = true;
+    
+    fetch(window.laravelRoutes.approveEnrollment, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            request_id: requestId,
+            student_id: studentId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Enrollment approved successfully! Student is now officially enrolled.', 'success');
+            // Reload the requests list
+            loadEnrollmentRequests();
+        } else {
+            showNotification(data.message || 'Error approving enrollment', 'error');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error approving enrollment:', error);
+        showNotification('Error approving enrollment: ' + error.message, 'error');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+function handleRejectEnrollment(e) {
+    const requestId = e.target.dataset.requestId;
+    const studentId = e.target.dataset.studentId;
+    
+    if (!requestId || !studentId) {
+        showNotification('Invalid request data', 'error');
+        return;
+    }
+    
+    const rejectionReason = prompt('Please enter the reason for rejection:');
+    
+    if (rejectionReason === null) {
+        return; // User cancelled
+    }
+    
+    if (!rejectionReason.trim()) {
+        showNotification('Rejection reason is required', 'error');
+        return;
+    }
+    
+    const btn = e.target;
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Rejecting...';
+    btn.disabled = true;
+    
+    fetch(window.laravelRoutes.rejectEnrollment, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            request_id: requestId,
+            student_id: studentId,
+            rejection_reason: rejectionReason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Enrollment rejected successfully!', 'success');
+            // Reload the requests list
+            loadEnrollmentRequests();
+        } else {
+            showNotification(data.message || 'Error rejecting enrollment', 'error');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error rejecting enrollment:', error);
+        showNotification('Error rejecting enrollment: ' + error.message, 'error');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+function showEnrollmentRequestsLoading(show) {
+    const loadingContainer = document.getElementById('enrollment-requests-loading');
+    const requestsContainer = document.getElementById('enrollment-requests-container');
+    const noRequestsContainer = document.getElementById('no-enrollment-requests');
+    
+    if (show) {
+        loadingContainer.style.display = 'block';
+        if (requestsContainer) requestsContainer.style.display = 'none';
+        noRequestsContainer.style.display = 'none';
+    } else {
+        loadingContainer.style.display = 'none';
+    }
+}
+
+function setupEnrollmentRequestListeners() {
+    // This function can be used to set up any additional event listeners
+    console.log('Enrollment request listeners setup');
+}
+// End of Enrollment Request
+
 // Enhanced Dark Mode and Theme Management with Smooth Transitions
 function initializeDarkMode() {
     const darkModeToggle = document.getElementById('dark-mode-toggle');
@@ -1049,6 +1421,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const contentSections = document.querySelectorAll('.content-section');
     const pageTitle = document.querySelector('.page-title');
 
+    // Check if enrollment requests section is active on page load
+    const enrollmentRequestsSection = document.getElementById('enrollment-requests-section');
+    console.log('Enrollment requests section found:', !!enrollmentRequestsSection);
+    if (enrollmentRequestsSection && enrollmentRequestsSection.classList.contains('active')) {
+        console.log('Enrollment requests section is active, initializing...');
+        setTimeout(initializeEnrollmentRequests, 100);
+    }
+
+    // Also listen for section changes
+    const observer2 = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                const target = mutation.target;
+                if (target.id === 'enrollment-requests-section' && target.classList.contains('active')) {
+                    console.log('Enrollment requests section became active, initializing...');
+                    setTimeout(initializeEnrollmentRequests, 100);
+                }
+            }
+        });
+    });
+
+    if (enrollmentRequestsSection) {
+        observer2.observe(enrollmentRequestsSection, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+    }
+
     // Check if input grades section is active on page load
     const inputGradesSection = document.getElementById('input-grades-section');
     console.log('Input grades section found:', !!inputGradesSection);
@@ -1160,6 +1560,10 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'input-grades':
                 console.log('Initializing input grades section...');
                 setTimeout(initializeInputGrades, 100);
+                break;
+            case 'enrollment-requests':
+                console.log('Initializing enrollment requests section...');
+                setTimeout(initializeEnrollmentRequests, 100);
                 break;
             case 'dashboard':
                 // Initialize dashboard if needed

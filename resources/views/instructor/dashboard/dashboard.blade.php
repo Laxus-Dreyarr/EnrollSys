@@ -35,7 +35,10 @@ $id = $user->info->instructor_id;
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="logo-container">
-                    <i class="fas fa-graduation-cap logo-icon"></i>
+                    <!-- <i class="fas fa-graduation-cap logo-icon"></i> -->
+                     <i class="logo">
+                        <img src="{{ asset('img/evsu-logo.png') }}" alt="">
+                    </i>
                     <h3>Enroll<span>Sys</span></h3>
                 </div>
             </div>
@@ -68,13 +71,6 @@ $id = $user->info->instructor_id;
                     <span class="menu-text">Dashboard</span>
                     <div class="menu-hover-effect"></div>
                 </a>
-                <a class="menu-item" data-section="courses">
-                    <div class="menu-icon">
-                        <i class="fas fa-book-open"></i>
-                    </div>
-                    <span class="menu-text">My Courses</span>
-                    <div class="menu-hover-effect"></div>
-                </a>
                 <a class="menu-item" data-section="input-grades">
                     <div class="menu-icon">
                         <i class="fas fa-pen-to-square"></i>
@@ -89,18 +85,11 @@ $id = $user->info->instructor_id;
                     <span class="menu-text">Students</span>
                     <div class="menu-hover-effect"></div>
                 </a>
-                <a class="menu-item" data-section="assignments">
+                <a class="menu-item" data-section="enrollment-requests">
                     <div class="menu-icon">
                         <i class="fas fa-file-signature"></i>
                     </div>
                     <span class="menu-text">Enrollment Request</span>
-                    <div class="menu-hover-effect"></div>
-                </a>
-                <a class="menu-item" data-section="grades">
-                    <div class="menu-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <span class="menu-text">Grade Management</span>
                     <div class="menu-hover-effect"></div>
                 </a>
                 <a class="menu-item" data-section="profile">
@@ -158,8 +147,8 @@ $id = $user->info->instructor_id;
             <div id="dashboard-section" class="content-section active">
                 <!-- Stats Overview -->
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <!-- Background Image Container -->
+                    <!-- <div class="stat-card">
+                        
                         <div class="card-bg-image courses-bg"></div>
                         <div class="stat-icon courses">
                             <i class="fas fa-book"></i>
@@ -168,7 +157,7 @@ $id = $user->info->instructor_id;
                             <h3 class="stat-value">4</h3>
                             <p class="stat-label">Courses Teaching</p>
                         </div>
-                    </div>
+                    </div> -->
                     
                     <div class="stat-card">
                         <!-- Background Image Container -->
@@ -201,8 +190,8 @@ $id = $user->info->instructor_id;
                             <i class="fas fa-calendar-day"></i>
                         </div>
                         <div class="stat-content">
-                            <h3 class="stat-value">3</h3>
-                            <p class="stat-label">Upcoming Classes</p>
+                            <h3 class="stat-value" style="font-size: 20px;">Enrollment Date</h3>
+                            <p class="stat-label">November 21, 2025 - December 7, 2025</p>
                         </div>
                     </div>
                 </div>
@@ -212,10 +201,10 @@ $id = $user->info->instructor_id;
                 <div class="quick-actions-grid">
                     <div class="quick-action-card" data-action="create-assignment">
                         <div class="action-icon">
-                            <i class="fas fa-file-circle-plus"></i>
+                            <i class="fas fa-file-signature"></i>
                         </div>
-                        <h4>Create Assignment</h4>
-                        <p>Create new assignment for your courses</p>
+                        <h4>Enrollment Request</h4>
+                        <p>Student's Enrollment Request</p>
                         <div class="action-hover-effect"></div>
                     </div>
                     
@@ -234,15 +223,6 @@ $id = $user->info->instructor_id;
                         </div>
                         <h4>Student Roster</h4>
                         <p>View and manage student lists</p>
-                        <div class="action-hover-effect"></div>
-                    </div>
-                    
-                    <div class="quick-action-card" data-action="upload-materials">
-                        <div class="action-icon">
-                            <i class="fas fa-cloud-arrow-up"></i>
-                        </div>
-                        <h4>Upload Materials</h4>
-                        <p>Share course materials with students</p>
                         <div class="action-hover-effect"></div>
                     </div>
                 </div>
@@ -858,6 +838,49 @@ $id = $user->info->instructor_id;
                     </div>
                 </div>
             </div>
+
+            <!-- Enrollment Request Section -->
+             <section id="enrollment-requests-section" class="content-section">
+                <div class="section-header">
+                    <h2>Enrollment Requests</h2>
+                    <p>Review and manage student enrollment requests</p>
+                </div>
+
+                <div class="section-content">
+                    <div id="enrollment-requests-loading" class="loading-container" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <p>Loading enrollment requests...</p>
+                    </div>
+
+                    <div id="no-enrollment-requests" class="no-data-container" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No Pending Requests</h3>
+                        <p>There are no pending enrollment requests at this time.</p>
+                    </div>
+
+                    <div id="enrollment-requests-container" class="enrollment-requests-container" style="display: none;">
+                        <div class="requests-sidebar">
+                            <div class="sidebar-header">
+                                <h3>Pending Requests</h3>
+                                <span class="requests-count" id="requests-count">0</span>
+                            </div>
+                            <div class="requests-list" id="enrollment-requests-list">
+                                <!-- Requests will be loaded here -->
+                            </div>
+                        </div>
+                        
+                        <div class="requests-details">
+                            <div id="enrollment-request-details" class="request-details-panel">
+                                <div class="no-selection-message">
+                                    <i class="fas fa-user-graduate"></i>
+                                    <h3>Select a student</h3>
+                                    <p>Click on a student from the list to view their enrollment details</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
             
             <!-- Settings Section -->
             <div id="settings-section" class="content-section">
@@ -964,7 +987,11 @@ $id = $user->info->instructor_id;
         // Pass Laravel routes to JavaScript
         window.laravelRoutes = {
             ungradedStudents: '{{ route("instructor.ungraded-students") }}',
-            saveGrade: '{{ route("instructor.save-grade") }}'
+            saveGrade: '{{ route("instructor.save-grade") }}',
+
+            getEnrollmentRequests: '{{ route("instructor.enrollment-requests") }}',
+            approveEnrollment: '{{ route("instructor.approve-enrollment") }}',
+            rejectEnrollment: '{{ route("instructor.reject-enrollment") }}'
         };
     </script>
     <script>
