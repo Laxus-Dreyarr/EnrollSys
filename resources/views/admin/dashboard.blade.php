@@ -32,7 +32,10 @@ $profile_picture = $user->profile;
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="d-flex align-items-center">
-                    <i id="graduateLogo" class="fas fa-graduation-cap fs-4 me-2 text-primary"></i>
+                    <!-- <i id="graduateLogo" class="fas fa-graduation-cap fs-4 me-2 text-primary"></i> -->
+                     <i class="logo">
+                        <img src="{{ asset('img/evsu-logo.png') }}" alt="">
+                    </i>
                     <span class="brand-text fs-5 fw-bold">EnrollSys</span>
                 </div>
             </div>

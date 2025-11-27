@@ -35,7 +35,10 @@
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="#">
-                <i class="fas fa-graduation-cap floating"></i>
+                <!-- <i class="fas fa-graduation-cap floating"></i> -->
+                 <i class="logo">
+                    <img src="{{ asset('img/evsu-logo.png') }}" alt="">
+                 </i>
                 <span class="logo-text">Enroll</span><span class="logo-highlight">Sys</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -57,10 +60,10 @@
                         <a class="nav-link" href="#contact">Contact</a>
                     </li>
                     <li class="nav-item ms-lg-3">
-                        <button class="btn btn-primary btn-login" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
+                        <button style="background-color: rgb(138, 30, 30); border-color: maroon" class="btn btn-primary btn-login" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
                     </li>
                     <li class="nav-item ms-lg-2">
-                        <button class="btn btn-outline-primary btn-register" data-bs-toggle="modal" data-bs-target="#registerModal">Forgot Account</button>
+                        <button style="border-color: maroon;" class="btn btn-outline-primary btn-register" data-bs-toggle="modal" data-bs-target="#registerModal">Register</button>
                     </li>
                 </ul>
             </div>
@@ -76,7 +79,7 @@
                     <h1 class="hero-title">Welcome to <span>EnrollSys</span></h1>
                     <p class="hero-subtitle">Your seamless gateway to academic enrollment and management</p>
                     <div class="hero-buttons">
-                        <button class="btn btn-primary btn-lg me-3" data-bs-toggle="modal" data-bs-target="#registerModal">Get Started</button>
+                        <button class="btn btn-primary btn-lg me-3" data-bs-toggle="modal" data-bs-target="#registerModal" style="background-color: maroon; border-color: maroon">Get Started</button>
                         <button class="btn btn-outline-light btn-lg">Learn More</button>
                     </div>
                 </div>

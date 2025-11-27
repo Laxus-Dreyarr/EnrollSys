@@ -1,10 +1,24 @@
 /* Base Styles */
 :root {
-    --primary-color: #4361ee;
+    /* --primary-color: #4361ee;
     --primary-dark: #3a56d4;
     --secondary-color2: #3f37c9;
     --secondary-color: #3f37c9;
     --accent-color: #4895ef;
+    --light-color: #f8f9fa;
+    --dark-color: #212529;
+    --gray-color: #6c757d;
+    --light-gray: #e9ecef;
+    --success-color: #4bb543;
+    --error-color: #ff3333;
+    --warning-color: #ffcc00;
+    --transition: all 0.3s ease; */
+
+    --primary-color: rgb(148, 58, 58);
+    --primary-dark: rgb(141, 30, 30);
+    --secondary-color2: rgb(151, 52, 52);
+    --secondary-color: rgb(146, 19, 19);
+    --accent-color: maroon;
     --light-color: #f8f9fa;
     --dark-color: #212529;
     --gray-color: #6c757d;
@@ -180,6 +194,16 @@ ul {
     color: var(--text-dark);
 }
 
+.logo {
+    width: 60px;
+    height: 60px;
+}
+
+.logo img {
+    width: 60px;
+    height: 60px;
+}
+
 
 .logo-text {
     color: var(--text-light);
@@ -232,8 +256,17 @@ ul {
     transition: all 0.3s ease;
 }
 
+.btn-register {
+    color: maroon;
+}
+
+.btn-register:hover {
+    color: white;
+}
+
 .btn-login:hover, .btn-register:hover {
     transform: translateY(-2px);
+    background-color: rgb(133, 54, 54);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -751,12 +784,12 @@ ul {
 .dark-theme .contact-form .form-control {
     background-color: var(--card-light);
     border-color: var(--dark-color);
-    color: var(--text-dark);
+    color: var(--card-dark);
 }
 
 .contact-form .form-control:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+    box-shadow: 0 0 0 0.1rem var(--secondary-color2);
 }
 
 .contact-info {
@@ -1829,12 +1862,12 @@ ul {
 .btn-enhanced-primary {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: white;
-    box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+    box-shadow: 0 4px 15px maroon;
 }
 
 .btn-enhanced-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+    box-shadow: 0 8px 25px maroon;
 }
 
 .btn-enhanced:disabled {
