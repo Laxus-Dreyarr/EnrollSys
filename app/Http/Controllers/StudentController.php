@@ -1134,8 +1134,13 @@ class StudentController extends Controller
     private function autoInsertSubjectsForRegularStudent($studentId, $selectedYearLevel, $selectedCurriculumYear)
     {
         try {
+            $enrollment_date = DB::table('enrollment_date')
+                ->where('is_active', 1)
+                ->first();
+
             // Determine current semester
-            $currentSemester = '2nd Sem';
+            $currentSemester = $enrollment_date->semester;
+
             
             Log::info('Auto-inserting subjects for regular student', [
                 'student_id' => $studentId,
@@ -1577,9 +1582,14 @@ class StudentController extends Controller
 
             // Get student's year level
             $yearLevel = $student->year_level;
+
+            $enrollment_date = DB::table('enrollment_date')
+                ->where('is_active', 1)
+                ->first();
+
             
             // Determine current semester
-            $currentSemester = '2nd Sem';
+            $currentSemester = $enrollment_date->semester;
             
             // Get all subjects the student has taken with their grades
             $studentGrades = DB::table('enrolled_sub')
