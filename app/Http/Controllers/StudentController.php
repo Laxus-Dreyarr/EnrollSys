@@ -1617,13 +1617,20 @@ class StudentController extends Controller
             // In the getEnrollmentSubjects method, update the subject query to include sections:
             if ($student->is_regular == 1) {
                 // Regular student logic
-                $subjects = Subject::where('year_level', $yearLevel)
-                    ->where('semester', $currentSemester)
-                    ->where('is_active', 1)
-                    ->with(['schedules' => function($query) {
-                        $query->select('id', 'subject_id', 'Section', 'day', 'start_time', 'end_time', 'room');
-                    }, 'prerequisites'])
-                    ->get();
+                // $subjects = Subject::where('year_level', $yearLevel)
+                //     ->where('semester', $currentSemester)
+                //     ->where('is_active', 1)
+                //     ->with(['schedules' => function($query) {
+                //         $query->select('id', 'subject_id', 'Section', 'day', 'start_time', 'end_time', 'room');
+                //     }, 'prerequisites'])
+                //     ->get();
+                // $subjects = Subject::where('is_active', 1)
+                //     ->with(['schedules' => function($query) {
+                //         $query->select('id', 'subject_id', 'Section', 'day', 'start_time', 'end_time', 'room');
+                //     }, 'prerequisites'])
+                //     ->orderBy('year_level', 'asc')
+                //     ->get();
+                $subjects = $this->getAvailableSubjectsForIrregular($student, $yearLevel, $currentSemester, $passedSubjects, $allTakenSubjects, $failedSubjects);
             } else {
                 // Irregular student logic
                 $subjects = $this->getAvailableSubjectsForIrregular($student, $yearLevel, $currentSemester, $passedSubjects, $allTakenSubjects, $failedSubjects);
@@ -2385,9 +2392,23 @@ class StudentController extends Controller
         try {
             // For irregular students, get all subjects from 1st to 4th year for the current semester
             // that the student hasn't already PASSED (allow failed subjects to be retaken)
+            // $allSubjects = Subject::where('is_active', 1)
+            //     ->where('semester', $semester)
+            //     ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year'])
+            //     ->whereNotIn('id', $passedSubjects) // Only exclude passed subjects, not failed ones
+            //     ->with(['schedules', 'prerequisites'])
+            //     ->get();
+            $curriculum_year = $student->curriculum;
+            $curriculum = DB::table('curriculum')
+                ->where('curriculum_year', $curriculum_year) // Use the selected curriculum
+                ->where('is_active', 1)
+                ->first();
+
+            $curriculum_id = $curriculum->id;
+
             $allSubjects = Subject::where('is_active', 1)
-                ->where('semester', $semester)
                 ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year'])
+                ->where('curriculum_id', $curriculum_id)
                 ->whereNotIn('id', $passedSubjects) // Only exclude passed subjects, not failed ones
                 ->with(['schedules', 'prerequisites'])
                 ->get();
