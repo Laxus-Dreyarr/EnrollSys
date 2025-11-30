@@ -1443,10 +1443,10 @@ class AdminController extends Controller
             $admin = Auth::guard('admin')->user();
             
             $data = [
-                'Semester' => $request->semester, // Capital 'S'
+                'semester' => $request->semester,
                 'academic_year' => $request->academic_year,
-                'Start' => $request->start_date, // Capital 'S'
-                'End' => $request->end_date,     // Capital 'E'
+                'start' => $request->start_date,
+                'end' => $request->end_date,
                 'is_active' => $request->is_active,
                 'admin_id' => $admin->admin_id
             ];
@@ -1454,7 +1454,7 @@ class AdminController extends Controller
             if ($request->has('enrollment_id') && $request->enrollment_id) {
                 // Update existing period
                 DB::table('enrollment_date')
-                    ->where('ID', $request->enrollment_id)
+                    ->where('id', $request->enrollment_id)
                     ->update($data);
                     
                 $message = 'Enrollment period updated successfully';
@@ -1462,17 +1462,16 @@ class AdminController extends Controller
                 // Create new period
                 DB::table('enrollment_date')->insert($data);
 
-                // $save = DB::table('students')
-                // ->whereNotNull('grade')
-                // ->value('grade');
+                // Update student status
                 $save = Student::whereNotIn('is_regular', ['5', '6'])
                     ->update([
                         'status' => 'Not Enrolled',
                         'is_regular' => 5
                     ]); 
-                if ($save) {
-                    $message = 'Enrollment period created successfully';
-                }
+                
+                // Always update student year count when creating new enrollment period
+                $this->updateStudentYearCountWithTransaction();
+                $message = 'Enrollment period created successfully';
             }
 
             DB::commit();
@@ -1481,9 +1480,107 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to save enrollment period: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to save enrollment period']);
+            return response()->json(['success' => false, 'message' => 'Failed to save enrollment period: ' . $e->getMessage()]);
         }
     }
+
+    public function updateStudentYearCountWithTransaction()
+    {
+        return DB::transaction(function () {
+            $currentSemester = DB::table('enrollment_date')
+                ->where('is_active', 1)
+                ->value('semester');
+
+            Log::info("Current semester: " . $currentSemester);
+
+            // Get all officially enrolled students, not just from enrollmentrequests
+            $enrolledStudents = DB::table('students')
+                ->where('status', 'Officially Enrolled')
+                ->select('id', 'year_level')
+                ->get();
+
+            Log::info("Enrolled students count: " . $enrolledStudents->count());
+
+            foreach ($enrolledStudents as $student) {
+                // Extract numeric part from year level (e.g., "3rd Year" -> 3)
+                $yearLevel = (int) filter_var($student->year_level, FILTER_SANITIZE_NUMBER_INT);
+                
+                // Increment year level if it's 1st semester
+                $totalYear = ($currentSemester === '1st Sem') ? $yearLevel + 1 : $yearLevel;
+                
+                Log::info("Student ID: {$student->id}, Year Level: {$yearLevel}, Total Year: {$totalYear}");
+
+                // Check if record exists
+                $existingRecord = DB::table('student_count_year')
+                    ->where('student_id', $student->id)
+                    ->first();
+                
+                if ($existingRecord) {
+                    DB::table('student_count_year')
+                        ->where('student_id', $student->id)
+                        ->update([
+                            'total_year' => $totalYear,
+                            'is_active' => 1
+                        ]);
+                    Log::info("Updated student_count_year for student: {$student->id}");
+                } else {
+                    DB::table('student_count_year')
+                        ->insert([
+                            'student_id' => $student->id,
+                            'total_year' => $totalYear,
+                            'is_active' => 1
+                        ]);
+                    Log::info("Inserted student_count_year for student: {$student->id}");
+                }
+            }
+            
+            Log::info("Completed student_count_year update for " . $enrolledStudents->count() . " students");
+        });
+    }
+
+    // public function updateStudentYearCountWithTransaction()
+    // {
+    //     return DB::transaction(function () {
+    //         $currentSemester = DB::table('enrollment_date')
+    //             ->where('is_active', 1)
+    //             ->value('semester');
+
+    //         $approvedStudents = DB::table('enrollmentrequests')
+    //             ->where('status', 'Approved')
+    //             ->join('students', 'enrollmentrequests.student_id', '=', 'students.id')
+    //             ->select('enrollmentrequests.student_id', 'students.year_level')
+    //             ->get();
+
+    //         foreach ($approvedStudents as $student) {
+    //             $yearLevel = (int) filter_var($student->year_level, FILTER_SANITIZE_NUMBER_INT);
+    //             $totalYear = ($currentSemester === '1st Sem') ? $yearLevel + 1 : $yearLevel;
+                
+    //             // Using DB::table for updateOrCreate equivalent
+    //             $existingRecord = DB::table('student_count_year')
+    //                 ->where('student_id', $student->student_id)
+    //                 ->first();
+                
+    //             if ($existingRecord) {
+    //                 DB::table('student_count_year')
+    //                     ->where('student_id', $student->student_id)
+    //                     ->update([
+    //                         'total_year' => $totalYear,
+    //                         'is_active' => 1
+    //                     ]);
+    //             } else {
+    //                 DB::table('student_count_year')
+    //                     ->insert([
+    //                         'student_id' => $student->student_id,
+    //                         'total_year' => $totalYear,
+    //                         'is_active' => 1
+    //                     ]);
+    //             }
+    //         }
+            
+    //         // return ['success' => true, 'updated_count' => count($approvedStudents)];
+    //         return;
+    //     });
+    // }
 
     public function deleteEnrollmentPeriod(Request $request)
     {
