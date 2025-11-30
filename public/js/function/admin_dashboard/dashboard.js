@@ -660,17 +660,32 @@
 
         // Function to load edit prerequisites
         function loadEditPrerequisiteOptions() {
-            $.post('/admin/ajax/get-stats', {action: 'get_prerequisites',  _token: $('meta[name="csrf-token"]').attr('content')}, function(response) {
+            // Only load prerequisites if a curriculum is selected
+            if (!selectedCurriculum) {
+                const dropdown = $('#editPrerequisitesDropdown');
+                dropdown.empty().append('<option value="">Please select a curriculum first</option>');
+                return;
+            }
+
+            $.post('/admin/ajax/get-stats', {
+                action: 'get_prerequisites', 
+                curriculum_id: selectedCurriculum, // Send the selected curriculum
+                _token: $('meta[name="csrf-token"]').attr('content')
+            }, function(response) {
                 if (response.success) {
                     const dropdown = $('#editPrerequisitesDropdown');
                     dropdown.empty().append('<option value="">Select prerequisite subject</option>');
                     
-                    response.prerequisites.forEach(function(prereq) {
-                        dropdown.append($('<option>', {
-                            value: prereq.id,
-                            text: prereq.code + ' - ' + prereq.name
-                        }));
-                    });
+                    if (response.prerequisites.length === 0) {
+                        dropdown.append('<option value="">No subjects available in this curriculum</option>');
+                    } else {
+                        response.prerequisites.forEach(function(prereq) {
+                            dropdown.append($('<option>', {
+                                value: prereq.id,
+                                text: prereq.code + ' - ' + prereq.name
+                            }));
+                        });
+                    }
                 }
             }, 'json').fail(function(xhr, status, error) {
                 console.error('Error loading prerequisites:', error);
@@ -718,17 +733,32 @@
     }
 
     function loadPrerequisiteOptions() {
-        $.post('/admin/ajax/get-stats', {action: 'get_prerequisites',  _token: $('meta[name="csrf-token"]').attr('content')}, function(response) {
+        // Only load prerequisites if a curriculum is selected
+        if (!selectedCurriculum) {
+            const dropdown = $('#prerequisitesDropdown');
+            dropdown.empty().append('<option value="">Please select a curriculum first</option>');
+            return;
+        }
+
+        $.post('/admin/ajax/get-stats', {
+            action: 'get_prerequisites', 
+            curriculum_id: selectedCurriculum, // Send the selected curriculum
+            _token: $('meta[name="csrf-token"]').attr('content')
+        }, function(response) {
             if (response.success) {
                 const dropdown = $('#prerequisitesDropdown');
                 dropdown.empty().append('<option value="">Select prerequisite subject</option>');
                 
-                response.prerequisites.forEach(function(prereq) {
-                    dropdown.append($('<option>', {
-                        value: prereq.id,
-                        text: prereq.code + ' - ' + prereq.name
-                    }));
-                });
+                if (response.prerequisites.length === 0) {
+                    dropdown.append('<option value="">No subjects available in this curriculum</option>');
+                } else {
+                    response.prerequisites.forEach(function(prereq) {
+                        dropdown.append($('<option>', {
+                            value: prereq.id,
+                            text: prereq.code + ' - ' + prereq.name
+                        }));
+                    });
+                }
             }
         }, 'json').fail(function(xhr, status, error) {
             console.error('Error loading prerequisites:', error);
@@ -991,6 +1021,9 @@
         
         // Reload subjects for the selected curriculum
         loadSubjects();
+
+        // Reload prerequisites for the selected curriculum
+        loadPrerequisiteOptions();
     }
 
     // Function to create new curriculum

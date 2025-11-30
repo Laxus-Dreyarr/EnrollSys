@@ -439,10 +439,21 @@ class AdminController extends Controller
                 return $this->createCurriculum($request);
                 
             case 'get_prerequisites':
-                $prerequisites = Subject::where('is_active', 1)
-                    ->select('id', 'code', 'name')
+                $curriculumId = $request->input('curriculum_id');
+    
+                $query = Subject::where('is_active', 1);
+                
+                // Filter by curriculum if provided
+                if ($curriculumId) {
+                    $query->where('curriculum_id', $curriculumId);
+                }
+                
+                $prerequisites = $query->select('id', 'code', 'name')
+                    ->orderBy('year_level')
+                    ->orderBy('semester')
                     ->orderBy('code')
                     ->get();
+                    
                 return response()->json(['success' => true, 'prerequisites' => $prerequisites]);
                 
             case 'get_subjects':
