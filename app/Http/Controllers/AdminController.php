@@ -1383,15 +1383,15 @@ class AdminController extends Controller
     {
         try {
             $periods = DB::table('enrollment_date')
-                ->orderBy('Start', 'desc') // Changed from 'start_date' to 'Start'
+                ->orderBy('start', 'desc') // Changed from 'start_date' to 'Start'
                 ->get()
                 ->map(function($period) {
                     return [
-                        'id' => $period->ID,
-                        'semester' => $period->Semester, // Note the capital 'S'
+                        'id' => $period->id,
+                        'semester' => $period->semester, // Note the capital 'S'
                         'academic_year' => $period->academic_year ?? null,
-                        'start_date' => $period->Start, // Note the capital 'S'
-                        'end_date' => $period->End,     // Note the capital 'E'
+                        'start_date' => $period->start, // Note the capital 'S'
+                        'end_date' => $period->end,     // Note the capital 'E'
                         'is_active' => $period->is_active ?? true,
                         'admin_id' => $period->admin_id
                     ];
@@ -1419,11 +1419,11 @@ class AdminController extends Controller
             return response()->json([
                 'success' => true,
                 'enrollment_period' => [
-                    'id' => $period->ID,
-                    'semester' => $period->Semester, // Capital 'S'
+                    'id' => $period->id,
+                    'semester' => $period->semester, // Capital 'S'
                     'academic_year' => $period->academic_year ?? null,
-                    'start_date' => $period->Start, // Capital 'S'
-                    'end_date' => $period->End,     // Capital 'E'
+                    'start_date' => $period->start, // Capital 'S'
+                    'end_date' => $period->end,     // Capital 'E'
                     'is_active' => $period->is_active ?? true,
                     'admin_id' => $period->admin_id
                 ]
@@ -1452,6 +1452,9 @@ class AdminController extends Controller
             ];
 
             if ($request->has('enrollment_id') && $request->enrollment_id) {
+
+                DB::table('enrollment_date')
+                ->delete();
                 // Update existing period
                 DB::table('enrollment_date')
                     ->where('id', $request->enrollment_id)
@@ -1459,18 +1462,21 @@ class AdminController extends Controller
                     
                 $message = 'Enrollment period updated successfully';
             } else {
+
+                DB::table('enrollment_date')
+                ->delete();
                 // Create new period
-                DB::table('enrollment_date')->insert($data);
+                DB::table('enrollment_date')->insert($data); 
+                
+                // Always update student year count when creating new enrollment period
+                $this->updateStudentYearCountWithTransaction();
 
                 // Update student status
                 $save = Student::whereNotIn('is_regular', ['5', '6'])
                     ->update([
                         'status' => 'Not Enrolled',
                         'is_regular' => 5
-                    ]); 
-                
-                // Always update student year count when creating new enrollment period
-                $this->updateStudentYearCountWithTransaction();
+                    ]);
                 $message = 'Enrollment period created successfully';
             }
 
@@ -1514,15 +1520,19 @@ class AdminController extends Controller
                 $existingRecord = DB::table('student_count_year')
                     ->where('student_id', $student->id)
                     ->first();
-                
+            
                 if ($existingRecord) {
-                    DB::table('student_count_year')
-                        ->where('student_id', $student->id)
-                        ->update([
+                    if($existingRecord->total_year > $totalYear) {
+                        Log::info("Don't update student_count_year for student: {$existingRecord->total_year}");
+                    }else{
+                        DB::table('student_count_year')
+                            ->where('student_id', $student->id)
+                            ->update([
                             'total_year' => $totalYear,
                             'is_active' => 1
-                        ]);
-                    Log::info("Updated student_count_year for student: {$student->id}");
+                            ]);
+                        Log::info("Updated student_count_year for student: {$student->id}");
+                    }
                 } else {
                     DB::table('student_count_year')
                         ->insert([

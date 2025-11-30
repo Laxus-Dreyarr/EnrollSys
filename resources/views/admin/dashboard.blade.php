@@ -387,9 +387,9 @@ $profile_picture = $user->profile;
                                 </button>
                             </div>
                             <div class="card-body">
-                                <div class="row" id="enrollmentCards">
-                                    <!-- Enrollment periods will be loaded here -->
-                                </div>
+                                <!-- <div class="row" id="enrollmentCards">
+                                    Enrollment periods will be loaded here
+                                </div> -->
                                 
                                 <div class="table-responsive mt-4">
                                     <table class="table table-hover" id="enrollmentTable">
