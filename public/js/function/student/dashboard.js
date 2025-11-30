@@ -1145,7 +1145,7 @@ function initializeStudentInfoModal() {
 
     function validateForm() {
         let isValid = true;
-        const fields = ['school_id', 'year_level', 'student_type', 'curriculum'];
+        const fields = ['school_id', 'curriculum'];
         
         fields.forEach(fieldId => {
             const field = document.getElementById(fieldId);
@@ -1170,8 +1170,6 @@ function initializeStudentInfoModal() {
         const formData = new FormData();
         formData.append('action', 'complete_student_info');
         formData.append('school_id', document.getElementById('school_id').value);
-        formData.append('year_level', document.getElementById('year_level').value);
-        formData.append('student_type', document.getElementById('student_type').value);
         formData.append('curriculum', document.getElementById('curriculum').value);
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
@@ -1192,14 +1190,6 @@ function initializeStudentInfoModal() {
                     const schoolIdInput = document.getElementById('school_id');
                     const schoolIdInputError = document.getElementById('school_id_error');
                     showFieldError(schoolIdInput, schoolIdInputError, data.message);
-                } else if (data.message.includes('year level')) {
-                    const yearLevelInput = document.getElementById('year_level');
-                    const yearLevelInputError = document.getElementById('year_level_error');
-                    showFieldError(yearLevelInput, yearLevelInputError, data.message);
-                } else if (data.message.includes('student type')) {
-                    const studentTypeInput = document.getElementById('student_type');
-                    const studentTypeInputError = document.getElementById('student_type_error');
-                    showFieldError(studentTypeInput, studentTypeInputError, data.message);
                 } else if (data.message.includes('Curriculum year')) {
                     const schoolIdInput = document.getElementById('school_id');
                     const schoolIdInputError = document.getElementById('school_id_error');
@@ -1208,6 +1198,192 @@ function initializeStudentInfoModal() {
                     const curriculumInput = document.getElementById('curriculum');
                     const curriculumInputError = document.getElementById('curriculum_error');
                     showFieldError(curriculumInput, curriculumInputError, data.message);
+                } else {
+                    // Show generic error
+                    Swal.fire({
+                        title: 'Failed',
+                        text: data.message,
+                        icon: 'error',
+                        confirmButtonText: 'Close',
+                        confirmButtonColor: '#070808ff',
+                        background: '#1a1a2e',
+                        color: '#ffffff',
+                        backdrop: 'rgba(0,0,0,0.7)',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showClass: {
+                            popup: 'animate__animated animate__fadeInDown'
+                        },
+                        hideClass: {
+                            popup: 'animate__animated animate__fadeOutUp'
+                        }
+                    });
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Network Error',
+                text: 'Please check your connection and try again.',
+                icon: 'error',
+                confirmButtonText: 'Close',
+                confirmButtonColor: '#070808ff',
+                background: '#1a1a2e',
+                color: '#ffffff',
+                backdrop: 'rgba(0,0,0,0.7)'
+            });
+        })
+        .finally(() => {
+            // Reset button
+            submitBtn.innerHTML = originalText;
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+        });
+    }
+
+    function showSuccessMessage() {
+        const modalContainer = document.querySelector('.modal-container');
+        const originalContent = modalContainer.innerHTML;
+        
+        modalContainer.innerHTML = `
+            <div class="success-animation">
+                <svg viewBox="0 0 52 52" fill="none">
+                    <circle cx="26" cy="26" r="25" fill="#10b981" stroke="#10b981" stroke-width="2"/>
+                    <path d="M14 27l7 7 17-17" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h4>Information Saved Successfully!</h4>
+                <p>Your student information has been updated. The page will refresh shortly.</p>
+                <div class="loading-bar">
+                    <div class="loading-progress"></div>
+                </div>
+            </div>
+        `;
+        
+        // Animate loading bar
+        const loadingProgress = modalContainer.querySelector('.loading-progress');
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 1;
+            loadingProgress.style.width = progress + '%';
+            if (progress >= 100) {
+                clearInterval(interval);
+            }
+        }, 30);
+        
+        // Refresh page after success
+        setTimeout(() => {
+            window.location.reload();
+        }, 3000);
+    }
+}
+
+// Student info modal functionality 2
+function initializeStudentInfoModal2() {
+    const studentInfoModal2 = document.getElementById('studentInfoModal2');
+    const studentInfoForm2 = document.getElementById('studentInfoForm2');
+    
+    if (!studentInfoModal2) {
+        return;
+    }
+
+    // Prevent closing modal by clicking outside
+    studentInfoModal2.addEventListener('click', function(e) {
+        if (e.target === studentInfoModal2) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+
+    // Form validation
+    studentInfoForm2.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (validateForm()) {
+            submitForm();
+        }
+    });
+
+    function validateField(field) {
+        const value = field.value.trim();
+        const errorElement = document.getElementById(field.id + '_error');
+        
+        // Clear previous error
+        clearFieldError(field);
+        
+        // Required field validation
+        if (!value) {
+            showFieldError(field, errorElement, 'This field is required');
+            return false;
+        }
+        
+        return true;
+    }
+
+    function showFieldError(field, errorElement, message) {
+        field.style.borderColor = 'var(--danger-color)';
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.classList.add('active');
+        }
+    }
+
+    function clearFieldError(field) {
+        field.style.borderColor = '';
+        const errorElement = document.getElementById(field.id + '_error');
+        if (errorElement) {
+            errorElement.classList.remove('active');
+        }
+    }
+
+    function validateForm() {
+        let isValid = true;
+        const fields = ['year_level', 'student_type'];
+        
+        fields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field && !validateField(field)) {
+                isValid = false;
+            }
+        });
+        
+        return isValid;
+    }
+
+    function submitForm() {
+        const submitBtn = studentInfoForm2.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
+        
+        // Get form data
+        const formData = new FormData();
+        formData.append('action', 'complete_student_info2');
+        formData.append('year_level', document.getElementById('year_level').value);
+        formData.append('student_type', document.getElementById('student_type').value);
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        // Send request
+        fetch('/exe/student', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                showSuccessMessage();
+            } else {
+                // Handle specific field errors
+                if (data.message.includes('year level')) {
+                    const yearLevelInput = document.getElementById('year_level');
+                    const yearLevelInputError = document.getElementById('year_level_error');
+                    showFieldError(yearLevelInput, yearLevelInputError, data.message);
+                } else if (data.message.includes('student type')) {
+                    const studentTypeInput = document.getElementById('student_type');
+                    const studentTypeInputError = document.getElementById('student_type_error');
+                    showFieldError(studentTypeInput, studentTypeInputError, data.message);
                 } else {
                     // Show generic error
                     Swal.fire({
@@ -2765,9 +2941,166 @@ function initializeEnhancedEnrollmentModal() {
     };
 }
 
+// Subject filtering and sorting functionality
+function initializeSubjectFilters() {
+    const yearLevelFilter = document.getElementById('year-level-filter');
+    const searchInput = document.getElementById('search-subject');
+    const coursesGrid = document.getElementById('courses-grid');
+    
+    // Check if elements exist before proceeding
+    if (!yearLevelFilter || !searchInput || !coursesGrid) {
+        console.warn('Subject filter elements not found');
+        return;
+    }
+    
+    function filterSubjects() {
+        const yearLevelValue = yearLevelFilter.value;
+        const searchValue = searchInput.value.toLowerCase().trim();
+        
+        const courseCards = Array.from(coursesGrid.getElementsByClassName('course-card'));
+        let hasVisibleCards = false;
+        
+        // Filter and show/hide courses
+        courseCards.forEach(card => {
+            const yearLevel = card.dataset.yearLevel;
+            const subjectCode = card.dataset.subjectCode || '';
+            const subjectName = card.dataset.subjectName || '';
+            
+            let shouldShow = true;
+            
+            // Year level filter
+            if (yearLevelValue !== 'all' && yearLevel !== yearLevelValue) {
+                shouldShow = false;
+            }
+            
+            // Search filter
+            if (shouldShow && searchValue) {
+                const matchesSearch = subjectCode.includes(searchValue) || 
+                                    subjectName.includes(searchValue);
+                if (!matchesSearch) {
+                    shouldShow = false;
+                }
+            }
+            
+            // Show or hide card
+            card.style.display = shouldShow ? '' : 'none';
+            if (shouldShow) hasVisibleCards = true;
+        });
+        
+        // Handle empty state
+        const existingEmptyState = coursesGrid.querySelector('.no-subjects, .no-results');
+        if (existingEmptyState) {
+            existingEmptyState.remove();
+        }
+        
+        if (!hasVisibleCards) {
+            const noResults = document.createElement('div');
+            noResults.className = 'no-results';
+            noResults.innerHTML = `
+                <i class="fas fa-search"></i>
+                <h3>No Subjects Found</h3>
+                <p>Try adjusting your filters to see more results.</p>
+            `;
+            coursesGrid.appendChild(noResults);
+        }
+    }
+    
+    // Add event listeners with debouncing for search input
+    yearLevelFilter.addEventListener('change', filterSubjects);
+    
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(filterSubjects, 300);
+    });
+    
+    // Initial filter to ensure proper state
+    filterSubjects();
+}
+
+// Subject filtering and sorting functionality in the My Subjects Side Bar
+function initializeSubjectFilters2() {
+    const yearLevelFilter = document.getElementById('year-level-filter2');
+    const searchInput = document.getElementById('search-subject2');
+    const coursesGrid = document.getElementById('courses-grid2');
+    
+    // Check if elements exist before proceeding
+    if (!yearLevelFilter || !searchInput || !coursesGrid) {
+        console.warn('Subject filter elements not found');
+        return;
+    }
+    
+    function filterSubjects() {
+        const yearLevelValue = yearLevelFilter.value;
+        const searchValue = searchInput.value.toLowerCase().trim();
+        
+        const courseCards = Array.from(coursesGrid.getElementsByClassName('course-card'));
+        let hasVisibleCards = false;
+        
+        // Filter and show/hide courses
+        courseCards.forEach(card => {
+            const yearLevel = card.dataset.yearLevel;
+            const subjectCode = card.dataset.subjectCode || '';
+            const subjectName = card.dataset.subjectName || '';
+            
+            let shouldShow = true;
+            
+            // Year level filter
+            if (yearLevelValue !== 'all' && yearLevel !== yearLevelValue) {
+                shouldShow = false;
+            }
+            
+            // Search filter
+            if (shouldShow && searchValue) {
+                const matchesSearch = subjectCode.includes(searchValue) || 
+                                    subjectName.includes(searchValue);
+                if (!matchesSearch) {
+                    shouldShow = false;
+                }
+            }
+            
+            // Show or hide card
+            card.style.display = shouldShow ? '' : 'none';
+            if (shouldShow) hasVisibleCards = true;
+        });
+        
+        // Handle empty state
+        const existingEmptyState = coursesGrid.querySelector('.no-subjects, .no-results');
+        if (existingEmptyState) {
+            existingEmptyState.remove();
+        }
+        
+        if (!hasVisibleCards) {
+            const noResults = document.createElement('div');
+            noResults.className = 'no-results';
+            noResults.innerHTML = `
+                <i class="fas fa-search"></i>
+                <h3>No Subjects Found</h3>
+                <p>Try adjusting your filters to see more results.</p>
+            `;
+            coursesGrid.appendChild(noResults);
+        }
+    }
+    
+    // Add event listeners with debouncing for search input
+    yearLevelFilter.addEventListener('change', filterSubjects);
+    
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(filterSubjects, 300);
+    });
+    
+    // Initial filter to ensure proper state
+    filterSubjects();
+}
+
+
 document.addEventListener('DOMContentLoaded', function() {
 
     initializeThemeColorPicker();
+    initializeSubjectFilters();
+    initializeSubjectFilters2();
     // Toggle sidebar on mobile
     const sidebarToggle = document.querySelector('.sidebar-toggle');
     const sidebar = document.querySelector('.sidebar');
@@ -2797,6 +3130,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeProfilePictureUpload();
     initializeTooltips();
     initializeStudentInfoModal();
+    initializeStudentInfoModal2();
 
     const studentInfoModal = document.getElementById('studentInfoModal');
     
@@ -2993,6 +3327,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Cancel edit button click
     cancelEditBtn.addEventListener('click', function() {
+        setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
         // Restore original values
         editableFields.forEach(field => {
             const input = document.getElementById(field);

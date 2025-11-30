@@ -91,23 +91,34 @@ class StudentController extends Controller
         switch ($action) {
             case 'check_email':
                 return $this->checkEmail($request);
+
             case 'send_verification':
                 return $this->sendVerificationCode($request);
+
             case 'confirm_account':
                 return $this->verifyRegister($request);
+
             case 'forgot_verification':
                 return $this->sendStudentOtpForgotPass($request);
+
             case 'resetPassword_account':
                 return $this->studentResetPass($request);
+
             case 'login':
                 return $this->loginStudent($request);
 
             case 'verify_code':
                 return $this->verifyCodeAndRegister($request);
+
             case 'register':
                 return $this->processRegistration($request);
+
             case 'complete_student_info':
                 return $this->completeStudentInfo($request);
+
+            case 'complete_student_info2':
+                return $this->completeStudentInfo2($request);
+                
             default:
                 return response()->json([
                     'success' => false,
@@ -885,12 +896,19 @@ class StudentController extends Controller
 
         $user = Auth::guard('student')->user();
         $student = $user->user_information->student;
+
+        // Get enrolled subjects with grades
+        $enrolledSubjects = DB::table('enrolled_sub')
+            ->where('student_id', $student->id)
+            ->orderBy('year_level')
+            ->orderBy('semester')
+            ->get();
         
         // Check if there's an active enrollment period
         $enrollmentPeriod = $this->checkActiveEnrollmentPeriod();
         $isEnrollmentActive = $enrollmentPeriod && $enrollmentPeriod->is_active == 1;
         
-        return view('student.dashboard.dashboard', compact('user', 'isEnrollmentActive', 'enrollmentPeriod'));
+        return view('student.dashboard.dashboard', compact('user', 'isEnrollmentActive', 'enrollmentPeriod', 'enrolledSubjects'));
     }
 
     private function checkActiveEnrollmentPeriod()
@@ -996,12 +1014,6 @@ class StudentController extends Controller
                     'max:50',
                     'regex:/^\d{4}-\d+$/'
                 ],
-                'year_level' => [
-                    'required'
-                ],
-                'student_type' => [
-                    'required'
-                ],
                 'curriculum' => [
                     'required'
                 ]
@@ -1009,8 +1021,6 @@ class StudentController extends Controller
                 'school_id.required' => 'School ID is required.',
                 'school_id.max' => 'School ID must not exceed 50 characters.',
                 'school_id.regex' => 'School ID must be in the format: YYYY-XXXXX (e.g., 2020-30617).',
-                'year_level.required' => 'Please select your year level.',
-                'student_type.required' => 'Please select your student type.',
                 'curriculum.required' => 'Please select your curriculum.'
             ]);
 
@@ -1038,6 +1048,17 @@ class StudentController extends Controller
             $schoolId = $request->school_id;
             $schoolIdYear = explode('-', $schoolId)[0];
             $currentYear = date('Y');
+
+            $curriculum = DB::table('students')
+                ->where('id_no', $schoolId)
+                ->first();
+
+            if ($curriculum) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This School ID already exist!'
+                ]);
+            }
             
             // Validate school ID year range (optional validation)
             if ($schoolIdYear < 2013) {
@@ -1057,12 +1078,12 @@ class StudentController extends Controller
             DB::beginTransaction();
 
             try {
-                $studentType = match($request->student_type) {
-                    'Regular' => '1',
-                    'Irregular' => '2',
-                    'Transferee' => '0',
-                    default => $request->student_type
-                };
+                // $studentType = match($request->student_type) {
+                //     'Regular' => '1',
+                //     'Irregular' => '2',
+                //     'Transferee' => '5',
+                //     default => $request->student_type
+                // };
 
                 // Get the current authenticated user
                 $user = Auth::guard('student')->user();
@@ -1082,9 +1103,8 @@ class StudentController extends Controller
                 $save = Student::where('student_id', $userInfo->id)
                     ->update([
                         'id_no' => $request->school_id,
-                        'year_level' => $request->year_level,
                         'status' => 'Not Enrolled',
-                        'is_regular' => $studentType,
+                        'is_regular' => '5',
                         'curriculum' => $request->curriculum // Use the selected curriculum, not school ID year
                     ]);
 
@@ -1099,18 +1119,117 @@ class StudentController extends Controller
                 // Find the student record for this user
                 $studentInfo = Student::where('student_id', $userInfo->id)->first();
 
+                $this->autoInsertSubjectsForIrregularStudent($studentInfo->id, $request->curriculum);
+
                 // Auto-insert subjects based on student type - USE THE SELECTED CURRICULUM
-                if ($studentType == '1') { // Regular student
-                    $this->autoInsertSubjectsForRegularStudent($studentInfo->id, $request->year_level, $request->curriculum);
-                } elseif ($studentType == '2') { // Irregular student
-                    $this->autoInsertSubjectsForIrregularStudent($studentInfo->id, $request->curriculum);
-                }
+                // if ($studentType == '1') { // Regular student
+                //     $this->autoInsertSubjectsForRegularStudent($studentInfo->id, $request->year_level, $request->curriculum);
+                // } elseif ($studentType == '2') { // Irregular student
+                //     $this->autoInsertSubjectsForIrregularStudent($studentInfo->id, $request->curriculum);
+                // } elseif ($studentType == '5') {
+                //     $this->autoInsertSubjectsForIrregularStudent($studentInfo->id, $request->curriculum);
+                // }
 
                 DB::commit();
                 
                 return response()->json([
                     'success' => true,
                     'message' => 'Student information completed successfully'
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollback();
+                Log::error('Student info update error: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to update student: ' . $e->getMessage()
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Complete student info error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    private function completeStudentInfo2(Request $request)
+    {
+        try {
+            // Validate the registration data first
+            $validator = Validator::make($request->all(), [
+                'year_level' => [
+                    'required'
+                ],
+                'student_type' => [
+                    'required'
+                ],
+            ], [
+                'year_level.required' => 'Please select your year level.',
+                'student_type.required' => 'Please select your student type.',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $validator->errors()->first()
+                ]);
+            }
+
+            DB::beginTransaction();
+
+            try {
+                $studentType = match($request->student_type) {
+                    'Regular' => '1',
+                    'Irregular' => '2',
+                    'Transferee' => '0',
+                    default => $request->student_type
+                };
+
+                // Get the current authenticated user
+                $user = Auth::guard('student')->user();
+                
+                // Find the user_info record for this user
+                $userInfo = UserInfo::where('user_id', $user->id)->first();
+                // Add debugging
+                Log::info('User: ' . $user->id);
+                Log::info('UserInfo: ' . ($userInfo ? $userInfo->id : 'Not found'));
+                
+                if (!$userInfo) {
+                    DB::rollback();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'User information not found.'
+                    ]);
+                }
+
+                // Update using the user_info id as student_id - USE THE SELECTED CURRICULUM
+                 $student = Student::where('student_id', $userInfo->id)->first();
+                Log::info('Student record: ' . ($student ? 'Found' : 'Not found'));
+                $save = Student::where('student_id', $userInfo->id)
+                    ->update([
+                        'year_level' => $request->year_level,
+                        'status' => 'Not Enrolled',
+                        'is_regular' => $studentType
+                    ]);
+                Log::error('Student complete_info2 update error: ');
+                
+
+                if(!$save) {
+                    DB::rollback();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Not able to update student information.'
+                    ]);
+                }
+
+                DB::commit();
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Completed successfully'
                 ]);
 
             } catch (\Exception $e) {
@@ -2416,9 +2535,16 @@ class StudentController extends Controller
 
             $curriculum_id = $curriculum->id;
 
+            $currentEnrollment = DB::table('enrollment_date')
+                ->where('is_active', 1)
+                ->first();
+
+            $currentSemester = $currentEnrollment->semester;
+
             $allSubjects = Subject::where('is_active', 1)
                 ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year'])
                 ->where('curriculum_id', $curriculum_id)
+                ->where('semester', $currentSemester)
                 ->whereNotIn('id', $passedSubjects) // Only exclude passed subjects, not failed ones
                 ->with(['schedules', 'prerequisites'])
                 ->get();

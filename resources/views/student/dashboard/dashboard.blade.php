@@ -1,12 +1,13 @@
 <?php
 $firstname = $user->user_information->firstname;
 $lastname = $user->user_information->lastname;
-$student_id = $user->user_information->student->id_no;
-$is_regular = $user->user_information->student->is_regular;
+$student_id = $user->user_information->student->id_no ?? 'Not Set';
+$is_regular = $user->user_information->student->is_regular ?? 'Not Set';
 $profile_picture = $user->profile;
 
 // Check if student ID is 'none' (case-insensitive)
 $show_student_form = (strtolower($student_id) === 'none');
+$show_prereg_form = $isEnrollmentActive;
 ?>
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -177,86 +178,74 @@ $show_student_form = (strtolower($student_id) === 'none');
                     </div>
                 </div>
                 
-                <!-- My Courses -->
-                <h2 class="section-title">My Courses</h2>
-                <div class="courses-grid">
-                    <div class="course-card">
-                        <div class="course-header">
-                            <h3 class="course-code">IT 373</h3>
-                            <p class="course-name">Software Engineering</p>
-                        </div>
-                        <div class="course-body">
-                            <div class="course-info">
-                                <span>Instructor: Dr. Smith</span>
-                                <span>Units: 3</span>
-                            </div>
-                            <div class="course-info">
-                                <span>Schedule: Mon/Wed 10:00 AM</span>
-                                <span>Room: CS-302</span>
-                            </div>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span>Course Progress</span>
-                                    <span>65%</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress" style="width: 65%;"></div>
-                                </div>
-                            </div>
-                        </div>
+                <h2 class="section-title">My Subjects</h2>
+
+                <!-- Filter Container -->
+                <div class="filter-container">
+                    <div class="filter-group">
+                        <label for="year-level-filter">Year Level:</label>
+                        <select id="year-level-filter" class="filter-select">
+                            <option value="all">All Years</option>
+                            <option value="1st Year">1st Year</option>
+                            <option value="2nd Year">2nd Year</option>
+                            <option value="3rd Year">3rd Year</option>
+                            <option value="4th Year">4th Year</option>
+                            <option value="5th Year">5th Year</option>
+                        </select>
                     </div>
                     
-                    <div class="course-card">
-                        <div class="course-header">
-                            <h3 class="course-code">CS 301</h3>
-                            <p class="course-name">Data Structures</p>
-                        </div>
-                        <div class="course-body">
-                            <div class="course-info">
-                                <span>Instructor: Prof. Johnson</span>
-                                <span>Units: 4</span>
-                            </div>
-                            <div class="course-info">
-                                <span>Schedule: Tue/Thu 2:00 PM</span>
-                                <span>Room: CS-105</span>
-                            </div>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span>Course Progress</span>
-                                    <span>78%</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress" style="width: 78%;"></div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="filter-group">
+                        <label for="search-subject">Search:</label>
+                        <input type="text" id="search-subject" class="search-input" placeholder="Search subject...">
                     </div>
-                    
-                    <div class="course-card">
-                        <div class="course-header">
-                            <h3 class="course-code">MATH 202</h3>
-                            <p class="course-name">Calculus II</p>
-                        </div>
-                        <div class="course-body">
-                            <div class="course-info">
-                                <span>Instructor: Dr. Lee</span>
-                                <span>Units: 3</span>
+                </div>
+
+                <!-- Subjects Grid -->
+                <div class="courses-grid" id="courses-grid">
+                    @forelse($enrolledSubjects as $subject)
+                        <div class="course-card" 
+                            data-year-level="{{ $subject->year_level }}"
+                            data-semester="{{ $subject->semester }}"
+                            data-subject-code="{{ strtolower($subject->subject_code) }}"
+                            data-subject-name="{{ strtolower($subject->subject_name) }}"
+                            data-grade="{{ $subject->grade ? 'graded' : 'ungraded' }}"
+                            data-grade-value="{{ $subject->grade ?? '' }}">
+                            <div class="course-header">
+                                <h3 class="course-code">{{ $subject->subject_code }}</h3>
+                                <p class="course-name">{{ $subject->subject_name }}</p>
+                                <span class="course-badge {{ $subject->year_level == '1st Year' ? 'badge-freshman' : ($subject->year_level == '2nd Year' ? 'badge-sophomore' : ($subject->year_level == '3rd Year' ? 'badge-junior' : 'badge-senior')) }}">
+                                    {{ $subject->year_level }}
+                                </span>
                             </div>
-                            <div class="course-info">
-                                <span>Schedule: Mon/Wed/Fri 1:00 PM</span>
-                                <span>Room: MATH-204</span>
-                            </div>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span>Course Progress</span>
-                                    <span>42%</span>
+                            <div class="course-body">
+                                <div class="course-info">
+                                    <span><strong>Units:</strong> {{ $subject->units }}</span>
+                                    <span><strong>Semester:</strong> {{ $subject->semester }}</span>
                                 </div>
-                                <div class="progress-bar">
-                                    <div class="progress" style="width: 42%;"></div>
+                                <div class="course-info">
+                                    <span><strong>Year Level:</strong> {{ $subject->year_level }}</span>
+                                    @if($subject->grade)
+                                        <span class="grade-display {{ $subject->grade <= 1.5 ? 'grade-excellent' : ($subject->grade <= 2.5 ? 'grade-good' : 'grade-poor') }}">
+                                            <strong>Grade:</strong> {{ $subject->grade }}
+                                        </span>
+                                    @else
+                                        <span class="grade-display grade-ungraded">
+                                            <strong>Grade:</strong> Not Yet Graded
+                                        </span>
+                                    @endif
+                                </div>
+                                <div class="course-meta">
+                                    <small>Enrolled: {{ \Carbon\Carbon::parse($subject->date_enrolled)->format('M d, Y') }}</small>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    @empty
+                        <div class="no-subjects">
+                            <i class="fas fa-book-open"></i>
+                            <h3>No Subjects Enrolled</h3>
+                            <p>You haven't enrolled in any subjects yet.</p>
+                        </div>
+                    @endforelse
                 </div>
                 
                 <!-- Today's Schedule -->
@@ -294,143 +283,73 @@ $show_student_form = (strtolower($student_id) === 'none');
             
             <!-- My Courses Section -->
             <div id="courses-section" class="content-section">
-                <h2 class="section-title">My Courses</h2>
-                
-                <div class="courses-grid">
-                    <div class="course-card">
-                        <div class="course-header">
-                            <h3 class="course-code">IT 373</h3>
-                            <p class="course-name">Software Engineering</p>
-                        </div>
-                        <div class="course-body">
-                            <div class="course-info">
-                                <span>Instructor: Dr. Smith</span>
-                                <span>Units: 3</span>
-                            </div>
-                            <div class="course-info">
-                                <span>Schedule: Mon/Wed 10:00 AM</span>
-                                <span>Room: CS-302</span>
-                            </div>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span>Course Progress</span>
-                                    <span>65%</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress" style="width: 65%;"></div>
-                                </div>
-                            </div>
-                            <button class="btn-primary mt-3 w-100">View Course</button>
-                        </div>
+
+                <!-- Filter Container -->
+                <div class="filter-container">
+                    <div class="filter-group">
+                        <label for="year-level-filter">Year Level:</label>
+                        <select id="year-level-filter2" class="filter-select">
+                            <option value="all">All Years</option>
+                            <option value="1st Year">1st Year</option>
+                            <option value="2nd Year">2nd Year</option>
+                            <option value="3rd Year">3rd Year</option>
+                            <option value="4th Year">4th Year</option>
+                            <option value="5th Year">5th Year</option>
+                        </select>
                     </div>
                     
-                    <div class="course-card">
-                        <div class="course-header">
-                            <h3 class="course-code">CS 301</h3>
-                            <p class="course-name">Data Structures</p>
-                        </div>
-                        <div class="course-body">
-                            <div class="course-info">
-                                <span>Instructor: Prof. Johnson</span>
-                                <span>Units: 4</span>
-                            </div>
-                            <div class="course-info">
-                                <span>Schedule: Tue/Thu 2:00 PM</span>
-                                <span>Room: CS-105</span>
-                            </div>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span>Course Progress</span>
-                                    <span>78%</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress" style="width: 78%;"></div>
-                                </div>
-                            </div>
-                            <button class="btn-primary mt-3 w-100">View Course</button>
-                        </div>
+                    <div class="filter-group">
+                        <label for="search-subject">Search:</label>
+                        <input type="text" id="search-subject2" class="search-input" placeholder="Search subject...">
                     </div>
-                    
-                    <div class="course-card">
-                        <div class="course-header">
-                            <h3 class="course-code">MATH 202</h3>
-                            <p class="course-name">Calculus II</p>
-                        </div>
-                        <div class="course-body">
-                            <div class="course-info">
-                                <span>Instructor: Dr. Lee</span>
-                                <span>Units: 3</span>
+                </div>
+
+                <!-- Subjects Grid -->
+                <div class="courses-grid" id="courses-grid2">
+                    @forelse($enrolledSubjects as $subject)
+                        <div class="course-card" 
+                            data-year-level="{{ $subject->year_level }}"
+                            data-semester="{{ $subject->semester }}"
+                            data-subject-code="{{ strtolower($subject->subject_code) }}"
+                            data-subject-name="{{ strtolower($subject->subject_name) }}"
+                            data-grade="{{ $subject->grade ? 'graded' : 'ungraded' }}"
+                            data-grade-value="{{ $subject->grade ?? '' }}">
+                            <div class="course-header">
+                                <h3 class="course-code">{{ $subject->subject_code }}</h3>
+                                <p class="course-name">{{ $subject->subject_name }}</p>
+                                <span class="course-badge {{ $subject->year_level == '1st Year' ? 'badge-freshman' : ($subject->year_level == '2nd Year' ? 'badge-sophomore' : ($subject->year_level == '3rd Year' ? 'badge-junior' : 'badge-senior')) }}">
+                                    {{ $subject->year_level }}
+                                </span>
                             </div>
-                            <div class="course-info">
-                                <span>Schedule: Mon/Wed/Fri 1:00 PM</span>
-                                <span>Room: MATH-204</span>
-                            </div>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span>Course Progress</span>
-                                    <span>42%</span>
+                            <div class="course-body">
+                                <div class="course-info">
+                                    <span><strong>Units:</strong> {{ $subject->units }}</span>
+                                    <span><strong>Semester:</strong> {{ $subject->semester }}</span>
                                 </div>
-                                <div class="progress-bar">
-                                    <div class="progress" style="width: 42%;"></div>
+                                <div class="course-info">
+                                    <span><strong>Year Level:</strong> {{ $subject->year_level }}</span>
+                                    @if($subject->grade)
+                                        <span class="grade-display {{ $subject->grade <= 1.5 ? 'grade-excellent' : ($subject->grade <= 2.5 ? 'grade-good' : 'grade-poor') }}">
+                                            <strong>Grade:</strong> {{ $subject->grade }}
+                                        </span>
+                                    @else
+                                        <span class="grade-display grade-ungraded">
+                                            <strong>Grade:</strong> Not Yet Graded
+                                        </span>
+                                    @endif
                                 </div>
-                            </div>
-                            <button class="btn-primary mt-3 w-100">View Course</button>
-                        </div>
-                    </div>
-                    
-                    <div class="course-card">
-                        <div class="course-header">
-                            <h3 class="course-code">ENG 101</h3>
-                            <p class="course-name">Composition I</p>
-                        </div>
-                        <div class="course-body">
-                            <div class="course-info">
-                                <span>Instructor: Prof. Davis</span>
-                                <span>Units: 3</span>
-                            </div>
-                            <div class="course-info">
-                                <span>Schedule: Tue/Thu 9:00 AM</span>
-                                <span>Room: LIB-205</span>
-                            </div>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span>Course Progress</span>
-                                    <span>85%</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress" style="width: 85%;"></div>
+                                <div class="course-meta">
+                                    <small>Enrolled: {{ \Carbon\Carbon::parse($subject->date_enrolled)->format('M d, Y') }}</small>
                                 </div>
                             </div>
-                            <button class="btn-primary mt-3 w-100">View Course</button>
                         </div>
-                    </div>
-                    
-                    <div class="course-card">
-                        <div class="course-header">
-                            <h3 class="course-code">HIST 110</h3>
-                            <p class="course-name">World History</p>
+                    @empty
+                        <div class="no-subjects">
+                            <i class="fas fa-book-open"></i>
+                            <h3>No Subjects Enrolled</h3>
+                            <p>You haven't enrolled in any subjects yet.</p>
                         </div>
-                        <div class="course-body">
-                            <div class="course-info">
-                                <span>Instructor: Dr. Garcia</span>
-                                <span>Units: 3</span>
-                            </div>
-                            <div class="course-info">
-                                <span>Schedule: Mon/Wed 3:00 PM</span>
-                                <span>Room: HSS-102</span>
-                            </div>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span>Course Progress</span>
-                                    <span>55%</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress" style="width: 55%;"></div>
-                                </div>
-                            </div>
-                            <button class="btn-primary mt-3 w-100">View Course</button>
-                        </div>
-                    </div>
+                    @endforelse
                 </div>
             </div>
             
@@ -1059,93 +978,121 @@ $show_student_form = (strtolower($student_id) === 'none');
     </div>
 
     <!-- Student Information Modal -->
-    <div id="studentInfoModal" class="modal-overlay <?php echo $show_student_form ? 'active' : ''; ?>">
-        <div class="modal-container">
-            <div class="modal-header">
-                <h3>Complete Your Student Information</h3>
-            </div>
-            
-            <form id="studentInfoForm" class="modal-form">
-                @csrf
-                <div class="form-group">
-                    <label for="school_id" class="form-label">
-                        <i class="fas fa-id-card"></i>
-                        School ID Number
-                    </label>
-                    <input 
-                        type="text" 
-                        id="school_id" 
-                        name="school_id" 
-                        class="form-control" 
-                        placeholder="Enter your school ID number"
-                        required
-                    >
-                    <div class="form-error" id="school_id_error"></div>
+    
+    @if($isEnrollmentActive == 1 && $is_regular == 5)
+        <div id="studentInfoModal2" class="modal-overlay <?php echo $show_prereg_form ? 'active' : ''; ?>">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3>Enrollment Pre-Registration Form</h3>
                 </div>
                 
-                <div class="form-group">
-                    <label for="year_level" class="form-label">
-                        <i class="fas fa-graduation-cap"></i>
-                        Year Level
-                    </label>
-                    <select id="year_level" name="year_level" class="form-control" required>
-                        <option value="">Select Year Level</option>
-                        <option value="1st Year">1st Year</option>
-                        <option value="2nd Year">2nd Year</option>
-                        <option value="3rd Year">3rd Year</option>
-                        <option value="4th Year">4th Year</option>
-                        <option value="5th Year">5th Year</option>
-                    </select>
-                    <div class="form-error" id="year_level_error"></div>
-                </div>
+                <form id="studentInfoForm2" class="modal-form">
+                    @csrf                   
+                    <div class="form-group">
+                        <label for="year_level" class="form-label">
+                            <i class="fas fa-graduation-cap"></i>
+                            Year Level
+                        </label>
+                        <select id="year_level" name="year_level" class="form-control" required>
+                            <option value="">Select Year Level</option>
+                            <option value="1st Year">1st Year</option>
+                            <option value="2nd Year">2nd Year</option>
+                            <option value="3rd Year">3rd Year</option>
+                            <option value="4th Year">4th Year</option>
+                            <option value="5th Year">5th Year</option>
+                        </select>
+                        <div class="form-error" id="year_level_error"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="student_type" class="form-label">
+                            <i class="fas fa-user-tag"></i>
+                            Student Type
+                        </label>
+                        <select id="student_type" name="student_type" class="form-control" required>
+                            <option value="">Select Student Type</option>
+                            <option value="Regular">Regular</option>
+                            <option value="Irregular">Irregular</option>
+                            <!-- <option value="Transferee">Transferee</option> -->
+                        </select>
+                        <div class="form-error" id="student_type_error"></div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary2 btn-full">
+                            <i class="fas fa-save"></i>
+                            Save Information
+                        </button>
+                    </div>
+                </form>
                 
-                <div class="form-group">
-                    <label for="student_type" class="form-label">
-                        <i class="fas fa-user-tag"></i>
-                        Student Type
-                    </label>
-                    <select id="student_type" name="student_type" class="form-control" required>
-                        <option value="">Select Student Type</option>
-                        <option value="Regular">Regular</option>
-                        <option value="Irregular">Irregular</option>
-                        <option value="Transferee">Transferee</option>
-                    </select>
-                    <div class="form-error" id="student_type_error"></div>
-                </div>
-                
-                <!-- NEW: Curriculum Dropdown -->
-                <div class="form-group">
-                    <label for="curriculum" class="form-label">
-                        <i class="fas fa-book"></i>
-                        Your Curriculum
-                    </label>
-                    <select id="curriculum" name="curriculum" class="form-control" required>
-                        <option value="">Select Curriculum</option>
-                        <!-- Options will be populated dynamically -->
-                    </select>
-                    <div class="form-error" id="curriculum_error"></div>
-                    <small class="form-text text-muted" style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+                <div class="modal-footer">
+                    <p class="form-note">
                         <i class="fas fa-info-circle"></i>
-                        Your curriculum determines which subjects will be available for enrollment.
-                    </small>
+                        This information is required for enrollment.
+                    </p>
                 </div>
-                
-                <div class="form-actions">
-                    <button type="submit" class="btn-primary btn-full">
-                        <i class="fas fa-save"></i>
-                        Save Information
-                    </button>
-                </div>
-            </form>
-            
-            <div class="modal-footer">
-                <p class="form-note">
-                    <i class="fas fa-info-circle"></i>
-                    This information is required to access all dashboard features.
-                </p>
             </div>
         </div>
-    </div>
+    @endif()
+
+        <div id="studentInfoModal" class="modal-overlay <?php echo $show_student_form ? 'active' : ''; ?>">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3>Complete Your Student Information</h3>
+                </div>
+                
+                <form id="studentInfoForm" class="modal-form">
+                    @csrf
+                    <div class="form-group">
+                        <label for="school_id" class="form-label">
+                            <i class="fas fa-id-card"></i>
+                            School ID Number
+                        </label>
+                        <input 
+                            type="text" 
+                            id="school_id" 
+                            name="school_id" 
+                            class="form-control" 
+                            placeholder="Enter your school ID number"
+                            required
+                        >
+                        <div class="form-error" id="school_id_error"></div>
+                    </div>
+                    
+                    <!-- NEW: Curriculum Dropdown -->
+                    <div class="form-group">
+                        <label for="curriculum" class="form-label">
+                            <i class="fas fa-book"></i>
+                            Your Curriculum
+                        </label>
+                        <select id="curriculum" name="curriculum" class="form-control" required>
+                            <option value="">Select Curriculum</option>
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                        <div class="form-error" id="curriculum_error"></div>
+                        <small class="form-text text-muted" style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+                            <i class="fas fa-info-circle"></i>
+                            Your curriculum determines which subjects will be available for enrollment.
+                        </small>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary btn-full">
+                            <i class="fas fa-save"></i>
+                            Save Information
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="modal-footer">
+                    <p class="form-note">
+                        <i class="fas fa-info-circle"></i>
+                        This information is required to access all dashboard features.
+                    </p>
+                </div>
+            </div>
+        </div>
 
     <!-- Enhanced Enrollment Modal -->
     <div id="enhancedEnrollmentModal" class="enhanced-enrollment-modal-overlay">

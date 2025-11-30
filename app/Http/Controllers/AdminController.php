@@ -1461,7 +1461,18 @@ class AdminController extends Controller
             } else {
                 // Create new period
                 DB::table('enrollment_date')->insert($data);
-                $message = 'Enrollment period created successfully';
+
+                // $save = DB::table('students')
+                // ->whereNotNull('grade')
+                // ->value('grade');
+                $save = Student::whereNotIn('is_regular', ['5', '6'])
+                    ->update([
+                        'status' => 'Not Enrolled',
+                        'is_regular' => 5
+                    ]); 
+                if ($save) {
+                    $message = 'Enrollment period created successfully';
+                }
             }
 
             DB::commit();
