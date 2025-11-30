@@ -3095,12 +3095,98 @@ function initializeSubjectFilters2() {
     filterSubjects();
 }
 
+// View Subject Informtaion
+function initializeSubjectView() {
+    // Add click event listeners to all view subject buttons
+    document.querySelectorAll('.view-subject-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const subjectId = this.getAttribute('data-subject-id');
+            const subjectCode = this.getAttribute('data-subject-code');
+            const subjectName = this.getAttribute('data-subject-name');
+            const units = this.getAttribute('data-units');
+            const yearLevel = this.getAttribute('data-year-level');
+            const semester = this.getAttribute('data-semester');
+            const grade = this.getAttribute('data-grade');
+            const dateEnrolled = this.getAttribute('data-date-enrolled');
+
+            // Populate modal with basic information
+            document.getElementById('subjectModalTitle').textContent = subjectCode + ' - ' + subjectName;
+            document.getElementById('modalSubjectCode').textContent = subjectCode;
+            document.getElementById('modalSubjectName').textContent = subjectName;
+            document.getElementById('modalSubjectUnits').textContent = units;
+            document.getElementById('modalYearLevel').textContent = yearLevel;
+            document.getElementById('modalSemester').textContent = semester;
+            document.getElementById('modalGrade').textContent = grade || 'Not Yet Graded';
+            document.getElementById('modalDateEnrolled').textContent = new Date(dateEnrolled).toLocaleDateString();
+
+            // Show loading for prerequisites
+            document.getElementById('prerequisitesList').innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Loading prerequisites...</div>';
+            document.getElementById('modalDescription').textContent = 'Loading description...';
+
+            // Fetch subject details and prerequisites via AJAX
+            fetchSubjectDetails(subjectId);
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('subjectModal'));
+            modal.show();
+        });
+    });
+}
+
+// Function to fetch subject details and prerequisites
+function fetchSubjectDetails(subjectId) {
+    fetch(`/student/subject/${subjectId}/details`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Update description
+                if (data.subject.description) {
+                    document.getElementById('modalDescription').textContent = data.subject.description;
+                }
+
+                // Update prerequisites
+                const prerequisitesList = document.getElementById('prerequisitesList');
+                if (data.prerequisites && data.prerequisites.length > 0) {
+                    let html = '<ul class="list-group">';
+                    data.prerequisites.forEach(prereq => {
+                        html += `
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>${prereq.code}</strong> - ${prereq.name}
+                                    <br><small class="text-muted">${prereq.units} units</small>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">${prereq.year_level}</span>
+                            </li>
+                        `;
+                    });
+                    html += '</ul>';
+                    prerequisitesList.innerHTML = html;
+                } else {
+                    prerequisitesList.innerHTML = '<div class="alert alert-info">No prerequisites required for this subject.</div>';
+                }
+            } else {
+                document.getElementById('prerequisitesList').innerHTML = '<div class="alert alert-warning">Unable to load prerequisites.</div>';
+                document.getElementById('modalDescription').textContent = 'No description available.';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching subject details:', error);
+            document.getElementById('prerequisitesList').innerHTML = '<div class="alert alert-danger">Error loading prerequisites.</div>';
+            document.getElementById('modalDescription').textContent = 'No description available.';
+        });
+}
 
 document.addEventListener('DOMContentLoaded', function() {
 
     initializeThemeColorPicker();
     initializeSubjectFilters();
     initializeSubjectFilters2();
+    initializeSubjectView();
     // Toggle sidebar on mobile
     const sidebarToggle = document.querySelector('.sidebar-toggle');
     const sidebar = document.querySelector('.sidebar');

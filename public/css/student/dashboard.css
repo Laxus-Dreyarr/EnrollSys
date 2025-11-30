@@ -7651,6 +7651,67 @@ body.dark-mode .enhanced-btn-primary {
 }
 /* End My Subjects */
 
+/* View Subject Information */
+.view-subject-btn {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.view-subject-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+}
+
+body.dark-mode .view-subject-btn {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+}
+
+.modal-content {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-content .alert-info {
+    background: linear-gradient(180deg, var(--sidebar-gradient-1) 0%, var(--sidebar-gradient-2) 50%, var(--sidebar-gradient-3) 100%);
+    color: white;
+}
+
+body.dark-mode .modal-content {
+    color: black;
+}
+
+.modal-header {
+    background: linear-gradient(180deg, var(--sidebar-gradient-1) 0%, var(--sidebar-gradient-2) 50%, var(--sidebar-gradient-3) 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+}
+
+.modal-content .btn-secondary {
+    background: linear-gradient(180deg, var(--sidebar-gradient-1) 0%, var(--sidebar-gradient-2) 50%, var(--sidebar-gradient-3) 100%);
+    color: white;
+}
+
+body.dark-mode .modal-content .btn-secondary {
+    background: linear-gradient(180deg, var(--sidebar-gradient-1) 0%, var(--sidebar-gradient-2) 50%, var(--sidebar-gradient-3) 100%);
+    color: white;
+}
+/* End View Subject Information */
+
 /* Print Styles */
 @media print {
     .irregular-modal-overlay {

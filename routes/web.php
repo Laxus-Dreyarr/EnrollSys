@@ -215,6 +215,8 @@ Route::middleware(['student.auth'])->group(function () {
     Route::post('/student/enrollment/final-enroll', [StudentController::class, 'finalEnroll']);
 
     Route::get('/student/enrollment/check-existing-request', [StudentController::class, 'checkExistingEnrollmentRequest']);
+
+    Route::get('/student/subject/{id}/details', [StudentController::class, 'getSubjectDetails'])->name('student.subject.details');
 });
 
 // Debug route - remove after testing

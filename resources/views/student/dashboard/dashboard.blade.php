@@ -341,6 +341,18 @@ $show_prereg_form = $isEnrollmentActive;
                                 <div class="course-meta">
                                     <small>Enrolled: {{ \Carbon\Carbon::parse($subject->date_enrolled)->format('M d, Y') }}</small>
                                 </div>
+
+                                <button class="btn-primary mt-3 w-100 view-subject-btn" 
+                                        data-subject-id="{{ $subject->subject_id }}"
+                                        data-subject-code="{{ $subject->subject_code }}"
+                                        data-subject-name="{{ $subject->subject_name }}"
+                                        data-units="{{ $subject->units }}"
+                                        data-year-level="{{ $subject->year_level }}"
+                                        data-semester="{{ $subject->semester }}"
+                                        data-grade="{{ $subject->grade }}"
+                                        data-date-enrolled="{{ $subject->date_enrolled }}">
+                                    View Subject
+                                </button>
                             </div>
                         </div>
                     @empty
@@ -974,6 +986,50 @@ $show_prereg_form = $isEnrollmentActive;
                     </div>
                 </div>
             </div>
+            <!-- Subject Details Modal -->
+            <div id="subjectModal" class="modal fade" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="subjectModalTitle">Subject Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-muted">Basic Information</h6>
+                                    <p><strong>Subject Code:</strong> <span id="modalSubjectCode"></span></p>
+                                    <p><strong>Subject Name:</strong> <span id="modalSubjectName"></span></p>
+                                    <p><strong>Units:</strong> <span id="modalSubjectUnits"></span></p>
+                                    <p><strong>Year Level:</strong> <span id="modalYearLevel"></span></p>
+                                    <p><strong>Semester:</strong> <span id="modalSemester"></span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-muted">Grade Information</h6>
+                                    <p><strong>Current Grade:</strong> <span id="modalGrade"></span></p>
+                                    <p><strong>Date Enrolled:</strong> <span id="modalDateEnrolled"></span></p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h6 class="text-muted">Prerequisites</h6>
+                                <div id="prerequisitesList">
+                                    <!-- Prerequisites will be loaded here -->
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h6 class="text-muted">Subject Description</h6>
+                                <p id="modalDescription" class="text-muted">No description available.</p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End Subject Details Modal -->
         </div>
     </div>
 

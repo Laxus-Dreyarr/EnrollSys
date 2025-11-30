@@ -127,6 +127,57 @@ class StudentController extends Controller
         }
     }
 
+    // View Subject Information
+    public function getSubjectDetails($id)
+    {
+        try {
+            if (!Auth::guard('student')->check()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            // Get subject details
+            $subject = Subject::find($id);
+            
+            if (!$subject) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Subject not found'
+                ]);
+            }
+
+            // Get prerequisites
+            $prerequisites = DB::table('subjectprerequisites as sp')
+                ->join('subjects as s', 'sp.prerequisite_id', '=', 's.id')
+                ->where('sp.subject_id', $id)
+                ->select('s.code', 's.name', 's.units', 's.year_level')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'subject' => [
+                    'code' => $subject->code,
+                    'name' => $subject->name,
+                    'description' => $subject->description,
+                    'units' => $subject->units,
+                    'year_level' => $subject->year_level,
+                    'semester' => $subject->semester
+                ],
+                'prerequisites' => $prerequisites
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching subject details: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching subject details'
+            ], 500);
+        }
+    }
+
 
     private function sendVerificationCode(Request $request)
     {
