@@ -447,15 +447,15 @@ class AdminController extends Controller
                 
             case 'get_subjects':
                 $curriculumId = $request->input('curriculum_id');
-                Log::info('Fetching subjects with curriculum_id: ' . $curriculumId); // Debug
-    
+                Log::info('Fetching subjects with curriculum_id: ' . $curriculumId);
+
                 // Build query with curriculum filter
                 $query = Subject::with(['schedules', 'prerequisites'])
                     ->where('is_active', 1);
                 
                 // Add curriculum filter if provided
                 if ($curriculumId) {
-                    $query->where('curriculum_id', $curriculumId); // Use 'curriculum' column which stores curriculum_id The Bug is the $query->where('curriculum') so I change it to curriculum_id
+                    $query->where('curriculum_id', $curriculumId); // FIXED: Use 'curriculum_id' instead of 'curriculum'
                 }
                 
                 $subjects = $query->orderBy('year_level')
@@ -465,7 +465,7 @@ class AdminController extends Controller
                     ->map(function($subject) {
                         // Get curriculum year from curriculum table
                         $curriculumYear = DB::table('curriculum')
-                            ->where('id', $subject->curriculum)
+                            ->where('id', $subject->curriculum_id) // FIXED: Use 'curriculum_id' instead of 'curriculum'
                             ->value('curriculum_year');
                         
                         return [
@@ -475,8 +475,8 @@ class AdminController extends Controller
                             'units' => $subject->units,
                             'year_level' => $subject->year_level,
                             'semester' => $subject->semester,
-                            'curriculum' => $subject->curriculum, // curriculum id
-                            'curriculum_year' => $curriculumYear, // curriculum year for display
+                            'curriculum_id' => $subject->curriculum_id, // FIXED: Use 'curriculum_id' instead of 'curriculum'
+                            'curriculum_year' => $curriculumYear,
                             'schedules' => $subject->schedules,
                             'prerequisites' => $subject->prerequisites
                         ];
@@ -497,7 +497,7 @@ class AdminController extends Controller
                         
                     if ($subject) {
                         $curriculumYear = DB::table('curriculum')
-                            ->where('id', $subject->curriculum)
+                            ->where('id', $subject->curriculum_id)
                             ->value('curriculum_year');
                             
                         $subjectData = [
@@ -507,7 +507,7 @@ class AdminController extends Controller
                             'units' => $subject->units,
                             'year_level' => $subject->year_level,
                             'semester' => $subject->semester,
-                            'curriculum' => $subject->curriculum,
+                            'curriculum_id' => $subject->curriculum_id,
                             'curriculum_year' => $curriculumYear,
                             'max_students' => $subject->max_students,
                             'description' => $subject->description,
@@ -534,7 +534,7 @@ class AdminController extends Controller
                         ->get()
                         ->map(function($subject) {
                             $curriculumYear = DB::table('curriculum')
-                                ->where('id', $subject->curriculum)
+                                ->where('id', $subject->curriculum_id)
                                 ->value('curriculum_year');
                                 
                             return [
@@ -544,7 +544,7 @@ class AdminController extends Controller
                                 'units' => $subject->units,
                                 'year_level' => $subject->year_level,
                                 'semester' => $subject->semester,
-                                'curriculum' => $subject->curriculum,
+                                'curriculum_id' => $subject->curriculum_id,
                                 'curriculum_year' => $curriculumYear,
                                 'schedules' => $subject->schedules,
                                 'prerequisites' => $subject->prerequisites
@@ -622,7 +622,7 @@ class AdminController extends Controller
                 'year_level' => $request->year_level,
                 'semester' => $request->semester,
                 'max_students' => $request->max_students,
-                'curriculum' => $request->curr,
+                'curriculum_id' => $request->curr,
                 'created_by' => Auth::guard('admin')->id(),
                 'is_active' => 1
             ]);
@@ -670,7 +670,6 @@ class AdminController extends Controller
         }
     }
 
-
     private function checkScheduleConflicts($newSchedules, $excludeSubjectId = null)
     {
         $conflicts = [];
@@ -696,9 +695,11 @@ class AdminController extends Controller
             $roomConflicts = $roomQuery->get();
 
             foreach ($roomConflicts as $conflict) {
+                // FIX: Check if subject exists before accessing its code
+                $subjectCode = $conflict->subject ? $conflict->subject->code : 'Unknown Subject';
                 $conflicts[] = [
                     'type' => 'room',
-                    'message' => "Room {$newSchedule['room']} is already occupied on {$newSchedule['day']} from {$conflict->start_time} to {$conflict->end_time} by {$conflict->subject->code}",
+                    'message' => "Room {$newSchedule['room']} is already occupied on {$newSchedule['day']} from {$conflict->start_time} to {$conflict->end_time} by {$subjectCode}",
                     'conflicting_schedule' => $conflict,
                     'new_schedule' => $newSchedule
                 ];
@@ -725,9 +726,11 @@ class AdminController extends Controller
                 $sectionConflicts = $sectionQuery->get();
 
                 foreach ($sectionConflicts as $conflict) {
+                    // FIX: Check if subject exists before accessing its code
+                    $subjectCode = $conflict->subject ? $conflict->subject->code : 'Unknown Subject';
                     $conflicts[] = [
                         'type' => 'section_time',
-                        'message' => "Section {$newSchedule['section']} already has a class on {$newSchedule['day']} from {$conflict->start_time} to {$conflict->end_time} for {$conflict->subject->code}",
+                        'message' => "Section {$newSchedule['section']} already has a class on {$newSchedule['day']} from {$conflict->start_time} to {$conflict->end_time} for {$subjectCode}",
                         'conflicting_schedule' => $conflict,
                         'new_schedule' => $newSchedule
                     ];
@@ -737,6 +740,73 @@ class AdminController extends Controller
         
         return $conflicts;
     }
+
+    // private function checkScheduleConflicts($newSchedules, $excludeSubjectId = null)
+    // {
+    //     $conflicts = [];
+        
+    //     foreach ($newSchedules as $index => $newSchedule) {
+    //         // Check for room conflicts
+    //         $roomQuery = SubjectSchedule::where('day', $newSchedule['day'])
+    //             ->where('room', $newSchedule['room'])
+    //             ->where(function($query) use ($newSchedule) {
+    //                 $query->where(function($q) use ($newSchedule) {
+    //                     $q->where('start_time', '<', $newSchedule['end_time'])
+    //                     ->where('end_time', '>', $newSchedule['start_time']);
+    //                 });
+    //             })
+    //             ->with('subject');
+
+    //         if ($excludeSubjectId) {
+    //             $roomQuery->whereHas('subject', function($q) use ($excludeSubjectId) {
+    //                 $q->where('id', '!=', $excludeSubjectId);
+    //             });
+    //         }
+
+    //         $roomConflicts = $roomQuery->get();
+
+    //         foreach ($roomConflicts as $conflict) {
+    //             $conflicts[] = [
+    //                 'type' => 'room',
+    //                 'message' => "Room {$newSchedule['room']} is already occupied on {$newSchedule['day']} from {$conflict->start_time} to {$conflict->end_time} by {$conflict->subject->code}",
+    //                 'conflicting_schedule' => $conflict,
+    //                 'new_schedule' => $newSchedule
+    //             ];
+    //         }
+
+    //         // Check for time overlap in the same section
+    //         if (isset($newSchedule['section'])) {
+    //             $sectionQuery = SubjectSchedule::where('day', $newSchedule['day'])
+    //                 ->where('Section', $newSchedule['section'])
+    //                 ->where(function($query) use ($newSchedule) {
+    //                     $query->where(function($q) use ($newSchedule) {
+    //                         $q->where('start_time', '<', $newSchedule['end_time'])
+    //                         ->where('end_time', '>', $newSchedule['start_time']);
+    //                     });
+    //                 })
+    //                 ->with('subject');
+
+    //             if ($excludeSubjectId) {
+    //                 $sectionQuery->whereHas('subject', function($q) use ($excludeSubjectId) {
+    //                     $q->where('id', '!=', $excludeSubjectId);
+    //                 });
+    //             }
+
+    //             $sectionConflicts = $sectionQuery->get();
+
+    //             foreach ($sectionConflicts as $conflict) {
+    //                 $conflicts[] = [
+    //                     'type' => 'section_time',
+    //                     'message' => "Section {$newSchedule['section']} already has a class on {$newSchedule['day']} from {$conflict->start_time} to {$conflict->end_time} for {$conflict->subject->code}",
+    //                     'conflicting_schedule' => $conflict,
+    //                     'new_schedule' => $newSchedule
+    //                 ];
+    //             }
+    //         }
+    //     }
+        
+    //     return $conflicts;
+    // }
 
     private function getAvailableTimeSlots($conflictingSchedules)
     {
@@ -935,7 +1005,7 @@ class AdminController extends Controller
                 'year_level' => $request->year_level,
                 'semester' => $request->semester,
                 'max_students' => $request->max_students,
-                'curriculum' => $request->curr, // Add this line
+                // 'curriculum_id' => $request->curr, // Add this line
             ]);
 
 

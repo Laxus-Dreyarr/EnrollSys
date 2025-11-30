@@ -745,6 +745,12 @@
             alert('Please select at least one subject type (Lecture or Laboratory)');
             return;
         }
+
+        // Validate that a curriculum is selected
+        if (!selectedCurriculum) {
+            alert('Please select a curriculum first');
+            return;
+        }
         
         // Validate schedules
         const schedules = $('input[name="schedules[]"]').map(function() {

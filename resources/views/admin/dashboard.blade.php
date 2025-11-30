@@ -522,6 +522,8 @@ $profile_picture = $user->profile;
                 </div>
                 <div class="modal-body">
                     <form id="createSubjectForm">
+                        <!-- Add this hidden input for curriculum -->
+                         <input type="hidden" id="curr" name="curr" value="">
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="subjectCode" class="form-label">Subject Code <span class="text-danger">*</span></label>
