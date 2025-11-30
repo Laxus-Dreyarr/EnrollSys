@@ -515,7 +515,7 @@ body.dark-mode .user-profile {
 
 .course-header {
     padding: 20px 24px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    background: linear-gradient(180deg, var(--sidebar-gradient-1) 0%, var(--sidebar-gradient-2) 50%, var(--sidebar-gradient-3) 100%);
     color: white;
     position: relative;
     overflow: hidden;

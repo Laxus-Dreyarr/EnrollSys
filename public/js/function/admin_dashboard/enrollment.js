@@ -1,6 +1,7 @@
 // enrollment.js - Enrollment Period Management
 
 document.addEventListener('DOMContentLoaded', function() {
+    loadEnrollmentData();
     // Load enrollment data when the enrollment tab is shown
     $('a[href="#enrollment"]').on('shown.bs.tab', function(e) {
         loadEnrollmentData();
@@ -116,9 +117,6 @@ function updateEnrollmentTable(periods) {
                 <td>${formatDateTime(period.end_date)}</td>
                 <td>${statusBadge}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="editEnrollmentPeriod(${period.id})">
-                        <i class="fas fa-edit"></i>
-                    </button>
                     <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteEnrollmentPeriod(${period.id})">
                         <i class="fas fa-trash"></i>
                     </button>

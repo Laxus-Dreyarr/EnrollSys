@@ -1451,18 +1451,6 @@ class AdminController extends Controller
                 'admin_id' => $admin->admin_id
             ];
 
-            if ($request->has('enrollment_id') && $request->enrollment_id) {
-
-                DB::table('enrollment_date')
-                ->delete();
-                // Update existing period
-                DB::table('enrollment_date')
-                    ->where('id', $request->enrollment_id)
-                    ->update($data);
-                    
-                $message = 'Enrollment period updated successfully';
-            } else {
-
                 DB::table('enrollment_date')
                 ->delete();
                 // Create new period
@@ -1472,13 +1460,23 @@ class AdminController extends Controller
                 $this->updateStudentYearCountWithTransaction();
 
                 // Update student status
-                $save = Student::whereNotIn('is_regular', ['5', '6'])
+                // Student::whereNotIn('is_regular', ['5', '6'])
+                //     ->update([
+                //         'status' => 'Not Enrolled',
+                //         'is_regular' => 5
+                //     ]);
+                Student::whereNotIn('is_regular', ['7', '8'])
                     ->update([
                         'status' => 'Not Enrolled',
                         'is_regular' => 5
                     ]);
+                    
+                DB::table('enrollmentrequests')
+                ->delete();
+                DB::table('enrollments')
+                ->delete();
                 $message = 'Enrollment period created successfully';
-            }
+            
 
             DB::commit();
             return response()->json(['success' => true, 'message' => $message]);
@@ -1595,9 +1593,12 @@ class AdminController extends Controller
     public function deleteEnrollmentPeriod(Request $request)
     {
         try {
+            // DB::table('enrollment_date')
+            //     ->where('ID', $request->enrollment_id)
+            //     ->delete();
             DB::table('enrollment_date')
-                ->where('ID', $request->enrollment_id)
                 ->delete();
+
 
             return response()->json(['success' => true, 'message' => 'Enrollment period deleted successfully']);
             
