@@ -139,6 +139,10 @@ Route::middleware(['instructor.auth'])->group(function () {
     Route::post('/instructor/enrollment-requests', [InstructorController::class, 'getEnrollmentRequests'])->name('instructor.enrollment-requests');
     Route::post('/instructor/approve-enrollment', [InstructorController::class, 'approveEnrollment'])->name('instructor.approve-enrollment');
     Route::post('/instructor/reject-enrollment', [InstructorController::class, 'rejectEnrollment'])->name('instructor.reject-enrollment');
+
+    // Student subjects history
+    Route::get('/instructor/student-subjects-history/{studentId}', 
+    [InstructorController::class, 'getStudentSubjectsHistory'])->name('instructor.student.subjects.history');
 });
 
 

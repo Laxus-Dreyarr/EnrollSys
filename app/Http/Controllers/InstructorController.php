@@ -985,6 +985,41 @@ class InstructorController extends Controller
         }
     }
 
+    // Get student's subjects history
+    public function getStudentSubjectsHistory($studentId)
+    {
+        try {
+            // Get all enrolled subjects for the student
+            $subjects = DB::table('enrolled_sub')
+                ->where('student_id', $studentId)
+                ->orderBy('date_enrolled', 'desc')
+                ->orderBy('year_level', 'desc')
+                ->orderBy('semester', 'desc')
+                ->select(
+                    'subject_code',
+                    'subject_name',
+                    'units',
+                    'year_level',
+                    'semester',
+                    'grade',
+                    'date_enrolled'
+                )
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'subjects' => $subjects
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching student subjects history: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to fetch subjects history'
+            ], 500);
+        }
+    }
+
     // public function getEnrollmentRequests(Request $request)
     // {
     //     try {

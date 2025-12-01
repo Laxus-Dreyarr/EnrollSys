@@ -977,6 +977,170 @@ $id = $user->info->instructor_id;
         </div>
     </div>
 
+    <!-- Subjects History Modal -->
+    <div id="subjectsHistoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <i class="fas fa-history"></i>
+                    <span>Subjects History - </span>
+                    <span id="modalStudentName"></span>
+                    <span id="modalStudentId" class="student-id"></span>
+                </h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Filters -->
+                <div class="filters-section">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="gradeFilter">
+                                <i class="fas fa-filter"></i> Grade Status:
+                            </label>
+                            <select id="gradeFilter" class="form-select">
+                                <option value="all">All Subjects</option>
+                                <option value="graded">Graded Only</option>
+                                <option value="ungraded">Ungraded Only</option>
+                                <option value="passed">Passed (1.0-3.0)</option>
+                                <option value="failed">Failed (4.0-5.0)</option>
+                                <option value="inc">Incomplete (INC)</option>
+                                <option value="drp">Dropped (DRP)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="yearFilter">
+                                <i class="fas fa-calendar"></i> School Year:
+                            </label>
+                            <select id="yearFilter" class="form-select">
+                                <option value="all">All Years</option>
+                                <!-- Will be populated dynamically -->
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="semesterFilter">
+                                <i class="fas fa-calendar-alt"></i> Semester:
+                            </label>
+                            <select id="semesterFilter" class="form-select">
+                                <option value="all">All Semesters</option>
+                                <option value="1st Sem">1st Semester</option>
+                                <option value="2nd Sem">2nd Semester</option>
+                                <option value="Summer">Summer</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="search-group">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchSubjects" placeholder="Search by subject code or name...">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Statistics -->
+                <div class="statistics-section">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total Subjects</div>
+                            <div class="stat-value" id="totalSubjects">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon passed">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Passed</div>
+                            <div class="stat-value" id="passedSubjects">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon failed">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Failed</div>
+                            <div class="stat-value" id="failedSubjects">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon in-progress">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">In Progress</div>
+                            <div class="stat-value" id="inProgressSubjects">0</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Subjects Table -->
+                <div class="table-container">
+                    <table id="subjectsHistoryTable">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <i class="fas fa-sort"></i>
+                                    Subject Code
+                                </th>
+                                <th>
+                                    <i class="fas fa-sort"></i>
+                                    Subject Name
+                                </th>
+                                <th>
+                                    <i class="fas fa-sort"></i>
+                                    Units
+                                </th>
+                                <th>
+                                    <i class="fas fa-sort"></i>
+                                    Year Level
+                                </th>
+                                <th>
+                                    <i class="fas fa-sort"></i>
+                                    Semester
+                                </th>
+                                <th>
+                                    <i class="fas fa-sort"></i>
+                                    Grade
+                                </th>
+                                <th>
+                                    <i class="fas fa-sort"></i>
+                                    Status
+                                </th>
+                                <th>
+                                    <i class="fas fa-sort"></i>
+                                    Date Enrolled
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="subjectsHistoryBody">
+                            <!-- Will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- No results message -->
+                <div id="noResults" class="no-results">
+                    <i class="fas fa-search"></i>
+                    <h3>No subjects found</h3>
+                    <p>Try adjusting your filters or search term</p>
+                </div>
+                
+                <!-- Loading indicator -->
+                <div id="loadingIndicator" class="loading-indicator">
+                    <div class="spinner"></div>
+                    <p>Loading subjects history...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- jQuery -->

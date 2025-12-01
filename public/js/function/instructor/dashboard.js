@@ -406,6 +406,11 @@ function loadRequestDetails(request) {
                     <span class="meta-badge student-type ${studentType.toLowerCase()}">${studentType}</span>
                     <span class="meta-badge curriculum">${request.curriculum} Curriculum</span>
                 </div>
+                <div class="header-actions2">
+                    <button class="btn-view-history" data-student-id="${request.student_id}">
+                        <i class="fas fa-history"></i> View Subjects History
+                    </button>
+                </div>
             </div>
         </div>
         
@@ -444,6 +449,12 @@ function loadRequestDetails(request) {
     
     // Add event listeners to action buttons
     setupRequestActionButtons();
+
+    // Add event listener for View Subjects History button
+    document.querySelector('.btn-view-history').addEventListener('click', function() {
+        const studentId = this.getAttribute('data-student-id');
+        showSubjectsHistoryModal(studentId, `${request.firstname} ${request.lastname}`, request.id_no);
+    });
 }
 
 
@@ -875,6 +886,7 @@ function applyThemeColor(color) {
             root.style.setProperty('--instructor-accent', '#4895ef');
     }
 }
+
 
 // Helper function to get color name
 function getColorName(color) {
@@ -1620,8 +1632,364 @@ function initializeInputGrades() {
     
 }
 
+// View Subject History in Enrollment Request
+let allSubjectsData = [];
+let currentStudentId = null;
+
+// Function to show subjects history modal
+function showSubjectsHistoryModal(studentId, studentName, studentIdNo) {
+    currentStudentId = studentId;
+    
+    // Update modal header
+    document.getElementById('modalStudentName').textContent = studentName;
+    document.getElementById('modalStudentId').textContent = ` ID: ${studentIdNo}`;
+    
+    // Show modal
+    const modal = document.getElementById('subjectsHistoryModal');
+    modal.style.display = 'block';
+    
+    // Fetch subjects history
+    fetchSubjectsHistory(studentId);
+}
+
+// Fetch subjects history from server
+function fetchSubjectsHistory(studentId) {
+    // Show loading indicator
+    document.getElementById('loadingIndicator').style.display = 'flex';
+    document.getElementById('subjectsHistoryBody').innerHTML = '';
+    document.getElementById('noResults').style.display = 'none';
+    
+    // Make API call to fetch subjects history
+    fetch(`/instructor/student-subjects-history/${studentId}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            allSubjectsData = data.subjects || [];
+            
+            // Populate year filter
+            populateYearFilter(allSubjectsData);
+            
+            // Render table
+            renderSubjectsTable(allSubjectsData);
+            
+            // Update statistics
+            updateStatistics(allSubjectsData);
+            
+            // Hide loading indicator
+            document.getElementById('loadingIndicator').style.display = 'none';
+        })
+        .catch(error => {
+            console.error('Error fetching subjects history:', error);
+            document.getElementById('loadingIndicator').style.display = 'none';
+            document.getElementById('subjectsHistoryBody').innerHTML = `
+                <tr>
+                    <td colspan="8" class="error-message">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Error loading subjects history. Please try again.
+                    </td>
+                </tr>
+            `;
+        });
+}
+
+// Populate year filter with unique years
+function populateYearFilter(subjects) {
+    const yearFilter = document.getElementById('yearFilter');
+    
+    // Extract unique years from subjects
+    const years = new Set();
+    subjects.forEach(subject => {
+        if (subject.date_enrolled) {
+            const year = new Date(subject.date_enrolled).getFullYear();
+            years.add(year);
+        }
+    });
+    
+    // Clear existing options (keep "All Years")
+    yearFilter.innerHTML = '<option value="all">All Years</option>';
+    
+    // Add year options in descending order
+    Array.from(years)
+        .sort((a, b) => b - a)
+        .forEach(year => {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            yearFilter.appendChild(option);
+        });
+}
+
+// Render subjects table
+function renderSubjectsTable(subjects) {
+    const tbody = document.getElementById('subjectsHistoryBody');
+    
+    if (subjects.length === 0) {
+        document.getElementById('noResults').style.display = 'block';
+        tbody.innerHTML = '';
+        return;
+    }
+    
+    document.getElementById('noResults').style.display = 'none';
+    
+    tbody.innerHTML = subjects.map(subject => {
+        const grade = subject.grade || 'Not Graded';
+        const status = getGradeStatus(grade);
+        const statusClass = getStatusClass(grade);
+        
+        // Format date
+        const dateEnrolled = subject.date_enrolled ? 
+            new Date(subject.date_enrolled).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            }) : 'N/A';
+        
+        return `
+            <tr>
+                <td class="subject-code-cell">
+                    <span class="subject-code">${subject.subject_code}</span>
+                </td>
+                <td class="subject-name-cell">
+                    <span class="subject-name">${subject.subject_name}</span>
+                </td>
+                <td class="units-cell">${subject.units}</td>
+                <td class="year-cell">${subject.year_level}</td>
+                <td class="semester-cell">${subject.semester}</td>
+                <td class="grade-cell ${statusClass}">
+                    ${grade}
+                </td>
+                <td class="status-cell">
+                    <span class="status-badge ${statusClass}">
+                        ${status}
+                    </span>
+                </td>
+                <td class="date-cell">${dateEnrolled}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Get grade status
+function getGradeStatus(grade) {
+    if (grade === 'Not Graded') return 'In Progress';
+    
+    const gradeStr = grade.toString().toUpperCase();
+    
+    if (['INC', 'INCOMPLETE'].includes(gradeStr)) return 'Incomplete';
+    if (['DRP', 'DROP', 'DROPPED'].includes(gradeStr)) return 'Dropped';
+    if (gradeStr === 'ND') return 'No Data';
+    
+    const gradeNum = parseFloat(grade);
+    if (isNaN(gradeNum)) return 'Unknown';
+    
+    if (gradeNum >= 1.0 && gradeNum <= 3.0) return 'Passed';
+    if (gradeNum === 5.0) return 'Failed (5.0)';
+    if (gradeNum > 3.0) return 'Failed';
+    
+    return 'Unknown';
+}
+
+// Get CSS class for status
+function getStatusClass(grade) {
+    if (grade === 'Not Graded') return 'in-progress';
+    
+    const gradeStr = grade.toString().toUpperCase();
+    
+    if (['INC', 'INCOMPLETE'].includes(gradeStr)) return 'incomplete';
+    if (['DRP', 'DROP', 'DROPPED'].includes(gradeStr)) return 'dropped';
+    if (gradeStr === 'ND') return 'no-data';
+    
+    const gradeNum = parseFloat(grade);
+    if (isNaN(gradeNum)) return 'unknown';
+    
+    if (gradeNum >= 1.0 && gradeNum <= 3.0) return 'passed';
+    if (gradeNum === 5.0 || gradeNum > 3.0) return 'failed';
+    
+    return 'unknown';
+}
+
+// Update statistics
+function updateStatistics(subjects) {
+    let total = subjects.length;
+    let passed = 0;
+    let failed = 0;
+    let inProgress = 0;
+    
+    subjects.forEach(subject => {
+        const grade = subject.grade;
+        
+        if (!grade || grade === 'Not Graded') {
+            inProgress++;
+        } else if (['INC', 'INCOMPLETE', 'DRP', 'DROP', 'DROPPED', 'ND'].includes(grade.toString().toUpperCase())) {
+            failed++; // Count special cases as failed
+        } else {
+            const gradeNum = parseFloat(grade);
+            if (!isNaN(gradeNum)) {
+                if (gradeNum >= 1.0 && gradeNum <= 3.0) {
+                    passed++;
+                } else {
+                    failed++;
+                }
+            }
+        }
+    });
+    
+    document.getElementById('totalSubjects').textContent = total;
+    document.getElementById('passedSubjects').textContent = passed;
+    document.getElementById('failedSubjects').textContent = failed;
+    document.getElementById('inProgressSubjects').textContent = inProgress;
+}
+
+// Filter and search functionality
+function applyFilters() {
+    const searchTerm = document.getElementById('searchSubjects').value.toLowerCase();
+    const gradeFilter = document.getElementById('gradeFilter').value;
+    const yearFilter = document.getElementById('yearFilter').value;
+    const semesterFilter = document.getElementById('semesterFilter').value;
+    
+    let filteredData = allSubjectsData;
+    
+    // Apply search filter
+    if (searchTerm) {
+        filteredData = filteredData.filter(subject => 
+            subject.subject_code.toLowerCase().includes(searchTerm) ||
+            subject.subject_name.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    // Apply grade filter
+    if (gradeFilter !== 'all') {
+        filteredData = filteredData.filter(subject => {
+            const grade = subject.grade || 'Not Graded';
+            const gradeStr = grade.toString().toUpperCase();
+            
+            switch (gradeFilter) {
+                case 'graded':
+                    return grade !== 'Not Graded' && !['', null, undefined].includes(grade);
+                case 'ungraded':
+                    return grade === 'Not Graded' || ['', null, undefined].includes(grade);
+                case 'passed':
+                    if (!grade || grade === 'Not Graded') return false;
+                    const gradeNum = parseFloat(grade);
+                    return !isNaN(gradeNum) && gradeNum >= 1.0 && gradeNum <= 3.0;
+                case 'failed':
+                    if (!grade || grade === 'Not Graded') return false;
+                    const gradeNum2 = parseFloat(grade);
+                    return !isNaN(gradeNum2) && (gradeNum2 > 3.0 || gradeNum2 === 5.0);
+                case 'inc':
+                    return ['INC', 'INCOMPLETE'].includes(gradeStr);
+                case 'drp':
+                    return ['DRP', 'DROP', 'DROPPED'].includes(gradeStr);
+                default:
+                    return true;
+            }
+        });
+    }
+    
+    // Apply year filter
+    if (yearFilter !== 'all') {
+        filteredData = filteredData.filter(subject => {
+            if (!subject.date_enrolled) return false;
+            const year = new Date(subject.date_enrolled).getFullYear();
+            return year.toString() === yearFilter;
+        });
+    }
+    
+    // Apply semester filter
+    if (semesterFilter !== 'all') {
+        filteredData = filteredData.filter(subject => 
+            subject.semester === semesterFilter
+        );
+    }
+    
+    // Render filtered data
+    renderSubjectsTable(filteredData);
+    updateStatistics(filteredData);
+}
+
+// Setup modal event listeners
+function setupModalEventListeners() {
+    const modal = document.getElementById('subjectsHistoryModal');
+    const closeBtn = modal.querySelector('.close-modal');
+    
+    // Close modal when clicking X
+    closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+    
+    // Setup filter event listeners
+    document.getElementById('searchSubjects').addEventListener('input', applyFilters);
+    document.getElementById('gradeFilter').addEventListener('change', applyFilters);
+    document.getElementById('yearFilter').addEventListener('change', applyFilters);
+    document.getElementById('semesterFilter').addEventListener('change', applyFilters);
+}
+
+// Add sorting functionality
+function setupTableSorting() {
+    let sortColumn = null;
+    let sortDirection = 'asc';
+    
+    document.querySelectorAll('#subjectsHistoryTable th').forEach((th, index) => {
+        th.addEventListener('click', () => {
+            if (sortColumn === index) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = index;
+                sortDirection = 'asc';
+            }
+            
+            sortTable(index);
+        });
+    });
+}
+
+function sortTable(columnIndex) {
+    const rows = Array.from(document.querySelectorAll('#subjectsHistoryBody tr'));
+    
+    rows.sort((a, b) => {
+        const aText = a.children[columnIndex].textContent.trim();
+        const bText = b.children[columnIndex].textContent.trim();
+        
+        // Special handling for grade column
+        if (columnIndex === 5) {
+            const aGrade = parseFloat(aText) || 999; // Put non-numeric grades at bottom
+            const bGrade = parseFloat(bText) || 999;
+            return sortDirection === 'asc' ? aGrade - bGrade : bGrade - aGrade;
+        }
+        
+        // Default string comparison
+        return sortDirection === 'asc' 
+            ? aText.localeCompare(bText)
+            : bText.localeCompare(aText);
+    });
+    
+    const tbody = document.getElementById('subjectsHistoryBody');
+    tbody.innerHTML = '';
+    rows.forEach(row => tbody.appendChild(row));
+    
+    // Update sort indicators
+    document.querySelectorAll('#subjectsHistoryTable th').forEach((th, index) => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        if (index === columnIndex) {
+            th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+        }
+    });
+}
+
 // Instructor Dashboard JavaScript
 document.addEventListener('DOMContentLoaded', function() {
+
+    setupModalEventListeners();
+    setupTableSorting();
     // Initialize sidebar toggle
     const sidebarToggle = document.querySelector('.sidebar-toggle');
     const sidebar = document.querySelector('.sidebar');
