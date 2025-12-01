@@ -127,6 +127,7 @@ function createRequestItem(request) {
     return item;
 }
 
+
 function loadRequestDetails(request) {
     const requestDetails = document.getElementById('enrollment-request-details');
     if (!requestDetails) return;
@@ -155,31 +156,62 @@ function loadRequestDetails(request) {
     }
     
     let documentsHTML = '';
+    
+    // FIXED: Check if documents exist in the request object
     if (request.fhe_document) {
+        // Get the base URL for the site
+        const baseUrl = window.location.origin;
+        // Clean up the file path if needed
+        const fhePath = request.fhe_document.startsWith('/') ? 
+               request.fhe_document : '/' + request.fhe_document;
+        
         documentsHTML += `
             <div class="document-item">
                 <i class="fas fa-file-pdf"></i>
                 <span>FHE Document</span>
-                <a href="/${request.fhe_document}" target="_blank" class="btn-view-document">
+                <a href="${baseUrl}${fhePath}" target="_blank" class="btn btn-sm btn-outline-primary">
                     <i class="fas fa-eye"></i> View
                 </a>
+            </div>
+        `;
+    } else {
+        documentsHTML += `
+            <div class="document-item">
+                <i class="fas fa-file-pdf"></i>
+                <span>FHE Document</span>
+                <span class="text-danger">No FHE document uploaded</span>
             </div>
         `;
     }
     
     if (request.payment_receipt) {
+        // Get the base URL for the site
+        const baseUrl = window.location.origin;
+        // Clean up the file path if needed
+        const paymentPath = request.payment_receipt.startsWith('/') ? 
+                           request.payment_receipt : '/' + request.payment_receipt;
+        
         documentsHTML += `
             <div class="document-item">
                 <i class="fas fa-receipt"></i>
                 <span>Payment Receipt</span>
-                <a href="/${request.payment_receipt}" target="_blank" class="btn-view-document">
+                <a href="${baseUrl}${paymentPath}" target="_blank" class="btn btn-sm btn-outline-success">
                     <i class="fas fa-eye"></i> View
                 </a>
             </div>
         `;
+    } else {
+        documentsHTML += `
+            <div class="document-item">
+                <i class="fas fa-receipt"></i>
+                <span>Payment Receipt</span>
+                <span class="text-danger">No payment receipt uploaded</span>
+            </div>
+        `;
     }
     
-    if (!documentsHTML) {
+    // If you want to show "No documents submitted" only when both are missing:
+    if (!request.fhe_document && !request.payment_receipt) {
         documentsHTML = '<div class="no-documents">No documents submitted</div>';
     }
     
@@ -226,6 +258,107 @@ function loadRequestDetails(request) {
     // Add event listeners to action buttons
     setupRequestActionButtons();
 }
+
+// function loadRequestDetails(request) {
+//     const requestDetails = document.getElementById('enrollment-request-details');
+//     if (!requestDetails) return;
+    
+//     const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(request.firstname + ' ' + request.lastname)}&background=4361ee&color=fff&size=80`;
+//     const studentType = request.is_regular === 1 ? 'Regular' : 'Irregular';
+    
+//     let subjectsHTML = '';
+//     if (request.subjects && request.subjects.length > 0) {
+//         request.subjects.forEach(subject => {
+//             subjectsHTML += `
+//                 <div class="subject-enrollment-item">
+//                     <div class="subject-header">
+//                         <div class="subject-code">${subject.subject_code}</div>
+//                         <div class="subject-meta">
+//                             ${subject.units} units • ${subject.semester} • ${subject.section_name}
+//                         </div>
+//                     </div>
+//                     <div class="subject-name">${subject.subject_name}</div>
+//                     <div class="subject-year">${subject.year_level}</div>
+//                 </div>
+//             `;
+//         });
+//     } else {
+//         subjectsHTML = '<div class="no-subjects">No subjects found for enrollment</div>';
+//     }
+    
+//     let documentsHTML = '';
+//     if (request.fhe_document) {
+//         documentsHTML += `
+//             <div class="document-item">
+//                 <i class="fas fa-file-pdf"></i>
+//                 <span>FHE Document</span>
+//                 <a href="${request.fheDocument.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+//                     <i class="fas fa-eye"></i> View
+//                 </a>
+//             '<span class="text-danger">No FHE document uploaded</span>';
+//             </div>
+//         `;
+//     }
+    
+//     if (request.payment_receipt) {
+//         documentsHTML += `
+//             <div class="document-item">
+//                 <i class="fas fa-receipt"></i>
+//                 <span>Payment Receipt</span>
+//                 <a href="${request.paymentReceipt.web_path}" target="_blank" class="btn btn-sm btn-outline-success">
+//                     <i class="fas fa-eye"></i> View
+//                 </a>
+//             </div>
+//         `;
+//     }
+    
+//     if (!documentsHTML) {
+//         documentsHTML = '<div class="no-documents">No documents submitted</div>';
+//     }
+    
+//     requestDetails.innerHTML = `
+//         <div class="request-details-header">
+//             <img src="${avatarUrl}" alt="Student Avatar" class="details-avatar">
+//             <div class="details-student-info">
+//                 <h3>${request.firstname} ${request.middlename || ''} ${request.lastname}</h3>
+//                 <p class="student-id">ID: ${request.id_no}</p>
+//                 <div class="student-meta">
+//                     <span class="meta-badge year-level">${request.year_level}</span>
+//                     <span class="meta-badge student-type ${studentType.toLowerCase()}">${studentType}</span>
+//                     <span class="meta-badge curriculum">${request.curriculum} Curriculum</span>
+//                 </div>
+//             </div>
+//         </div>
+        
+//         <div class="request-details-content">
+//             <div class="details-section">
+//                 <h4>Subjects for Enrollment</h4>
+//                 <div class="subjects-enrollment-list">
+//                     ${subjectsHTML}
+//                 </div>
+//             </div>
+            
+//             <div class="details-section">
+//                 <h4>Submitted Documents</h4>
+//                 <div class="documents-list">
+//                     ${documentsHTML}
+//                 </div>
+//             </div>
+            
+//             <div class="request-actions">
+//                 <button class="btn-accept" data-request-id="${request.request_id}" data-student-id="${request.student_id}">
+//                     <i class="fas fa-check"></i> Accept Enrollment
+//                 </button>
+//                 <button class="btn-reject" data-request-id="${request.request_id}" data-student-id="${request.student_id}">
+//                     <i class="fas fa-times"></i> Reject Enrollment
+//                 </button>
+//             </div>
+//         </div>
+//     `;
+    
+//     // Add event listeners to action buttons
+//     setupRequestActionButtons();
+// }
 
 function setupRequestActionButtons() {
     const acceptBtn = document.querySelector('.btn-accept');

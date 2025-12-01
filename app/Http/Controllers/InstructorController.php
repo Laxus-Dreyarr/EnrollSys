@@ -847,35 +847,39 @@ class InstructorController extends Controller
             
             // Get pending enrollment requests with student details
             $requests = DB::table('enrollmentrequests as er')
-                ->join('students as s', 'er.student_id', '=', 's.id')
-                ->join('user_info as ui', 's.student_id', '=', 'ui.id')
-                ->leftJoin('documents as d', function($join) {
-                    $join->on('s.id', '=', 'd.student_id')
-                        ->where('d.type', 'FHE')
-                        ->where('d.status', 'Pending');
-                })
-                ->leftJoin('payments as p', function($join) {
-                    $join->on('s.id', '=', 'p.student_id')
-                        ->where('p.type', 'PAYMENT_RECEIPT')
-                        ->where('p.status', 'Pending');
-                })
-                ->where('er.status', 'Pending')
-                ->select(
-                    'er.id as request_id',
-                    'er.student_id',
-                    'er.request_date',
-                    's.id_no',
-                    's.year_level',
-                    's.curriculum',
-                    's.is_regular',
-                    'ui.firstname',
-                    'ui.lastname',
-                    'ui.middlename',
-                    'd.file_path as fhe_document',
-                    'p.file_path as payment_receipt',
-                    DB::raw('(SELECT COUNT(*) FROM enrollments WHERE student_id = s.id AND status = "Enrolled") as enrolled_subjects_count')
-                )
-                ->get();
+            ->join('students as s', 'er.student_id', '=', 's.id')
+            ->join('user_info as ui', 's.student_id', '=', 'ui.id')
+            ->where('er.status', 'Pending')
+            ->select(
+                'er.id as request_id',
+                'er.student_id',
+                'er.request_date',
+                's.id_no',
+                's.year_level',
+                's.curriculum',
+                's.is_regular',
+                'ui.firstname',
+                'ui.lastname',
+                'ui.middlename',
+                // Get FHE document with full web path (add leading slash)
+                DB::raw("(SELECT CONCAT('/', file_path) 
+                    FROM documents 
+                    WHERE student_id = s.id AND type = 'FHE' 
+                    ORDER BY upload_date DESC LIMIT 1) as fhe_document"),
+                DB::raw("(SELECT status FROM documents 
+                    WHERE student_id = s.id AND type = 'FHE' 
+                    ORDER BY upload_date DESC LIMIT 1) as fhe_status"),
+                // Get payment receipt with full web path (add leading slash)
+                DB::raw("(SELECT CONCAT('/', file_path) 
+                    FROM payments 
+                    WHERE student_id = s.id AND type = 'PAYMENT_RECEIPT' 
+                    ORDER BY upload_date DESC LIMIT 1) as payment_receipt"),
+                DB::raw("(SELECT status FROM payments 
+                    WHERE student_id = s.id AND type = 'PAYMENT_RECEIPT' 
+                    ORDER BY upload_date DESC LIMIT 1) as payment_status"),
+                DB::raw('(SELECT COUNT(*) FROM enrollments WHERE student_id = s.id AND status = "Enrolled") as enrolled_subjects_count')
+            )
+            ->get();
 
             // Get enrolled subjects for each student
             foreach ($requests as $request) {
@@ -906,6 +910,7 @@ class InstructorController extends Controller
             return response()->json(['error' => 'Failed to fetch enrollment requests'], 500);
         }
     }
+
 
     public function approveEnrollment(Request $request)
     {

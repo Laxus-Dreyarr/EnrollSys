@@ -1017,13 +1017,13 @@ class OrgController extends Controller
                 ]);
 
             // Update enrollment request status if exists
-            $enrollmentUpdated = DB::table('enrollmentrequests')
-                ->where('student_id', $student->id)
-                ->where('status', 'Pending')
-                ->update([
-                    'status' => 'Approved',
-                    'processed_date' => now()->toDateTimeString()
-                ]);
+            // $enrollmentUpdated = DB::table('enrollmentrequests')
+            //     ->where('student_id', $student->id)
+            //     ->where('status', 'Pending')
+            //     ->update([
+            //         'status' => 'Approved',
+            //         'processed_date' => now()->toDateTimeString()
+            //     ]);
 
             DB::commit();
 
@@ -1092,14 +1092,6 @@ class OrgController extends Controller
                     'status' => 'Rejected'
                 ]);
 
-            // Update enrollment request status if exists
-            $enrollmentUpdated = DB::table('enrollmentrequests')
-                ->where('student_id', $student->id)
-                ->where('status', 'Pending')
-                ->update([
-                    'status' => 'Rejected',
-                    'processed_date' => now()->toDateTimeString()
-                ]);
 
             DB::commit();
 

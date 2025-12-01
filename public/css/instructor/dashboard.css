@@ -3447,3 +3447,52 @@ body.dark-mode .stat-card:hover {
     }
     
 }
+
+.document-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.document-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.document-title i {
+    font-size: 1.2rem;
+    color: #4361ee;
+}
+
+.document-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+
+.badge-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.badge-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.badge-info {
+    background-color: #17a2b8;
+    color: white;
+}
