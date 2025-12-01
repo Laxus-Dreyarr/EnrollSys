@@ -1,3 +1,47 @@
+const supabaseUrl = "https://dfvapjrkotprotpbpeju.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmdmFwanJrb3Rwcm90cGJwZWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNDg1OTMsImV4cCI6MjA3MjcyNDU5M30.Hou-GtB-P8qJ4fxXbC-VtyaCkDpf5Kr01DD9aSckhiU";
+
+// Create Supabase client
+const { createClient } = supabase;
+const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+// Function to set up real-time subscription
+function setupRealtimeSubscription() {
+    const subscription = supabaseClient
+        .channel('enrollment_status-changes')
+        .on('postgres_changes', 
+        { 
+            event: '*',  // Listen for all changes (INSERT, UPDATE, DELETE)
+            schema: 'public', 
+            table: 'enrollment_status' 
+        }, 
+        (payload) => {
+            // Refresh data based on the operation type
+            if (payload.new && payload.new.table_name === 'status') {
+                if (payload.new.operation === 'INSERT') {
+                    status_update();
+                } else if (payload.new.operation === 'DELETE') {
+                    status_update();
+                } else if (payload.new.operation === 'UPDATE') {
+                    status_update();
+                }
+                // Refresh the notification count when changes occur
+                // fetchNotificationCount();
+            }
+                        
+        }
+        )
+        .subscribe((status) => {
+            console.log('Subscription status:', status);
+            if (status === 'SUBSCRIBED') {
+                console.log('Real-time subscription established');
+            }
+        });
+            
+    return subscription;
+}
+
+
 // Theme Color Picker Functionality
 function initializeThemeColorPicker() {
     const colorOptions = document.querySelectorAll('.color-option');
@@ -3181,12 +3225,39 @@ function fetchSubjectDetails(subjectId) {
         });
 }
 
+function status_update () {
+    // Create FormData
+    const formData = new FormData();
+    formData.append('action', 'status_now');
+    formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+            
+    // Send login request
+    fetch('/exe/student_status', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json()) 
+    .then(data => {
+        if (data) {
+            $("#determined").text(data.students_status);
+        } 
+    })
+    .catch(error => {
+        alert('Network error. Please check your connection and try again.');
+        console.error('Login error:', error);
+    })
+    .finally(() => {
+        
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
 
     initializeThemeColorPicker();
     initializeSubjectFilters();
     initializeSubjectFilters2();
     initializeSubjectView();
+    setupRealtimeSubscription();
     // Toggle sidebar on mobile
     const sidebarToggle = document.querySelector('.sidebar-toggle');
     const sidebar = document.querySelector('.sidebar');

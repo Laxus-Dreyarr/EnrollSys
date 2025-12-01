@@ -2660,7 +2660,52 @@ class StudentController extends Controller
         return $totalUnits;
     }
 
+    public function student_status (Request $request)
+    {
+        $action = $request->input('action');
 
+        switch ($action) {
+            case 'status_now':
+                return $this->student_status_update ();
+                
+            default:
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid action'
+                ]);
+        }
+    }
+
+    private function student_status_update () 
+    {
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+        try {
+            $students_status = DB::table('enrollmentrequests')
+                ->where('student_id', $student->id)
+                ->orderBy('request_date', 'desc')
+                ->get(); // This returns a Collection
+            
+            // ERROR: You can't do $students_status->status on a Collection
+            // You need to get the first item or pluck the status
+            
+            // Fix:
+            $latest_request = $students_status->first();
+            $status = $latest_request->status;
+            
+            return response()->json([
+                'success' => true,
+                'students_status' => $status
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error fetching student_status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get enrollment status'
+            ]);
+        }
+    }
 
 
 }//END OF Class

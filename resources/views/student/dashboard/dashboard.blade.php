@@ -34,6 +34,7 @@ $show_prereg_form = $isEnrollmentActive;
         }
     </style>
     <link rel="stylesheet" href="{{ asset('css/student/dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="dashboard-container">
@@ -130,7 +131,7 @@ $show_prereg_form = $isEnrollmentActive;
                         <div class="stat-icon grades">
                             <i class="fa-solid fa-plus"></i>
                         </div>
-                        <h3 class="stat-value">
+                        <h3 class="stat-value" id="determined">
                             @if($user->user_information->student->status === 'None' || !$isEnrollmentActive)
                                 Enrollment Not Available
                             @else
