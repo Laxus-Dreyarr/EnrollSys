@@ -1,19 +1,111 @@
+const supabaseUrl = "https://dfvapjrkotprotpbpeju.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmdmFwanJrb3Rwcm90cGJwZWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNDg1OTMsImV4cCI6MjA3MjcyNDU5M30.Hou-GtB-P8qJ4fxXbC-VtyaCkDpf5Kr01DD9aSckhiU";
+
+// Create Supabase client
+const { createClient } = supabase;
+const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+// Function to set up real-time subscription
+function setupRealtimeSubscription() {
+    const subscription = supabaseClient
+        .channel('enrollment_status-changes')
+        .on('postgres_changes', 
+        { 
+            event: '*',  // Listen for all changes (INSERT, UPDATE, DELETE)
+            schema: 'public', 
+            table: 'enrollment_status' 
+        }, 
+        (payload) => {
+            // Refresh data based on the operation type
+            if (payload.new && payload.new.table_name === 'status') {
+                if (payload.new.operation === 'INSERT') {
+                    
+                }
+                // Refresh the notification count when changes occur
+                // fetchNotificationCount();
+            }
+                        
+        }
+        )
+        .subscribe((status) => {
+            console.log('Subscription status:', status);
+            if (status === 'SUBSCRIBED') {
+                console.log('Real-time subscription established');
+            }
+        });
+            
+    return subscription;
+}
+
+
+// Realtime update for submit enrollment
+async function insertsupabase(){
+    const data = {
+        table_name: 'status',  // make sure these variables are defined
+        operation: 'DELETE'
+    };
+    // Create AbortController for timeout (similar to PHP's 10s timeout)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+            try {
+            const response = await fetch(`${supabaseUrl}/rest/v1/enrollment_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseAnonKey,
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                    'Prefer': 'return=minimal'
+                },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData = await response.json();
+            console.log(responseData);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.error('Request timed out');
+                } else {
+                    console.error('Error:', error);
+                }
+            }
+}
+
+
 const baseUrl = window.location.origin;
 
+// Helper function for status classes (keep existing)
 function getStatusClass(status) {
-    if (!status) return 'badge-secondary';
-    
-    switch(status.toLowerCase()) {
-        case 'approved':
-            return 'badge-success';
-        case 'rejected':
-            return 'badge-danger';
-        case 'pending':
-            return 'badge-warning';
-        default:
-            return 'badge-secondary';
+    switch(status?.toLowerCase()) {
+        case 'approved': return 'status-approved';
+        case 'rejected': return 'status-rejected';
+        case 'pending': return 'status-pending';
+        default: return 'status-unknown';
     }
 }
+
+// function getStatusClass(status) {
+//     if (!status) return 'badge-secondary';
+    
+//     switch(status.toLowerCase()) {
+//         case 'approved':
+//             return 'badge-success';
+//         case 'rejected':
+//             return 'badge-danger';
+//         case 'pending':
+//             return 'badge-warning';
+//         default:
+//             return 'badge-secondary';
+//     }
+// }
+
+
 // Enrollment Request
 // Enrollment Requests functionality
 function initializeEnrollmentRequests() {
@@ -154,8 +246,62 @@ function loadRequestDetails(request) {
     let subjectsHTML = '';
     if (request.subjects && request.subjects.length > 0) {
         request.subjects.forEach(subject => {
+            // Determine CSS class based on prerequisites status
+            let subjectClass = 'subject-enrollment-item';
+            let prerequisiteWarning = '';
+            
+            if (subject.has_prerequisites) {
+                if (subject.all_prerequisites_passed) {
+                    subjectClass += ' prerequisites-passed';
+                } else {
+                    subjectClass += ' prerequisites-failed';
+                    prerequisiteWarning = '<div class="prerequisite-warning">⚠️ Missing/Unpassed Prerequisites</div>';
+                }
+            }
+            
+            // Build prerequisites HTML
+            let prerequisitesHTML = '';
+            if (subject.prerequisites && subject.prerequisites.length > 0) {
+                prerequisitesHTML = `
+                    <div class="prerequisites-section">
+                        <div class="prerequisites-title">
+                            <i class="fas fa-list-check"></i>
+                            <span>Prerequisites:</span>
+                            ${subject.all_prerequisites_passed ? 
+                                '<span class="prerequisites-status passed">All Passed ✓</span>' : 
+                                '<span class="prerequisites-status failed">Not All Passed ✗</span>'
+                            }
+                        </div>
+                        <div class="prerequisites-list">
+                            ${subject.prerequisites.map(prereq => `
+                                <div class="prerequisite-item ${prereq.passed ? 'passed' : 'failed'}">
+                                    <div class="prereq-code">${prereq.code}</div>
+                                    <div class="prereq-name">${prereq.name}</div>
+                                    <div class="prereq-status">
+                                        <span class="status-badge ${prereq.passed ? 'passed' : 'failed'}">
+                                            ${prereq.passed ? '✓ Passed' : `${prereq.status}`}
+                                            ${prereq.grade ? ` (${prereq.grade})` : ''}
+                                        </span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                prerequisitesHTML = `
+                    <div class="prerequisites-section">
+                        <div class="prerequisites-title">
+                            <i class="fas fa-list-check"></i>
+                            <span>Prerequisites:</span>
+                            <span class="prerequisites-status none">No Prerequisites</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
             subjectsHTML += `
-                <div class="subject-enrollment-item">
+                <div class="${subjectClass}">
                     <div class="subject-header">
                         <div class="subject-code">${subject.subject_code}</div>
                         <div class="subject-meta">
@@ -164,6 +310,8 @@ function loadRequestDetails(request) {
                     </div>
                     <div class="subject-name">${subject.subject_name}</div>
                     <div class="subject-year">${subject.year_level}</div>
+                    ${prerequisiteWarning}
+                    ${prerequisitesHTML}
                 </div>
             `;
         });
@@ -263,14 +411,21 @@ function loadRequestDetails(request) {
         
         <div class="request-details-content">
             <div class="details-section">
-                <h4>Subjects for Enrollment</h4>
+                <h4>
+                    <i class="fas fa-book-open"></i>
+                    Subjects for Enrollment
+                    <span class="badge">${request.subjects ? request.subjects.length : 0}</span>
+                </h4>
                 <div class="subjects-enrollment-list">
                     ${subjectsHTML}
                 </div>
             </div>
             
             <div class="details-section">
-                <h4>Submitted Documents</h4>
+                <h4>
+                    <i class="fas fa-file"></i>
+                    Submitted Documents
+                </h4>
                 <div class="documents-list">
                     ${documentsHTML}
                 </div>
@@ -291,106 +446,6 @@ function loadRequestDetails(request) {
     setupRequestActionButtons();
 }
 
-// function loadRequestDetails(request) {
-//     const requestDetails = document.getElementById('enrollment-request-details');
-//     if (!requestDetails) return;
-    
-//     const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(request.firstname + ' ' + request.lastname)}&background=4361ee&color=fff&size=80`;
-//     const studentType = request.is_regular === 1 ? 'Regular' : 'Irregular';
-    
-//     let subjectsHTML = '';
-//     if (request.subjects && request.subjects.length > 0) {
-//         request.subjects.forEach(subject => {
-//             subjectsHTML += `
-//                 <div class="subject-enrollment-item">
-//                     <div class="subject-header">
-//                         <div class="subject-code">${subject.subject_code}</div>
-//                         <div class="subject-meta">
-//                             ${subject.units} units • ${subject.semester} • ${subject.section_name}
-//                         </div>
-//                     </div>
-//                     <div class="subject-name">${subject.subject_name}</div>
-//                     <div class="subject-year">${subject.year_level}</div>
-//                 </div>
-//             `;
-//         });
-//     } else {
-//         subjectsHTML = '<div class="no-subjects">No subjects found for enrollment</div>';
-//     }
-    
-//     let documentsHTML = '';
-//     if (request.fhe_document) {
-//         documentsHTML += `
-//             <div class="document-item">
-//                 <i class="fas fa-file-pdf"></i>
-//                 <span>FHE Document</span>
-//                 <a href="${request.fheDocument.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
-//                     <i class="fas fa-eye"></i> View
-//                 </a>
-//             '<span class="text-danger">No FHE document uploaded</span>';
-//             </div>
-//         `;
-//     }
-    
-//     if (request.payment_receipt) {
-//         documentsHTML += `
-//             <div class="document-item">
-//                 <i class="fas fa-receipt"></i>
-//                 <span>Payment Receipt</span>
-//                 <a href="${request.paymentReceipt.web_path}" target="_blank" class="btn btn-sm btn-outline-success">
-//                     <i class="fas fa-eye"></i> View
-//                 </a>
-//             </div>
-//         `;
-//     }
-    
-//     if (!documentsHTML) {
-//         documentsHTML = '<div class="no-documents">No documents submitted</div>';
-//     }
-    
-//     requestDetails.innerHTML = `
-//         <div class="request-details-header">
-//             <img src="${avatarUrl}" alt="Student Avatar" class="details-avatar">
-//             <div class="details-student-info">
-//                 <h3>${request.firstname} ${request.middlename || ''} ${request.lastname}</h3>
-//                 <p class="student-id">ID: ${request.id_no}</p>
-//                 <div class="student-meta">
-//                     <span class="meta-badge year-level">${request.year_level}</span>
-//                     <span class="meta-badge student-type ${studentType.toLowerCase()}">${studentType}</span>
-//                     <span class="meta-badge curriculum">${request.curriculum} Curriculum</span>
-//                 </div>
-//             </div>
-//         </div>
-        
-//         <div class="request-details-content">
-//             <div class="details-section">
-//                 <h4>Subjects for Enrollment</h4>
-//                 <div class="subjects-enrollment-list">
-//                     ${subjectsHTML}
-//                 </div>
-//             </div>
-            
-//             <div class="details-section">
-//                 <h4>Submitted Documents</h4>
-//                 <div class="documents-list">
-//                     ${documentsHTML}
-//                 </div>
-//             </div>
-            
-//             <div class="request-actions">
-//                 <button class="btn-accept" data-request-id="${request.request_id}" data-student-id="${request.student_id}">
-//                     <i class="fas fa-check"></i> Accept Enrollment
-//                 </button>
-//                 <button class="btn-reject" data-request-id="${request.request_id}" data-student-id="${request.student_id}">
-//                     <i class="fas fa-times"></i> Reject Enrollment
-//                 </button>
-//             </div>
-//         </div>
-//     `;
-    
-//     // Add event listeners to action buttons
-//     setupRequestActionButtons();
-// }
 
 function setupRequestActionButtons() {
     const acceptBtn = document.querySelector('.btn-accept');
@@ -439,6 +494,7 @@ function handleAcceptEnrollment(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            insertsupabase();
             showNotification('Enrollment approved successfully! Student is now officially enrolled.', 'success');
             // Reload the requests list
             loadEnrollmentRequests();
@@ -498,6 +554,7 @@ function handleRejectEnrollment(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            insertsupabase();
             showNotification('Enrollment rejected successfully!', 'success');
             // Reload the requests list
             loadEnrollmentRequests();

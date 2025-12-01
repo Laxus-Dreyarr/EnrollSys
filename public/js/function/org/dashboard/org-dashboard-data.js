@@ -1,3 +1,83 @@
+const supabaseUrl = "https://dfvapjrkotprotpbpeju.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmdmFwanJrb3Rwcm90cGJwZWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNDg1OTMsImV4cCI6MjA3MjcyNDU5M30.Hou-GtB-P8qJ4fxXbC-VtyaCkDpf5Kr01DD9aSckhiU";
+
+// Create Supabase client
+const { createClient } = supabase;
+const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+// Function to set up real-time subscription
+function setupRealtimeSubscription() {
+    const subscription = supabaseClient
+        .channel('enrollment_status-changes')
+        .on('postgres_changes', 
+        { 
+            event: '*',  // Listen for all changes (INSERT, UPDATE, DELETE)
+            schema: 'public', 
+            table: 'enrollment_status' 
+        }, 
+        (payload) => {
+            // Refresh data based on the operation type
+            if (payload.new && payload.new.table_name === 'status') {
+                if (payload.new.operation === 'INSERT') {
+                    this.timeoutId = setTimeout(() => {
+                        this.fetchDashboardData();
+                    }, 0);
+                }
+                // Refresh the notification count when changes occur
+                // fetchNotificationCount();
+            }
+                        
+        }
+        )
+        .subscribe((status) => {
+            console.log('Subscription status:', status);
+            if (status === 'SUBSCRIBED') {
+                console.log('Real-time subscription established');
+            }
+        });
+            
+    return subscription;
+}
+
+
+// Realtime update for submit enrollment
+async function insertsupabase(){
+    const data = {
+        table_name: 'status',  // make sure these variables are defined
+        operation: 'UPDATE'
+    };
+    // Create AbortController for timeout (similar to PHP's 10s timeout)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+            try {
+            const response = await fetch(`${supabaseUrl}/rest/v1/enrollment_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseAnonKey,
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                    'Prefer': 'return=minimal'
+                },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData = await response.json();
+            console.log(responseData);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.error('Request timed out');
+                } else {
+                    console.error('Error:', error);
+                }
+            }
+}
 
 // Organization Dashboard Data Handler
 class OrgDashboardData {
@@ -15,9 +95,11 @@ class OrgDashboardData {
     }
 
     init() {
-        this.fetchDashboardData();
+        this.timeoutId = setTimeout(() => {
+            this.fetchDashboardData();
+        }, 0);
         // Refresh data every 30 seconds
-        setInterval(() => this.fetchDashboardData(), 60000);
+        // setInterval(() => this.fetchDashboardData(), 60000);
     }
 
     async fetchDashboardData() {
@@ -423,8 +505,10 @@ class OrgDashboardData {
                 });
 
                 // Refresh dashboard data
-                this.fetchDashboardData();
-                setInterval(() => this.fetchDashboardData(), 60000);
+                this.timeoutId = setTimeout(() => {
+                    this.fetchDashboardData();
+                }, 0);
+                insertsupabase();
             } else {
                 throw new Error(result.message || 'Failed to approve payment');
             }
@@ -471,8 +555,10 @@ class OrgDashboardData {
                 });
 
                 // Refresh dashboard data
-                this.fetchDashboardData();
-                setInterval(() => this.fetchDashboardData(), 60000);
+                this.timeoutId = setTimeout(() => {
+                    this.fetchDashboardData();
+                }, 0);
+                // setInterval(() => this.fetchDashboardData(), 60000);
             } else {
                 throw new Error(result.message || 'Failed to decline payment');
             }
@@ -537,7 +623,9 @@ class OrgDashboardData {
                 });
 
                 // Refresh the dashboard data
-                this.fetchDashboardData();
+                this.timeoutId = setTimeout(() => {
+                    this.fetchDashboardData();
+                }, 0);
             } else {
                 throw new Error(result.message || 'Failed to verify payment');
             }
@@ -650,4 +738,8 @@ class OrgDashboardData {
 // Initialize dashboard data when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     window.orgDashboardData = new OrgDashboardData();
+    setupRealtimeSubscription();
+    this.timeoutId = setTimeout(() => {
+        this.fetchDashboardData();
+    }, 0);
 });

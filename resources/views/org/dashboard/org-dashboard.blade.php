@@ -30,6 +30,7 @@ $show_student_form = (strtolower($org_id) === 'none');
     <link href="{{ asset('style/bootstrap.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/org/dashboard.css') }}">
     <link rel="stylesheet" href="{{ asset('css/student/dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="dashboard-container">

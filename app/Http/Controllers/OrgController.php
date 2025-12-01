@@ -895,7 +895,7 @@ class OrgController extends Controller
                 ->join('sections', 'enrollments.section_id', '=', 'sections.id')
                 ->leftJoin('instructor_info', 'sections.instructor_id', '=', 'instructor_info.instructor_id')
                 ->where('enrollments.student_id', $student->id)
-                ->where('enrollments.status', 'Enrolled') // Only current enrollments
+                ->where('enrollments.status', 'Pending') // Only current enrollments
                 ->select(
                     'subjects.code as subject_code',
                     'subjects.name as subject_name', 

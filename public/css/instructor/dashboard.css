@@ -3496,3 +3496,140 @@ body.dark-mode .stat-card:hover {
     background-color: #17a2b8;
     color: white;
 }
+
+/* Enrollment Request */
+/* Prerequisites Styles */
+.prerequisites-section {
+    margin-top: 10px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #6c757d;
+}
+
+.prerequisites-passed .prerequisites-section {
+    border-left-color: #28a745;
+    background: #f0fff4;
+}
+
+.prerequisites-failed .prerequisites-section {
+    border-left-color: #dc3545;
+    background: #fff5f5;
+}
+
+.prerequisites-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.prerequisites-title i {
+    color: #6c757d;
+}
+
+.prerequisites-status {
+    margin-left: auto;
+    font-size: 0.85em;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.prerequisites-status.passed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.prerequisites-status.failed {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.prerequisites-status.none {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.prerequisites-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.prerequisite-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.prerequisite-item.passed {
+    border-color: #c3e6cb;
+    background: #f8fff9;
+}
+
+.prerequisite-item.failed {
+    border-color: #f5c6cb;
+    background: #fff9f9;
+}
+
+.prereq-code {
+    font-weight: 600;
+    color: #495057;
+    min-width: 80px;
+}
+
+.prereq-name {
+    flex: 1;
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.prereq-status {
+    margin-left: auto;
+}
+
+.prerequisite-warning {
+    background: #fff3cd;
+    color: #856404;
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin: 8px 0;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #ffeaa7;
+}
+
+.status-badge.passed {
+    background: #d4edda;
+    color: #155724;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+}
+
+.status-badge.failed {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+}
+
+/* Subject item status */
+.subject-enrollment-item.prerequisites-failed {
+    border: 2px solid #dc3545;
+    background: linear-gradient(to right, #fff, #fff5f5);
+}
+
+.subject-enrollment-item.prerequisites-passed {
+    border: 2px solid #28a745;
+    background: linear-gradient(to right, #fff, #f0fff4);
+}

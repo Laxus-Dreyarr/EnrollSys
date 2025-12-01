@@ -18,11 +18,7 @@ function setupRealtimeSubscription() {
         (payload) => {
             // Refresh data based on the operation type
             if (payload.new && payload.new.table_name === 'status') {
-                if (payload.new.operation === 'INSERT') {
-                    status_update();
-                } else if (payload.new.operation === 'DELETE') {
-                    status_update();
-                } else if (payload.new.operation === 'UPDATE') {
+                if (payload.new.operation === 'DELETE') {
                     status_update();
                 }
                 // Refresh the notification count when changes occur
@@ -39,6 +35,46 @@ function setupRealtimeSubscription() {
         });
             
     return subscription;
+}
+
+
+// Realtime update for submit enrollment
+async function insertsupabase(){
+    const data = {
+        table_name: 'status',  // make sure these variables are defined
+        operation: 'INSERT'
+    };
+    // Create AbortController for timeout (similar to PHP's 10s timeout)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+            try {
+            const response = await fetch(`${supabaseUrl}/rest/v1/enrollment_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseAnonKey,
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                    'Prefer': 'return=minimal'
+                },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData = await response.json();
+            console.log(responseData);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.error('Request timed out');
+                } else {
+                    console.error('Error:', error);
+                }
+            }
 }
 
 
@@ -2160,6 +2196,7 @@ function initializeEnhancedEnrollmentModal() {
         .then(data => {
             console.log('Final enrollment response:', data);
             if (data.success) {
+                insertsupabase();
                 showNotification(data.message || 'Enrollment submitted successfully!', 'success');
                 closeModal();
                 
@@ -3258,6 +3295,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeSubjectFilters2();
     initializeSubjectView();
     setupRealtimeSubscription();
+    status_update();
     // Toggle sidebar on mobile
     const sidebarToggle = document.querySelector('.sidebar-toggle');
     const sidebar = document.querySelector('.sidebar');

@@ -881,14 +881,15 @@ class InstructorController extends Controller
             )
             ->get();
 
-            // Get enrolled subjects for each student
+            // Get enrolled subjects for each student with prerequisites
             foreach ($requests as $request) {
                 $subjects = DB::table('enrollments as e')
                     ->join('subjects as sub', 'e.subject_id', '=', 'sub.id')
                     ->join('sections as sec', 'e.section_id', '=', 'sec.id')
                     ->where('e.student_id', $request->student_id)
-                    ->where('e.status', 'Enrolled')
+                    ->where('e.status', 'Pending')
                     ->select(
+                        'sub.id as subject_id',
                         'sub.code as subject_code',
                         'sub.name as subject_name',
                         'sub.units',
@@ -897,6 +898,79 @@ class InstructorController extends Controller
                         'sec.section_name'
                     )
                     ->get();
+                
+                // Get prerequisites for each subject and check if student has passed them
+                foreach ($subjects as $subject) {
+                    // Get prerequisites for this subject
+                    $prerequisites = DB::table('subjectprerequisites as sp')
+                        ->join('subjects as s', 'sp.prerequisite_id', '=', 's.id')
+                        ->where('sp.subject_id', $subject->subject_id)
+                        ->select(
+                            's.id as prereq_id',
+                            's.code as prereq_code',
+                            's.name as prereq_name'
+                        )
+                        ->get();
+                    
+                    // Check each prerequisite if student has passed it
+                    $prerequisiteStatus = [];
+                    foreach ($prerequisites as $prereq) {
+                        // Check if student has taken this prerequisite
+                        $gradeRecord = DB::table('enrolled_sub')
+                            ->where('student_id', $request->student_id)
+                            ->where('subject_id', $prereq->prereq_id)
+                            ->orderBy('date_enrolled', 'desc')
+                            ->first();
+                        
+                        $passed = false;
+                        $grade = null;
+                        $status = 'Not Taken';
+                        
+                        if ($gradeRecord) {
+                            $grade = $gradeRecord->grade;
+                            $status = 'Taken';
+                            
+                            // Check if grade is passing (1.0 to 3.0) and not 5.0
+                            if (is_numeric($grade)) {
+                                $gradeValue = floatval($grade);
+                                if ($gradeValue >= 1.0 && $gradeValue <= 3.0) {
+                                    $passed = true;
+                                    $status = 'Passed';
+                                } else if ($gradeValue == 5.0) {
+                                    $status = 'Failed (5.0)';
+                                } else {
+                                    $status = 'Failed (' . $grade . ')';
+                                }
+                            } else if (in_array(strtoupper($grade), ['INC', 'DRP', 'DROP'])) {
+                                $status = 'Incomplete/Dropped';
+                            }
+                        }
+                        
+                        $prerequisiteStatus[] = [
+                            'code' => $prereq->prereq_code,
+                            'name' => $prereq->prereq_name,
+                            'passed' => $passed,
+                            'grade' => $grade,
+                            'status' => $status,
+                            'has_grade' => !is_null($grade)
+                        ];
+                    }
+                    
+                    // Check if all prerequisites are passed
+                    $allPrerequisitesPassed = true;
+                    if (count($prerequisiteStatus) > 0) {
+                        foreach ($prerequisiteStatus as $prereq) {
+                            if (!$prereq['passed']) {
+                                $allPrerequisitesPassed = false;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    $subject->prerequisites = $prerequisiteStatus;
+                    $subject->all_prerequisites_passed = $allPrerequisitesPassed;
+                    $subject->has_prerequisites = count($prerequisiteStatus) > 0;
+                }
                 
                 $request->subjects = $subjects;
             }
@@ -910,6 +984,77 @@ class InstructorController extends Controller
             return response()->json(['error' => 'Failed to fetch enrollment requests'], 500);
         }
     }
+
+    // public function getEnrollmentRequests(Request $request)
+    // {
+    //     try {
+    //         $instructor = Auth::guard('instructor')->user();
+            
+    //         // Get pending enrollment requests with student details
+    //         $requests = DB::table('enrollmentrequests as er')
+    //         ->join('students as s', 'er.student_id', '=', 's.id')
+    //         ->join('user_info as ui', 's.student_id', '=', 'ui.id')
+    //         ->where('er.status', 'Pending')
+    //         ->select(
+    //             'er.id as request_id',
+    //             'er.student_id',
+    //             'er.request_date',
+    //             's.id_no',
+    //             's.year_level',
+    //             's.curriculum',
+    //             's.is_regular',
+    //             'ui.firstname',
+    //             'ui.lastname',
+    //             'ui.middlename',
+    //             // Get FHE document with full web path (add leading slash)
+    //             DB::raw("(SELECT CONCAT('/', file_path) 
+    //                 FROM documents 
+    //                 WHERE student_id = s.id AND type = 'FHE' 
+    //                 ORDER BY upload_date DESC LIMIT 1) as fhe_document"),
+    //             DB::raw("(SELECT status FROM documents 
+    //                 WHERE student_id = s.id AND type = 'FHE' 
+    //                 ORDER BY upload_date DESC LIMIT 1) as fhe_status"),
+    //             // Get payment receipt with full web path (add leading slash)
+    //             DB::raw("(SELECT CONCAT('/', file_path) 
+    //                 FROM payments 
+    //                 WHERE student_id = s.id AND type = 'PAYMENT_RECEIPT' 
+    //                 ORDER BY upload_date DESC LIMIT 1) as payment_receipt"),
+    //             DB::raw("(SELECT status FROM payments 
+    //                 WHERE student_id = s.id AND type = 'PAYMENT_RECEIPT' 
+    //                 ORDER BY upload_date DESC LIMIT 1) as payment_status"),
+    //             DB::raw('(SELECT COUNT(*) FROM enrollments WHERE student_id = s.id AND status = "Enrolled") as enrolled_subjects_count')
+    //         )
+    //         ->get();
+
+    //         // Get enrolled subjects for each student
+    //         foreach ($requests as $request) {
+    //             $subjects = DB::table('enrollments as e')
+    //                 ->join('subjects as sub', 'e.subject_id', '=', 'sub.id')
+    //                 ->join('sections as sec', 'e.section_id', '=', 'sec.id')
+    //                 ->where('e.student_id', $request->student_id)
+    //                 ->where('e.status', 'Pending')
+    //                 ->select(
+    //                     'sub.code as subject_code',
+    //                     'sub.name as subject_name',
+    //                     'sub.units',
+    //                     'sub.year_level',
+    //                     'sub.semester',
+    //                     'sec.section_name'
+    //                 )
+    //                 ->get();
+                
+    //             $request->subjects = $subjects;
+    //         }
+
+    //         return response()->json([
+    //             'requests' => $requests
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         Log::error('Error fetching enrollment requests: ' . $e->getMessage());
+    //         return response()->json(['error' => 'Failed to fetch enrollment requests'], 500);
+    //     }
+    // }
 
 
     // public function approveEnrollment(Request $request)

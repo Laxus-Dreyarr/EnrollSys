@@ -2222,6 +2222,21 @@ class StudentController extends Controller
                 ]);
             }
 
+            // Disable foreign key checks
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+            // Delete records
+            DB::table('enrollmentrequests')
+                ->where('student_id', $student->id)
+                ->delete();
+
+            DB::table('enrollments')
+                ->where('student_id', $student->id)
+                ->delete();
+                
+            // Re-enable foreign key checks
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
             // Create enrollment request
             $enrollmentRequest = new EnrollmentRequest();
             $enrollmentRequest->student_id = $student->id;
@@ -2242,7 +2257,7 @@ class StudentController extends Controller
                     $enrollment->student_id = $student->id;
                     $enrollment->subject_id = $subjectId;
                     $enrollment->section_id = $sectionId;
-                    $enrollment->status = 'Enrolled';
+                    $enrollment->status = 'Pending';
                     $enrollment->enrollment_date = now();
                     $enrollment->save();
 
@@ -2280,7 +2295,7 @@ class StudentController extends Controller
     {
         try {
             $existingRequest = EnrollmentRequest::where('student_id', $studentId)
-                ->whereIn('status', ['Pending', 'Approved', 'Rejected'])
+                ->whereIn('status', ['Pending', 'Approved'])
                 ->first();
                 
             return $existingRequest ? $existingRequest : false;

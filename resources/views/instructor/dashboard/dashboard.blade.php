@@ -28,6 +28,7 @@ $id = $user->info->instructor_id;
         }
     </style>
     <link rel="stylesheet" href="{{ asset('css/instructor/dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="dashboard-container">
