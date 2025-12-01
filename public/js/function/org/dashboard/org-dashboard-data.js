@@ -1,3 +1,4 @@
+
 // Organization Dashboard Data Handler
 class OrgDashboardData {
     constructor() {
@@ -16,7 +17,7 @@ class OrgDashboardData {
     init() {
         this.fetchDashboardData();
         // Refresh data every 30 seconds
-        setInterval(() => this.fetchDashboardData(), 30000);
+        setInterval(() => this.fetchDashboardData(), 60000);
     }
 
     async fetchDashboardData() {
@@ -117,7 +118,7 @@ class OrgDashboardData {
             return;
         }
 
-        // Add new activities with payment-specific styling
+        // Add new activities
         activities.forEach(activity => {
             const activityElement = document.createElement('div');
             activityElement.className = 'schedule-item payment-activity';
@@ -135,11 +136,14 @@ class OrgDashboardData {
                         <strong>${activity.student_id}</strong> - ${activity.year_level}
                     </div>
                     <div class="payment-actions">
-                        <button class="btn-view-receipt" data-file-path="${activity.file_path}" data-student-id="${activity.student_id}">
-                            <i class="fas fa-receipt"></i> View Receipt
+                        <button class="btn-view-details" data-student-id="${activity.student_id}">
+                            <i class="fas fa-receipt"></i> View Details
                         </button>
-                        <button class="btn-verify-payment" data-student-id="${activity.student_id}">
-                            <i class="fas fa-check"></i> Verify
+                        <button class="btn-decline-payment" data-student-id="${activity.student_id}">
+                            <i class="fa-solid fa-circle-xmark"></i> Decline
+                        </button>
+                        <button class="btn-approve-payment" data-student-id="${activity.student_id}">
+                            <i class="fas fa-check"></i> Approve
                         </button>
                     </div>
                 </div>
@@ -148,27 +152,335 @@ class OrgDashboardData {
             scheduleContainer.appendChild(activityElement);
         });
 
-        // Add event listeners to the new buttons
-        this.attachPaymentEventListeners();
+        // Re-attach event listeners after a small delay to ensure DOM is updated
+        setTimeout(() => {
+            this.attachPaymentEventListeners();
+        }, 100);
     }
 
     attachPaymentEventListeners() {
-        // View receipt buttons
-        document.querySelectorAll('.btn-view-receipt').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const filePath = e.target.closest('.btn-view-receipt').getAttribute('data-file-path');
-                const studentId = e.target.closest('.btn-view-receipt').getAttribute('data-student-id');
-                this.viewReceipt(filePath, studentId);
-            });
+        console.log('Attaching event listeners...'); // Debug log
+        
+        // View details buttons - FIXED: Use event delegation
+        document.querySelector('.schedule-day').addEventListener('click', (e) => {
+            if (e.target.closest('.btn-view-details')) {
+                const button = e.target.closest('.btn-view-details');
+                const studentId = button.getAttribute('data-student-id');
+                this.viewStudentDetails(studentId);
+            }
+            
+            if (e.target.closest('.btn-approve-payment')) {
+                const button = e.target.closest('.btn-approve-payment');
+                const studentId = button.getAttribute('data-student-id');
+                this.approvePayment(studentId);
+            }
+            
+            if (e.target.closest('.btn-decline-payment')) {
+                const button = e.target.closest('.btn-decline-payment');
+                const studentId = button.getAttribute('data-student-id');
+                this.declinePayment(studentId);
+            }
         });
+    }
 
-        // Verify payment buttons
-        document.querySelectorAll('.btn-verify-payment').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const studentId = e.target.closest('.btn-verify-payment').getAttribute('data-student-id');
-                this.verifyPayment(studentId);
+    async viewStudentDetails(studentId) {
+        try {
+            console.log('Viewing details for student:', studentId); // Debug log
+            
+            const response = await fetch(`/org/student-details/${studentId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
             });
-        });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch student details');
+            }
+
+            const data = await response.json();
+            
+            if (data.error) {
+                this.showError(data.error);
+                return;
+            }
+
+            this.showStudentDetailsModal(data);
+
+        } catch (error) {
+            console.error('Error fetching student details:', error);
+            this.showError('Failed to load student details');
+        }
+    }
+
+    // showStudentDetailsModal(data) {
+    //     // Build the modal content with student details
+    //     let subjectsHtml = '';
+    //     if (data.subjects && data.subjects.length > 0) {
+    //         subjectsHtml = data.subjects.map(subject => `
+    //             <div class="subject-item">
+    //                 <strong>${subject.subject_code}</strong> - ${subject.subject_name}
+    //                 <span class="units">(${subject.units} units)</span>
+    //             </div>
+    //         `).join('');
+    //     } else {
+    //         subjectsHtml = '<div class="text-muted">No subjects found</div>';
+    //     }
+
+    //     let fheHtml = data.fheDocument ? 
+    //         `<a href="/${data.fheDocument.file_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+    //             <i class="fas fa-file-pdf"></i> View FHE
+    //         </a>` : 
+    //         '<span class="text-danger">No FHE document uploaded</span>';
+
+    //     let receiptHtml = data.paymentReceipt ? 
+    //         `<a href="/${data.paymentReceipt.file_path}" target="_blank" class="btn btn-sm btn-outline-success">
+    //             <i class="fas fa-receipt"></i> View Receipt
+    //         </a>` : 
+    //         '<span class="text-danger">No payment receipt uploaded</span>';
+
+    //     const modalHtml = `
+    //         <div class="modal fade" id="studentDetailsModal" tabindex="-1">
+    //             <div class="modal-dialog modal-lg">
+    //                 <div class="modal-content">
+    //                     <div class="modal-header">
+    //                         <h5 class="modal-title">Student Enrollment Details - ${data.student.id_no}</h5>
+    //                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    //                     </div>
+    //                     <div class="modal-body">
+    //                         <div class="row mb-3">
+    //                             <div class="col-md-6">
+    //                                 <h6>Student Information</h6>
+    //                                 <p><strong>ID:</strong> ${data.student.id_no}</p>
+    //                                 <p><strong>Year Level:</strong> ${data.student.year_level}</p>
+    //                                 <p><strong>Status:</strong> ${data.student.status}</p>
+    //                             </div>
+    //                             <div class="col-md-6">
+    //                                 <h6>Documents</h6>
+    //                                 <p><strong>FHE:</strong> ${fheHtml}</p>
+    //                                 <p><strong>Payment Receipt:</strong> ${receiptHtml}</p>
+    //                             </div>
+    //                         </div>
+    //                         <div class="row">
+    //                             <div class="col-12">
+    //                                 <h6>Requested Subjects</h6>
+    //                                 <div class="subjects-list">
+    //                                     ${subjectsHtml}
+    //                                 </div>
+    //                             </div>
+    //                         </div>
+    //                     </div>
+    //                     <div class="modal-footer">
+    //                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    //                     </div>
+    //                 </div>
+    //             </div>
+    //         </div>
+    //     `;
+
+    //     // Remove existing modal if any
+    //     const existingModal = document.getElementById('studentDetailsModal');
+    //     if (existingModal) {
+    //         existingModal.remove();
+    //     }
+
+    //     // Add modal to page
+    //     document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+    //     // Show modal
+    //     const modal = new bootstrap.Modal(document.getElementById('studentDetailsModal'));
+    //     modal.show();
+    // }
+
+    //
+    
+    showStudentDetailsModal(data) {
+        // Build the modal content with student details
+        let subjectsHtml = '';
+        if (data.subjects && data.subjects.length > 0) {
+            subjectsHtml = data.subjects.map(subject => `
+                <div class="subject-item">
+                    <div class="subject-header">
+                        <strong>${subject.subject_code}</strong> - ${subject.subject_name}
+                        <span class="units">(${subject.units} units)</span>
+                    </div>
+                    <div class="subject-details">
+                        <small class="text-muted">
+                            Section: ${subject.section_name} 
+                            ${subject.instructor_name ? `| Instructor: ${subject.instructor_name}` : ''}
+                        </small>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            subjectsHtml = '<div class="text-muted">No enrolled subjects found</div>';
+        }
+
+        let fheHtml = data.fheDocument ? 
+            `<a href="${data.fheDocument.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-file-pdf"></i> View FHE
+            </a>` : 
+            '<span class="text-danger">No FHE document uploaded</span>';
+
+        let receiptHtml = data.paymentReceipt ? 
+            `<a href="${data.paymentReceipt.web_path}" target="_blank" class="btn btn-sm btn-outline-success">
+                <i class="fas fa-receipt"></i> View Receipt
+            </a>` : 
+            '<span class="text-danger">No payment receipt uploaded</span>';
+
+        let enrollmentStatus = data.enrollmentRequest ? 
+            `<span class="badge bg-warning">Pending</span>` : 
+            '<span class="badge bg-secondary">No Enrollment Request</span>';
+
+        const modalHtml = `
+            <div class="modal fade" id="studentDetailsModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Student Enrollment Details - ${data.student.id_no}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h6>Student Information</h6>
+                                    <p><strong>ID:</strong> ${data.student.id_no}</p>
+                                    <p><strong>Year Level:</strong> ${data.student.year_level}</p>
+                                    <p><strong>Status:</strong> ${data.student.status}</p>
+                                    <p><strong>Enrollment Request:</strong> ${enrollmentStatus}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Documents</h6>
+                                    <p><strong>FHE:</strong> ${fheHtml}</p>
+                                    <p><strong>Payment Receipt:</strong> ${receiptHtml}</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <h6>Enrolled Subjects (${data.subjects ? data.subjects.length : 0})</h6>
+                                    <div class="subjects-list">
+                                        ${subjectsHtml}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove existing modal if any
+        const existingModal = document.getElementById('studentDetailsModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('studentDetailsModal'));
+        modal.show();
+    }
+
+    async approvePayment(studentId) {
+        try {
+            const confirmed = await Swal.fire({
+                title: 'Approve Payment?',
+                text: `Are you sure you want to approve payment for student ${studentId}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Approve',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#4361ee'
+            });
+
+            if (!confirmed.isConfirmed) return;
+
+            const response = await fetch('/org/approve-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    student_id: studentId
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                Swal.fire({
+                    title: 'Payment Approved!',
+                    text: `Payment for student ${studentId} has been approved successfully.`,
+                    icon: 'success',
+                    confirmButtonColor: '#4361ee'
+                });
+
+                // Refresh dashboard data
+                this.fetchDashboardData();
+                setInterval(() => this.fetchDashboardData(), 60000);
+            } else {
+                throw new Error(result.message || 'Failed to approve payment');
+            }
+
+        } catch (error) {
+            console.error('Error approving payment:', error);
+            this.showError('Failed to approve payment: ' + error.message);
+        }
+    }
+
+    async declinePayment(studentId) {
+        try {
+            const confirmed = await Swal.fire({
+                title: 'Decline Payment?',
+                text: `Are you sure you want to decline payment for student ${studentId}?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Decline',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#e74c3c'
+            });
+
+            if (!confirmed.isConfirmed) return;
+
+            const response = await fetch('/org/decline-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    student_id: studentId
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                Swal.fire({
+                    title: 'Payment Declined!',
+                    text: `Payment for student ${studentId} has been declined.`,
+                    icon: 'success',
+                    confirmButtonColor: '#e74c3c'
+                });
+
+                // Refresh dashboard data
+                this.fetchDashboardData();
+                setInterval(() => this.fetchDashboardData(), 60000);
+            } else {
+                throw new Error(result.message || 'Failed to decline payment');
+            }
+
+        } catch (error) {
+            console.error('Error declining payment:', error);
+            this.showError('Failed to decline payment: ' + error.message);
+        }
     }
 
     viewReceipt(filePath, studentId) {

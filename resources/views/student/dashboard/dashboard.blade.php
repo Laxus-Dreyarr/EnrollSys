@@ -1039,7 +1039,7 @@ $show_prereg_form = $isEnrollmentActive;
         <div id="studentInfoModal2" class="modal-overlay <?php echo $show_prereg_form ? 'active' : ''; ?>">
             <div class="modal-container">
                 <div class="modal-header">
-                    <h3>Enrollment Pre-Registration Form</h3>
+                    <h3 style="color: white;">Enrollment Pre-Registration Form</h3>
                 </div>
                 
                 <form id="studentInfoForm2" class="modal-form">

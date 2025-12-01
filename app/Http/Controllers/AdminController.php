@@ -1552,10 +1552,16 @@ class AdminController extends Controller
                         'is_regular' => 5
                     ]);
                     
-                DB::table('enrollmentrequests')
-                ->delete();
-                DB::table('enrollments')
-                ->delete();
+                // Disable foreign key checks
+                DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+                // Delete records
+                DB::table('enrollmentrequests')->delete();
+                DB::table('enrollments')->delete();
+
+                // Re-enable foreign key checks
+                DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
                 $message = 'Enrollment period created successfully';
             
 
@@ -1677,8 +1683,15 @@ class AdminController extends Controller
             // DB::table('enrollment_date')
             //     ->where('ID', $request->enrollment_id)
             //     ->delete();
+
+            // Disable foreign key checks
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            
             DB::table('enrollment_date')
                 ->delete();
+
+            // Re-enable foreign key checks
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
 
             return response()->json(['success' => true, 'message' => 'Enrollment period deleted successfully']);

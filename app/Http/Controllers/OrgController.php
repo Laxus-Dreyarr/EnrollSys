@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\Log;
 use App\Mail\PasswordResetOtp;
 use Illuminate\Support\Str;
 use Jenssegers\Agent\Agent;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 class OrgController extends Controller
 {
@@ -831,20 +833,6 @@ class OrgController extends Controller
     }
 
 
-
-    private function formatActivityAction($action)
-    {
-        if (str_contains($action, 'New Student Account Created')) {
-            return 'New student account created';
-        } elseif (str_contains($action, 'Grade input')) {
-            return 'Grade input for subject';
-        } elseif (str_contains($action, 'Enrollment')) {
-            return 'Enrollment activity';
-        } else {
-            return $action;
-        }
-    }
-
     // Student Management
 
     public function getStudentsData()
@@ -886,6 +874,273 @@ class OrgController extends Controller
         } catch (\Exception $e) {
             Log::error('Error fetching students data: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to fetch students data'], 500);
+        }
+    }
+
+    public function getStudentDetails($studentId)
+    {
+        try {
+            // Get student basic info
+            $student = DB::table('students')
+                ->where('id_no', $studentId)
+                ->first();
+
+            if (!$student) {
+                return response()->json(['error' => 'Student not found'], 404);
+            }
+
+            // Get enrolled subjects from enrollments table (current enrollment)
+            $subjects = DB::table('enrollments')
+                ->join('subjects', 'enrollments.subject_id', '=', 'subjects.id')
+                ->join('sections', 'enrollments.section_id', '=', 'sections.id')
+                ->leftJoin('instructor_info', 'sections.instructor_id', '=', 'instructor_info.instructor_id')
+                ->where('enrollments.student_id', $student->id)
+                ->where('enrollments.status', 'Enrolled') // Only current enrollments
+                ->select(
+                    'subjects.code as subject_code',
+                    'subjects.name as subject_name', 
+                    'subjects.units',
+                    'sections.section_name',
+                    DB::raw('CONCAT(instructor_info.firstname, " ", instructor_info.lastname) as instructor_name')
+                )
+                ->get();
+
+            // Get FHE document
+            $fheDocument = DB::table('documents')
+                ->where('student_id', $student->id)
+                ->where('type', 'FHE')
+                ->where('status', 'Pending')
+                ->first();
+
+            // Get payment receipt
+            $paymentReceipt = DB::table('payments')
+                ->where('student_id', $student->id)
+                ->where('type', 'PAYMENT_RECEIPT')
+                ->where('status', 'Pending')
+                ->first();
+
+            
+
+            // Get payment receipt
+            $paymentReceipt = DB::table('payments')
+                ->where('student_id', $student->id)
+                ->where('type', 'PAYMENT_RECEIPT')
+                ->where('status', 'Pending')
+                ->first();
+
+            // Get enrollment request details
+            $enrollmentRequest = DB::table('enrollmentrequests')
+                ->where('student_id', $student->id)
+                ->where('status', 'Pending')
+                ->first();
+
+            // Use custom route for file access
+            if ($fheDocument) {
+                $filename = basename($fheDocument->file_path);
+                $fheDocument->web_path = "/documents/fhe/{$filename}";
+                
+                // Debug: Check if file exists
+                $fullPath = storage_path('app/public/' . $fheDocument->file_path);
+                Log::info("FHE File:", [
+                    'db_path' => $fheDocument->file_path,
+                    'filename' => $filename,
+                    'web_path' => $fheDocument->web_path,
+                    'full_path' => $fullPath,
+                    'exists' => file_exists($fullPath)
+                ]);
+            }
+
+            if ($paymentReceipt) {
+                $filename = basename($paymentReceipt->file_path);
+                $paymentReceipt->web_path = "/documents/payment_receipts/{$filename}";
+                
+                // Debug: Check if file exists
+                $fullPath = storage_path('app/public/' . $paymentReceipt->file_path);
+                Log::info("Receipt File:", [
+                    'db_path' => $paymentReceipt->file_path,
+                    'filename' => $filename,
+                    'web_path' => $paymentReceipt->web_path,
+                    'full_path' => $fullPath,
+                    'exists' => file_exists($fullPath)
+                ]);
+            }
+
+            return response()->json([
+                'student' => $student,
+                'subjects' => $subjects,
+                'fheDocument' => $fheDocument,
+                'paymentReceipt' => $paymentReceipt,
+                'enrollmentRequest' => $enrollmentRequest
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching student details: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch student details'], 500);
+        }
+    }
+
+    public function approvePayment(Request $request)
+    {
+        try {
+            $request->validate([
+                'student_id' => 'required|string'
+            ]);
+
+            $studentId = $request->student_id;
+
+            // Get student record
+            $student = DB::table('students')
+                ->where('id_no', $studentId)
+                ->first();
+
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student not found']);
+            }
+
+            DB::beginTransaction();
+
+            // Update payment status
+            $paymentUpdated = DB::table('payments')
+                ->where('student_id', $student->id)
+                ->where('status', 'Pending')
+                ->update([
+                    'status' => 'Approved',
+                    'updated_at' => now()->toDateTimeString()
+                ]);
+
+            // Update document status
+            $documentUpdated = DB::table('documents')
+                ->where('student_id', $student->id)
+                ->where('status', 'Pending')
+                ->update([
+                    'status' => 'Approved'
+                ]);
+
+            // Update enrollment request status if exists
+            $enrollmentUpdated = DB::table('enrollmentrequests')
+                ->where('student_id', $student->id)
+                ->where('status', 'Pending')
+                ->update([
+                    'status' => 'Approved',
+                    'processed_date' => now()->toDateTimeString()
+                ]);
+
+            DB::commit();
+
+            // Log the activity
+            $clientInfo = $this->collectClientInformation();
+            $ipaddress = $this->getClientDeviceInfo();
+
+            AuditLog::create([
+                'user_id' => $studentId,
+                'action' => 'Payment approved by organization',
+                'details' => $clientInfo['operating_system'] . '/' . $clientInfo['device_type'] . '/' . $clientInfo['user_agent'],
+                'ip_address' => $ipaddress['ip_address'],
+                'date' => now()->toDateTimeString(),
+                'access_by' => Auth::guard('org')->user()->org_id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment and documents approved successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error approving payment: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to approve payment'
+            ], 500);
+        }
+    }
+
+    public function declinePayment(Request $request)
+    {
+        try {
+            $request->validate([
+                'student_id' => 'required|string'
+            ]);
+
+            $studentId = $request->student_id;
+
+            // Get student record
+            $student = DB::table('students')
+                ->where('id_no', $studentId)
+                ->first();
+
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student not found']);
+            }
+
+            DB::beginTransaction();
+
+            // Update payment status
+            $paymentUpdated = DB::table('payments')
+                ->where('student_id', $student->id)
+                ->where('status', 'Pending')
+                ->update([
+                    'status' => 'Rejected',
+                    'updated_at' => now()->toDateTimeString()
+                ]);
+
+            // Update document status
+            $documentUpdated = DB::table('documents')
+                ->where('student_id', $student->id)
+                ->where('status', 'Pending')
+                ->update([
+                    'status' => 'Rejected'
+                ]);
+
+            // Update enrollment request status if exists
+            $enrollmentUpdated = DB::table('enrollmentrequests')
+                ->where('student_id', $student->id)
+                ->where('status', 'Pending')
+                ->update([
+                    'status' => 'Rejected',
+                    'processed_date' => now()->toDateTimeString()
+                ]);
+
+            DB::commit();
+
+            // Log the activity
+            $clientInfo = $this->collectClientInformation();
+            $ipaddress = $this->getClientDeviceInfo();
+
+            AuditLog::create([
+                'user_id' => $studentId,
+                'action' => 'Payment declined by organization',
+                'details' => $clientInfo['operating_system'] . '/' . $clientInfo['device_type'] . '/' . $clientInfo['user_agent'],
+                'ip_address' => $ipaddress['ip_address'],
+                'date' => now()->toDateTimeString(),
+                'access_by' => Auth::guard('org')->user()->org_id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment and documents declined successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error declining payment: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to decline payment'
+            ], 500);
+        }
+    }
+
+    private function formatActivityAction($action)
+    {
+        if (str_contains($action, 'New Student Account Created')) {
+            return 'New student account created';
+        } elseif (str_contains($action, 'Grade input')) {
+            return 'Grade input for subject';
+        } elseif (str_contains($action, 'Enrollment')) {
+            return 'Enrollment activity';
+        } else {
+            return $action;
         }
     }
 

@@ -11,6 +11,10 @@ use App\Models\Admin;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Jenssegers\Agent\Agent;
+use Illuminate\Support\Facades\Http;
 
 
 // Public routes
@@ -264,6 +268,46 @@ Route::middleware(['org.auth'])->group(function () {
 
     // Students Management
     Route::get('/org-dashboard/students', [OrgController::class, 'getStudentsData'])->name('org.students.data');
+
+    // Verify docs and payment
+    Route::get('/org/student-details/{studentId}', [OrgController::class, 'getStudentDetails']);
+    Route::post('/org/approve-payment', [OrgController::class, 'approvePayment']);
+    Route::post('/org/decline-payment', [OrgController::class, 'declinePayment']);
+
+    // File serving routes for documents
+    Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {
+        // Define allowed folders for security
+        $allowedFolders = ['fhe', 'payment_receipts'];
+        
+        if (!in_array($folder, $allowedFolders)) {
+            abort(404, 'Folder not allowed');
+        }
+
+        $path = storage_path("app/public/documents/{$folder}/{$filename}");
+        
+        Log::info("File access attempt:", [
+            'folder' => $folder,
+            'filename' => $filename,
+            'full_path' => $path,
+            'exists' => file_exists($path)
+        ]);
+
+        if (!file_exists($path)) {
+            abort(404, 'File not found');
+        }
+
+        // Get file mime type
+        $mime = mime_content_type($path);
+        
+        // Create response with proper headers
+        $response = response()->file($path, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . $filename . '"'
+        ]);
+
+        return $response;
+    })->where('filename', '.*')->name('documents.serve');
+
 });
 Route::get('/org', function () {
     return view('org.index');
