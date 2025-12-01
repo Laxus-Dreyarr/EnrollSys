@@ -912,6 +912,73 @@ class InstructorController extends Controller
     }
 
 
+    // public function approveEnrollment(Request $request)
+    // {
+    //     try {
+    //         $validator = Validator::make($request->all(), [
+    //             'request_id' => 'required|integer',
+    //             'student_id' => 'required|integer'
+    //         ]);
+
+    //         if ($validator->fails()) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Invalid input data'
+    //             ]);
+    //         }
+
+    //         $instructor = Auth::guard('instructor')->user();
+
+    //         // Update enrollment request
+    //         DB::table('enrollmentrequests')
+    //             ->where('id', $request->request_id)
+    //             ->update([
+    //                 'status' => 'Approved',
+    //                 'instructor_id' => $instructor->instructor_id,
+    //                 'processed_date' => now()
+    //             ]);
+
+    //         // Update student status
+    //         DB::table('students')
+    //             ->where('id', $request->student_id)
+    //             ->update([
+    //                 'status' => 'Officially Enrolled'
+    //             ]);
+
+    //         // Create notification for student
+    //         DB::table('notifications')->insert([
+    //             'user_id' => '7',
+    //             'title' => 'Enrollment Approved',
+    //             'message' => 'Your enrollment request has been approved. You are now officially enrolled.',
+    //             'is_read' => '0',
+    //             'created_at' => now()
+    //         ]);
+
+    //         // Log the action
+    //         // $clientInfo = $this->collectClientInformation();
+    //         // AuditLog::create([
+    //         //     'user_id' => $request->student_id,
+    //         //     'action' => 'Enrollment request approved by instructor',
+    //         //     'details' => 'Student ID: ' . $request->student_id . ' - ' . $clientInfo['operating_system'] . '/' . $clientInfo['device_type'] . '/' . $clientInfo['user_agent'],
+    //         //     'ip_address' => $clientInfo['ip_address'],
+    //         //     'date' => now(),
+    //         //     'access_by' => $instructor->instructor_id
+    //         // ]);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Enrollment approved successfully'
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         Log::error('Error approving enrollment: ' . $e->getMessage());
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Failed to approve enrollment'
+    //         ], 500);
+    //     }
+    // }
+
     public function approveEnrollment(Request $request)
     {
         try {
@@ -929,6 +996,30 @@ class InstructorController extends Controller
 
             $instructor = Auth::guard('instructor')->user();
 
+            // Get the student's user_id
+            $student = DB::table('students')
+                ->where('id', $request->student_id)
+                ->first();
+
+            if (!$student) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Student not found'
+                ]);
+            }
+
+            // Get the user_id from user_info table
+            $userInfo = DB::table('user_info')
+                ->where('id', $student->student_id) // student_id in students table = id in user_info table
+                ->first();
+
+            if (!$userInfo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User information not found'
+                ]);
+            }
+
             // Update enrollment request
             DB::table('enrollmentrequests')
                 ->where('id', $request->request_id)
@@ -945,12 +1036,12 @@ class InstructorController extends Controller
                     'status' => 'Officially Enrolled'
                 ]);
 
-            // Create notification for student
+            // Create notification for student using the correct user_id
             DB::table('notifications')->insert([
-                'user_id' => $request->student_id,
+                'user_id' => $userInfo->user_id, // Use the actual user_id
                 'title' => 'Enrollment Approved',
                 'message' => 'Your enrollment request has been approved. You are now officially enrolled.',
-                'is_read' => 0,
+                'is_read' => 0, // Use integer 0, not string '0'
                 'created_at' => now()
             ]);
 
@@ -959,10 +1050,10 @@ class InstructorController extends Controller
             AuditLog::create([
                 'user_id' => $request->student_id,
                 'action' => 'Enrollment request approved by instructor',
-                'details' => 'Student ID: ' . $request->student_id . ' - ' . $clientInfo['operating_system'] . '/' . $clientInfo['device_type'] . '/' . $clientInfo['user_agent'],
+                'details' => 'Student ID: ' . $request->id_no . ' - ' . $clientInfo['operating_system'] . '/' . $clientInfo['device_type'] . '/' . $clientInfo['user_agent'],
                 'ip_address' => $clientInfo['ip_address'],
                 'date' => now(),
-                'access_by' => $instructor->instructor_id
+                'access_by' => '107568'
             ]);
 
             return response()->json([
@@ -972,12 +1063,14 @@ class InstructorController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error approving enrollment: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to approve enrollment'
+                'message' => 'Failed to approve enrollment: ' . $e->getMessage()
             ], 500);
         }
     }
+
 
     public function rejectEnrollment(Request $request)
     {
@@ -996,6 +1089,30 @@ class InstructorController extends Controller
             }
 
             $instructor = Auth::guard('instructor')->user();
+            
+            // Get the student's user_id
+            $student = DB::table('students')
+                ->where('id', $request->student_id)
+                ->first();
+
+            if (!$student) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Student not found'
+                ]);
+            }
+
+            // Get the user_id from user_info table
+            $userInfo = DB::table('user_info')
+                ->where('id', $student->student_id) // student_id in students table = id in user_info table
+                ->first();
+
+            if (!$userInfo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User information not found'
+                ]);
+            }
 
             // Update enrollment request
             DB::table('enrollmentrequests')
@@ -1007,9 +1124,16 @@ class InstructorController extends Controller
                     'processed_date' => now()
                 ]);
 
+            // Update student status
+            DB::table('students')
+                ->where('id', $request->student_id)
+                ->update([
+                    'status' => 'Rejected'
+                ]);
+
             // Create notification for student
             DB::table('notifications')->insert([
-                'user_id' => $request->student_id,
+                'user_id' => $userInfo->user_id,
                 'title' => 'Enrollment Rejected',
                 'message' => 'Your enrollment request has been rejected. Reason: ' . $request->rejection_reason,
                 'is_read' => 0,
@@ -1021,10 +1145,10 @@ class InstructorController extends Controller
             AuditLog::create([
                 'user_id' => $request->student_id,
                 'action' => 'Enrollment request rejected by instructor',
-                'details' => 'Student ID: ' . $request->student_id . ' - Reason: ' . $request->rejection_reason . ' - ' . $clientInfo['operating_system'] . '/' . $clientInfo['device_type'] . '/' . $clientInfo['user_agent'],
+                'details' => 'Student ID: ' . $request->id_no . ' - Reason: ' . $request->rejection_reason . ' - ' . $clientInfo['operating_system'] . '/' . $clientInfo['device_type'] . '/' . $clientInfo['user_agent'],
                 'ip_address' => $clientInfo['ip_address'],
                 'date' => now(),
-                'access_by' => $instructor->instructor_id
+                'access_by' => '107568'
             ]);
 
             return response()->json([

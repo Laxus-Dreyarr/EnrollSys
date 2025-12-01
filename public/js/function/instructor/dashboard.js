@@ -1,3 +1,19 @@
+const baseUrl = window.location.origin;
+
+function getStatusClass(status) {
+    if (!status) return 'badge-secondary';
+    
+    switch(status.toLowerCase()) {
+        case 'approved':
+            return 'badge-success';
+        case 'rejected':
+            return 'badge-danger';
+        case 'pending':
+            return 'badge-warning';
+        default:
+            return 'badge-secondary';
+    }
+}
 // Enrollment Request
 // Enrollment Requests functionality
 function initializeEnrollmentRequests() {
@@ -164,11 +180,19 @@ function loadRequestDetails(request) {
         // Clean up the file path if needed
         const fhePath = request.fhe_document.startsWith('/') ? 
                request.fhe_document : '/' + request.fhe_document;
+
+        const fheStatusClass = getStatusClass(request.fhe_status);
+        const fheStatusText = request.fhe_status || 'Unknown';
         
         documentsHTML += `
             <div class="document-item">
-                <i class="fas fa-file-pdf"></i>
-                <span>FHE Document</span>
+                <div class="document-title">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>FHE Document</span>
+                </div>
+                <div class="document-title">
+                    <span class="status-badge ${fheStatusClass}">${fheStatusText}</span>
+                </div>
                 <a href="${baseUrl}${fhePath}" target="_blank" class="btn btn-sm btn-outline-primary">
                     <i class="fas fa-eye"></i> View
                 </a>
@@ -191,11 +215,19 @@ function loadRequestDetails(request) {
         const paymentPath = request.payment_receipt.startsWith('/') ? 
                            request.payment_receipt : '/' + request.payment_receipt;
         
+        const fheStatusClass = getStatusClass(request.fhe_status);
+        const fheStatusText = request.fhe_status || 'Unknown';
+
         documentsHTML += `
             <div class="document-item">
-                <i class="fas fa-receipt"></i>
-                <span>Payment Receipt</span>
-                <a href="${baseUrl}${paymentPath}" target="_blank" class="btn btn-sm btn-outline-success">
+                <div class="document-title">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>FHE Document</span>
+                </div>
+                <div class="document-title">
+                    <span class="status-badge ${fheStatusClass}">${fheStatusText}</span>
+                </div>
+                <a href="${baseUrl}${paymentPath}" target="_blank" class="btn btn-sm btn-outline-primary">
                     <i class="fas fa-eye"></i> View
                 </a>
             </div>
