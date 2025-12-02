@@ -1558,9 +1558,12 @@ class AdminController extends Controller
                 // Delete records
                 DB::table('enrollmentrequests')->delete();
                 DB::table('enrollments')->delete();
+                DB::table('documents')->delete();
+                DB::table('payments')->delete();
 
                 // Re-enable foreign key checks
                 DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+                
 
                 $message = 'Enrollment period created successfully';
             

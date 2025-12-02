@@ -19,7 +19,9 @@ function setupRealtimeSubscription() {
             // Refresh data based on the operation type
             if (payload.new && payload.new.table_name === 'status') {
                 if (payload.new.operation === 'INSERT') {
-                    
+                    initializeEnrollmentRequests();
+                } else if (payload.new.operation === 'UPDATE') {
+                    // loadRequestDetails();
                 }
                 // Refresh the notification count when changes occur
                 // fetchNotificationCount();
@@ -1990,6 +1992,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     setupModalEventListeners();
     setupTableSorting();
+    setupRealtimeSubscription();
     // Initialize sidebar toggle
     const sidebarToggle = document.querySelector('.sidebar-toggle');
     const sidebar = document.querySelector('.sidebar');

@@ -694,6 +694,7 @@ async function approvePayment(studentId) {
         });
 
         const result = await response.json();
+        insertsupabase();
 
         if (result.success) {
             Swal.fire({
@@ -708,7 +709,7 @@ async function approvePayment(studentId) {
                 clearTimeout(dashboardState.timeoutId);
             }
             dashboardState.timeoutId = setTimeout(() => {
-                fetchDashboardData();
+                fetchDashboardData2();
             }, 500);
         } else {
             throw new Error(result.message || 'Failed to approve payment');
@@ -716,7 +717,8 @@ async function approvePayment(studentId) {
 
     } catch (error) {
         console.error('Error approving payment:', error);
-        showError('Failed to approve payment: ' + error.message);
+        showError('Failed to approve payment: Check your internet connection');
+        // showError('Failed to approve payment: ' + error.message);
     }
 }
 
@@ -748,6 +750,7 @@ async function declinePayment(studentId) {
         const result = await response.json();
 
         if (result.success) {
+            insertsupabase();
             Swal.fire({
                 title: 'Payment Declined!',
                 text: `Payment for student ${studentId} has been declined.`,
@@ -760,7 +763,7 @@ async function declinePayment(studentId) {
                 clearTimeout(dashboardState.timeoutId);
             }
             dashboardState.timeoutId = setTimeout(() => {
-                fetchDashboardData();
+                fetchDashboardData2();
             }, 500);
         } else {
             throw new Error(result.message || 'Failed to decline payment');
@@ -768,7 +771,8 @@ async function declinePayment(studentId) {
 
     } catch (error) {
         console.error('Error declining payment:', error);
-        showError('Failed to decline payment: ' + error.message);
+        showError('Failed to decline payment: Check your internet connection');
+        // showError('Failed to decline payment: ' + error.message);
     }
 }
 
@@ -1184,7 +1188,7 @@ function showThemeNotification(message, type = 'success') {
         
         // Setup real-time subscription
         setupRealtimeSubscription();
- 
+        
 
 
             initializeThemeColorPicker();
@@ -1461,6 +1465,7 @@ function showThemeNotification(message, type = 'success') {
                     cancelButtonText: 'Cancel'
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        insertsupabase();
                         // API call to approve enrollment
                         Swal.fire('Approved!', 'Enrollment request has been approved.', 'success');
                         enrollmentDetailsModal.classList.remove('active');
@@ -1481,6 +1486,7 @@ function showThemeNotification(message, type = 'success') {
                 }).then((result) => {
                     if (result.isConfirmed) {
                         // API call to reject enrollment
+                        insertsupabase();
                         Swal.fire('Rejected!', 'Enrollment request has been rejected.', 'success');
                         enrollmentDetailsModal.classList.remove('active');
                         // Refresh the enrollment requests table
