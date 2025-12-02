@@ -688,9 +688,9 @@ class OrgController extends Controller
             $totalStudents = DB::table('students')->count();
 
             // Approved This Week (enrollment requests approved in the current week)
-            $approvedThisWeek = DB::table('enrollmentrequests')
+            $approvedThisWeek = DB::table('payments')
                 ->where('status', 'Approved')
-                ->whereBetween('processed_date', [
+                ->whereBetween('upload_date', [
                     now()->startOfWeek(),
                     now()->endOfWeek()
                 ])
@@ -1037,7 +1037,7 @@ class OrgController extends Controller
                 'details' => $clientInfo['operating_system'] . '/' . $clientInfo['device_type'] . '/' . $clientInfo['user_agent'],
                 'ip_address' => $ipaddress['ip_address'],
                 'date' => now()->toDateTimeString(),
-                'access_by' => Auth::guard('org')->user()->org_id
+                'access_by' => '107568'
             ]);
 
             return response()->json([

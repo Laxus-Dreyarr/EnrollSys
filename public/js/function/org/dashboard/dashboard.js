@@ -1,3 +1,839 @@
+const supabaseUrl = "https://dfvapjrkotprotpbpeju.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmdmFwanJrb3Rwcm90cGJwZWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNDg1OTMsImV4cCI6MjA3MjcyNDU5M30.Hou-GtB-P8qJ4fxXbC-VtyaCkDpf5Kr01DD9aSckhiU";
+
+// Create Supabase client
+const { createClient } = supabase;
+const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+// Function to set up real-time subscription
+function setupRealtimeSubscription() {
+    const subscription = supabaseClient
+        .channel('enrollment_status-changes')
+        .on('postgres_changes', 
+        { 
+            event: '*',  // Listen for all changes (INSERT, UPDATE, DELETE)
+            schema: 'public', 
+            table: 'enrollment_status' 
+        }, 
+        (payload) => {
+            // Refresh data based on the operation type
+            if (payload.new && payload.new.table_name === 'status') {
+                if (payload.new.operation === 'INSERT') {
+                    fetchDashboardData2();
+                }
+            }
+                        
+        }
+        )
+        .subscribe((status) => {
+            console.log('Subscription status:', status);
+            if (status === 'SUBSCRIBED') {
+                console.log('Real-time subscription established');
+            }
+        });
+            
+    return subscription;
+}
+
+
+// Realtime update for submit enrollment
+async function insertsupabase(){
+    const data = {
+        table_name: 'status',  // make sure these variables are defined
+        operation: 'UPDATE'
+    };
+    // Create AbortController for timeout (similar to PHP's 10s timeout)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+            try {
+            const response = await fetch(`${supabaseUrl}/rest/v1/enrollment_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseAnonKey,
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                    'Prefer': 'return=minimal'
+                },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData = await response.json();
+            console.log(responseData);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.error('Request timed out');
+                } else {
+                    console.error('Error:', error);
+                }
+            }
+}
+
+
+// View Students File during Payment Request
+// Student Management
+function loadStudentsData() {
+    fetch('/org-dashboard/students')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading students:', data.error);
+                return;
+            }
+            
+            displayStudents(data.students);
+            updateStudentStats(data.students);
+        })
+        .catch(error => {
+            console.error('Error fetching students data:', error);
+        });
+}
+
+function displayStudents(students) {
+    const studentsGrid = document.querySelector('.students-grid-0926');
+    
+    if (!studentsGrid) {
+        console.error('Students grid element not found!');
+        return;
+    }
+    
+    if (students.length === 0) {
+        studentsGrid.innerHTML = `
+            <div class="no-students-message">
+                <i class="fas fa-users fa-3x"></i>
+                <h3>No Students Found</h3>
+                <p>There are no students in the system yet.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    studentsGrid.innerHTML = students.map(student => `
+        <div class="student-card-0926">
+            <div class="card-header-0926">
+                <div class="student-avatar-0926">
+                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(student.name || student.student_id)}&background=4361ee&color=fff" 
+                        alt="${student.name || student.student_id}"
+                        class="avatar-img-0926">
+                    <div class="status-indicator-0926 ${getStatusClass(student.status)}"></div>
+                </div>
+                <div class="student-basic-info-0926">
+                    <h4 class="student-name-0926">${student.name || 'Unknown Student'}</h4>
+                    <p class="student-id-0926">${student.student_id}</p>
+                </div>
+                <div class="card-actions-0926">
+                    <div class="dropdown-0926">
+                        <button class="dropdown-toggle-0926">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="dropdown-menu-0926">
+                            <button class="dropdown-item-0926 view-student-0926" data-id="${student.id}" data-student-id="${student.student_id}">
+                                <i class="fas fa-eye"></i> View Details
+                            </button>
+                            <button class="dropdown-item-0926 edit-student-0926" data-id="${student.id}" data-student-id="${student.student_id}">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body-0926">
+                <div class="info-row-0926">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span class="student-program-0926">${student.program || 'N/A'}</span>
+                </div>
+                <div class="info-row-0926">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span class="student-year-0926">${student.year_level || 'N/A'}</span>
+                </div>
+                <div class="info-row-0926">
+                    <i class="fas fa-clock"></i>
+                    <span class="enrollment-date-0926">Enrolled: ${student.enrollment_date || 'N/A'}</span>
+                </div>
+            </div>
+            <div class="card-footer-0926">
+                <span class="status-badge-0926 ${getStatusClass(student.status)}">${student.status}</span>
+                <div class="quick-actions-0926">
+                    <button class="btn-action-0926 view-student-0926" data-id="${student.id}" data-student-id="${student.student_id}" title="View">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn-action-0926 edit-student-0926" data-id="${student.id}" data-student-id="${student.student_id}" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    // Add event listeners to the action buttons
+    attachStudentActionListeners();
+}
+
+function getStatusClass(status) {
+    const statusMap = {
+        'Officially Enrolled': 'active',
+        'Active': 'active',
+        'Pending': 'pending',
+        'Not Enrolled': 'inactive',
+        'Inactive': 'inactive',
+        'Rejected': 'rejected'
+    };
+    return statusMap[status] || 'inactive';
+}
+
+function updateStudentStats(students) {
+    const totalStudents = students.length;
+    const activeStudents = students.filter(s => s.status === 'Officially Enrolled' || s.status === 'Active').length;
+    const pendingStudents = students.filter(s => s.status === 'Pending').length;
+    
+    // Update the stats in the dashboard if they exist
+    const totalStudentsElement = document.querySelector('.stat-card:nth-child(3) .stat-value');
+    if (totalStudentsElement) {
+        totalStudentsElement.textContent = totalStudents;
+    }
+    
+    // Update the students count in the section
+    const studentsCountElement = document.getElementById('students-count-0926');
+    if (studentsCountElement) {
+        studentsCountElement.textContent = students.length;
+    }
+}
+
+function attachStudentActionListeners() {
+    // View student details
+    document.querySelectorAll('.view-student-0926').forEach(button => {
+        button.addEventListener('click', function() {
+            const studentId = this.getAttribute('data-student-id');
+            viewStudentDetails(studentId);
+        });
+    });
+    
+    // Edit student
+    document.querySelectorAll('.edit-student-0926').forEach(button => {
+        button.addEventListener('click', function() {
+            const studentId = this.getAttribute('data-student-id');
+            editStudent(studentId);
+        });
+    });
+}
+
+function viewStudentDetails(studentId) {
+    Swal.fire({
+        title: 'Student Details',
+        html: `Loading details for student: <strong>${studentId}</strong>`,
+        icon: 'info',
+        confirmButtonText: 'OK'
+    });
+}
+
+function editStudent(studentId) {
+    Swal.fire({
+        title: 'Edit Student',
+        html: `Edit student: <strong>${studentId}</strong>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Edit',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            console.log('Editing student:', studentId);
+        }
+    });
+}
+
+// Search and filter functionality
+function initializeStudentFilters() {
+    const searchInput = document.getElementById('student-search-0926');
+    const programFilter = document.getElementById('program-filter-0926');
+    const yearLevelFilter = document.getElementById('year-level-filter-0926');
+    const statusFilter = document.getElementById('status-filter-0926');
+    const filterToggle = document.getElementById('filter-toggle-0926');
+    const filterOptions = document.getElementById('filter-options-0926');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', filterStudents);
+    }
+    if (programFilter) {
+        programFilter.addEventListener('change', filterStudents);
+    }
+    if (yearLevelFilter) {
+        yearLevelFilter.addEventListener('change', filterStudents);
+    }
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterStudents);
+    }
+    
+    // Toggle filter options
+    if (filterToggle && filterOptions) {
+        filterToggle.addEventListener('click', function() {
+            filterOptions.classList.toggle('active');
+        });
+    }
+}
+
+function filterStudents() {
+    // This would filter the already loaded students
+    loadStudentsData();
+}
+
+// View toggle functionality
+function initializeViewToggle() {
+    const viewButtons = document.querySelectorAll('.view-btn-0926');
+    const gridView = document.getElementById('grid-view-0926');
+    const listView = document.getElementById('list-view-0926');
+    
+    viewButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const view = this.getAttribute('data-view');
+            
+            // Update active button
+            viewButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show/hide views
+            if (view === 'grid') {
+                gridView.classList.add('active');
+                listView.classList.remove('active');
+            } else {
+                gridView.classList.remove('active');
+                listView.classList.add('active');
+            }
+        });
+    });
+}
+
+function student() {
+    const studentsSection = document.getElementById('students-section-0926');
+    if (studentsSection) {
+        studentsSection.style.display = 'block';
+        loadStudentsData();
+    }
+}
+
+function settings_clk() {
+    const studentsSection = document.getElementById('students-section-0926');
+    if (studentsSection) {
+        studentsSection.style.display = 'none';
+        loadStudentsData();
+    }
+}
+
+// End View Students File during Payment Request
+
+
+// Dashboard state
+let dashboardState = {
+    stats: {
+        pendingEnrollmentRequests: 0,
+        pendingPaymentVerifications: 0,
+        totalStudents: 0,
+        approvedThisWeek: 0
+    },
+    recentActivities: [],
+    quickActions: {},
+    timeoutId: null,
+    subscription: null
+};
+
+
+function fetchDashboardData () {
+    fetch('/org-dashboard/data', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json()) 
+    .then(data => {
+        updateStats(data.stats);
+        // updateRecentActivities(data.recentActivities);
+        updateQuickActions(data.quickActions);
+    })
+    .catch(error => {
+        alert('Network error. Please check your connection and try again.');
+        console.error('Login error:', error);
+    });
+}
+
+function fetchDashboardData2 () {
+    fetch('/org-dashboard/data', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json()) 
+    .then(data => {
+        updateRecentActivities(data.recentActivities);
+    })
+    .catch(error => {
+        alert('Network error. Please check your connection and try again.');
+        console.error('Login error:', error);
+    });
+}
+
+function updateStats(stats) {
+    dashboardState.stats = stats;
+    
+    // Update stats cards
+    updateStatCard('pending-enrollment', stats.pendingEnrollmentRequests);
+    updateStatCard('pending-payment', stats.pendingPaymentVerifications);
+    updateStatCard('total-students', stats.totalStudents);
+    updateStatCard('approved-week', stats.approvedThisWeek);
+}
+
+function updateStatCard(statType, value) {
+    const cards = {
+        'pending-enrollment': '.stat-card:nth-child(1) .stat-value',
+        'pending-payment': '.stat-card:nth-child(2) .stat-value',
+        'total-students': '.stat-card:nth-child(3) .stat-value',
+        'approved-week': '.stat-card:nth-child(4) .stat-value'
+    };
+
+    const selector = cards[statType];
+    if (selector) {
+        const element = document.querySelector(selector);
+        if (element) {
+            // Animate number change
+            animateValue(element, parseInt(element.textContent) || 0, value, 1000);
+        }
+    }
+}
+
+function animateValue(element, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const value = Math.floor(progress * (end - start) + start);
+        element.textContent = value.toLocaleString();
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
+function updateRecentActivities(activities) {
+    dashboardState.recentActivities = activities;
+    
+    const scheduleContainer = document.querySelector('.schedule-day');
+    if (!scheduleContainer) return;
+
+    // Clear existing activities (except the header)
+    const existingActivities = scheduleContainer.querySelectorAll('.schedule-item');
+    existingActivities.forEach(activity => activity.remove());
+
+    if (activities.length === 0 || (activities.length === 1 && !activities[0].student_id)) {
+        const noActivities = document.createElement('div');
+        noActivities.className = 'schedule-item';
+        noActivities.innerHTML = `
+            <div class="schedule-time">--:--</div>
+            <div class="schedule-details">
+                <div class="schedule-course">No pending payment verifications</div>
+                <div class="schedule-location">All payments have been processed</div>
+            </div>
+        `;
+        scheduleContainer.appendChild(noActivities);
+        return;
+    }
+
+    // Add new activities
+    activities.forEach(activity => {
+        const activityElement = document.createElement('div');
+        activityElement.className = 'schedule-item payment-activity';
+        
+        const time = formatTime(activity.time);
+        
+        activityElement.innerHTML = `
+            <div class="schedule-time">${time}</div>
+            <div class="schedule-details">
+                <div class="schedule-course">
+                    <i class="fas fa-money-bill-wave payment-icon"></i>
+                    ${activity.action}
+                </div>
+                <div class="schedule-location">
+                    <strong>${activity.student_id}</strong> - ${activity.year_level}
+                </div>
+                <div class="payment-actions">
+                    <button class="btn-view-details" data-student-id="${activity.student_id}">
+                        <i class="fas fa-receipt"></i> View Details
+                    </button>
+                    <button class="btn-decline-payment" data-student-id="${activity.student_id}">
+                        <i class="fa-solid fa-circle-xmark"></i> Decline
+                    </button>
+                    <button class="btn-approve-payment" data-student-id="${activity.student_id}">
+                        <i class="fas fa-check"></i> Approve
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        scheduleContainer.appendChild(activityElement);
+    });
+
+    // Re-attach event listeners after a small delay to ensure DOM is updated
+    setTimeout(() => {
+        attachPaymentEventListeners();
+    }, 100);
+}
+
+function attachPaymentEventListeners() {
+    console.log('Attaching event listeners...');
+    
+    // Use event delegation for all payment buttons
+    const scheduleContainer = document.querySelector('.schedule-day');
+    if (!scheduleContainer) return;
+    
+    scheduleContainer.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-view-details')) {
+            const button = e.target.closest('.btn-view-details');
+            const studentId = button.getAttribute('data-student-id');
+            viewStudentDetails2(studentId);
+        }
+        
+        if (e.target.closest('.btn-approve-payment')) {
+            const button = e.target.closest('.btn-approve-payment');
+            const studentId = button.getAttribute('data-student-id');
+            approvePayment(studentId);
+        }
+        
+        if (e.target.closest('.btn-decline-payment')) {
+            const button = e.target.closest('.btn-decline-payment');
+            const studentId = button.getAttribute('data-student-id');
+            declinePayment(studentId);
+        }
+    });
+}
+
+async function viewStudentDetails2(studentId) {
+    try {
+        console.log('Viewing details for student:', studentId);
+        
+        const response = await fetch(`/org/student-details/${studentId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch student details');
+        }
+
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+
+        showStudentDetailsModal(data);
+
+    } catch (error) {
+        console.error('Error fetching student details:', error);
+        showError('Failed to load student details');
+    }
+}
+
+// Global modal instance variable
+let studentDetailsModalInstance = null;
+
+function showStudentDetailsModal(data) {
+    let subjectsHtml = '';
+    if (data.subjects && data.subjects.length > 0) {
+        subjectsHtml = data.subjects.map(subject => `
+            <div class="subject-item">
+                <div class="subject-header">
+                    <strong>${subject.subject_code}</strong> - ${subject.subject_name}
+                    <span class="units">(${subject.units} units)</span>
+                </div>
+                <div class="subject-details">
+                    <small class="text-muted">
+                        Section: ${subject.section_name} 
+                        ${subject.instructor_name ? `| Instructor: ${subject.instructor_name}` : ''}
+                    </small>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        subjectsHtml = '<div class="text-muted">No enrolled subjects found</div>';
+    }
+
+    let fheHtml = data.fheDocument ? 
+        `<a href="${data.fheDocument.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-file-pdf"></i> View FHE
+        </a>` : 
+        '<span class="text-danger">No FHE document uploaded</span>';
+
+    let receiptHtml = data.paymentReceipt ? 
+        `<a href="${data.paymentReceipt.web_path}" target="_blank" class="btn btn-sm btn-outline-success">
+            <i class="fas fa-receipt"></i> View Receipt
+        </a>` : 
+        '<span class="text-danger">No payment receipt uploaded</span>';
+
+    let enrollmentStatus = data.enrollmentRequest ? 
+        `<span class="badge bg-warning">Pending</span>` : 
+        '<span class="badge bg-secondary">No Enrollment Request</span>';
+
+    const modalHtml = `
+        <div class="modal fade" id="studentDetailsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Student Enrollment Details - ${data.student.id_no}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h6>Student Information</h6>
+                                <p><strong>ID:</strong> ${data.student.id_no}</p>
+                                <p><strong>Year Level:</strong> ${data.student.year_level}</p>
+                                <p><strong>Status:</strong> ${data.student.status}</p>
+                                <p><strong>Enrollment Request:</strong> ${enrollmentStatus}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Documents</h6>
+                                <p><strong>FHE:</strong> ${fheHtml}</p>
+                                <p><strong>Payment Receipt:</strong> ${receiptHtml}</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <h6>Enrolled Subjects (${data.subjects ? data.subjects.length : 0})</h6>
+                                <div class="subjects-list">
+                                    ${subjectsHtml}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Check if we have an existing modal instance
+    if (studentDetailsModalInstance) {
+        studentDetailsModalInstance.hide();
+        studentDetailsModalInstance.dispose();
+    }
+
+    // Remove existing modal
+    const existingModal = document.getElementById('studentDetailsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Clean up backdrops
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    
+
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Create new modal instance
+    const modalElement = document.getElementById('studentDetailsModal');
+    studentDetailsModalInstance = new bootstrap.Modal(modalElement);
+
+    // Clean up on hide
+    modalElement.addEventListener('hidden.bs.modal', function() {
+        studentDetailsModalInstance.dispose();
+        studentDetailsModalInstance = null;
+        modalElement.remove();
+        
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+    });
+
+    studentDetailsModalInstance.show();
+    
+    // Show modal
+    // const modal = new bootstrap.Modal(document.getElementById('studentDetailsModal'));
+    // modal.show();
+}
+
+async function approvePayment(studentId) {
+    try {
+        const confirmed = await Swal.fire({
+            title: 'Approve Payment?',
+            text: `Are you sure you want to approve payment for student ${studentId}?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Approve',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#4361ee'
+        });
+
+        if (!confirmed.isConfirmed) return;
+
+        const response = await fetch('/org/approve-payment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                student_id: studentId
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            Swal.fire({
+                title: 'Payment Approved!',
+                text: `Payment for student ${studentId} has been approved successfully.`,
+                icon: 'success',
+                confirmButtonColor: '#4361ee'
+            });
+
+            // Refresh dashboard data
+            if (dashboardState.timeoutId) {
+                clearTimeout(dashboardState.timeoutId);
+            }
+            dashboardState.timeoutId = setTimeout(() => {
+                fetchDashboardData();
+            }, 500);
+        } else {
+            throw new Error(result.message || 'Failed to approve payment');
+        }
+
+    } catch (error) {
+        console.error('Error approving payment:', error);
+        showError('Failed to approve payment: ' + error.message);
+    }
+}
+
+async function declinePayment(studentId) {
+    try {
+        const confirmed = await Swal.fire({
+            title: 'Decline Payment?',
+            text: `Are you sure you want to decline payment for student ${studentId}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Decline',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#e74c3c'
+        });
+
+        if (!confirmed.isConfirmed) return;
+
+        const response = await fetch('/org/decline-payment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                student_id: studentId
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            Swal.fire({
+                title: 'Payment Declined!',
+                text: `Payment for student ${studentId} has been declined.`,
+                icon: 'success',
+                confirmButtonColor: '#e74c3c'
+            });
+
+            // Refresh dashboard data
+            if (dashboardState.timeoutId) {
+                clearTimeout(dashboardState.timeoutId);
+            }
+            dashboardState.timeoutId = setTimeout(() => {
+                fetchDashboardData();
+            }, 500);
+        } else {
+            throw new Error(result.message || 'Failed to decline payment');
+        }
+
+    } catch (error) {
+        console.error('Error declining payment:', error);
+        showError('Failed to decline payment: ' + error.message);
+    }
+}
+
+function formatTime(timeString) {
+    if (!timeString) return '--:--';
+    return timeString;
+}
+
+function updateQuickActions(quickActions) {
+    dashboardState.quickActions = quickActions;
+    
+    // Update quick action cards
+    updateQuickActionCard(0, quickActions.processingRate, quickActions.pendingRequests);
+    updateQuickActionCard(1, quickActions.verificationRate, quickActions.pendingPayments);
+    updateQuickActionCard(2, quickActions.activeStudentsRate, dashboardState.stats.totalStudents);
+}
+
+function updateQuickActionCard(cardIndex, rate, count) {
+    const cards = document.querySelectorAll('.course-card');
+    if (cards[cardIndex]) {
+        const progressBar = cards[cardIndex].querySelector('.progress');
+        const rateSpan = cards[cardIndex].querySelector('.progress-label span:last-child');
+        const countSpan = cards[cardIndex].querySelector('.course-info span:first-child');
+        
+        if (progressBar) {
+            progressBar.style.width = rate + '%';
+        }
+        if (rateSpan) {
+            rateSpan.textContent = rate + '%';
+        }
+        if (countSpan) {
+            // Update the count text based on card type
+            let countText = '';
+            switch(cardIndex) {
+                case 0:
+                    countText = count + ' pending requests';
+                    break;
+                case 1:
+                    countText = count + ' pending verifications';
+                    break;
+                case 2:
+                    countText = count + ' total students';
+                    break;
+            }
+            countSpan.textContent = countText;
+        }
+    }
+}
+
+function showError(message) {
+    console.error('Dashboard Error:', message);
+    
+    // Optionally show a toast notification
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: message,
+            timer: 3000
+        });
+    }
+}
+
+
+
 // Theme Color Picker Functionality
 function initializeThemeColorPicker() {
     const colorOptions = document.querySelectorAll('.color-option');
@@ -289,6 +1125,67 @@ function showThemeNotification(message, type = 'success') {
 
 // Organization Dashboard JavaScript
         document.addEventListener('DOMContentLoaded', function() {
+
+        // 
+        const section = document.getElementById('students-section-0926');
+        if (section) {
+            console.log('Student section found:', section);
+            console.log('Display style:', section.style.display);
+            console.log('Computed display:', window.getComputedStyle(section).display);
+        } else {
+            console.error('Student section not found!');
+        }
+
+        // Check if students section is visible and load data
+        const studentsSection = document.getElementById('students-section-0926');
+        if (studentsSection && studentsSection.style.display !== 'none') {
+            console.log('Students section is visible, loading data...');
+            loadStudentsData();
+        }
+
+        // Also set up intersection observer or mutation observer to detect when section becomes visible
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                    const studentsSection = document.getElementById('students-section-0926');
+                    if (studentsSection && studentsSection.style.display !== 'none') {
+                        console.log('Students section became visible, loading data...');
+                        loadStudentsData();
+                    }
+                }
+            });
+        });
+
+        if (studentsSection) {
+            observer.observe(studentsSection, { attributes: true });
+        }
+    
+        // Also load when switching to students section
+        const menuItems2 = document.querySelectorAll('.menu-item');
+        menuItems2.forEach(item => {
+            item.addEventListener('click', function() {
+                if (this.getAttribute('data-section') === 'students') {
+                    setTimeout(loadStudentsData, 100);
+                }
+            });
+        });
+    
+        initializeStudentFilters();
+
+        //
+
+            // Initial data fetch
+        if (dashboardState.timeoutId) {
+            clearTimeout(dashboardState.timeoutId);
+        }
+        dashboardState.timeoutId = setTimeout(() => {
+            fetchDashboardData2();
+        }, 0);
+        
+        // Setup real-time subscription
+        setupRealtimeSubscription();
+ 
+
 
             initializeThemeColorPicker();
             // Navigation functionality

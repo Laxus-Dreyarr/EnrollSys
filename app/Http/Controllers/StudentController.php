@@ -25,6 +25,7 @@ use App\Mail\PasswordResetOtp;
 use Illuminate\Support\Str;
 use Jenssegers\Agent\Agent;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 class StudentController extends Controller
 {
@@ -2189,6 +2190,45 @@ class StudentController extends Controller
             $student = $user->user_information->student;
 
             DB::beginTransaction();
+
+            // Disable foreign key checks
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+            // Get file paths before deleting records
+            $documentFiles = DB::table('documents')
+                ->where('student_id', $student->id)
+                ->pluck('file_path')
+                ->toArray();
+
+            $paymentFiles = DB::table('payments')
+                ->where('student_id', $student->id)
+                ->pluck('file_path')
+                ->toArray();
+
+            DB::table('documents')
+                ->where('student_id', $student->id)
+                ->delete();
+
+            DB::table('payments')
+                ->where('student_id', $student->id)
+                ->delete();
+
+            // Re-enable foreign key checks
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            // Delete actual files from storage
+            foreach ($documentFiles as $filePath) {
+                if (Storage::disk('public')->exists($filePath)) {
+                    Storage::disk('public')->delete($filePath);
+                }
+            }
+
+            foreach ($paymentFiles as $filePath) {
+                if (Storage::disk('public')->exists($filePath)) {
+                    Storage::disk('public')->delete($filePath);
+                }
+            }
+
 
             // Handle FHE file upload
             if ($request->hasFile('fhe_file')) {

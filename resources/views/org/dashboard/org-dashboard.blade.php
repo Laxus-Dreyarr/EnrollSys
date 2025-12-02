@@ -990,12 +990,10 @@ $show_student_form = (strtolower($org_id) === 'none');
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Student Management -->
-    <script src="{{ asset('js/function/org/dashboard/org-students.js') }}"></script>
     <script src="{{asset('js/jquery.js')}}"></script>
     <script src="{{asset('js/sweetalert2.js')}}"></script>
+    <!-- Student Management -->
     <script src="{{asset('js/function/org/dashboard/dashboard.js')}}"></script>
-    <script src="{{asset('js/function/org/dashboard/org-dashboard-data.js')}}"></script>
     
 </body>
 </html>
