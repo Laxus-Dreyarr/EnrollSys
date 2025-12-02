@@ -19,9 +19,10 @@ function setupRealtimeSubscription() {
             // Refresh data based on the operation type
             if (payload.new && payload.new.table_name === 'status') {
                 if (payload.new.operation === 'INSERT') {
-                    this.timeoutId = setTimeout(() => {
-                        this.fetchDashboardData();
-                    }, 0);
+                    // Refresh dashboard data
+                    if (window.orgDashboardData) {
+                        window.orgDashboardData.fetchDashboardData();
+                    }
                 }
                 // Refresh the notification count when changes occur
                 // fetchNotificationCount();
@@ -98,8 +99,8 @@ class OrgDashboardData {
         this.timeoutId = setTimeout(() => {
             this.fetchDashboardData();
         }, 0);
-        // Refresh data every 30 seconds
-        // setInterval(() => this.fetchDashboardData(), 60000);
+        // Initialize real-time subscription
+        this.setupRealtimeSubscription();
     }
 
     async fetchDashboardData() {

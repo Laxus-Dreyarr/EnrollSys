@@ -204,6 +204,7 @@ function saveEnrollmentPeriod() {
         saveBtn.prop('disabled', false).html('Save Enrollment Period');
         
         if (response.success) {
+            insertsupabase2();
             $('#enrollmentModal').modal('hide');
             showSuccess('Enrollment period saved successfully!');
             loadEnrollmentData();
@@ -243,7 +244,7 @@ function editEnrollmentPeriod(enrollmentId) {
             // Update modal title and button
             $('#enrollmentModal .modal-title').text('Edit Enrollment Period');
             $('#saveEnrollmentBtn').text('Update Enrollment Period');
-            
+            insertsupabase2();
             $('#enrollmentModal').modal('show');
         } else {
             showError('Error: ' + response.message);
@@ -274,6 +275,7 @@ function deleteEnrollmentPeriod(enrollmentId) {
                 _token: $('meta[name="csrf-token"]').attr('content')
             }, function(response) {
                 if (response.success) {
+                    insertsupabase2();
                     showSuccess('Enrollment period deleted successfully!');
                     loadEnrollmentData();
                 } else {

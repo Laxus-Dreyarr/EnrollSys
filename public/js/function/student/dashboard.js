@@ -20,6 +20,8 @@ function setupRealtimeSubscription() {
             if (payload.new && payload.new.table_name === 'status') {
                 if (payload.new.operation === 'DELETE') {
                     status_update();
+                } else if (payload.new.operation === 'RESTART') {
+                    window.location.reload();
                 }
                 // Refresh the notification count when changes occur
                 // fetchNotificationCount();
@@ -2197,6 +2199,7 @@ function initializeEnhancedEnrollmentModal() {
             console.log('Final enrollment response:', data);
             if (data.success) {
                 insertsupabase();
+                setupRealtimeSubscription();
                 showNotification(data.message || 'Enrollment submitted successfully!', 'success');
                 closeModal();
                 
@@ -3276,7 +3279,12 @@ function status_update () {
     .then(response => response.json()) 
     .then(data => {
         if (data) {
-            $("#determined").text(data.students_status);
+            if (data.students_status == 'Approved') {
+                $("#determined").text('Officially Enrolled');
+            } else {
+                $("#determined").text(data.students_status);
+            }
+            
         } 
     })
     .catch(error => {

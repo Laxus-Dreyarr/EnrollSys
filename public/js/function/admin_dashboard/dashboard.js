@@ -6,6 +6,79 @@
         const { createClient } = supabase;
         const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
+        // This is for the enrollment status
+        // Function to set up real-time subscription
+function setupRealtimeSubscription2() {
+    const subscription = supabaseClient
+        .channel('enrollment_status-changes')
+        .on('postgres_changes', 
+        { 
+            event: '*',  // Listen for all changes (INSERT, UPDATE, DELETE)
+            schema: 'public', 
+            table: 'enrollment_status' 
+        }, 
+        (payload) => {
+            // Refresh data based on the operation type
+            if (payload.new && payload.new.table_name === 'status') {
+                if (payload.new.operation === 'INSERT') {
+                    
+                }
+                // Refresh the notification count when changes occur
+                // fetchNotificationCount();
+            }
+                        
+        }
+        )
+        .subscribe((status) => {
+            console.log('Subscription status:', status);
+            if (status === 'SUBSCRIBED') {
+                console.log('Real-time subscription established');
+            }
+        });
+            
+    return subscription;
+}
+
+
+// Realtime update for submit enrollment
+async function insertsupabase2(){
+    const data = {
+        table_name: 'status',  // make sure these variables are defined
+        operation: 'RESTART'
+    };
+    // Create AbortController for timeout (similar to PHP's 10s timeout)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+            try {
+            const response = await fetch(`${supabaseUrl}/rest/v1/enrollment_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseAnonKey,
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                    'Prefer': 'return=minimal'
+                },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData = await response.json();
+            console.log(responseData);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.error('Request timed out');
+                } else {
+                    console.error('Error:', error);
+                }
+            }
+}
+
 
         // Function to fetch notification count
         // async function fetchNotificationCount() {
@@ -281,6 +354,7 @@
 
         // fetchNotificationCount();
         setupRealtimeSubscription();
+        insertsupabase2();
 
         loadSubjects();
         loadStatistics();
