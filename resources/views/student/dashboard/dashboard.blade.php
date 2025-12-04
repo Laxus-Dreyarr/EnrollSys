@@ -812,8 +812,8 @@ $show_prereg_form = $isEnrollmentActive;
                                     <i class="fas fa-university"></i>
                                 </div>
                                 <div class="info-content">
-                                    <span class="info-label">Department</span>
-                                    <span class="info-value">College of Information Technology</span>
+                                    <!-- <span class="info-label">Department</span> -->
+                                    <span class="info-value">Information Technology</span>
                                 </div>
                             </div>
                             
@@ -855,7 +855,7 @@ $show_prereg_form = $isEnrollmentActive;
             <div id="settings-section" class="content-section">
                 <h2 class="section-title">Settings</h2>
                 
-                <div class="settings-card">
+                <!-- <div class="settings-card">
                     <h4>Account Settings</h4>
                     
                     <div class="settings-option">
@@ -866,7 +866,7 @@ $show_prereg_form = $isEnrollmentActive;
                         <button class="btn-primary">Change</button>
                     </div>
                     
-                    <!-- <div class="settings-option">
+                    <div class="settings-option">
                         <div class="option-info">
                             <h5>Two-Factor Authentication</h5>
                             <p>Add an extra layer of security to your account</p>
@@ -875,7 +875,7 @@ $show_prereg_form = $isEnrollmentActive;
                             <input type="checkbox">
                             <span class="slider"></span>
                         </label>
-                    </div> -->
+                    </div>
                     
                     <div class="settings-option">
                         <div class="option-info">
@@ -884,9 +884,9 @@ $show_prereg_form = $isEnrollmentActive;
                         </div>
                         <button class="btn-primary">View</button>
                     </div>
-                </div>
+                </div> -->
                 
-                <div class="settings-card">
+                <!-- <div class="settings-card">
                     <h4>Notification Preferences</h4>
                     
                     <div class="settings-option">
@@ -932,7 +932,7 @@ $show_prereg_form = $isEnrollmentActive;
                             <span class="slider"></span>
                         </label>
                     </div>
-                </div>
+                </div> -->
                 
                 <div class="settings-card">
                     <h4>Appearance</h4>
@@ -948,7 +948,7 @@ $show_prereg_form = $isEnrollmentActive;
                         </label>
                     </div>
                     
-                    <div class="settings-option">
+                    <!-- <div class="settings-option">
                         <div class="option-info">
                             <h5>Font Size</h5>
                             <p>Adjust the font size to your preference</p>
@@ -958,7 +958,7 @@ $show_prereg_form = $isEnrollmentActive;
                             <option selected>Medium</option>
                             <option>Large</option>
                         </select>
-                    </div>
+                    </div> -->
 
                     <div class="settings-option theme-picker">
                         <div class="option-info">
