@@ -922,11 +922,11 @@ class OrgController extends Controller
             
 
             // Get payment receipt
-            $paymentReceipt = DB::table('payments')
-                ->where('student_id', $student->id)
-                ->where('type', 'PAYMENT_RECEIPT')
-                ->where('status', 'Pending')
-                ->first();
+            // $paymentReceipt = DB::table('payments')
+            //     ->where('student_id', $student->id)
+            //     ->where('type', 'PAYMENT_RECEIPT')
+            //     ->where('status', 'Pending')
+            //     ->first();
 
             // Get enrollment request details
             $enrollmentRequest = DB::table('enrollmentrequests')

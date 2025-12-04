@@ -862,21 +862,21 @@ class InstructorController extends Controller
                 'ui.lastname',
                 'ui.middlename',
                 // Get FHE document with full web path (add leading slash)
-                DB::raw("(SELECT CONCAT('/', file_path) 
-                    FROM documents 
-                    WHERE student_id = s.id AND type = 'FHE' 
-                    ORDER BY upload_date DESC LIMIT 1) as fhe_document"),
-                DB::raw("(SELECT status FROM documents 
-                    WHERE student_id = s.id AND type = 'FHE' 
-                    ORDER BY upload_date DESC LIMIT 1) as fhe_status"),
+                // DB::raw("(SELECT CONCAT('/', file_path) 
+                //     FROM documents 
+                //     WHERE student_id = s.id AND type = 'FHE' 
+                //     ORDER BY upload_date DESC LIMIT 1) as fhe_document"),
+                // DB::raw("(SELECT status FROM documents 
+                //     WHERE student_id = s.id AND type = 'FHE' 
+                //     ORDER BY upload_date DESC LIMIT 1) as fhe_status"),
                 // Get payment receipt with full web path (add leading slash)
-                DB::raw("(SELECT CONCAT('/', file_path) 
-                    FROM payments 
-                    WHERE student_id = s.id AND type = 'PAYMENT_RECEIPT' 
-                    ORDER BY upload_date DESC LIMIT 1) as payment_receipt"),
-                DB::raw("(SELECT status FROM payments 
-                    WHERE student_id = s.id AND type = 'PAYMENT_RECEIPT' 
-                    ORDER BY upload_date DESC LIMIT 1) as payment_status"),
+                // DB::raw("(SELECT CONCAT('/', file_path) 
+                //     FROM payments 
+                //     WHERE student_id = s.id AND type = 'PAYMENT_RECEIPT' 
+                //     ORDER BY upload_date DESC LIMIT 1) as payment_receipt"),
+                // DB::raw("(SELECT status FROM payments 
+                //     WHERE student_id = s.id AND type = 'PAYMENT_RECEIPT' 
+                //     ORDER BY upload_date DESC LIMIT 1) as payment_status"),
                 DB::raw('(SELECT COUNT(*) FROM enrollments WHERE student_id = s.id AND status = "Enrolled") as enrolled_subjects_count')
             )
             ->get();
@@ -898,6 +898,37 @@ class InstructorController extends Controller
                         'sec.section_name'
                     )
                     ->get();
+
+                // Get FHE document for this specific student
+            $fheDocument = DB::table('documents')
+                ->where('student_id', $request->student_id)
+                ->where('type', 'FHE')
+                ->orderBy('upload_date', 'desc')
+                ->first();
+
+            // Get payment receipt for this specific student
+            $paymentReceipt = DB::table('payments')
+                ->where('student_id', $request->student_id)
+                ->where('type', 'PAYMENT_RECEIPT')
+                ->orderBy('upload_date', 'desc')
+                ->first();
+
+            // Add web_path for file access
+            if ($fheDocument) {
+                $filename = basename($fheDocument->file_path);
+                $fheDocument->web_path = "/documents/fhe/{$filename}";
+                $fheDocument->status = $fheDocument->status ?: 'Pending';
+            }
+
+            if ($paymentReceipt) {
+                $filename = basename($paymentReceipt->file_path);
+                $paymentReceipt->web_path = "/documents/payment_receipts/{$filename}";
+                $paymentReceipt->status = $paymentReceipt->status ?: 'Pending';
+            }
+
+            // Attach documents to the request object
+            $request->fhe_document = $fheDocument;
+            $request->payment_receipt = $paymentReceipt;
                 
                 // Get prerequisites for each subject and check if student has passed them
                 foreach ($subjects as $subject) {

@@ -19,9 +19,9 @@ function setupRealtimeSubscription() {
             // Refresh data based on the operation type
             if (payload.new && payload.new.table_name === 'status') {
                 if (payload.new.operation === 'INSERT') {
-                    initializeEnrollmentRequests();
+                    loadRequestDetails();
                 } else if (payload.new.operation === 'UPDATE') {
-                    // loadRequestDetails();
+                    loadRequestDetails();
                 }
                 // Refresh the notification count when changes occur
                 // fetchNotificationCount();
@@ -127,7 +127,7 @@ function loadEnrollmentRequests() {
     
     showEnrollmentRequestsLoading(true);
     
-    fetch(window.laravelRoutes.getEnrollmentRequests, {
+    fetch('/instructor/enrollment-requests', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -323,71 +323,78 @@ function loadRequestDetails(request) {
     
     let documentsHTML = '';
     
-    // FIXED: Check if documents exist in the request object
-    if (request.fhe_document) {
-        // Get the base URL for the site
-        const baseUrl = window.location.origin;
-        // Clean up the file path if needed
-        const fhePath = request.fhe_document.startsWith('/') ? 
-               request.fhe_document : '/' + request.fhe_document;
-
-        const fheStatusClass = getStatusClass(request.fhe_status);
-        const fheStatusText = request.fhe_status || 'Unknown';
+    // FHE Document Section - UPDATED
+    if (request.fhe_document && request.fhe_document.web_path) {
+        const fhe = request.fhe_document;
+        const fheStatusClass = getStatusClass(fhe.status);
+        const fheStatusText = fhe.status || 'Pending';
         
         documentsHTML += `
             <div class="document-item">
-                <div class="document-title">
-                    <i class="fas fa-file-pdf"></i>
-                    <span>FHE Document</span>
+                <div class="document-header">
+                    <div class="document-title">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>FHE Document</span>
+                    </div>
+                    <div class="document-status">
+                        <span class="status-badge ${fheStatusClass}">${fheStatusText}</span>
+                    </div>
                 </div>
-                <div class="document-title">
-                    <span class="status-badge ${fheStatusClass}">${fheStatusText}</span>
-                </div>
-                <a href="${baseUrl}${fhePath}" target="_blank" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-eye"></i> View
+                <a href="${fhe.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-eye"></i> View FHE
                 </a>
             </div>
         `;
     } else {
         documentsHTML += `
             <div class="document-item">
-                <i class="fas fa-file-pdf"></i>
-                <span>FHE Document</span>
-                <span class="text-danger">No FHE document uploaded</span>
+                <div class="document-header">
+                    <div class="document-title">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>FHE Document</span>
+                    </div>
+                    <div class="document-status">
+                        <span class="status-badge missing">Not Submitted</span>
+                    </div>
+                </div>
             </div>
         `;
     }
     
-    if (request.payment_receipt) {
-        // Get the base URL for the site
-        const baseUrl = window.location.origin;
-        // Clean up the file path if needed
-        const paymentPath = request.payment_receipt.startsWith('/') ? 
-                           request.payment_receipt : '/' + request.payment_receipt;
+    // Payment Receipt Section - UPDATED
+    if (request.payment_receipt && request.payment_receipt.web_path) {
+        const receipt = request.payment_receipt;
+        const receiptStatusClass = getStatusClass(receipt.status);
+        const receiptStatusText = receipt.status || 'Pending';
         
-        const fheStatusClass = getStatusClass(request.fhe_status);
-        const fheStatusText = request.fhe_status || 'Unknown';
-
         documentsHTML += `
             <div class="document-item">
-                <div class="document-title">
-                    <i class="fas fa-file-pdf"></i>
-                    <span>FHE Document</span>
+                <div class="document-header">
+                    <div class="document-title">
+                        <i class="fas fa-receipt"></i>
+                        <span>Payment Receipt</span>
+                    </div>
+                    <div class="document-status">
+                        <span class="status-badge ${receiptStatusClass}">${receiptStatusText}</span>
+                    </div>
                 </div>
-                <div class="document-title">
-                    <span class="status-badge ${fheStatusClass}">${fheStatusText}</span>
-                </div>
-                <a href="${baseUrl}${paymentPath}" target="_blank" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-eye"></i> View
+                <a href="${receipt.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-eye"></i> View Receipt
                 </a>
             </div>
         `;
     } else {
         documentsHTML += `
             <div class="document-item">
-                <i class="fas fa-receipt"></i>
-                <span>Payment Receipt</span>
-                <span class="text-danger">No payment receipt uploaded</span>
+                <div class="document-header">
+                    <div class="document-title">
+                        <i class="fas fa-receipt"></i>
+                        <span>Payment Receipt</span>
+                    </div>
+                    <div class="document-status">
+                        <span class="status-badge missing">Not Submitted</span>
+                    </div>
+                </div>
             </div>
         `;
     }
