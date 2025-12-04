@@ -107,7 +107,7 @@ $id = $user->info->instructor_id;
                     <span class="menu-text">Settings</span>
                     <div class="menu-hover-effect"></div>
                 </a>
-                <a class="menu-item logout-item" id="logout-btn">
+                <a class="menu-item logout-item" id="logout-btn" role="button" tabindex="0">
                     <div class="menu-icon">
                         <i class="fas fa-arrow-right-from-bracket"></i>
                     </div>
@@ -1137,6 +1137,36 @@ $id = $user->info->instructor_id;
                     <div class="spinner"></div>
                     <p>Loading subjects history...</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Logout Form -->
+    <form id="logout-form" action="{{ route('instructor.logout') }}" method="POST" style="display: none;">
+        @csrf
+    </form>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logout-modal" class="logout-modal-overlay">
+        <div class="logout-modal">
+            <div class="logout-modal-header">
+                <div class="logout-modal-icon">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+                <h3 class="logout-modal-title">Confirm Logout</h3>
+            </div>
+            <p class="logout-modal-message">
+                Are you sure you want to logout? You will need to log in again to access your dashboard.
+            </p>
+            <div class="logout-modal-actions">
+                <button class="logout-modal-btn logout-modal-cancel" id="logout-cancel-btn">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+                <button class="logout-modal-btn logout-modal-confirm" id="logout-confirm-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Yes, Logout
+                </button>
             </div>
         </div>
     </div>

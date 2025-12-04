@@ -143,6 +143,9 @@ Route::middleware(['instructor.auth'])->group(function () {
     // Student subjects history
     Route::get('/instructor/student-subjects-history/{studentId}', 
     [InstructorController::class, 'getStudentSubjectsHistory'])->name('instructor.student.subjects.history');
+
+    // Logout
+    Route::post('/instructor/logout', [InstructorController::class, 'logout'])->name('instructor.logout');
 });
 
 
@@ -227,6 +230,8 @@ Route::middleware(['student.auth'])->group(function () {
     Route::get('/student/subject/{id}/details', [StudentController::class, 'getSubjectDetails'])->name('student.subject.details');
 
     Route::post('/exe/student_status', [StudentController::class, 'student_status']);
+
+    Route::post('/student/logout', [StudentController::class, 'logout'])->name('student.logout');
 });
 
 // Debug route - remove after testing
@@ -313,6 +318,8 @@ Route::middleware(['org.auth'])->group(function () {
 
         return $response;
     })->where('filename', '.*')->name('documents.serve');
+
+    Route::post('/org/logout', [OrgController::class, 'logout'])->name('org.logout');
 
 });
 Route::get('/org', function () {

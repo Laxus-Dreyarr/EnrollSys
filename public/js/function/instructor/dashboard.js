@@ -1994,6 +1994,88 @@ function sortTable(columnIndex) {
     });
 }
 
+// Logout Functionality
+function initializeLogout() {
+    const logoutBtn = document.getElementById('logout-btn');
+    const logoutModal = document.getElementById('logout-modal');
+    const logoutCancelBtn = document.getElementById('logout-cancel-btn');
+    const logoutConfirmBtn = document.getElementById('logout-confirm-btn');
+    const logoutForm = document.getElementById('logout-form');
+
+    if (!logoutBtn || !logoutModal) return;
+
+    // Show logout confirmation modal
+    logoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Show modal with animation
+        logoutModal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
+    });
+
+    // Close modal on cancel
+    logoutCancelBtn.addEventListener('click', function() {
+        logoutModal.classList.remove('active');
+        document.body.style.overflow = '';
+        window.location.reload();
+    });
+
+    // Close modal when clicking outside
+    logoutModal.addEventListener('click', function(e) {
+        if (e.target === logoutModal) {
+            logoutModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && logoutModal.classList.contains('active')) {
+            logoutModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+
+    // Handle logout confirmation
+    logoutConfirmBtn.addEventListener('click', async function() {
+        const btn = this;
+        const originalText = btn.innerHTML;
+        
+        // Disable button and show loading
+        btn.disabled = true;
+        btn.classList.add('loading');
+        
+            // Get CSRF token from meta tag
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            // Send logout request
+            const response = await fetch('/instructor/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            });
+
+
+            // Redirect after a short delay
+            setTimeout(() => {
+                // Show success message
+                showNotification('Logged out successfully! Redirecting...', 'success');
+                window.location.href = '/instructor';
+            }, 1500);
+
+    });
+
+    // Alternative: Use form submission (simpler but no loading state)
+    // logoutConfirmBtn.addEventListener('click', function() {
+    //     logoutForm.submit();
+    // });
+}
+
 // Instructor Dashboard JavaScript
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -2009,6 +2091,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize Dark Mode and Theme System
     initializeDarkMode();
     watchSystemTheme();
+
+    // Logout
+    initializeLogout();
     
     if (sidebarToggle && sidebar) {
         sidebarToggle.addEventListener('click', function() {
@@ -2079,12 +2164,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     menuItems.forEach(item => {
         item.addEventListener('click', function() {
-            if (this.id === 'logout-btn') {
-                if (confirm('Are you sure you want to logout?')) {
-                    window.location.href = '/logout';
-                }
-                return;
-            }
+            // if (this.id === 'logout-btn') {
+            //     if (confirm('Are you sure you want to logout?')) {
+            //         window.location.href = '/logout';
+            //     }
+            //     return;
+            // }
             
             // Remove active class from all menu items
             menuItems.forEach(i => i.classList.remove('active'));

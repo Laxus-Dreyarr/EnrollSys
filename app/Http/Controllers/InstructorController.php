@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Log;
 use App\Mail\PasswordResetOtp;
 use Illuminate\Support\Str;
 use Jenssegers\Agent\Agent;
+use Illuminate\Support\Facades\Session;
 
 class InstructorController extends Controller
 {
@@ -340,6 +341,38 @@ class InstructorController extends Controller
         $user = Auth::guard('instructor')->user();
         return view('instructor.dashboard.dashboard', compact('user'));
         
+    }
+
+    public function logout(Request $request)
+    {
+        // Check if user is logged in
+        if (Auth::guard('instructor')->check()) {
+            // Logout the instructor
+            Auth::guard('instructor')->logout();
+            
+            // Invalidate the session
+            $request->session()->invalidate();
+            
+            // Regenerate the CSRF token
+            $request->session()->regenerateToken();
+            
+            // Return JSON response for AJAX
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Logged out successfully',
+                    'redirect' => '/instructor'
+                ]);
+            }
+            
+            // Redirect to login page
+            return redirect('/instructor')->with('success', 'Logged out successfully');
+        }
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'No user logged in'
+        ], 401);
     }
 
     public function getUngradedStudents(Request $request)

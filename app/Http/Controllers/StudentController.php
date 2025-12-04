@@ -26,6 +26,7 @@ use Illuminate\Support\Str;
 use Jenssegers\Agent\Agent;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Session;
 
 class StudentController extends Controller
 {
@@ -961,6 +962,38 @@ class StudentController extends Controller
         $isEnrollmentActive = $enrollmentPeriod && $enrollmentPeriod->is_active == 1;
         
         return view('student.dashboard.dashboard', compact('user', 'isEnrollmentActive', 'enrollmentPeriod', 'enrolledSubjects'));
+    }
+
+    public function logout(Request $request)
+    {
+        // Check if user is logged in
+        if (Auth::guard('student')->check()) {
+            // Logout the student
+            Auth::guard('student')->logout();
+            
+            // Invalidate the session
+            $request->session()->invalidate();
+            
+            // Regenerate the CSRF token
+            $request->session()->regenerateToken();
+            
+            // Return JSON response for AJAX
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Logged out successfully',
+                    'redirect' => '/'
+                ]);
+            }
+            
+            // Redirect to login page
+            return redirect('/')->with('success', 'Logged out successfully');
+        }
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'No user logged in'
+        ], 401);
     }
 
     private function checkActiveEnrollmentPeriod()

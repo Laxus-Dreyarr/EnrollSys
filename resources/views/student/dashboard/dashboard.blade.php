@@ -89,9 +89,12 @@ $show_prereg_form = $isEnrollmentActive;
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
                 </a>
-                <a class="menu-item" id="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
+                <a class="menu-item logout-item" id="logout-btn" role="button" tabindex="0">
+                    <div class="menu-icon">
+                        <i class="fas fa-arrow-right-from-bracket"></i>
+                    </div>
+                    <span class="menu-text">Logout</span>
+                    <div class="menu-hover-effect"></div>
                 </a>
             </div>
         </div>
@@ -2144,6 +2147,36 @@ $show_prereg_form = $isEnrollmentActive;
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Logout Form -->
+    <form id="logout-form" action="{{ route('student.logout') }}" method="POST" style="display: none;">
+        @csrf
+    </form>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logout-modal" class="logout-modal-overlay">
+        <div class="logout-modal">
+            <div class="logout-modal-header">
+                <div class="logout-modal-icon">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+                <h3 class="logout-modal-title">Confirm Logout</h3>
+            </div>
+            <p class="logout-modal-message">
+                Are you sure you want to logout? You will need to log in again to access your dashboard.
+            </p>
+            <div class="logout-modal-actions">
+                <button class="logout-modal-btn logout-modal-cancel" id="logout-cancel-btn">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+                <button class="logout-modal-btn logout-modal-confirm" id="logout-confirm-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Yes, Logout
+                </button>
             </div>
         </div>
     </div>

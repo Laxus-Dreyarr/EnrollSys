@@ -25,6 +25,7 @@ use Illuminate\Support\Str;
 use Jenssegers\Agent\Agent;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Session;
 
 class OrgController extends Controller
 {
@@ -662,6 +663,38 @@ class OrgController extends Controller
         // Check if there's an active enrollment period
         
         return view('org.dashboard.org-dashboard', compact('user'));
+    }
+
+    public function logout(Request $request)
+    {
+        // Check if user is logged in
+        if (Auth::guard('org')->check()) {
+            // Logout the org
+            Auth::guard('org')->logout();
+            
+            // Invalidate the session
+            $request->session()->invalidate();
+            
+            // Regenerate the CSRF token
+            $request->session()->regenerateToken();
+            
+            // Return JSON response for AJAX
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Logged out successfully',
+                    'redirect' => '/org'
+                ]);
+            }
+            
+            // Redirect to login page
+            return redirect('/org')->with('success', 'Logged out successfully');
+        }
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'No user logged in'
+        ], 401);
     }
 
     public function getDashboardData()
