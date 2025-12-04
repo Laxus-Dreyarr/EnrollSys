@@ -342,7 +342,7 @@
                             <input type="checkbox" class="form-check-input" id="showPassword">
                             <label class="form-check-label" for="showPassword">Show Password</label>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100" id="submitBtn">Login</button>
+                        <button style="background-color: rgb(138, 30, 30); border-color: maroon" type="submit" class="btn btn-primary w-100" id="submitBtn">Login</button>
                         <div class="mb-3success-message" id="successMessage"></div>
                     </form>
                     <div class="text-center mt-3">
@@ -452,7 +452,7 @@
                             <input type="checkbox" class="form-check-input" id="showPassword2">
                             <label class="form-check-label" for="showPassword2">Show Password</label>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100" id="sendCodeBtn">Send Verification Code</button>
+                        <button style="background-color: rgb(138, 30, 30); border-color: maroon" type="submit" class="btn btn-primary w-100" id="sendCodeBtn">Send Verification Code</button>
                     </form>
                 </div>
                 <div class="modal-footer justify-content-center">

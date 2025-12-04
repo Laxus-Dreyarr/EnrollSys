@@ -17,7 +17,7 @@
           
           <!-- Header with Logo and Title -->
           <tr>
-            <td style="background: linear-gradient(135deg, #1f3a93 0%, #3498db 100%); padding:25px 30px;">
+            <td style="background: linear-gradient(180deg, #570a0aff, #932828 50%, #9f3030 100%); padding:25px 30px;">
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
                   <td align="left" style="vertical-align: middle;">
@@ -107,7 +107,7 @@
 
           <!-- Footer -->
           <tr>
-            <td align="center" style="background-color:#1f3a93; padding:25px; font-size:12px; color:#ffffff;">
+            <td align="center" style="background: linear-gradient(180deg, #570a0aff, #932828 50%, #9f3030 100%); padding:25px; font-size:12px; color:#ffffff;">
               <p style="margin:0; font-weight:300;">© {{ date('Y') }} EnrollSys - EVSU Ormoc Campus. All rights reserved.</p>
               <p style="margin:8px 0; font-weight:300;">This is an automated message. Please do not reply.</p>
               <p style="margin:8px 0;">
