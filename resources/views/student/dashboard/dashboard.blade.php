@@ -1100,7 +1100,7 @@ $show_prereg_form = $isEnrollmentActive;
         <div id="studentInfoModal" class="modal-overlay <?php echo $show_student_form ? 'active' : ''; ?>">
             <div class="modal-container">
                 <div class="modal-header">
-                    <h3>Complete Your Student Information</h3>
+                    <h3 style="color: white;">Complete Your Student Information</h3>
                 </div>
                 
                 <form id="studentInfoForm" class="modal-form">
@@ -1313,13 +1313,13 @@ $show_prereg_form = $isEnrollmentActive;
                                 <option value="units">Units</option>
                             </select>
                         </div>
-                        <div class="enhanced-filter-group">
+                        <!-- <div class="enhanced-filter-group">
                             <label>Section</label>
                             <select id="enhancedSectionFilter" class="enhanced-filter-select">
                                 <option value="all">All Sections</option>
-                                <!-- Sections will be populated dynamically -->
+                                Sections will be populated dynamically
                             </select>
-                        </div>
+                        </div> -->
                         <div class="enhanced-filter-group enhanced-search-group">
                             <label>Search</label>
                             <div class="enhanced-search-input-wrapper">

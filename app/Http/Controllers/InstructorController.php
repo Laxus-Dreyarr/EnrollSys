@@ -389,7 +389,7 @@ class InstructorController extends Controller
                 ->join('students as s', 'es.student_id', '=', 's.id')
                 ->join('user_info as ui', 's.student_id', '=', 'ui.id')
                 ->join('subjects as sub', 'es.subject_id', '=', 'sub.id')
-                ->where('s.year_level', '!=', 'NONE') // Exclude students with year_level = 'NONE'
+                ->where('s.year_level', '!=', NULL) // Exclude students with year_level = 'NONE'
                 ->select(
                     's.id as student_db_id',
                     's.student_id as student_user_id',
@@ -479,7 +479,7 @@ class InstructorController extends Controller
                     ELSE 4
                 END
             ")
-            ->orderBy('sub.code');
+            ->orderBy('sub.id');
 
             $students = $query->get();
 

@@ -101,7 +101,7 @@
 <div class="modal-overlay" id="grade-modal" style="display: none;">
     <div class="modal-container horizontal-modal">
         <div class="modal-header">
-            <h3>Input Grade</h3>
+            <h3 style="color: white;">Input Grade</h3>
             <button class="close-modal" id="close-grade-modal">
                 <i class="fas fa-times"></i>
             </button>
@@ -194,7 +194,6 @@
                                 <option value="5.00">5.0 - Failed</option>
                                 <option value="INC">INC - Incomplete</option>
                                 <option value="DRP">DRP - Dropped</option>
-                                <option value="ND">ND- Not Done </option>
                             </select>
                             <small class="form-text">Select the appropriate grade for the student</small>
                         </div>
@@ -537,7 +536,7 @@
     background: none;
     border: none;
     font-size: 1.2rem;
-    color: #64748b;
+    color: #ffffff;
     cursor: pointer;
     padding: 8px;
     border-radius: 6px;
@@ -973,7 +972,7 @@ body.dark-mode .close-modal {
 
 body.dark-mode .close-modal:hover {
     background: rgba(255, 255, 255, 0.2);
-    color: var(--text-dark);
+    color: white;
 }
 
 /* Student info card in modal */
