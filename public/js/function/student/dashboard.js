@@ -315,6 +315,11 @@ function showThemeNotification(message, type = 'success') {
 }
 
 
+function reload() {
+    window.location.reload();
+}
+
+
 // Enhanced Irregular Student Modal Functionality
 function initializeIrregularModal() {
     const modal = document.getElementById('irregularSubjectsModal');
@@ -1983,6 +1988,7 @@ function initializeEnhancedEnrollmentModal() {
         fheDropZone.style.display = 'block';
         fheFileInput.value = '';
         nextStepBtn.disabled = true;
+        window.location.reload();
     }
 
     // Payment Receipt Upload Functions
@@ -2201,6 +2207,21 @@ function initializeEnhancedEnrollmentModal() {
                 insertsupabase();
                 setupRealtimeSubscription();
                 showNotification(data.message || 'Enrollment submitted successfully!', 'success');
+
+                // If prospectus URL is available, show download option
+                if (data.prospectus_url) {
+                    setTimeout(() => {
+                        showNotification(
+                            'Your enrollment prospectus has been generated. <a href="' + data.prospectus_url + '" target="_blank" style="color: white; text-decoration: underline; font-weight: bold;">Click here to download</a>',
+                            'success',
+                            5000 // Show for 5 seconds
+                        );
+                        
+                        // Optional: Auto-open in new tab
+                        window.open(data.prospectus_url, '_blank');
+                    }, 1000);
+                }
+
                 closeModal();
                 
                 // Refresh the page

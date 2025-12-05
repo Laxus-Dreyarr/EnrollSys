@@ -21,7 +21,9 @@ use Illuminate\Support\Facades\Log;
 use App\Mail\PasswordResetOtp;
 use Illuminate\Support\Str;
 use Jenssegers\Agent\Agent;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
 
 class InstructorController extends Controller
 {

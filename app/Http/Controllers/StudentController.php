@@ -27,6 +27,8 @@ use Jenssegers\Agent\Agent;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Session;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class StudentController extends Controller
 {
@@ -1803,7 +1805,7 @@ class StudentController extends Controller
                 ->keyBy('subject_id');
             
             // Define passing grades (1.0 to 3.0 are passing)
-            $passingGrades = ['1.0', '1.25', '1.5', '1.75', '2.0', '2.25', '2.5', '2.75', '3.0'];
+            $passingGrades = ['1.0', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7', '1.8', '1.9', '2.0', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7', '2.8', '2.9', '3.0'];
             $failingGrades = ['4.0', '5.0', 'INC', 'DRP'];
             
             // Get subjects with passing grades
@@ -2347,12 +2349,21 @@ class StudentController extends Controller
             $student->status = 'Pending';
             $student->save();
 
+            // NEW: Generate and save prospectus PDF
+            $prospectusPath = $this->generateProspectusPDF($student->id);
+
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Enrollment submitted successfully! Your enrollment and payment receipt are pending verification.'
+                'message' => 'Enrollment submitted successfully! Your enrollment and payment receipt are pending verification.',
+                'prospectus_url' => asset('storage/' . $prospectusPath)
             ]);
+
+            // return response()->json([
+            //     'success' => true,
+            //     'message' => 'Enrollment submitted successfully! Your enrollment and payment receipt are pending verification.'
+            // ]);
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -2363,6 +2374,284 @@ class StudentController extends Controller
             ]);
         }
     }
+
+    private function generateProspectusPDF($studentId)
+    {
+        try {
+            // Get student information - convert to array
+            $student = DB::table('students')
+                ->join('user_info', 'students.student_id', '=', 'user_info.id')
+                ->join('users', 'user_info.user_id', '=', 'users.id')
+                ->select('students.*', 'user_info.firstname', 'user_info.lastname', 'user_info.middlename', 'users.email2')
+                ->where('students.id', $studentId)
+                ->first();
+
+            if (!$student) {
+                throw new \Exception('Student not found');
+            }
+
+            // Convert student object to array
+            $student = (array) $student;
+
+            // Get all enrolled subjects with grades
+            $enrolledSubjects = DB::table('enrolled_sub')
+                ->where('student_id', $studentId)
+                ->orderBy('year_level')
+                ->orderBy('semester')
+                ->orderBy('subject_code')
+                ->get();
+
+            // Convert enrolled subjects to array format
+            $enrolledSubjectsArray = [];
+            foreach ($enrolledSubjects as $subject) {
+                $enrolledSubjectsArray[] = (array) $subject;
+            }
+
+            // Get enrollment period info
+            $enrollmentPeriod = DB::table('enrollment_date')
+                ->where('is_active', 1)
+                ->orderBy('id', 'desc')
+                ->first();
+            
+            if ($enrollmentPeriod) {
+                $enrollmentPeriod = (array) $enrollmentPeriod;
+            }
+
+            // Get prerequisites for all subjects
+            $prerequisites = DB::table('subjectprerequisites')
+                ->join('subjects as s1', 'subjectprerequisites.subject_id', '=', 's1.id')
+                ->join('subjects as s2', 'subjectprerequisites.prerequisite_id', '=', 's2.id')
+                ->select('subjectprerequisites.subject_id', 's2.code as prereq_code')
+                ->get();
+
+            // Group prerequisites by subject_id
+            $prerequisitesBySubject = [];
+            foreach ($prerequisites as $prereq) {
+                $prereq = (array) $prereq;
+                $subjectId = $prereq['subject_id'];
+                if (!isset($prerequisitesBySubject[$subjectId])) {
+                    $prerequisitesBySubject[$subjectId] = [];
+                }
+                $prerequisitesBySubject[$subjectId][] = $prereq['prereq_code'];
+            }
+
+            // Organize subjects by year level and semester
+            $organizedSubjects = [];
+            $yearLevelOrder = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'];
+            $semesterOrder = ['1st Sem', '2nd Sem', 'Summer'];
+            
+            foreach ($yearLevelOrder as $year) {
+                foreach ($semesterOrder as $semester) {
+                    $semesterSubjects = array_filter($enrolledSubjectsArray, function($subject) use ($year, $semester) {
+                        return $subject['year_level'] == $year && $subject['semester'] == $semester;
+                    });
+                    
+                    if (count($semesterSubjects) > 0) {
+                        // Re-index the array and add prerequisites
+                        $semesterSubjects = array_values($semesterSubjects);
+                        
+                        // Get subject IDs to find prerequisites
+                        $subjectIds = array_column($semesterSubjects, 'subject_id');
+                        
+                        foreach ($semesterSubjects as &$subject) {
+                            $subjectId = $subject['subject_id'];
+                            if (isset($prerequisitesBySubject[$subjectId]) && !empty($prerequisitesBySubject[$subjectId])) {
+                                $subject['prerequisites'] = implode(', ', $prerequisitesBySubject[$subjectId]);
+                            } else {
+                                $subject['prerequisites'] = 'None';
+                            }
+                        }
+                        
+                        $organizedSubjects[$year][$semester] = $semesterSubjects;
+                    }
+                }
+            }
+
+            // Calculate totals
+            $totalUnits = array_sum(array_column($enrolledSubjectsArray, 'units'));
+            $totalSubjects = count($enrolledSubjectsArray);
+            $subjectsWithGrades = 0;
+            foreach ($enrolledSubjectsArray as $subject) {
+                if (!empty($subject['grade'])) {
+                    $subjectsWithGrades++;
+                }
+            }
+
+            // ✅ Format curriculum year to academic year range
+            $curriculumYear = $student['curriculum'] ?? 'Not Set';
+            $academicYearRange = 'Not Set';
+            
+            if ($curriculumYear && is_numeric($curriculumYear)) {
+                $startYear = (int)$curriculumYear;
+                $endYear = $startYear + 1;
+                $academicYearRange = $startYear . '-' . $endYear;
+            } else {
+                $academicYearRange = $curriculumYear;
+            }
+
+            // ✅ Format the header academic year from enrollment period
+            $enrollmentAcademicYear = $enrollmentPeriod['academic_year'] ?? '2025-2026';
+            
+            // If enrollment period has just a single year, format it to range
+            if ($enrollmentAcademicYear && strpos($enrollmentAcademicYear, '-') === false && is_numeric($enrollmentAcademicYear)) {
+                $startYear = (int)$enrollmentAcademicYear;
+                $endYear = $startYear + 1;
+                $enrollmentAcademicYear = $startYear . '-' . $endYear;
+            }
+
+            // Prepare data for PDF
+            $data = [
+                'student' => $student,
+                'organizedSubjects' => $organizedSubjects,
+                'curriculumYear' => $academicYearRange, // ✅ Now formatted as "2018-2019"
+                'enrollmentPeriod' => $enrollmentPeriod,
+                'enrollmentAcademicYear' => $enrollmentAcademicYear, // ✅ New formatted academic year for display
+                'totalUnits' => $totalUnits,
+                'totalSubjects' => $totalSubjects,
+                'subjectsWithGrades' => $subjectsWithGrades,
+                'dateGenerated' => now()->format('F d, Y h:i A'),
+                'yearLevelOrder' => $yearLevelOrder,
+                'semesterOrder' => $semesterOrder
+            ];
+
+            // Generate PDF
+            $pdf = PDF::loadView('student.prospectus', $data);
+            
+            // Create directory if it doesn't exist
+            $directory = storage_path('app/public/documents/prospectus/');
+            if (!file_exists($directory)) {
+                mkdir($directory, 0755, true);
+            }
+
+            // Save PDF to storage
+            $fileName = 'prospectus_' . $studentId . '_' . time() . '.pdf';
+            $filePath = 'documents/prospectus/' . $fileName;
+            
+            Storage::disk('public')->put($filePath, $pdf->output());
+
+            // Save to documents table
+            DB::table('documents')->insert([
+                'student_id' => $studentId,
+                'type' => 'Prospectus',
+                'file_path' => $filePath,
+                'upload_date' => now(),
+                'status' => 'Approved'
+            ]);
+
+            return $filePath;
+
+        } catch (\Exception $e) {
+            Log::error('Prospectus generation error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    // private function generateProspectusPDF($studentId)
+    // {
+    //     try {
+    //         // Get student information
+    //         $student = DB::table('students')
+    //             ->join('user_info', 'students.student_id', '=', 'user_info.id')
+    //             ->join('users', 'user_info.user_id', '=', 'users.id')
+    //             ->select('students.*', 'user_info.firstname', 'user_info.lastname', 'user_info.middlename', 'users.email2')
+    //             ->where('students.id', $studentId)
+    //             ->first();
+
+    //         if (!$student) {
+    //             throw new \Exception('Student not found');
+    //         }
+
+    //         // Get all enrolled subjects with grades
+    //         $enrolledSubjects = DB::table('enrolled_sub')
+    //             ->where('student_id', $studentId)
+    //             ->orderBy('year_level')
+    //             ->orderBy('semester')
+    //             ->orderBy('subject_code')
+    //             ->get();
+
+    //         // Get enrollment period info
+    //         $enrollmentPeriod = DB::table('enrollment_date')
+    //             ->where('is_active', 1)
+    //             ->orderBy('id', 'desc')
+    //             ->first();
+
+    //         // Get curriculum info
+    //         $curriculum = DB::table('curriculum')
+    //             ->where('curriculum_year', $student->curriculum)
+    //             ->first();
+
+    //         // Organize subjects by year level and semester
+    //         $organizedSubjects = [];
+    //         $yearLevelOrder = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'];
+    //         $semesterOrder = ['1st Sem', '2nd Sem', 'Summer'];
+            
+    //         foreach ($yearLevelOrder as $year) {
+    //             foreach ($semesterOrder as $semester) {
+    //                 $semesterSubjects = $enrolledSubjects
+    //                     ->where('year_level', $year)
+    //                     ->where('semester', $semester)
+    //                     ->values();
+                    
+    //                 if ($semesterSubjects->count() > 0) {
+    //                     if (!isset($organizedSubjects[$year])) {
+    //                         $organizedSubjects[$year] = [];
+    //                     }
+    //                     $organizedSubjects[$year][$semester] = $semesterSubjects->toArray();
+    //                 }
+    //             }
+    //         }
+
+    //         // Calculate totals
+    //         $totalUnits = $enrolledSubjects->sum('units');
+    //         $totalSubjects = $enrolledSubjects->count();
+    //         $subjectsWithGrades = $enrolledSubjects->whereNotNull('grade')->count();
+
+    //         // Prepare data for PDF
+    //         $data = [
+    //             'student' => $student,
+    //             'organizedSubjects' => $organizedSubjects,
+    //             'curriculumYear' => $student->curriculum,
+    //             'curriculum' => $curriculum,
+    //             'enrollmentPeriod' => $enrollmentPeriod,
+    //             'totalUnits' => $totalUnits,
+    //             'totalSubjects' => $totalSubjects,
+    //             'subjectsWithGrades' => $subjectsWithGrades,
+    //             'dateGenerated' => now()->format('F d, Y h:i A'),
+    //             'yearLevelOrder' => $yearLevelOrder,
+    //             'semesterOrder' => $semesterOrder
+    //         ];
+
+    //         // Generate PDF
+    //         $pdf = PDF::loadView('student.prospectus', $data);
+            
+    //         // Create directory if it doesn't exist
+    //         $directory = storage_path('app/public/documents/prospectus/');
+    //         if (!file_exists($directory)) {
+    //             mkdir($directory, 0755, true);
+    //         }
+
+    //         // Save PDF to storage
+    //         $fileName = 'prospectus_' . $studentId . '_' . time() . '.pdf';
+    //         $filePath = 'documents/prospectus/' . $fileName;
+            
+    //         Storage::disk('public')->put($filePath, $pdf->output());
+
+    //         // Save to documents table
+    //         DB::table('documents')->insert([
+    //             'student_id' => $studentId,
+    //             'type' => 'Prospectus',
+    //             'file_path' => $filePath,
+    //             'upload_date' => now(),
+    //             'status' => 'Approved'
+    //         ]);
+
+    //         return $filePath;
+
+    //     } catch (\Exception $e) {
+    //         Log::error('Prospectus generation error: ' . $e->getMessage());
+    //         throw $e;
+    //     }
+    // }
 
     private function hasExistingEnrollmentRequest($studentId)
     {
