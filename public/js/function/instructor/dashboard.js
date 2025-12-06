@@ -21,7 +21,7 @@ function setupRealtimeSubscription() {
                 if (payload.new.operation === 'INSERT') {
                     loadRequestDetails();
                 } else if (payload.new.operation === 'UPDATE') {
-                    loadRequestDetails();
+                    // refreshDocumentsSection();
                 }
                 // Refresh the notification count when changes occur
                 // fetchNotificationCount();
@@ -323,6 +323,8 @@ function loadRequestDetails(request) {
     
     let documentsHTML = '';
     
+    // let documentsHTML = generateDocumentsHTML(request);
+    
     // FHE Document Section - UPDATED
     if (request.fhe_document && request.fhe_document.web_path) {
         const fhe = request.fhe_document;
@@ -352,6 +354,41 @@ function loadRequestDetails(request) {
                     <div class="document-title">
                         <i class="fas fa-file-pdf"></i>
                         <span>FHE Document</span>
+                    </div>
+                    <div class="document-status">
+                        <span class="status-badge missing">Not Submitted</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // PROSPECTUS Document Section - UPDATED
+    if (request.prospectus && request.prospectus.web_path) {
+        const prospectus = request.prospectus;
+        const prospectusClass = getStatusClass(prospectus.status);
+        const prospectusText = prospectus.status || 'Pending';
+        
+        documentsHTML += `
+            <div class="document-item">
+                <div class="document-header">
+                    <div class="document-title">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>Prospectus Document</span>
+                    </div>
+                </div>
+                <a href="${prospectus.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-eye"></i> View Prospectus
+                </a>
+            </div>
+        `;
+    } else {
+        documentsHTML += `
+            <div class="document-item">
+                <div class="document-header">
+                    <div class="document-title">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>prospectus Document</span>
                     </div>
                     <div class="document-status">
                         <span class="status-badge missing">Not Submitted</span>
@@ -458,13 +495,92 @@ function loadRequestDetails(request) {
     
     // Add event listeners to action buttons
     setupRequestActionButtons();
+    
 
     // Add event listener for View Subjects History button
     document.querySelector('.btn-view-history').addEventListener('click', function() {
         const studentId = this.getAttribute('data-student-id');
         showSubjectsHistoryModal(studentId, `${request.firstname} ${request.lastname}`, request.id_no);
     });
+    
 }
+
+
+// Separate function to generate documents HTML
+// function generateDocumentsHTML(request) {
+//     let documentsHTML = '';
+    
+//     // FHE Document Section
+//     if (request.fhe_document && request.fhe_document.web_path) {
+//         const fhe = request.fhe_document;
+//         const fheStatusClass = getStatusClass(fhe.status);
+//         const fheStatusText = fhe.status || 'Pending';
+        
+//         documentsHTML += `
+            
+//                     <div class="document-status">
+//                         <span class="status-badge ${fheStatusClass}">${fheStatusText}</span>
+//                     </div>
+               
+//         `;
+//     } else {
+//         documentsHTML += `
+//             <div class="document-item">
+//                 <div class="document-header">
+//                     <div class="document-title">
+//                         <i class="fas fa-file-pdf"></i>
+//                         <span>FHE Document</span>
+//                     </div>
+//                     <div class="document-status">
+//                         <span class="status-badge missing">Not Submitted</span>
+//                     </div>
+//                 </div>
+//             </div>
+//         `;
+//     }
+    
+//     // Payment Receipt Section
+//     if (request.payment_receipt && request.payment_receipt.web_path) {
+//         const receipt = request.payment_receipt;
+//         const receiptStatusClass = getStatusClass(receipt.status);
+//         const receiptStatusText = receipt.status || 'Pending';
+        
+//         documentsHTML += `
+//                     <div class="document-status">
+//                         <span class="status-badge ${receiptStatusClass}">${receiptStatusText}</span>
+//                     </div>
+//         `;
+//     } else {
+//         documentsHTML += `
+//             <div class="document-item">
+//                 <div class="document-header">
+//                     <div class="document-title">
+//                         <i class="fas fa-receipt"></i>
+//                         <span>Payment Receipt</span>
+//                     </div>
+//                     <div class="document-status">
+//                         <span class="status-badge missing">Not Submitted</span>
+//                     </div>
+//                 </div>
+//             </div>
+//         `;
+//     }
+    
+//     // If you want to show "No documents submitted" only when both are missing:
+//     if (!request.fhe_document && !request.payment_receipt) {
+//         documentsHTML = '<div class="no-documents">No documents submitted</div>';
+//     }
+    
+//     return documentsHTML;
+// }
+
+
+// function refreshDocumentsSection(request) {
+//     const documentsContainer = document.querySelector('.documents-list');
+//     if (documentsContainer) {
+//         documentsContainer.innerHTML = generateDocumentsHTML(request);
+//     }
+// }
 
 
 function setupRequestActionButtons() {

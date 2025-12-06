@@ -146,6 +146,40 @@ Route::middleware(['instructor.auth'])->group(function () {
 
     // Logout
     Route::post('/instructor/logout', [InstructorController::class, 'logout'])->name('instructor.logout');
+
+    Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {
+        // Define allowed folders for security
+        $allowedFolders = ['fhe', 'payment_receipts', 'prospectus'];
+        
+        if (!in_array($folder, $allowedFolders)) {
+            abort(404, 'Folder not allowed');
+        }
+
+        $path = storage_path("app/public/documents/{$folder}/{$filename}");
+        
+        Log::info("File access attempt:", [
+            'folder' => $folder,
+            'filename' => $filename,
+            'full_path' => $path,
+            'exists' => file_exists($path)
+        ]);
+
+        if (!file_exists($path)) {
+            abort(404, 'File not found');
+        }
+
+        // Get file mime type
+        $mime = mime_content_type($path);
+        
+        // Create response with proper headers
+        $response = response()->file($path, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . $filename . '"'
+        ]);
+
+        return $response;
+    })->where('filename', '.*')->name('documents.serve');
+
 });
 
 
@@ -288,7 +322,7 @@ Route::middleware(['org.auth'])->group(function () {
     // File serving routes for documents
     Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {
         // Define allowed folders for security
-        $allowedFolders = ['fhe', 'payment_receipts'];
+        $allowedFolders = ['fhe', 'payment_receipts', 'prospectus'];
         
         if (!in_array($folder, $allowedFolders)) {
             abort(404, 'Folder not allowed');

@@ -934,10 +934,17 @@ class InstructorController extends Controller
                     )
                     ->get();
 
-                // Get FHE document for this specific student
+            // Get FHE document for this specific student
             $fheDocument = DB::table('documents')
                 ->where('student_id', $request->student_id)
                 ->where('type', 'FHE')
+                ->orderBy('upload_date', 'desc')
+                ->first();
+
+            // Get Prospectus document for this specific student
+            $prospectus = DB::table('documents')
+                ->where('student_id', $request->student_id)
+                ->where('type', 'Prospectus')
                 ->orderBy('upload_date', 'desc')
                 ->first();
 
@@ -955,6 +962,12 @@ class InstructorController extends Controller
                 $fheDocument->status = $fheDocument->status ?: 'Pending';
             }
 
+            if ($prospectus) {
+                $filename = basename($prospectus->file_path);
+                $prospectus->web_path = "/documents/prospectus/{$filename}";
+                // $prospectus->status = $prospectus->status ?: 'Pending';
+            }
+
             if ($paymentReceipt) {
                 $filename = basename($paymentReceipt->file_path);
                 $paymentReceipt->web_path = "/documents/payment_receipts/{$filename}";
@@ -963,6 +976,7 @@ class InstructorController extends Controller
 
             // Attach documents to the request object
             $request->fhe_document = $fheDocument;
+            $request->prospectus = $prospectus;
             $request->payment_receipt = $paymentReceipt;
                 
                 // Get prerequisites for each subject and check if student has passed them
