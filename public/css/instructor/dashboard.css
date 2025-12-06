@@ -918,6 +918,8 @@ body.dark-mode .color-option {
     font-size: 1.5rem;
     letter-spacing: -0.5px;
     transition: var(--transition);
+    width: 90%;
+    text-align: center;
 }
 
 /* Enhanced Search Bar */
@@ -4060,6 +4062,78 @@ body.dark-mode .info-item {
 
 body.dark-mode .modal-header h4{
     color: black;
+}
+
+/* Search bar styles */
+.search-container {
+    margin-bottom: 20px;
+}
+
+.search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 8px 15px;
+    border: 1px solid #ddd;
+}
+
+.search-icon {
+    color: #999;
+    margin-right: 10px;
+}
+
+.search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    color: #333;
+    background: transparent;
+}
+
+.search-input::placeholder {
+    color: #999;
+}
+
+.search-btn {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-btn:hover {
+    color: #333;
+}
+
+/* Student search filters */
+.student-filters {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.student-filters .form-control {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.student-filters select {
+    min-width: 150px;
+}
+
+.student-filters input {
+    flex: 1;
+    max-width: 300px;
 }
 
 

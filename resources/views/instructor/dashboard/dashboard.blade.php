@@ -125,15 +125,15 @@ $id = $user->info->instructor_id;
                 <h1 class="page-title">Instructor Dashboard</h1>
 
                 <!-- Search Bar -->
-                <div class="search-container">
+                <!-- <div class="search-container">
                     <div class="search-bar">
                         <i class="fas fa-search search-icon"></i>
-                        <input type="text" class="search-input" placeholder="Search students, courses, assignments...">
+                        <input type="text" id="header-search-input" class="search-input" placeholder="Search students, subjects...">
                         <button class="search-btn">
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
-                </div>
+                </div> -->
 
                 <div class="header-actions">
                     <div class="notification-btn">
@@ -514,7 +514,7 @@ $id = $user->info->instructor_id;
             <!-- Students Section -->
             <div id="students-section" class="content-section">
                 <div class="section-header">
-                    <h2 class="section-title">Student Management</h2>
+                    <h2 class="section-title">Student Records</h2>
                     <div class="student-filters">
                         <select class="form-control" id="year-level-filter">
                             <option value="">All Year Levels</option>

@@ -2237,6 +2237,7 @@ function reload_request() {
     initializeEnrollmentRequests();
 }
 
+
 // Instructor Dashboard JavaScript
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -2296,6 +2297,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (yearLevelFilter) yearLevelFilter.addEventListener('change', filterStudents);
     if (curriculumFilter) curriculumFilter.addEventListener('change', filterStudents);
     if (searchInput2) searchInput2.addEventListener('input', filterStudents);
+
+    
 
     // View Profile button functionality
     document.querySelectorAll('.view-profile').forEach(button => {
@@ -2597,11 +2600,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleQuickAction(action) {
         switch(action) {
             case 'create-assignment':
-                document.querySelector('[data-section="assignments"]').click();
-                setTimeout(() => {
-                    const createBtn = document.getElementById('createAssignmentBtn');
-                    if (createBtn) createBtn.click();
-                }, 300);
+                document.querySelector('[data-section="enrollment-requests"]').click();
                 break;
             case 'input-grades':
                 // Find and click the input-grades menu item
