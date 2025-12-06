@@ -22,6 +22,40 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// File serving routes for documents
+Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {
+        // Define allowed folders for security
+        $allowedFolders = ['fhe', 'payment_receipts', 'prospectus'];
+        
+        if (!in_array($folder, $allowedFolders)) {
+            abort(404, 'Folder not allowed');
+        }
+
+        $path = storage_path("app/public/documents/{$folder}/{$filename}");
+        
+        Log::info("File access attempt:", [
+            'folder' => $folder,
+            'filename' => $filename,
+            'full_path' => $path,
+            'exists' => file_exists($path)
+        ]);
+
+        if (!file_exists($path)) {
+            abort(404, 'File not found');
+        }
+
+        // Get file mime type
+        $mime = mime_content_type($path);
+        
+        // Create response with proper headers
+        $response = response()->file($path, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . $filename . '"'
+        ]);
+
+        return $response;
+})->where('filename', '.*')->name('documents.serve');
+
 
 //Admin Routes
 Route::get('/admin', function () {
@@ -137,6 +171,7 @@ Route::middleware(['instructor.auth'])->group(function () {
     Route::post('/instructor/save-grade', [InstructorController::class, 'saveGrade'])->name('instructor.save-grade');
 
     Route::post('/instructor/enrollment-requests', [InstructorController::class, 'getEnrollmentRequests'])->name('instructor.enrollment-requests');
+    Route::post('/instructor/enrollment-requests2', [InstructorController::class, 'getEnrollmentRequests2'])->name('instructor.enrollment-requests');
     Route::post('/instructor/approve-enrollment', [InstructorController::class, 'approveEnrollment'])->name('instructor.approve-enrollment');
     Route::post('/instructor/reject-enrollment', [InstructorController::class, 'rejectEnrollment'])->name('instructor.reject-enrollment');
 
@@ -144,41 +179,46 @@ Route::middleware(['instructor.auth'])->group(function () {
     Route::get('/instructor/student-subjects-history/{studentId}', 
     [InstructorController::class, 'getStudentSubjectsHistory'])->name('instructor.student.subjects.history');
 
+    // Student Management
+    Route::get('/instructor/student-profile/{studentId}', 
+    [InstructorController::class, 'getStudentProfile'])->name('instructor.student.profile');
+
     // Logout
     Route::post('/instructor/logout', [InstructorController::class, 'logout'])->name('instructor.logout');
+    
 
-    Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {
-        // Define allowed folders for security
-        $allowedFolders = ['fhe', 'payment_receipts', 'prospectus'];
+    // Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {
+    //     // Define allowed folders for security
+    //     $allowedFolders = ['fhe', 'payment_receipts', 'prospectus'];
         
-        if (!in_array($folder, $allowedFolders)) {
-            abort(404, 'Folder not allowed');
-        }
+    //     if (!in_array($folder, $allowedFolders)) {
+    //         abort(404, 'Folder not allowed');
+    //     }
 
-        $path = storage_path("app/public/documents/{$folder}/{$filename}");
+    //     $path = storage_path("app/public/documents/{$folder}/{$filename}");
         
-        Log::info("File access attempt:", [
-            'folder' => $folder,
-            'filename' => $filename,
-            'full_path' => $path,
-            'exists' => file_exists($path)
-        ]);
+    //     Log::info("File access attempt:", [
+    //         'folder' => $folder,
+    //         'filename' => $filename,
+    //         'full_path' => $path,
+    //         'exists' => file_exists($path)
+    //     ]);
 
-        if (!file_exists($path)) {
-            abort(404, 'File not found');
-        }
+    //     if (!file_exists($path)) {
+    //         abort(404, 'File not found');
+    //     }
 
-        // Get file mime type
-        $mime = mime_content_type($path);
+    //     // Get file mime type
+    //     $mime = mime_content_type($path);
         
-        // Create response with proper headers
-        $response = response()->file($path, [
-            'Content-Type' => $mime,
-            'Content-Disposition' => 'inline; filename="' . $filename . '"'
-        ]);
+    //     // Create response with proper headers
+    //     $response = response()->file($path, [
+    //         'Content-Type' => $mime,
+    //         'Content-Disposition' => 'inline; filename="' . $filename . '"'
+    //     ]);
 
-        return $response;
-    })->where('filename', '.*')->name('documents.serve');
+    //     return $response;
+    // })->where('filename', '.*')->name('documents.serve');
 
 });
 
@@ -320,38 +360,38 @@ Route::middleware(['org.auth'])->group(function () {
     Route::post('/org/decline-payment', [OrgController::class, 'declinePayment']);
 
     // File serving routes for documents
-    Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {
-        // Define allowed folders for security
-        $allowedFolders = ['fhe', 'payment_receipts', 'prospectus'];
+    // Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {
+    //     // Define allowed folders for security
+    //     $allowedFolders = ['fhe', 'payment_receipts', 'prospectus'];
         
-        if (!in_array($folder, $allowedFolders)) {
-            abort(404, 'Folder not allowed');
-        }
+    //     if (!in_array($folder, $allowedFolders)) {
+    //         abort(404, 'Folder not allowed');
+    //     }
 
-        $path = storage_path("app/public/documents/{$folder}/{$filename}");
+    //     $path = storage_path("app/public/documents/{$folder}/{$filename}");
         
-        Log::info("File access attempt:", [
-            'folder' => $folder,
-            'filename' => $filename,
-            'full_path' => $path,
-            'exists' => file_exists($path)
-        ]);
+    //     Log::info("File access attempt:", [
+    //         'folder' => $folder,
+    //         'filename' => $filename,
+    //         'full_path' => $path,
+    //         'exists' => file_exists($path)
+    //     ]);
 
-        if (!file_exists($path)) {
-            abort(404, 'File not found');
-        }
+    //     if (!file_exists($path)) {
+    //         abort(404, 'File not found');
+    //     }
 
-        // Get file mime type
-        $mime = mime_content_type($path);
+    //     // Get file mime type
+    //     $mime = mime_content_type($path);
         
-        // Create response with proper headers
-        $response = response()->file($path, [
-            'Content-Type' => $mime,
-            'Content-Disposition' => 'inline; filename="' . $filename . '"'
-        ]);
+    //     // Create response with proper headers
+    //     $response = response()->file($path, [
+    //         'Content-Type' => $mime,
+    //         'Content-Disposition' => 'inline; filename="' . $filename . '"'
+    //     ]);
 
-        return $response;
-    })->where('filename', '.*')->name('documents.serve');
+    //     return $response;
+    // })->where('filename', '.*')->name('documents.serve');
 
     Route::post('/org/logout', [OrgController::class, 'logout'])->name('org.logout');
 

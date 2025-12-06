@@ -19,9 +19,10 @@ function setupRealtimeSubscription() {
             // Refresh data based on the operation type
             if (payload.new && payload.new.table_name === 'status') {
                 if (payload.new.operation === 'INSERT') {
-                    loadRequestDetails();
+                    // initializeEnrollmentRequests();
+                    count_pending();
                 } else if (payload.new.operation === 'UPDATE') {
-                    // refreshDocumentsSection();
+                    count_pending();
                 }
                 // Refresh the notification count when changes occur
                 // fetchNotificationCount();
@@ -342,7 +343,7 @@ function loadRequestDetails(request) {
                         <span class="status-badge ${fheStatusClass}">${fheStatusText}</span>
                     </div>
                 </div>
-                <a href="${fhe.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <a class="btn-view-document" href="${fhe.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
                     <i class="fas fa-eye"></i> View FHE
                 </a>
             </div>
@@ -377,7 +378,7 @@ function loadRequestDetails(request) {
                         <span>Prospectus Document</span>
                     </div>
                 </div>
-                <a href="${prospectus.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <a class="btn-view-document" href="${prospectus.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
                     <i class="fas fa-eye"></i> View Prospectus
                 </a>
             </div>
@@ -415,7 +416,7 @@ function loadRequestDetails(request) {
                         <span class="status-badge ${receiptStatusClass}">${receiptStatusText}</span>
                     </div>
                 </div>
-                <a href="${receipt.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <a class="btn-view-document" href="${receipt.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
                     <i class="fas fa-eye"></i> View Receipt
                 </a>
             </div>
@@ -2209,12 +2210,41 @@ function initializeLogout() {
     // });
 }
 
+
+function count_pending() {
+    const requestsContainer = document.getElementById('requests-count');
+    
+    fetch('/instructor/enrollment-requests2', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({}) // Empty body for POST
+    })
+    .then(response => response.json())
+    .then(data => {
+        requestsContainer.textContent = data.count || 0;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        requestsContainer.textContent = '0';
+    });
+}
+
+function reload_request() {
+    initializeEnrollmentRequests();
+}
+
 // Instructor Dashboard JavaScript
 document.addEventListener('DOMContentLoaded', function() {
 
     setupModalEventListeners();
     setupTableSorting();
     setupRealtimeSubscription();
+    count_pending();
+
     // Initialize sidebar toggle
     const sidebarToggle = document.querySelector('.sidebar-toggle');
     const sidebar = document.querySelector('.sidebar');
@@ -2227,6 +2257,229 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Logout
     initializeLogout();
+
+    // STUDENT MANAGEMENT FUNCTIONALITY
+    
+    // Filter students
+    const yearLevelFilter = document.getElementById('year-level-filter');
+    const curriculumFilter = document.getElementById('curriculum-filter');
+    const searchInput2 = document.getElementById('search-students');
+    const studentsTableBody = document.getElementById('students-table-body');
+    const studentRows = studentsTableBody.querySelectorAll('tr');
+
+    function filterStudents() {
+        const yearLevel = yearLevelFilter.value;
+        const curriculum = curriculumFilter.value;
+        const searchTerm = searchInput2.value.toLowerCase();
+
+        studentRows.forEach(row => {
+            const rowYearLevel = row.getAttribute('data-year-level');
+            const rowCurriculum = row.getAttribute('data-curriculum');
+            const studentName = row.getAttribute('data-student-name');
+            const studentId = row.getAttribute('data-student-id');
+            
+            const yearLevelMatch = !yearLevel || rowYearLevel === yearLevel;
+            const curriculumMatch = !curriculum || rowCurriculum === curriculum;
+            const searchMatch = !searchTerm || 
+                studentName.includes(searchTerm) || 
+                studentId.includes(searchTerm);
+            
+            if (yearLevelMatch && curriculumMatch && searchMatch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // Add event listeners for filtering
+    if (yearLevelFilter) yearLevelFilter.addEventListener('change', filterStudents);
+    if (curriculumFilter) curriculumFilter.addEventListener('change', filterStudents);
+    if (searchInput2) searchInput2.addEventListener('input', filterStudents);
+
+    // View Profile button functionality
+    document.querySelectorAll('.view-profile').forEach(button => {
+        button.addEventListener('click', function() {
+            const studentId = this.getAttribute('data-student-id');
+            const row = this.closest('tr');
+            const studentData = JSON.parse(row.getAttribute('data-student-data'));
+            loadStudentProfile(studentId, studentData);
+        });
+    });
+
+    // Send Message button functionality
+    document.querySelectorAll('.send-message').forEach(button => {
+        button.addEventListener('click', function() {
+            const email = this.getAttribute('data-email');
+            if (email && email !== '') {
+                // Redirect to Gmail compose window
+                window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}`, '_blank');
+            } else {
+                alert('No email address found for this student.');
+            }
+        });
+    });
+
+    // Modal functionality
+    const profileModal = document.getElementById('studentProfileModal');
+    const closeModal = document.querySelector('.close-modal2');
+
+    if (closeModal) {
+        closeModal.addEventListener('click', function() {
+            profileModal.style.display = 'none';
+        });
+    }
+
+    if (profileModal) {
+        window.addEventListener('click', function(event) {
+            if (event.target === profileModal) {
+                profileModal.style.display = 'none';
+            }
+        });
+    }
+
+    // Function to load student profile
+    async function loadStudentProfile(studentId, studentData) {
+        // Show the modal
+        const profileModal = document.getElementById('studentProfileModal');
+        profileModal.style.display = 'block';
+        
+        // Display basic student information first
+        const basicInfoHTML = `
+            <div class="student-basic-info">
+                <div class="info-section">
+                    <h4>Personal Information</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <strong>Student ID:</strong>
+                            <span>${studentData.id_no}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Name:</strong>
+                            <span>${studentData.full_name}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Year Level:</strong>
+                            <span>${studentData.year_level}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Student Type:</strong>
+                            <span>${studentData.student_type}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Curriculum:</strong>
+                            <span>${studentData.curriculum}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Enrollment Status:</strong>
+                            <span class="status-badge ${studentData.status === 'Active' ? 'active' : 'warning'}">
+                                ${studentData.enrollment_status}
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Email:</strong>
+                            <span>${studentData.email || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Overall Average:</strong>
+                            <span>${studentData.average_grade}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="academic-history-section" id="academicHistorySection">
+                    <h4>Academic History</h4>
+                    <div id="academicHistoryContent">
+                        <div class="loading">Loading academic history...</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('studentProfileContent').innerHTML = basicInfoHTML;
+        
+        // Now fetch academic history using your existing route
+        try {
+            const response = await fetch(`/instructor/student-subjects-history/${studentId}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                const subjects = data.subjects;
+                let academicHistoryHTML = '';
+                
+                if (subjects && subjects.length > 0) {
+                    // Group subjects by year level and semester
+                    const groupedSubjects = {};
+                    subjects.forEach(subject => {
+                        const key = `${subject.year_level} - ${subject.semester}`;
+                        if (!groupedSubjects[key]) {
+                            groupedSubjects[key] = [];
+                        }
+                        groupedSubjects[key].push(subject);
+                    });
+                    
+                    // Create HTML for each semester
+                    for (const [semester, semesterSubjects] of Object.entries(groupedSubjects)) {
+                        academicHistoryHTML += `
+                            <div class="semester-section">
+                                <h5>${semester}</h5>
+                                <div class="table-container"> <!-- Add a container div -->
+                                    <table class="subjects-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Subject Code</th>
+                                                <th>Subject Name</th>
+                                                <th>Units</th>
+                                                <th>Grade</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${semesterSubjects.map(subject => `
+                                                <tr style="overflow: scroll;">
+                                                    <td>${subject.subject_code}</td>
+                                                    <td>${subject.subject_name}</td>
+                                                    <td>${subject.units}</td>
+                                                    <td>
+                                                        <span id="grade-badge ${
+                                                            subject.grade === 'INC' || subject.grade === 'DRP' || subject.grade === '' || subject.grade == '4.0' || subject.grade == '5.0' ? 
+                                                            'grade-incomplete' : 
+                                                            'grade-complete'
+                                                        }" style="color: ${
+                                                            // Red for INC and DRP
+                                                            subject.grade === 'INC' || subject.grade === 'DRP' ? 'rgba(214, 9, 9, 1)' : 
+                                                            // Gray for empty/NULL
+                                                            subject.grade === '' ? 'rgba(128, 128, 128, 1)' : 
+                                                            // Orange for 4.0 and 5.0
+                                                            subject.grade == '4.0' || subject.grade == '5.0' ? 'rgba(255, 165, 0, 1)' : 
+                                                            // Green for everything else
+                                                            'rgba(0, 204, 0, 1)'
+                                                        }">
+                                                            ${subject.grade || 'N/A'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    academicHistoryHTML = '<p>No academic history available.</p>';
+                }
+                
+                document.getElementById('academicHistoryContent').innerHTML = academicHistoryHTML;
+            } else {
+                document.getElementById('academicHistoryContent').innerHTML = 
+                    '<p class="error">Failed to load academic history.</p>';
+            }
+        } catch (error) {
+            console.error('Error loading academic history:', error);
+            document.getElementById('academicHistoryContent').innerHTML = 
+                '<p class="error">Error loading academic history.</p>';
+        }
+    }
+
     
     if (sidebarToggle && sidebar) {
         sidebarToggle.addEventListener('click', function() {
@@ -2322,7 +2575,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update page title
                 const sectionName = this.querySelector('.menu-text').textContent;
                 if (pageTitle) {
-                    pageTitle.textContent = sectionName + ' | Instructor Dashboard';
+                    pageTitle.textContent = sectionName + ' | Instructor';
                 }
                 
                 // Initialize specific section functionality

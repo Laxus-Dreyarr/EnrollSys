@@ -934,50 +934,50 @@ class InstructorController extends Controller
                     )
                     ->get();
 
-            // Get FHE document for this specific student
-            $fheDocument = DB::table('documents')
-                ->where('student_id', $request->student_id)
-                ->where('type', 'FHE')
-                ->orderBy('upload_date', 'desc')
-                ->first();
+                // Get FHE document for this specific student
+                $fheDocument = DB::table('documents')
+                    ->where('student_id', $request->student_id)
+                    ->where('type', 'FHE')
+                    ->orderBy('upload_date', 'desc')
+                    ->first();
 
-            // Get Prospectus document for this specific student
-            $prospectus = DB::table('documents')
-                ->where('student_id', $request->student_id)
-                ->where('type', 'Prospectus')
-                ->orderBy('upload_date', 'desc')
-                ->first();
+                // Get Prospectus document for this specific student
+                $prospectus = DB::table('documents')
+                    ->where('student_id', $request->student_id)
+                    ->where('type', 'Prospectus')
+                    ->orderBy('upload_date', 'desc')
+                    ->first();
 
-            // Get payment receipt for this specific student
-            $paymentReceipt = DB::table('payments')
-                ->where('student_id', $request->student_id)
-                ->where('type', 'PAYMENT_RECEIPT')
-                ->orderBy('upload_date', 'desc')
-                ->first();
+                // Get payment receipt for this specific student
+                $paymentReceipt = DB::table('payments')
+                    ->where('student_id', $request->student_id)
+                    ->where('type', 'PAYMENT_RECEIPT')
+                    ->orderBy('upload_date', 'desc')
+                    ->first();
 
-            // Add web_path for file access
-            if ($fheDocument) {
-                $filename = basename($fheDocument->file_path);
-                $fheDocument->web_path = "/documents/fhe/{$filename}";
-                $fheDocument->status = $fheDocument->status ?: 'Pending';
-            }
+                // Add web_path for file access
+                if ($fheDocument) {
+                    $filename = basename($fheDocument->file_path);
+                    $fheDocument->web_path = "/documents/fhe/{$filename}";
+                    $fheDocument->status = $fheDocument->status ?: 'Pending';
+                }
 
-            if ($prospectus) {
-                $filename = basename($prospectus->file_path);
-                $prospectus->web_path = "/documents/prospectus/{$filename}";
-                // $prospectus->status = $prospectus->status ?: 'Pending';
-            }
+                if ($prospectus) {
+                    $filename = basename($prospectus->file_path);
+                    $prospectus->web_path = "/documents/prospectus/{$filename}";
+                    // $prospectus->status = $prospectus->status ?: 'Pending';
+                }
 
-            if ($paymentReceipt) {
-                $filename = basename($paymentReceipt->file_path);
-                $paymentReceipt->web_path = "/documents/payment_receipts/{$filename}";
-                $paymentReceipt->status = $paymentReceipt->status ?: 'Pending';
-            }
+                if ($paymentReceipt) {
+                    $filename = basename($paymentReceipt->file_path);
+                    $paymentReceipt->web_path = "/documents/payment_receipts/{$filename}";
+                    $paymentReceipt->status = $paymentReceipt->status ?: 'Pending';
+                }
 
-            // Attach documents to the request object
-            $request->fhe_document = $fheDocument;
-            $request->prospectus = $prospectus;
-            $request->payment_receipt = $paymentReceipt;
+                // Attach documents to the request object
+                $request->fhe_document = $fheDocument;
+                $request->prospectus = $prospectus;
+                $request->payment_receipt = $paymentReceipt;
                 
                 // Get prerequisites for each subject and check if student has passed them
                 foreach ($subjects as $subject) {
@@ -1057,6 +1057,26 @@ class InstructorController extends Controller
 
             return response()->json([
                 'requests' => $requests
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching enrollment requests: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch enrollment requests'], 500);
+        }
+    }
+
+    public function getEnrollmentRequests2(Request $request)
+    {
+        try {
+            $instructor = Auth::guard('instructor')->user();
+            
+            // Get count of pending enrollment requests
+            $count = DB::table('enrollmentrequests')
+                ->where('status', 'Pending')
+                ->count();
+
+            return response()->json([
+                'count' => $count
             ]);
 
         } catch (\Exception $e) {
@@ -1425,6 +1445,79 @@ class InstructorController extends Controller
     }
 
     // End of enrollment request
+
+
+    public function getStudentProfile($studentId)
+    {
+        if (!Auth::guard('instructor')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Fetch student details
+        $student = DB::table('students as s')
+            ->join('user_info as ui', 's.student_id', '=', 'ui.id')
+            ->leftJoin('users as u', 'ui.user_id', '=', 'u.id')
+            ->leftJoin('student_count_year as scy', 's.id', '=', 'scy.student_id')
+            ->where('s.id', $studentId)
+            ->select(
+                's.*',
+                'ui.*',
+                'u.email2 as email',
+                'scy.total_year'
+            )
+            ->first();
+
+        if (!$student) {
+            return response()->json(['error' => 'Student not found'], 404);
+        }
+
+        // Get enrolled subjects with grades
+        $subjects = DB::table('enrolled_sub')
+            ->where('student_id', $studentId)
+            ->select('subject_code', 'subject_name', 'grade', 'year_level', 'semester')
+            ->get();
+
+        // Format curriculum display
+        $curriculumDisplay = $student->curriculum;
+        if ($student->curriculum == '2018') {
+            $curriculumDisplay = '2018-2019';
+        }
+
+        // Format student type
+        $studentType = '';
+        if ($student->is_regular == 1) {
+            $studentType = 'Regular';
+        } elseif ($student->is_regular == 2) {
+            $studentType = 'Irregular';
+        } elseif ($student->is_regular == 3) {
+            $studentType = 'Transferee';
+        }
+
+        return response()->json([
+            'student' => [
+                'id_no' => $student->id_no,
+                'name' => $student->firstname . ' ' . $student->lastname,
+                'firstname' => $student->firstname,
+                'lastname' => $student->lastname,
+                'middlename' => $student->middlename,
+                'year_level' => $student->year_level,
+                'student_type' => $studentType,
+                'curriculum' => $student->curriculum,
+                'curriculum_formatted' => $curriculumDisplay,
+                'enrollment_status' => $student->status,
+                'email' => $student->email,
+                'total_years' => $student->total_year
+            ],
+            'subjects' => $subjects,
+            'average_grade' => $subjects->whereNotNull('grade')
+                ->where('grade', '!=', 'INC')
+                ->where('grade', '!=', 'DRP')
+                ->where('grade', '!=', '')
+                ->avg(function($subject) {
+                    return is_numeric($subject->grade) ? (float)$subject->grade : null;
+                })
+        ]);
+    }
 
     private function checkEmailExists(Request $request) 
     {

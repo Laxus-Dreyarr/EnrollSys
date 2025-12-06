@@ -694,7 +694,7 @@ async function approvePayment(studentId) {
         });
 
         const result = await response.json();
-        insertsupabase();
+        // insertsupabase();
 
         if (result.success) {
             Swal.fire({
@@ -750,7 +750,7 @@ async function declinePayment(studentId) {
         const result = await response.json();
 
         if (result.success) {
-            insertsupabase();
+            // insertsupabase();
             Swal.fire({
                 title: 'Payment Declined!',
                 text: `Payment for student ${studentId} has been declined.`,
@@ -1541,7 +1541,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     cancelButtonText: 'Cancel'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        insertsupabase();
+                        // insertsupabase();
                         // API call to approve enrollment
                         Swal.fire('Approved!', 'Enrollment request has been approved.', 'success');
                         enrollmentDetailsModal.classList.remove('active');
@@ -1562,7 +1562,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }).then((result) => {
                     if (result.isConfirmed) {
                         // API call to reject enrollment
-                        insertsupabase();
+                        // insertsupabase();
                         Swal.fire('Rejected!', 'Enrollment request has been rejected.', 'success');
                         enrollmentDetailsModal.classList.remove('active');
                         // Refresh the enrollment requests table

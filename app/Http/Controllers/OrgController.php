@@ -741,7 +741,7 @@ class OrgController extends Controller
                     'payments.file_path',
                     DB::raw('(SELECT CONCAT(firstname, " ", lastname) FROM admin_info WHERE admin_id = 107568) as processed_by')
                 )
-                ->orderBy('payments.upload_date', 'desc')
+                ->orderBy('payments.upload_date', 'asc')
                 ->limit(5)
                 ->get()
                 ->map(function($payment) {

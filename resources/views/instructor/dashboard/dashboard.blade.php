@@ -1,4 +1,6 @@
 <?php
+use Illuminate\Support\Facades\DB;
+
 $firstname = $user->info->firstname;
 $lastname = 'Donquixote';
 $id = $user->info->instructor_id;
@@ -507,19 +509,44 @@ $id = $user->info->instructor_id;
                     </div>
                 </div>
             </div>
-            
+
+
             <!-- Students Section -->
             <div id="students-section" class="content-section">
                 <div class="section-header">
                     <h2 class="section-title">Student Management</h2>
                     <div class="student-filters">
-                        <select class="form-control">
-                            <option>All Courses</option>
-                            <option>IT 373 - Software Engineering</option>
-                            <option>CS 301 - Data Structures</option>
-                            <option>IT 401 - Web Development</option>
+                        <select class="form-control" id="year-level-filter">
+                            <option value="">All Year Levels</option>
+                            <option value="1st Year">1st Year</option>
+                            <option value="2nd Year">2nd Year</option>
+                            <option value="3rd Year">3rd Year</option>
+                            <option value="4th Year">4th Year</option>
+                            <option value="5th Year">5th Year</option>
                         </select>
-                        <input type="text" class="form-control" placeholder="Search students...">
+
+                        <select class="form-control" id="curriculum-filter">
+                            <option value="">All Curriculum</option>
+                            <?php
+                            // Get distinct curriculums from students table
+                            $curriculumQuery = DB::table('students')
+                                ->whereNotNull('curriculum')
+                                ->distinct()
+                                ->pluck('curriculum');
+                            
+                            foreach ($curriculumQuery as $curriculum) {
+                                // Format curriculum display
+                                $display = $curriculum;
+                                if (is_numeric($curriculum) && strlen($curriculum) === 4) {
+                                    $year = (int)$curriculum;
+                                    $nextYear = $year + 1;
+                                    $display = $year . '-' . $nextYear;
+                                }
+                                echo "<option value=\"$curriculum\">$display</option>";
+                            }
+                            ?>
+                        </select>
+                        <input type="text" class="form-control" id="search-students" placeholder="Search students...">
                     </div>
                 </div>
                 
@@ -529,54 +556,304 @@ $id = $user->info->instructor_id;
                             <tr>
                                 <th>Student ID</th>
                                 <th>Name</th>
-                                <th>Course</th>
-                                <th>Attendance</th>
-                                <th>Current Grade</th>
+                                <th>Year Level</th>
+                                <th>Student Type</th>
+                                <th>Average Grade</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>2023001</td>
-                                <td>John Smith</td>
-                                <td>IT 373</td>
-                                <td>95%</td>
-                                <td>88%</td>
-                                <td><span class="status-badge active">Active</span></td>
+                        <tbody id="students-table-body">
+                            <?php
+                            // Fetch all students with their information
+                            $students = DB::table('students as s')
+                                ->join('user_info as ui', 's.student_id', '=', 'ui.id')
+                                ->leftJoin('enrolled_sub as es', function($join) {
+                                    $join->on('s.id', '=', 'es.student_id')
+                                        ->whereNotNull('es.grade')
+                                        ->where('es.grade', '!=', 'INC')
+                                        ->where('es.grade', '!=', 'DRP')
+                                        ->where('es.grade', '!=', '');
+                                })
+                                ->leftJoin('student_count_year as scy', 's.id', '=', 'scy.student_id')
+                                ->leftJoin('users as u', 'ui.user_id', '=', 'u.id')
+                                ->select(
+                                    's.id as student_table_id',
+                                    's.id_no',
+                                    's.year_level',
+                                    's.is_regular',
+                                    's.curriculum',
+                                    's.status as enrollment_status',
+                                    'ui.firstname',
+                                    'ui.lastname',
+                                    'ui.middlename',
+                                    'scy.total_year',
+                                    'u.email2 as email',
+                                    DB::raw('AVG(CASE 
+                                        WHEN es.grade REGEXP "^[0-9]+(\\\\.[0-9]+)?$" THEN CAST(es.grade AS DECIMAL(10,2)) 
+                                        ELSE NULL 
+                                    END) as average_grade')
+                                )
+                                ->groupBy('s.id', 's.id_no', 's.year_level', 's.is_regular', 's.curriculum', 
+                                        's.status', 'ui.firstname', 'ui.lastname', 'ui.middlename', 'scy.total_year', 'u.email2')
+                                ->get();
+                            
+                            foreach ($students as $student):
+                                // Format name
+                                $fullName = $student->firstname . ' ' . $student->lastname;
+                                
+                                // Determine student type
+                                $studentType = '';
+                                if ($student->is_regular == 1) {
+                                    $studentType = 'Regular';
+                                } elseif ($student->is_regular == 2) {
+                                    $studentType = 'Irregular';
+                                } elseif ($student->is_regular == 3) {
+                                    $studentType = 'Transferee';
+                                }
+                                
+                                // Format average grade
+                                $averageGrade = 'N/A';
+                                if ($student->average_grade !== null) {
+                                    $averageGrade = number_format($student->average_grade, 5);
+                                }
+                                
+                                // Determine status
+                                $status = '';
+                                $statusClass = '';
+                                
+                                if (!$student->total_year) {
+                                    $status = 'Active';
+                                    $statusClass = 'active';
+                                } elseif ($student->total_year <= 4) {
+                                    $status = 'Active';
+                                    $statusClass = 'active';
+                                } else {
+                                    $status = 'At Risk';
+                                    $statusClass = 'warning';
+                                }
+                                
+                                // Format curriculum display
+                                $curriculumDisplay = $student->curriculum;
+                                if (is_numeric($student->curriculum) && strlen($student->curriculum) === 4) {
+                                    $year = (int)$student->curriculum;
+                                    $nextYear = $year + 1;
+                                    $curriculumDisplay = $year . '-' . $nextYear;
+                                }
+                            ?>
+                            <tr data-year-level="<?php echo $student->year_level; ?>" 
+                                data-curriculum="<?php echo $student->curriculum; ?>"
+                                data-student-name="<?php echo strtolower($fullName); ?>"
+                                data-student-id="<?php echo $student->id_no; ?>"
+                                data-student-data='<?php echo json_encode([
+                                    'id_no' => $student->id_no,
+                                    'full_name' => $fullName,
+                                    'firstname' => $student->firstname,
+                                    'lastname' => $student->lastname,
+                                    'middlename' => $student->middlename,
+                                    'year_level' => $student->year_level,
+                                    'student_type' => $studentType,
+                                    'curriculum' => $curriculumDisplay,
+                                    'enrollment_status' => $student->enrollment_status,
+                                    'email' => $student->email,
+                                    'average_grade' => $averageGrade,
+                                    'status' => $status
+                                ]); ?>'>
+                                <td><?php echo $student->id_no; ?></td>
+                                <td><?php echo $fullName; ?></td>
+                                <td><?php echo $student->year_level; ?></td>
+                                <td><?php echo $studentType; ?></td>
+                                <td><?php echo $averageGrade; ?></td>
+                                <td><span class="status-badge <?php echo $statusClass; ?>"><?php echo $status; ?></span></td>
                                 <td>
-                                    <button class="btn-icon" title="View Profile"><i class="fas fa-eye"></i></button>
-                                    <button class="btn-icon" title="Send Message"><i class="fas fa-envelope"></i></button>
+                                    <button class="btn-icon view-profile" 
+                                            title="View Profile" 
+                                            data-student-id="<?php echo $student->student_table_id; ?>">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon send-message" 
+                                            title="Send Message" 
+                                            data-email="<?php echo $student->email; ?>">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
                                 </td>
                             </tr>
-                            <tr>
-                                <td>2023002</td>
-                                <td>Sarah Johnson</td>
-                                <td>CS 301</td>
-                                <td>92%</td>
-                                <td>91%</td>
-                                <td><span class="status-badge active">Active</span></td>
-                                <td>
-                                    <button class="btn-icon" title="View Profile"><i class="fas fa-eye"></i></button>
-                                    <button class="btn-icon" title="Send Message"><i class="fas fa-envelope"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>2023003</td>
-                                <td>Michael Brown</td>
-                                <td>IT 401</td>
-                                <td>85%</td>
-                                <td>76%</td>
-                                <td><span class="status-badge warning">At Risk</span></td>
-                                <td>
-                                    <button class="btn-icon" title="View Profile"><i class="fas fa-eye"></i></button>
-                                    <button class="btn-icon" title="Send Message"><i class="fas fa-envelope"></i></button>
-                                </td>
-                            </tr>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            <!-- Student Profile Modal -->
+            <div id="studentProfileModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 style="color: white;">Student Profile</h3>
+                        <span class="close-modal2">&times;</span>
+                    </div>
+                    <div class="modal-body" id="studentProfileContent">
+                        <!-- Profile content will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Students Section -->
+            <!-- <div id="students-section" class="content-section">
+                <div class="section-header">
+                    <h2 class="section-title">Student Management</h2>
+                    <div class="student-filters">
+                        <select class="form-control" id="year-level-filter">
+                            <option value="">All Year Levels</option>
+                            <option value="1st Year">1st Year</option>
+                            <option value="2nd Year">2nd Year</option>
+                            <option value="3rd Year">3rd Year</option>
+                            <option value="4th Year">4th Year</option>
+                            <option value="5th Year">5th Year</option>
+                        </select>
+
+                        <select class="form-control" id="curriculum-filter">
+                            <option value="">All Curriculum</option>
+                            <?php
+                            // Get distinct curriculums from students table
+                            $curriculumQuery = DB::table('students')
+                                ->whereNotNull('curriculum')
+                                ->distinct()
+                                ->pluck('curriculum');
+                            
+                            foreach ($curriculumQuery as $curriculum) {
+                                // Format curriculum display
+                                if ($curriculum == '2018') {
+                                    $display = '2018-2019';
+                                } else {
+                                    $display = $curriculum;
+                                }
+                                echo "<option value=\"$curriculum\">$display</option>";
+                            }
+                            ?>
+                        </select>
+                        <input type="text" class="form-control" id="search-students" placeholder="Search students...">
+                    </div>
+                </div>
+                
+                <div class="students-container">
+                    <table class="students-table">
+                        <thead>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Name</th>
+                                <th>Year Level</th>
+                                <th>Student Type</th>
+                                <th>Average Grade</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="students-table-body">
+                            <?php
+                            // Fetch all students with their information
+                            $students = DB::table('students as s')
+                                ->join('user_info as ui', 's.student_id', '=', 'ui.id')
+                                ->leftJoin('enrolled_sub as es', 's.id', '=', 'es.student_id')
+                                ->leftJoin('student_count_year as scy', 's.id', '=', 'scy.student_id')
+                                ->select(
+                                    's.id as student_table_id',
+                                    's.id_no',
+                                    's.year_level',
+                                    's.is_regular',
+                                    's.curriculum',
+                                    's.status as enrollment_status',
+                                    'ui.firstname',
+                                    'ui.lastname',
+                                    'ui.middlename',
+                                    'scy.total_year',
+                                    DB::raw('AVG(CASE 
+                                        WHEN es.grade REGEXP "^[0-9]+(\\\\.[0-9]+)?$" THEN CAST(es.grade AS DECIMAL(10,2)) 
+                                        ELSE NULL 
+                                    END) as average_grade')
+                                )
+                                ->groupBy('s.id', 's.id_no', 's.year_level', 's.is_regular', 's.curriculum', 
+                                        's.status', 'ui.firstname', 'ui.lastname', 'ui.middlename', 'scy.total_year')
+                                ->get();
+                            
+                            foreach ($students as $student):
+                                // Format name
+                                $fullName = $student->firstname . ' ' . $student->lastname;
+                                
+                                // Determine student type
+                                $studentType = '';
+                                if ($student->is_regular == 1) {
+                                    $studentType = 'Regular';
+                                } elseif ($student->is_regular == 2) {
+                                    $studentType = 'Irregular';
+                                } elseif ($student->is_regular == 3) {
+                                    $studentType = 'Transferee';
+                                }
+                                
+                                // Format average grade
+                                $averageGrade = $student->average_grade ? number_format($student->average_grade, 5) : 'N/A';
+                                
+                                // Determine status
+                                $status = '';
+                                $statusClass = '';
+                                
+                                if (!$student->total_year) {
+                                    $status = 'Active';
+                                    $statusClass = 'active';
+                                } elseif ($student->total_year <= 4) {
+                                    $status = 'Active';
+                                    $statusClass = 'active';
+                                } else {
+                                    $status = 'At Risk';
+                                    $statusClass = 'warning';
+                                }
+                                
+                                // Get email from users table for this student
+                                $userEmail = DB::table('users')
+                                    ->join('user_info', 'users.id', '=', 'user_info.user_id')
+                                    ->where('user_info.id', $student->student_table_id)
+                                    ->value('users.email2');
+                            ?>
+                            <tr data-year-level="<?php echo $student->year_level; ?>" 
+                                data-curriculum="<?php echo $student->curriculum; ?>"
+                                data-student-name="<?php echo strtolower($fullName); ?>"
+                                data-student-id="<?php echo $student->id_no; ?>">
+                                <td><?php echo $student->id_no; ?></td>
+                                <td><?php echo $fullName; ?></td>
+                                <td><?php echo $student->year_level; ?></td>
+                                <td><?php echo $studentType; ?></td>
+                                <td><?php echo $averageGrade; ?></td>
+                                <td><span class="status-badge <?php echo $statusClass; ?>"><?php echo $status; ?></span></td>
+                                <td>
+                                    <button class="btn-icon view-profile" 
+                                            title="View Profile" 
+                                            data-student-id="<?php echo $student->student_table_id; ?>">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon send-message" 
+                                            title="Send Message" 
+                                            data-email="<?php echo $userEmail; ?>">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div> -->
+
+            <!-- Student Profile Modal -->
+            <!-- <div id="studentProfileModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Student Profile</h3>
+                        <span class="close-modal">&times;</span>
+                    </div>
+                    <div class="modal-body" id="studentProfileContent">
+                        
+                    </div>
+                </div>
+            </div> -->
             
             <!-- Assignments Section -->
             <div id="assignments-section" class="content-section">
@@ -861,9 +1138,9 @@ $id = $user->info->instructor_id;
 
                     <div id="enrollment-requests-container" class="enrollment-requests-container" style="display: none;">
                         <div class="requests-sidebar">
-                            <div class="sidebar-header">
+                            <div class="sidebar-header" onclick="reload_request()">
                                 <h3>Pending Requests</h3>
-                                <span class="requests-count" id="requests-count">0</span>
+                                <span class="requests-count" id="requests-count"></span>
                             </div>
                             <div class="requests-list" id="enrollment-requests-list">
                                 <!-- Requests will be loaded here -->
@@ -917,7 +1194,7 @@ $id = $user->info->instructor_id;
                     </div>
                 </div>
                 
-                <div class="settings-card">
+                <!-- <div class="settings-card">
                     <h4>Account Settings</h4>
                     
                     <div class="settings-option">
@@ -972,7 +1249,7 @@ $id = $user->info->instructor_id;
                             <span class="slider"></span>
                         </label>
                     </div>
-                </div>
+                </div> -->
             </div>
         </div>
     </div>

@@ -48,6 +48,23 @@
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background-color: #292b32;
+}
+
+::-webkit-scrollbar {
+    width: 5px;
+    background-color: var(--accent-color);
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  background-color: var(--accent-color);
+}
+
 
 /* ===== THEME COLOR SYSTEM - FIXED ===== */
 /* Ensure all theme-colored elements use the dynamic variables */
@@ -2702,10 +2719,15 @@ body.dark-mode .stat-card:hover {
 .requests-count {
     background: var(--primary-color);
     color: white;
-    padding: 4px 8px;
-    border-radius: 20px;
+    padding: 5px;
+    border-radius: 100px;
     font-size: 0.8rem;
     font-weight: 600;
+    width: 30px;
+    height: 30px;
+    justify-content: center;
+    align-items: center;
+    margin-left: 3%;
 }
 
 .requests-list {
@@ -3120,7 +3142,7 @@ body.dark-mode .stat-card:hover {
     color: white;
 }
 
-.close-modal {
+.close-modal2 {
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
@@ -3128,7 +3150,7 @@ body.dark-mode .stat-card:hover {
     transition: opacity 0.2s;
 }
 
-.close-modal:hover {
+.close-modal2:hover {
     opacity: 0.5;
 }
 
@@ -3903,6 +3925,123 @@ body.dark-mode .logout-modal-cancel:hover {
     text-decoration: none;
 }
 
+.no-data-container {
+    height: 300px;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    align-content: center;
+    justify-items: center;
+}
+
+
+/* Student Management */
+
+.student-basic-info {
+    padding: 10px;
+}
+
+.info-section, .academic-history-section {
+    margin-bottom: 30px;
+}
+
+.info-section h4, .academic-history-section h4 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.info-item {
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 6px;
+}
+
+.info-item strong {
+    display: block;
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.info-item span {
+    font-size: 1.1em;
+    color: #333;
+}
+
+.semester-section {
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.semester-section h5 {
+    background-color: #f5f5f5;
+    padding: 10px 15px;
+    margin: 0;
+    color: #333;
+}
+
+
+.subjects-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.subjects-table th {
+    background-color: #f8f9fa;
+    padding: 10px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.subjects-table td {
+    padding: 10px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.subjects-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+#grade-badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+#grade-complete {
+    background-color: #d4edda;
+    color: #155724 !important;
+}
+
+#grade-incomplete {
+    background-color: #f8d7da;
+    color: #721c24 !important;
+}
+
+.loading, .error {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+.error {
+    color: #dc3545;
+}
+
+
 /* Responsive Design */
 @media (max-width: 1200px) {
     .sidebar {
@@ -4276,6 +4415,13 @@ body.dark-mode .logout-modal-cancel:hover {
         opacity: 0.9;
         color: white;
         top: 5px;
+    }
+
+    .btn-view-document {
+        font-size: 0.5rem;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
     }
 }
 
