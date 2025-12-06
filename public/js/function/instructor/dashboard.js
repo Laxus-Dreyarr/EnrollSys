@@ -2348,7 +2348,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const basicInfoHTML = `
             <div class="student-basic-info">
                 <div class="info-section">
-                    <h4>Personal Information</h4>
+                    <h4>Personal Informations</h4>
                     <div class="info-grid">
                         <div class="info-item">
                             <strong>Student ID:</strong>
@@ -2421,20 +2421,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     for (const [semester, semesterSubjects] of Object.entries(groupedSubjects)) {
                         academicHistoryHTML += `
                             <div class="semester-section">
-                                <h5>${semester}</h5>
+                                <h5 id="students_info2">${semester}</h5>
                                 <div class="table-container"> <!-- Add a container div -->
                                     <table class="subjects-table">
                                         <thead>
                                             <tr>
-                                                <th>Subject Code</th>
-                                                <th>Subject Name</th>
-                                                <th>Units</th>
-                                                <th>Grade</th>
+                                                <th id="students_info3">Subject Code</th>
+                                                <th id="students_info3">Subject Name</th>
+                                                <th id="students_info3">Units</th>
+                                                <th id="students_info3">Grade</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody id="students_info">
                                             ${semesterSubjects.map(subject => `
-                                                <tr style="overflow: scroll;">
+                                                <tr>
                                                     <td>${subject.subject_code}</td>
                                                     <td>${subject.subject_name}</td>
                                                     <td>${subject.units}</td>

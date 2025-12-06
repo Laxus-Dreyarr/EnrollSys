@@ -709,6 +709,7 @@ body.dark-mode textarea.form-control {
     background: var(--dark-color) !important;
     border-color: var(--border-dark) !important;
     color: var(--text-dark) !important;
+    
 }
 
 body.dark-mode select.form-control:focus,
@@ -4041,6 +4042,26 @@ body.dark-mode .logout-modal-cancel:hover {
     color: #dc3545;
 }
 
+body.dark-mode #students_info {
+    background-color: none;
+    color: black;
+}
+
+body.dark-mode #students_info tr:hover {
+    background-color: var(--primary-color);
+    color: white;
+    transition: 0.5s ease-in-out;
+}
+
+body.dark-mode .info-item {
+    background-color: none;
+    color: black;
+}
+
+body.dark-mode .modal-header h4{
+    color: black;
+}
+
 
 /* Responsive Design */
 @media (max-width: 1200px) {
@@ -4423,6 +4444,56 @@ body.dark-mode .logout-modal-cancel:hover {
         align-items: center;
         text-align: center;
     }
+
+    body.dark-mode #students_info {
+        background-color: var(--card-dark);
+        color: white;
+    }
+
+    body.dark-mode #students_info tr:hover {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    body.dark-mode #students_info2 {
+        background-color: var(--card-dark);
+        color: white;
+    }
+
+    body.dark-mode #students_info3 {
+        background-color: var(--card-dark);
+        color: white;
+    }
+
+    /* body.dark-mode .info-item,
+    body.dark-mode strong,
+    body.dark-mode span {
+        background-color: var(--card-dark);
+        color: white;
+    } */
+
+    body.dark-mode .info-item {
+        background-color: var(--card-dark);
+        color: white;
+        opacity: 1;
+    }
+
+    body.dark-mode .info-item strong {
+        background-color: var(--card-dark);
+        color: white;
+        opacity: 1;
+    }
+
+    body.dark-mode .info-item span {
+        background-color: var(--card-dark);
+        color: white;
+        opacity: 1;
+    }
+
+    body.dark-mode .modal-body h4{
+        color: white;   
+    }
+
 }
 
 @media (max-width: 480px) {

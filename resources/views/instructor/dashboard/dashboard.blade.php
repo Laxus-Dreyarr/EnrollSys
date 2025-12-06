@@ -546,7 +546,8 @@ $id = $user->info->instructor_id;
                             }
                             ?>
                         </select>
-                        <input type="text" class="form-control" id="search-students" placeholder="Search students...">
+                        <label for="#">Search:</label>
+                        <input type="text" class="form-control" id="search-students" placeholder="">
                     </div>
                 </div>
                 
@@ -615,7 +616,7 @@ $id = $user->info->instructor_id;
                                 // Format average grade
                                 $averageGrade = 'N/A';
                                 if ($student->average_grade !== null) {
-                                    $averageGrade = number_format($student->average_grade, 5);
+                                    $averageGrade = number_format($student->average_grade, 1);
                                 }
                                 
                                 // Determine status
