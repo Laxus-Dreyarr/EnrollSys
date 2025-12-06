@@ -1072,9 +1072,8 @@ class InstructorController extends Controller
             // Get all enrolled subjects for the student
             $subjects = DB::table('enrolled_sub')
                 ->where('student_id', $studentId)
-                ->orderBy('date_enrolled', 'desc')
-                ->orderBy('year_level', 'desc')
-                ->orderBy('semester', 'desc')
+                ->orderBy('year_level', 'asc')
+                ->orderBy('semester', 'asc')
                 ->select(
                     'subject_code',
                     'subject_name',

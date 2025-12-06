@@ -1823,27 +1823,46 @@ function fetchSubjectsHistory(studentId) {
 function populateYearFilter(subjects) {
     const yearFilter = document.getElementById('yearFilter');
     
-    // Extract unique years from subjects
-    const years = new Set();
+    // Extract unique year levels from subjects
+    const yearLevels = new Set();
     subjects.forEach(subject => {
-        if (subject.date_enrolled) {
-            const year = new Date(subject.date_enrolled).getFullYear();
-            years.add(year);
+        if (subject.year_level) {
+            // Convert to string and clean up any whitespace
+            const yearLevel = subject.year_level.toString().trim();
+            if (yearLevel) {
+                yearLevels.add(yearLevel);
+            }
         }
     });
     
     // Clear existing options (keep "All Years")
     yearFilter.innerHTML = '<option value="all">All Years</option>';
     
-    // Add year options in descending order
-    Array.from(years)
-        .sort((a, b) => b - a)
-        .forEach(year => {
-            const option = document.createElement('option');
-            option.value = year;
-            option.textContent = year;
-            yearFilter.appendChild(option);
-        });
+    // Sort year levels in a logical order (1st Year, 2nd Year, etc.)
+    const sortedYearLevels = Array.from(yearLevels).sort((a, b) => {
+        // Extract numeric part for sorting
+        const aNum = extractNumericYear(a);
+        const bNum = extractNumericYear(b);
+        return aNum - bNum;
+    });
+    
+    // Add year level options
+    sortedYearLevels.forEach(yearLevel => {
+        const option = document.createElement('option');
+        option.value = yearLevel;
+        option.textContent = yearLevel;
+        yearFilter.appendChild(option);
+    });
+}
+
+// Helper function to extract numeric year from year level string
+function extractNumericYear(yearLevel) {
+    if (!yearLevel) return 0;
+    
+    // Try to extract the first number from the string
+    // Handles formats like: "1st Year", "Year 1", "1", etc.
+    const match = yearLevel.match(/\d+/);
+    return match ? parseInt(match[0]) : 0;
 }
 
 // Render subjects table
@@ -1890,7 +1909,7 @@ function renderSubjectsTable(subjects) {
                         ${status}
                     </span>
                 </td>
-                <td class="date-cell">${dateEnrolled}</td>
+
             </tr>
         `;
     }).join('');
@@ -2015,11 +2034,9 @@ function applyFilters() {
     
     // Apply year filter
     if (yearFilter !== 'all') {
-        filteredData = filteredData.filter(subject => {
-            if (!subject.date_enrolled) return false;
-            const year = new Date(subject.date_enrolled).getFullYear();
-            return year.toString() === yearFilter;
-        });
+        filteredData = filteredData.filter(subject => 
+            subject.year_level && subject.year_level.toString().toLowerCase() === yearFilter.toLowerCase()
+        );
     }
     
     // Apply semester filter

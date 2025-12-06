@@ -1113,10 +1113,6 @@ $id = $user->info->instructor_id;
                                     <i class="fas fa-sort"></i>
                                     Status
                                 </th>
-                                <th>
-                                    <i class="fas fa-sort"></i>
-                                    Date Enrolled
-                                </th>
                             </tr>
                         </thead>
                         <tbody id="subjectsHistoryBody">
