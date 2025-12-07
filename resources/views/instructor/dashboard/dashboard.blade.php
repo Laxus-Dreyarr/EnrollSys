@@ -145,20 +145,15 @@ $id = $user->info->instructor_id;
                     </div>
                 </div> -->
 
-                <div class="notification-btn" onclick="showNotifications()">
-                    <i class="fas fa-bell"></i>
-                    <span id="notification-count2" class="notification-count" style="display: none;">0</span>
-                </div>
-
-                <!-- <div class="header-actions">
+                <div class="header-actions">
                     <div class="notification-btn">
                         <i class="fas fa-bell"></i>
-                        <span class="notification-count">5</span>
+                        <span id="notification-count2" class="notification-count">5</span>
                     </div>
                     <div class="sidebar-toggle">
                         <i class="fas fa-bars"></i>
                     </div>
-                </div> -->
+                </div>
             </div>
             
             <!-- Dashboard Section -->
@@ -293,7 +288,7 @@ $id = $user->info->instructor_id;
                 </div>
                 
                 <!-- Recent Activity -->
-                <h2 class="section-title">Recent Activity</h2>
+                <!-- <h2 class="section-title">Recent Activity</h2>
                 <div class="activity-container">
                     <div class="activity-item">
                         <div class="activity-icon">
@@ -327,7 +322,7 @@ $id = $user->info->instructor_id;
                             <span class="activity-time">2 days ago</span>
                         </div>
                     </div>
-                </div>
+                </div> -->
             </div>
             <!-- Input Grades Section -->
             <div id="input-grades-section" class="content-section">
