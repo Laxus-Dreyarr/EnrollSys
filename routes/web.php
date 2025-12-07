@@ -172,6 +172,11 @@ Route::middleware(['instructor.auth'])->group(function () {
 
     Route::post('/instructor/enrollment-requests', [InstructorController::class, 'getEnrollmentRequests'])->name('instructor.enrollment-requests');
     Route::post('/instructor/enrollment-requests2', [InstructorController::class, 'getEnrollmentRequests2'])->name('instructor.enrollment-requests');
+    
+    Route::post('/instructor/enrollment-requests3', [InstructorController::class, 'getEnrollmentRequests3'])->name('instructor.enrollment-requests3');
+
+    Route::post('/instructor/pending_request', [InstructorController::class, 'getPendingRequests'])->name('instructor.pending_request');
+
     Route::post('/instructor/approve-enrollment', [InstructorController::class, 'approveEnrollment'])->name('instructor.approve-enrollment');
     Route::post('/instructor/reject-enrollment', [InstructorController::class, 'rejectEnrollment'])->name('instructor.reject-enrollment');
 
@@ -182,6 +187,10 @@ Route::middleware(['instructor.auth'])->group(function () {
     // Student Management
     Route::get('/instructor/student-profile/{studentId}', 
     [InstructorController::class, 'getStudentProfile'])->name('instructor.student.profile');
+
+    Route::post('/instructor/mark-notification-read', [InstructorController::class, 'markNotificationAsRead'])->name('instructor.mark-notification-read');
+
+    Route::post('/instructor/mark-notification-read-count', [InstructorController::class, 'countNotificationAsRead'])->name('instructor.mark-notification-read-count');
 
     // Logout
     Route::post('/instructor/logout', [InstructorController::class, 'logout'])->name('instructor.logout');

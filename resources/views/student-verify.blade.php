@@ -36,6 +36,7 @@ $middleName = $registerData['middleName'];
     <link href="{{ asset('style/google-fonts.css') }}" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 </head>
 <body class="light-theme">

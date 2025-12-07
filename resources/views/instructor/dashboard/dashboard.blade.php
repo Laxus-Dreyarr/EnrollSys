@@ -124,6 +124,16 @@ $id = $user->info->instructor_id;
             <div class="header">
                 <h1 class="page-title">Instructor Dashboard</h1>
 
+                <div class="search-container">
+                    <div class="search-bar">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="header-search-input" class="search-input" placeholder="Search students, subjects...">
+                        <button id="search-btn" class="search-btn">
+                            <i style="color: white;" class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Search Bar -->
                 <!-- <div class="search-container">
                     <div class="search-bar">
@@ -135,7 +145,12 @@ $id = $user->info->instructor_id;
                     </div>
                 </div> -->
 
-                <div class="header-actions">
+                <div class="notification-btn" onclick="showNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span id="notification-count2" class="notification-count" style="display: none;">0</span>
+                </div>
+
+                <!-- <div class="header-actions">
                     <div class="notification-btn">
                         <i class="fas fa-bell"></i>
                         <span class="notification-count">5</span>
@@ -143,7 +158,7 @@ $id = $user->info->instructor_id;
                     <div class="sidebar-toggle">
                         <i class="fas fa-bars"></i>
                     </div>
-                </div>
+                </div> -->
             </div>
             
             <!-- Dashboard Section -->
@@ -162,14 +177,14 @@ $id = $user->info->instructor_id;
                         </div>
                     </div> -->
                     
-                    <div class="stat-card">
+                    <div class="stat-card" id="stat-card">
                         <!-- Background Image Container -->
                         <div class="card-bg-image students-bg"></div>
                         <div class="stat-icon students">
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="stat-content">
-                            <h3 class="stat-value">127</h3>
+                            <h3 class="stat-value" id="total-students"></h3>
                             <p class="stat-label">Total Students</p>
                         </div>
                     </div>
@@ -181,7 +196,7 @@ $id = $user->info->instructor_id;
                             <i class="fas fa-tasks"></i>
                         </div>
                         <div class="stat-content">
-                            <h3 class="stat-value">8</h3>
+                            <h3 class="stat-value" id="pending_request"></h3>
                             <p class="stat-label">Pending Request</p>
                         </div>
                     </div>
@@ -194,7 +209,14 @@ $id = $user->info->instructor_id;
                         </div>
                         <div class="stat-content">
                             <h3 class="stat-value" style="font-size: 20px;">Enrollment Date</h3>
-                            <p class="stat-label">November 21, 2025 - December 7, 2025</p>
+                            <p class="stat-label" id="enrollment_period">
+                                 @if($enrollmentPeriod)
+                                    Enrollment is until
+                                    {{ \Carbon\Carbon::parse($enrollmentPeriod->start)->format('F j, Y') }} - {{ \Carbon\Carbon::parse($enrollmentPeriod->end)->format('F j, Y') }}
+                                @else
+                                    No active enrollment period
+                                @endif
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -230,34 +252,44 @@ $id = $user->info->instructor_id;
                     </div>
                 </div>
                 
-                <!-- Teaching Schedule -->
-                <h2 class="section-title">Today's Classes</h2>
+                <!-- Notifications -->
+                <h2 class="section-title">Notifications</h2>
                 <div class="schedule-container">
-                    <div class="schedule-day">
-                        <h4 class="day-header">Monday, August 30</h4>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-time">10:00 AM - 11:30 AM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Software Engineering (IT 373)</div>
-                                <div class="schedule-location">CS-302 | 35 Students</div>
-                            </div>
-                            <div class="schedule-action">
-                                <button class="btn-primary btn-sm">Take Attendance</button>
+                    @forelse($notifications as $notification)
+                        <div class="schedule-day">
+                            <h4 class="day-header">
+                                {{ \Carbon\Carbon::parse($notification->created_at)->format('F d, Y') }}
+                                @if(!$notification->is_read)
+                                    <span class="badge badge-danger" style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">New</span>
+                                @endif
+                            </h4>
+                            
+                            <div class="schedule-item">
+                                <div class="schedule-time">
+                                    {{ \Carbon\Carbon::parse($notification->created_at)->format('h:i A') }}
+                                </div>
+                                <div class="schedule-details">
+                                    <div class="schedule-course">{{ $notification->title }}</div>
+                                    <div class="schedule-location">{{ $notification->message }}</div>
+                                </div>
+                                <div class="schedule-action">
+                                    <button class="btn-primary btn-sm mark-as-read-btn" data-id="{{ $notification->id }}">
+                                        <i class="fa fa-trash" aria-hidden="true"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-time">2:00 PM - 3:30 PM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Data Structures (CS 301)</div>
-                                <div class="schedule-location">CS-105 | 42 Students</div>
-                            </div>
-                            <div class="schedule-action">
-                                <button class="btn-primary btn-sm">Take Attendance</button>
+                    @empty
+                        <div class="schedule-day">
+                            <h4 class="day-header">No Notifications</h4>
+                            <div class="schedule-item">
+                                <div class="schedule-details">
+                                    <div class="schedule-course">No notifications at this time</div>
+                                    <div class="schedule-location">You'll see important updates here</div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    @endforelse
                 </div>
                 
                 <!-- Recent Activity -->

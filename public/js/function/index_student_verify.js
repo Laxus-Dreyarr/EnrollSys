@@ -1,4 +1,51 @@
+const supabaseUrl = "https://dfvapjrkotprotpbpeju.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmdmFwanJrb3Rwcm90cGJwZWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNDg1OTMsImV4cCI6MjA3MjcyNDU5M30.Hou-GtB-P8qJ4fxXbC-VtyaCkDpf5Kr01DD9aSckhiU";
+
+// Create Supabase client
+const { createClient } = supabase;
+const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+// Realtime update for submit enrollment
+async function insertsupabase(){
+    const data = {
+        table_name: 'status',  // make sure these variables are defined
+        operation: 'INSERT'
+    };
+    // Create AbortController for timeout (similar to PHP's 10s timeout)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+            try {
+            const response = await fetch(`${supabaseUrl}/rest/v1/enrollment_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseAnonKey,
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                    'Prefer': 'return=minimal'
+                },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData = await response.json();
+            console.log(responseData);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.error('Request timed out');
+                } else {
+                    console.error('Error:', error);
+                }
+            }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+
 
     // Theme Toggle Functionality
     const themeToggleBtn = document.getElementById('themeToggle');
@@ -394,6 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             window.location.href = '/';
                         }, 2000);
                     }else if (response == '9') {
+                        insertsupabase();
                         showStatus('Registration Complete...', 'success');
                         setTimeout(() => {
                             window.location.href = '/';

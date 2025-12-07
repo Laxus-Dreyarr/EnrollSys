@@ -918,8 +918,6 @@ body.dark-mode .color-option {
     font-size: 1.5rem;
     letter-spacing: -0.5px;
     transition: var(--transition);
-    width: 90%;
-    text-align: center;
 }
 
 /* Enhanced Search Bar */
@@ -949,7 +947,7 @@ body.dark-mode .color-option {
 }
 
 .search-icon {
-    color: #64748b;
+    color: white;
     margin-right: 12px;
     font-size: 1rem;
 }
@@ -1047,6 +1045,18 @@ body.dark-mode .color-option {
     margin-bottom: 36px;
 }
 
+#stat-card {
+    background-color: none;
+    color: none;
+}
+
+#stat-card:hover {
+    background-color: none;
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+    color: red;
+}
+
 .stat-card {
     background: linear-gradient(135deg, white, #f8fafc);
     border-radius: var(--border-radius);
@@ -1062,6 +1072,7 @@ body.dark-mode .color-option {
 .stat-card:hover {
     transform: translateY(-8px);
     box-shadow: var(--shadow-hover);
+    color: white;
 }
 
 .stat-icon {
@@ -2633,6 +2644,14 @@ body.dark-mode .quick-action-card p {
 .stat-card .stat-content {
     position: relative;
     z-index: 2;
+    background-color: none;
+}
+
+.stat-card .stat-content:hover {
+    position: relative;
+    z-index: 2;
+    color: white;
+    background-color: transparent;
 }
 
 /* Dark Mode Support */
@@ -3251,6 +3270,23 @@ body.dark-mode .stat-card:hover {
     margin-bottom: 25px;
 }
 
+/* Make sure all text in stat cards becomes white on hover */
+.stat-card:hover {
+    color: white !important;
+}
+
+.stat-card:hover .stat-value,
+.stat-card:hover .stat-label,
+.stat-card:hover .stat-icon {
+    color: inherit !important;
+}
+
+.stat-card:hover .stat-value {
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: inherit !important;
+}
+
 .stat-card {
     background: white;
     padding: 20px;
@@ -3307,7 +3343,7 @@ body.dark-mode .stat-card:hover {
 .stat-value {
     font-size: 1.8rem;
     font-weight: 700;
-    color: #343a40;
+    color: white;
 }
 
 /* Table Styles */
@@ -4134,6 +4170,52 @@ body.dark-mode .modal-header h4{
 .student-filters input {
     flex: 1;
     max-width: 300px;
+}
+
+/* Notification specific styles */
+.schedule-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.schedule-item.unread {
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.05), rgba(100, 181, 246, 0.05));
+    border-left: 3px solid var(--theme-primary);
+}
+
+.schedule-item.read {
+    opacity: 0.8;
+}
+
+.schedule-item:hover {
+    transform: translateX(5px);
+}
+
+.mark-as-read-btn:disabled {
+    background: #cbd5e1 !important;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Notification badge */
+.badge-danger {
+    background: #ef4444;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* Dark mode notification styles */
+body.dark-mode .schedule-item.unread {
+    background: rgba(67, 97, 238, 0.1);
+    border-left-color: var(--theme-accent);
+}
+
+body.dark-mode .schedule-item.read {
+    opacity: 0.6;
 }
 
 

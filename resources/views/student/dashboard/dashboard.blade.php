@@ -144,7 +144,7 @@ $show_prereg_form = $isEnrollmentActive;
                         </h3>
                         <p class="stat-label">
                             @if($enrollmentPeriod)
-                                Enrollment is until: 
+                                Enrollment is until
                                 {{ \Carbon\Carbon::parse($enrollmentPeriod->start)->format('F j, Y') }} - {{ \Carbon\Carbon::parse($enrollmentPeriod->end)->format('F j, Y') }}
                             @else
                                 No active enrollment period

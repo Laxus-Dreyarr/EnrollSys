@@ -21,8 +21,12 @@ function setupRealtimeSubscription() {
                 if (payload.new.operation === 'INSERT') {
                     // initializeEnrollmentRequests();
                     count_pending();
+                    pending_request();
+                    count_students();
                 } else if (payload.new.operation === 'UPDATE') {
                     count_pending();
+                } else if (payload.new.operation == 'NOTIF') {
+                    updateNotificationCount();
                 }
                 // Refresh the notification count when changes occur
                 // fetchNotificationCount();
@@ -80,6 +84,44 @@ async function insertsupabase(){
             }
 }
 
+
+async function insertsupabase2(){
+    const data = {
+        table_name: 'status',  // make sure these variables are defined
+        operation: 'NOTIF'
+    };
+    // Create AbortController for timeout (similar to PHP's 10s timeout)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+            try {
+            const response = await fetch(`${supabaseUrl}/rest/v1/enrollment_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseAnonKey,
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                    'Prefer': 'return=minimal'
+                },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData = await response.json();
+            console.log(responseData);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.error('Request timed out');
+                } else {
+                    console.error('Error:', error);
+                }
+            }
+}
 
 const baseUrl = window.location.origin;
 
@@ -2237,6 +2279,50 @@ function reload_request() {
     initializeEnrollmentRequests();
 }
 
+function count_students() {
+     const requestsContainer = document.getElementById('total-students');
+    
+    fetch('/instructor/enrollment-requests3', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({}) // Empty body for POST
+    })
+    .then(response => response.json())
+    .then(data => {
+        requestsContainer.textContent = data.count || 0;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        requestsContainer.textContent = '0';
+    });
+}
+
+function pending_request() {
+    const requestsContainer = document.getElementById('pending_request');
+    
+    fetch('/instructor/pending_request', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({}) // Empty body for POST
+    })
+    .then(response => response.json())
+    .then(data => {
+        requestsContainer.textContent = data.count || 0;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        requestsContainer.textContent = '0';
+    });
+}
+
 
 // Instructor Dashboard JavaScript
 document.addEventListener('DOMContentLoaded', function() {
@@ -2245,6 +2331,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setupTableSorting();
     setupRealtimeSubscription();
     count_pending();
+    count_students();
+    pending_request();
 
     // Initialize sidebar toggle
     const sidebarToggle = document.querySelector('.sidebar-toggle');
@@ -2259,19 +2347,90 @@ document.addEventListener('DOMContentLoaded', function() {
     // Logout
     initializeLogout();
 
+
+    // Mark notification as read functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('mark-as-read-btn')) {
+            const notificationId = e.target.dataset.id;
+            markAsRead(notificationId, e.target);
+        }
+    });
+    
+    // Function to mark notification as read
+    function markAsRead(notificationId, button) {
+        fetch('/instructor/mark-notification-read', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ notification_id: notificationId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update button text
+                button.textContent = 'Read';
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-secondary');
+                button.disabled = true;
+
+                insertsupabase2();
+                
+                // Remove "New" badge if exists
+                const dayHeader = button.closest('.schedule-day').querySelector('.day-header');
+                const badge = dayHeader.querySelector('.badge');
+                if (badge) {
+                    badge.remove();
+                }
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+    
+    // Check for unread notifications count
+    updateNotificationCount();
+    
+    // Function to update notification count in header
+    function updateNotificationCount() {
+        const unreadNotifications = document.querySelectorAll('.mark-as-read-btn:not(:disabled)').length;
+        const notificationCount = document.querySelector('.notification-count');
+        
+        if (notificationCount) {
+            if (unreadNotifications > 0) {
+                notificationCount.textContent = unreadNotifications;
+                notificationCount.style.display = 'flex';
+            } else {
+                notificationCount.style.display = 'none';
+            }
+        }
+    }
+
+
     // STUDENT MANAGEMENT FUNCTIONALITY
     
-    // Filter students
+    // Get all search inputs
     const yearLevelFilter = document.getElementById('year-level-filter');
     const curriculumFilter = document.getElementById('curriculum-filter');
-    const searchInput2 = document.getElementById('search-students');
+    const studentSearchInput = document.getElementById('search-students');
+    const headerSearchInput = document.getElementById('header-search-input');
     const studentsTableBody = document.getElementById('students-table-body');
-    const studentRows = studentsTableBody.querySelectorAll('tr');
 
+    // Function to filter students - DECLARE THIS FIRST
     function filterStudents() {
-        const yearLevel = yearLevelFilter.value;
-        const curriculum = curriculumFilter.value;
-        const searchTerm = searchInput2.value.toLowerCase();
+        const yearLevel = yearLevelFilter ? yearLevelFilter.value : '';
+        const curriculum = curriculumFilter ? curriculumFilter.value : '';
+        
+        // Get search term from either input (prioritize student section search if both have value)
+        let searchTerm = '';
+        if (studentSearchInput && studentSearchInput.value.trim() !== '') {
+            searchTerm = studentSearchInput.value.trim().toLowerCase();
+        } else if (headerSearchInput && headerSearchInput.value.trim() !== '') {
+            searchTerm = headerSearchInput.value.trim().toLowerCase();
+        }
+
+        // Get current rows in case table was updated
+        const studentRows = studentsTableBody ? studentsTableBody.querySelectorAll('tr') : [];
 
         studentRows.forEach(row => {
             const rowYearLevel = row.getAttribute('data-year-level');
@@ -2293,13 +2452,53 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Add event listeners for filtering
+    // Now add event listeners (AFTER the function is defined)
     if (yearLevelFilter) yearLevelFilter.addEventListener('change', filterStudents);
     if (curriculumFilter) curriculumFilter.addEventListener('change', filterStudents);
-    if (searchInput2) searchInput2.addEventListener('input', filterStudents);
+    if (studentSearchInput) studentSearchInput.addEventListener('input', filterStudents);
 
-    
+    // Add event listener for header search
+    if (headerSearchInput) {
+        headerSearchInput.addEventListener('input', function() {
+            // If header search is being used, clear the student section search
+            if (studentSearchInput && headerSearchInput.value.trim() !== '') {
+                studentSearchInput.value = '';
+            }
+            filterStudents();
+        });
+    }
 
+    // Clear header search when student section search is used
+    if (studentSearchInput) {
+        studentSearchInput.addEventListener('input', function() {
+            if (headerSearchInput && studentSearchInput.value.trim() !== '') {
+                headerSearchInput.value = '';
+            }
+        });
+    }
+
+    // Add search button functionality
+    const searchBtn5 = document.querySelector('#search-btn');
+    if (searchBtn5) {
+        searchBtn5.addEventListener('click', function() {
+            // Trigger the search
+            filterStudents();
+            document.querySelector('[data-section="students"]').click();
+        });
+    }
+
+    // Allow pressing Enter in search inputs
+    function handleEnterKey(event) {
+        if (event.key === 'Enter') {
+            filterStudents();
+            document.querySelector('[data-section="students"]').click();
+        }
+    }
+
+    if (studentSearchInput) studentSearchInput.addEventListener('keypress', handleEnterKey);
+    if (headerSearchInput) headerSearchInput.addEventListener('keypress', handleEnterKey);
+
+    // The rest of your code remains the same...
     // View Profile button functionality
     document.querySelectorAll('.view-profile').forEach(button => {
         button.addEventListener('click', function() {

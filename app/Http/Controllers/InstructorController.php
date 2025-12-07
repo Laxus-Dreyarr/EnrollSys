@@ -340,9 +340,53 @@ class InstructorController extends Controller
             return redirect('/instructor')->with('error', 'Please login first.');
         }
 
+        // Check if there's an active enrollment period
+        $enrollmentPeriod = $this->checkActiveEnrollmentPeriod();
+
         $user = Auth::guard('instructor')->user();
-        return view('instructor.dashboard.dashboard', compact('user'));
+
+        // Get notifications for the instructor
+        $notifications = DB::table('notifications_instructor')
+            ->where('user_id', $user->instructor_id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('instructor.dashboard.dashboard', compact('user', 'enrollmentPeriod', 'notifications'));
         
+    }
+
+    public function markNotificationAsRead(Request $request)
+    {
+        $notificationId = $request->input('notification_id');
+        
+        $updated = DB::table('notifications_instructor')
+            ->where('id', $notificationId)
+            ->update(['is_read' => 1]);
+        
+        return response()->json([
+            'success' => $updated > 0,
+            'message' => $updated > 0 ? 'Notification marked as read' : 'Failed to update notification'
+        ]);
+    }
+
+    public function countNotificationAsRead(Request $request)
+    {
+        try {
+            $instructor = Auth::guard('instructor')->user();
+            
+            // Get count of pending enrollment requests
+            $count = DB::table('notifications_instructor')
+                ->where('is_read', 0)
+                ->count();
+
+            return response()->json([
+                'count' => $count
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching enrollment requests: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch enrollment requests'], 500);
+        }
     }
 
     public function logout(Request $request)
@@ -1644,6 +1688,70 @@ class InstructorController extends Controller
                 'success' => false,
                 'message' => 'An error occurred: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    public function getEnrollmentRequests3(Request $request) {
+        try {
+            $instructor = Auth::guard('instructor')->user();
+            
+            // Get count of pending enrollment requests
+            $count = DB::table('students')
+                ->count();
+
+            return response()->json([
+                'count' => $count
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching enrollment requests: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch enrollment requests'], 500);
+        }
+    }
+
+    public function getPendingRequests(Request $request) {
+        try {
+            $instructor = Auth::guard('instructor')->user();
+            
+            // Get count of pending enrollment requests
+            $count = DB::table('enrollmentrequests')
+                ->where('status', 'Pending')
+                ->count();
+
+            return response()->json([
+                'count' => $count
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching enrollment requests: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch enrollment requests'], 500);
+        }
+    }
+
+
+    private function checkActiveEnrollmentPeriod()
+    {
+        try {
+            $currentDate = now()->format('Y-m-d');
+            
+            // Check if there's an active enrollment period where current date is between start and end
+            $enrollmentPeriod = DB::table('enrollment_date')
+                ->where('is_active', 1)
+                ->whereDate('start', '<=', $currentDate)
+                ->whereDate('end', '>=', $currentDate)
+                ->first();
+                
+            Log::info('Enrollment period check', [
+                'current_date' => $currentDate,
+                'found_period' => $enrollmentPeriod ? true : false,
+                'period_details' => $enrollmentPeriod
+            ]);
+            
+            return $enrollmentPeriod;
+            
+        } catch (\Exception $e) {
+            Log::error('Error checking enrollment period: ' . $e->getMessage());
+            return null;
         }
     }
 
