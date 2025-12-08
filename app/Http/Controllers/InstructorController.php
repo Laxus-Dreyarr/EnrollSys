@@ -1371,7 +1371,7 @@ class InstructorController extends Controller
                 ]);
 
             DB::table('enrollments')
-                ->where('id', $request->request_id)
+                ->where('student_id', $request->student_id)
                 ->update([
                     'status' => 'Enrolled'
                 ]);
