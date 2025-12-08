@@ -355,17 +355,17 @@ class InstructorController extends Controller
         
     }
 
-    public function markNotificationAsRead(Request $request)
+    public function deleteNotification(Request $request)
     {
         $notificationId = $request->input('notification_id');
         
-        $updated = DB::table('notifications_instructor')
+        $delete = DB::table('notifications_instructor')
             ->where('id', $notificationId)
-            ->update(['is_read' => 1]);
+            ->delete();
         
         return response()->json([
-            'success' => $updated > 0,
-            'message' => $updated > 0 ? 'Notification marked as read' : 'Failed to update notification'
+            'success' => (bool)$delete,
+            'message' => $delete ? 'Notification deleted successfully' : 'Failed to delete notification'
         ]);
     }
 

@@ -188,7 +188,7 @@ Route::middleware(['instructor.auth'])->group(function () {
     Route::get('/instructor/student-profile/{studentId}', 
     [InstructorController::class, 'getStudentProfile'])->name('instructor.student.profile');
 
-    Route::post('/instructor/mark-notification-read', [InstructorController::class, 'markNotificationAsRead'])->name('instructor.mark-notification-read');
+    Route::post('/instructor/delete-notification', [InstructorController::class, 'deleteNotification']);
 
     Route::post('/instructor/mark-notification-read-count', [InstructorController::class, 'countNotificationAsRead'])->name('instructor.mark-notification-read-count');
 

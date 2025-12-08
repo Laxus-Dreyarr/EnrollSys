@@ -2333,6 +2333,7 @@ document.addEventListener('DOMContentLoaded', function() {
     count_pending();
     count_students();
     pending_request();
+    updateNotificationCount();
 
     // Initialize sidebar toggle
     const sidebarToggle = document.querySelector('.sidebar-toggle');
@@ -2350,15 +2351,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Mark notification as read functionality
     document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('mark-as-read-btn')) {
-            const notificationId = e.target.dataset.id;
-            markAsRead(notificationId, e.target);
+        if (e.target.closest('.mark-as-read-btn')) {
+            const button = e.target.closest('.mark-as-read-btn');
+            const notificationId = button.dataset.id;
+            deleteNotification(notificationId, button);
         }
     });
-    
-    // Function to mark notification as read
-    function markAsRead(notificationId, button) {
-        fetch('/instructor/mark-notification-read', {
+
+    // Function to delete notification with confirmation
+    function deleteNotification(notificationId, button) {
+        if (!confirm('Are you sure you want to delete this notification?')) {
+            return;
+        }
+        
+        fetch('/instructor/delete-notification', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -2369,31 +2375,44 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Update button text
-                button.textContent = 'Read';
-                button.classList.remove('btn-primary');
-                button.classList.add('btn-secondary');
-                button.disabled = true;
-
-                insertsupabase2();
-                
-                // Remove "New" badge if exists
-                const dayHeader = button.closest('.schedule-day').querySelector('.day-header');
-                const badge = dayHeader.querySelector('.badge');
-                if (badge) {
-                    badge.remove();
+                // Remove notification with fade out animation
+                const notificationItem = button.closest('.schedule-day');
+                if (notificationItem) {
+                    notificationItem.style.transition = 'opacity 0.3s';
+                    notificationItem.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        notificationItem.remove();
+                        updateNotificationCount();
+                        
+                        // Show empty state if needed
+                        const container = document.querySelector('.schedule-container');
+                        const remainingNotifications = container.querySelectorAll('.schedule-day');
+                        
+                        if (remainingNotifications.length === 0) {
+                            container.innerHTML = `
+                                <div class="schedule-day">
+                                    <h4 class="day-header">No Notifications</h4>
+                                    <div class="schedule-item">
+                                        <div class="schedule-details">
+                                            <div class="schedule-course">No notifications at this time</div>
+                                            <div class="schedule-location">You'll see important updates here</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }, 300);
                 }
             }
         })
         .catch(error => console.error('Error:', error));
     }
     
-    // Check for unread notifications count
-    updateNotificationCount();
     
     // Function to update notification count in header
     function updateNotificationCount() {
-        const unreadNotifications = document.querySelectorAll('.mark-as-read-btn:not(:disabled)').length;
+        const unreadNotifications = document.querySelectorAll('.badge-danger').length;
         const notificationCount = document.querySelector('.notification-count');
         
         if (notificationCount) {
