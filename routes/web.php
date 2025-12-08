@@ -192,6 +192,13 @@ Route::middleware(['instructor.auth'])->group(function () {
 
     Route::post('/instructor/mark-notification-read-count', [InstructorController::class, 'countNotificationAsRead'])->name('instructor.mark-notification-read-count');
 
+    Route::post('/instructor/update-profile', [InstructorController::class, 'updateProfile'])->name('instructor.update-profile');
+
+    Route::post('/instructor/upload-profile-picture', [InstructorController::class, 'uploadProfilePicture'])->name('instructor.upload-profile-picture');
+    
+    Route::post('/instructor/remove-profile-picture', [InstructorController::class, 'removeProfilePicture'])->name('instructor.remove-profile-picture');
+
+
     // Logout
     Route::post('/instructor/logout', [InstructorController::class, 'logout'])->name('instructor.logout');
     

@@ -116,8 +116,13 @@
                     <div class="modal-column student-column">
                         <div class="student-info-card">
                             <div class="student-avatar">
-                                <img src="https://ui-avatars.com/api/?name=Student+Name&background=4361ee&color=fff" 
+                                @if(!empty($profile_picture) && $profile_picture !== 'default.png')
+                                    <img src="{{ asset('profile/' . $profile_picture) }}" 
                                      alt="Student Avatar" id="student_avatar">
+                                @else
+                                    <img src="https://ui-avatars.com/api/?name=Student+Name&background=4361ee&color=fff" 
+                                     alt="Student Avatar" id="student_avatar">
+                                @endif
                             </div>
                             <div class="student-details">
                                 <h4 id="student_full_name"></h4>

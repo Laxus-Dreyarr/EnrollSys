@@ -430,10 +430,13 @@ class InstructorController extends Controller
             $subjectSearch = $request->input('subject_search');
             $gradeStatus = $request->input('grade_status', 'ungraded');
 
+
+
             // Base query for enrolled subjects
             $query = DB::table('enrolled_sub as es')
                 ->join('students as s', 'es.student_id', '=', 's.id')
                 ->join('user_info as ui', 's.student_id', '=', 'ui.id')
+                ->join('users as u', 'ui.user_id', '=', 'u.id')
                 ->join('subjects as sub', 'es.subject_id', '=', 'sub.id')
                 ->where('s.year_level', '!=', NULL) // Exclude students with year_level = 'NONE'
                 ->select(
@@ -442,6 +445,7 @@ class InstructorController extends Controller
                     'ui.firstname',
                     'ui.lastname',
                     'ui.middlename',
+                    'u.profile',
                     's.id_no',
                     's.year_level',
                     'sub.id as subject_id',
@@ -541,6 +545,7 @@ class InstructorController extends Controller
                         'firstname' => $student->firstname,
                         'lastname' => $student->lastname,
                         'middlename' => $student->middlename,
+                        'profile' => asset('profile/' . $student->profile),
                         'id_no' => $student->id_no,
                         'year_level' => $student->year_level,
                         'subjects' => []
@@ -551,6 +556,7 @@ class InstructorController extends Controller
                     'subject_id' => $student->subject_id,
                     'subject_code' => $student->subject_code,
                     'subject_name' => $student->subject_name,
+                    'profile' => asset('profile/' . $student->profile),
                     'units' => $student->units,
                     'subject_year' => $student->subject_year,
                     'subject_semester' => $student->subject_semester,
@@ -1815,5 +1821,470 @@ class InstructorController extends Controller
             return $x;
     }
 
-    
+    public function updateProfile(Request $request)
+    {
+        try {
+            // Get the authenticated instructor
+            $instructor = Auth::guard('instructor')->user();
+            
+            // Validate the incoming request
+            $validator = Validator::make($request->all(), [
+                'firstName' => 'required|string|max:100',
+                'lastName' => 'required|string|max:100',
+                'middleName' => 'nullable|string|max:100',
+                'phone' => 'nullable|string|max:20|regex:/^[0-9\-\+\(\)\s]+$/',
+                'department' => 'required|string|max:100',
+                'office' => 'nullable|string|max:255',
+                'bio' => 'nullable|string|max:1000',
+            ], [
+                'phone.regex' => 'Please enter a valid phone number.',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Begin database transaction
+            DB::beginTransaction();
+
+            try {
+                // Update instructor main table (email if changed)
+                // if ($instructor->email5 !== $request->email) {
+                //     $instructor->email5 = $request->email;
+                //     $instructor->save();
+                // }
+
+                // Update instructor_info table
+                $instructorInfo = DB::table('instructor_info')
+                    ->where('instructor_id', $instructor->instructor_id)
+                    ->first();
+
+                if ($instructorInfo) {
+                    // Update existing record
+                    DB::table('instructor_info')
+                        ->where('instructor_id', $instructor->instructor_id)
+                        ->update([
+                            'firstname' => $request->firstName,
+                            'lastname' => $request->lastName,
+                            'middlename' => $request->middleName ?? '',
+                            'phone_number' => $request->phone ?? null,
+                            'department' => $request->department,
+                            'office' => $request->office ?? null,
+                            'bio' => $request->bio ?? null,
+                        ]);
+                } else {
+                    // Create new record if doesn't exist
+                    DB::table('instructor_info')->insert([
+                        'instructor_id' => $instructor->instructor_id,
+                        'firstname' => $request->firstName,
+                        'lastname' => $request->lastName,
+                        'middlename' => $request->middleName ?? '',
+                        'phone_number' => $request->phone ?? null,
+                        'department' => $request->department,
+                        'office' => $request->office ?? null,
+                        'bio' => $request->bio ?? null,
+                    ]);
+                }
+
+                // Add audit log
+                DB::table('auditlogs')->insert([
+                    'user_id' => $instructor->instructor_id,
+                    'action' => 'Profile updated',
+                    'details' => 'Sir '.$instructorInfo->lastname .' profile information updated',
+                    'ip_address' => $request->ip(),
+                    'date' => now(),
+                    'access_by' => '107568',
+                ]);
+
+                DB::commit();
+
+                // Refresh user data
+                $updatedInstructor = Auth::guard('instructor')->user();
+                
+                // Reload the instructor info relationship
+                $instructorInfo = DB::table('instructor_info')
+                    ->where('instructor_id', $instructor->instructor_id)
+                    ->first();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Profile updated successfully!',
+                    'data' => [
+                        'firstname' => $request->firstName,
+                        'lastname' => $request->lastName,
+                        'middlename' => $request->middleName ?? '',
+                        'email' => $request->email,
+                        'phone_number' => $request->phone ?? null,
+                        'department' => $request->department,
+                        'office' => $request->office ?? null,
+                        'bio' => $request->bio ?? null,
+                    ]
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Profile update failed: ' . $e->getMessage());
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An error occurred while updating your profile. Please try again.',
+                    'error' => env('APP_DEBUG') ? $e->getMessage() : null
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Profile update error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong. Please try again later.',
+                'error' => env('APP_DEBUG') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+
+    public function uploadProfilePicture(Request $request)
+    {
+        try {
+            $instructor = Auth::guard('instructor')->user();
+            
+            // Validate the uploaded file
+            $validator = Validator::make($request->all(), [
+                'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048', // 2MB max
+            ], [
+                'profile_picture.required' => 'Please select an image to upload.',
+                'profile_picture.image' => 'The file must be an image.',
+                'profile_picture.mimes' => 'Only JPEG, PNG, JPG, GIF, and WebP images are allowed.',
+                'profile_picture.max' => 'The image size must not exceed 2MB.',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            DB::beginTransaction();
+
+            try {
+                // Get the uploaded file
+                $file = $request->file('profile_picture');
+                
+                // Generate unique filename
+                $filename = 'instructor_' . $instructor->instructor_id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                
+                // Set upload path to public/profile
+                $uploadPath = public_path('profile');
+                
+                // Create directories if they don't exist
+                if (!file_exists($uploadPath)) {
+                    mkdir($uploadPath, 0755, true);
+                }
+
+                // Delete old profile picture if not default
+                $oldProfile = $instructor->profile;
+                if ($oldProfile && $oldProfile !== 'default.png' && file_exists(public_path('profile/' . $oldProfile))) {
+                    unlink(public_path('profile/' . $oldProfile));
+                    
+                    // Also delete thumbnail if exists
+                    $oldThumb = public_path('profile/thumb_' . $oldProfile);
+                    if (file_exists($oldThumb)) {
+                        unlink($oldThumb);
+                    }
+                }
+
+                // Save the new image to public/profile
+                $file->move($uploadPath, $filename);
+                
+                // Optimize the image (resize to 500x500)
+                $this->optimizeImage($uploadPath . '/' . $filename);
+                
+                // Create thumbnail (optional)
+                $this->createThumbnail($uploadPath, $filename);
+                
+                // Update database
+                DB::table('instructor')
+                    ->where('instructor_id', $instructor->instructor_id)
+                    ->update(['profile' => $filename]);
+                
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Profile picture updated successfully!',
+                    'profile_picture' => $filename,
+                    'profile_url' => asset('profile/' . $filename) . '?v=' . time() // Add timestamp to prevent caching
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Profile picture upload failed: ' . $e->getMessage());
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to upload profile picture. Please try again.',
+                    'error' => env('APP_DEBUG') ? $e->getMessage() : null
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Profile picture upload error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong. Please try again later.',
+                'error' => env('APP_DEBUG') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    public function removeProfilePicture(Request $request)
+    {
+        try {
+            $instructor = Auth::guard('instructor')->user();
+            
+            DB::beginTransaction();
+
+            try {
+                // Delete current profile picture if not default
+                $currentProfile = $instructor->profile;
+                if ($currentProfile && $currentProfile !== 'default.png' && file_exists(public_path('profile/' . $currentProfile))) {
+                    unlink(public_path('profile/' . $currentProfile));
+                    
+                    // Also delete thumbnail if exists
+                    $thumbPath = public_path('profile/thumb_' . $currentProfile);
+                    if (file_exists($thumbPath)) {
+                        unlink($thumbPath);
+                    }
+                }
+
+                // Set to default
+                DB::table('instructor')
+                    ->where('instructor_id', $instructor->instructor_id)
+                    ->update(['profile' => 'default.png']);
+                
+
+                DB::commit();
+
+                // Generate avatar URL
+                $firstName = DB::table('instructor_info')
+                    ->where('instructor_id', $instructor->instructor_id)
+                    ->value('firstname');
+                $lastName = DB::table('instructor_info')
+                    ->where('instructor_id', $instructor->instructor_id)
+                    ->value('lastname');
+
+                $avatarName = urlencode(($firstName ?? '') . '+' . ($lastName ?? ''));
+                $avatarUrl = 'https://ui-avatars.com/api/?name=' . $avatarName . '&background=4361ee&color=fff&size=150';
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Profile picture removed successfully!',
+                    'profile_picture' => 'default.png',
+                    'profile_url' => $avatarUrl
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Profile picture removal failed: ' . $e->getMessage());
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to remove profile picture. Please try again.',
+                    'error' => env('APP_DEBUG') ? $e->getMessage() : null
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Profile picture removal error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong. Please try again later.',
+                'error' => env('APP_DEBUG') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    // Optimize image (resize to 500x500)
+    private function optimizeImage($imagePath)
+    {
+        try {
+            if (!extension_loaded('gd')) {
+                return;
+            }
+
+            $imageType = exif_imagetype($imagePath);
+            
+            switch ($imageType) {
+                case IMAGETYPE_JPEG:
+                    $image = imagecreatefromjpeg($imagePath);
+                    break;
+                case IMAGETYPE_PNG:
+                    $image = imagecreatefrompng($imagePath);
+                    break;
+                case IMAGETYPE_GIF:
+                    $image = imagecreatefromgif($imagePath);
+                    break;
+                case IMAGETYPE_WEBP:
+                    if (function_exists('imagecreatefromwebp')) {
+                        $image = imagecreatefromwebp($imagePath);
+                    } else {
+                        return;
+                    }
+                    break;
+                default:
+                    return;
+            }
+
+            list($width, $height) = getimagesize($imagePath);
+            
+            // Calculate new dimensions (max 500px)
+            $maxSize = 500;
+            if ($width > $height) {
+                $newWidth = $maxSize;
+                $newHeight = intval($height * ($maxSize / $width));
+            } else {
+                $newHeight = $maxSize;
+                $newWidth = intval($width * ($maxSize / $height));
+            }
+            
+            // Create new image
+            $newImage = imagecreatetruecolor($newWidth, $newHeight);
+            
+            // Preserve transparency for PNG and GIF
+            if ($imageType == IMAGETYPE_PNG || $imageType == IMAGETYPE_GIF) {
+                imagecolortransparent($newImage, imagecolorallocatealpha($newImage, 0, 0, 0, 127));
+                imagealphablending($newImage, false);
+                imagesavealpha($newImage, true);
+            }
+            
+            // Resize image
+            imagecopyresampled($newImage, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+            
+            // Save optimized image
+            switch ($imageType) {
+                case IMAGETYPE_JPEG:
+                    imagejpeg($newImage, $imagePath, 85);
+                    break;
+                case IMAGETYPE_PNG:
+                    imagepng($newImage, $imagePath, 8);
+                    break;
+                case IMAGETYPE_GIF:
+                    imagegif($newImage, $imagePath);
+                    break;
+                case IMAGETYPE_WEBP:
+                    if (function_exists('imagewebp')) {
+                        imagewebp($newImage, $imagePath, 85);
+                    }
+                    break;
+            }
+            
+            // Free memory
+            imagedestroy($image);
+            imagedestroy($newImage);
+            
+        } catch (\Exception $e) {
+            Log::error('Image optimization failed: ' . $e->getMessage());
+            // Continue without optimization if it fails
+        }
+    }
+
+
+    private function createThumbnail($directory, $filename)
+    {
+        try {
+            if (!extension_loaded('gd')) {
+                return;
+            }
+
+            $sourcePath = $directory . '/' . $filename;
+            $thumbPath = $directory . '/thumb_' . $filename;
+            
+            $imageType = exif_imagetype($sourcePath);
+            
+            switch ($imageType) {
+                case IMAGETYPE_JPEG:
+                    $image = imagecreatefromjpeg($sourcePath);
+                    break;
+                case IMAGETYPE_PNG:
+                    $image = imagecreatefrompng($sourcePath);
+                    break;
+                case IMAGETYPE_GIF:
+                    $image = imagecreatefromgif($sourcePath);
+                    break;
+                case IMAGETYPE_WEBP:
+                    if (function_exists('imagecreatefromwebp')) {
+                        $image = imagecreatefromwebp($sourcePath);
+                    } else {
+                        return;
+                    }
+                    break;
+                default:
+                    return;
+            }
+            
+            $width = imagesx($image);
+            $height = imagesy($image);
+            
+            // Create square thumbnail (150x150)
+            $thumbSize = 150;
+            $thumb = imagecreatetruecolor($thumbSize, $thumbSize);
+            
+            // Preserve transparency for PNG and GIF
+            if ($imageType == IMAGETYPE_PNG || $imageType == IMAGETYPE_GIF) {
+                imagecolortransparent($thumb, imagecolorallocatealpha($thumb, 0, 0, 0, 127));
+                imagealphablending($thumb, false);
+                imagesavealpha($thumb, true);
+            } else {
+                // Fill background with white for JPEG
+                $white = imagecolorallocate($thumb, 255, 255, 255);
+                imagefill($thumb, 0, 0, $white);
+            }
+            
+            // Calculate resize to fit in square
+            $ratio = min($thumbSize / $width, $thumbSize / $height);
+            $newWidth = intval($width * $ratio);
+            $newHeight = intval($height * $ratio);
+            $x = intval(($thumbSize - $newWidth) / 2);
+            $y = intval(($thumbSize - $newHeight) / 2);
+            
+            imagecopyresampled($thumb, $image, $x, $y, 0, 0, $newWidth, $newHeight, $width, $height);
+            
+            // Save thumbnail
+            switch ($imageType) {
+                case IMAGETYPE_JPEG:
+                    imagejpeg($thumb, $thumbPath, 90);
+                    break;
+                case IMAGETYPE_PNG:
+                    imagepng($thumb, $thumbPath, 9);
+                    break;
+                case IMAGETYPE_GIF:
+                    imagegif($thumb, $thumbPath);
+                    break;
+                case IMAGETYPE_WEBP:
+                    if (function_exists('imagewebp')) {
+                        imagewebp($thumb, $thumbPath, 90);
+                    }
+                    break;
+            }
+            
+            imagedestroy($image);
+            imagedestroy($thumb);
+            
+        } catch (\Exception $e) {
+            Log::error('Thumbnail creation failed: ' . $e->getMessage());
+            // Continue without thumbnail if creation fails
+        }
+    }
+
+
 }// End of Class

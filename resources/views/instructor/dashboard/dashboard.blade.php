@@ -2,8 +2,9 @@
 use Illuminate\Support\Facades\DB;
 
 $firstname = $user->info->firstname;
-$lastname = 'Donquixote';
+$lastname = $user->info->lastname;
 $id = $user->info->instructor_id;
+$profile_picture = $user->profile;
 ?>
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -1018,43 +1019,63 @@ $id = $user->info->instructor_id;
                 <div class="profile-container">
                     <!-- Profile Summary Card -->
                     <div class="profile-summary-card">
+                        <!--  -->
                         <div class="profile-avatar-section">
-                            <div class="avatar-container">
-                                <img src="{{ !empty($profile_picture) && $profile_picture !== 'default.png' ? asset('profile/' . $profile_picture) : 'https://ui-avatars.com/api/?name=' . urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) . '&background=4361ee&color=fff&size=150' }}" 
+                            <div class="avatar-container" id="avatar-container">
+                                @php
+                                    $profilePic = $user->profile ?? 'default.png';
+                                    $hasCustomAvatar = !empty($profilePic) && $profilePic !== 'default.png';
+                                    
+                                    if ($hasCustomAvatar) {
+                                        $avatarUrl = asset('profile/' . $profilePic) . '?v=' . time();
+                                    } else {
+                                        $firstName = $user->info->firstname ?? '';
+                                        $lastName = $user->info->lastname ?? '';
+                                        $avatarUrl = 'https://ui-avatars.com/api/?name=' . urlencode($firstName . '+' . $lastName) . '&background=4361ee&color=fff&size=150';
+                                    }
+                                @endphp
+                                
+                                <img src="{{ $avatarUrl }}" 
                                     alt="Instructor Avatar" 
-                                    class="profile-avatar">
+                                    class="profile-avatar"
+                                    id="profile-avatar"
+                                    onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=Instructor&background=4361ee&color=fff&size=150'">
+                                
                                 <div class="avatar-overlay">
                                     <i class="fas fa-camera"></i>
+                                    <span>Change Photo</span>
+                                </div>
+                                
+                                <!-- Loading overlay -->
+                                <div class="avatar-loading-overlay" id="avatar-loading-overlay">
+                                    <div class="spinner"></div>
+                                    <span>Uploading...</span>
                                 </div>
                             </div>
                             
-                            <button class="btn-secondary btn-avatar">
+                            <button class="btn-secondary btn-avatar" id="change-photo-btn">
                                 <i class="fas fa-camera"></i>
                                 Change Photo
                             </button>
+                            
+                            @if($hasCustomAvatar)
+                            <button class="btn-secondary btn-remove-avatar" id="remove-photo-btn" style="margin-top: 8px;">
+                                <i class="fas fa-trash"></i>
+                                Remove Photo
+                            </button>
+                            @endif
+                            
+                            <!-- Hidden file input -->
+                            <input type="file" id="profile-picture-input" accept="image/*" style="display: none;">
                         </div>
+                        <!--  -->
                         
                         <div class="profile-info-summary">
-                            <h3 class="profile-name">Donquixote Doflamingo</h3>
-                            <p class="profile-id">007</p>
+                            <h3 class="profile-name" id="profile-form2">{{$firstname}} {{$lastname}}</h3>
+                            <p class="profile-id" id="profile-form3">{{$user->email5}}</p>
                             <div class="profile-badge">
                                 <i class="fas fa-chalkboard-teacher"></i>
                                 Faculty Member
-                            </div>
-                            
-                            <div class="profile-stats">
-                                <div class="profile-stat">
-                                    <span class="stat-number">4</span>
-                                    <span class="stat-label">Courses</span>
-                                </div>
-                                <div class="profile-stat">
-                                    <span class="stat-number">127</span>
-                                    <span class="stat-label">Students</span>
-                                </div>
-                                <div class="profile-stat">
-                                    <span class="stat-number">5</span>
-                                    <span class="stat-label">Years</span>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -1076,7 +1097,7 @@ $id = $user->info->instructor_id;
                                         <i class="fas fa-user"></i>
                                         First Name
                                     </label>
-                                    <input type="text" class="form-control" id="firstName" value="Doflamingo" readonly>
+                                    <input type="text" class="form-control" id="firstName" value="{{$firstname}}" readonly>
                                 </div>
                                 
                                 <div class="form-group">
@@ -1086,13 +1107,21 @@ $id = $user->info->instructor_id;
                                     </label>
                                     <input type="text" class="form-control" id="lastName" value="{{ $lastname }}" readonly>
                                 </div>
+
+                                <div class="form-group">
+                                    <label for="lastName" class="form-label">
+                                        <i class="fas fa-user"></i>
+                                        Niddle Name
+                                    </label>
+                                    <input type="text" class="form-control" id="middleName" value="{{ $user->info->middlename }}" readonly>
+                                </div>
                                 
                                 <div class="form-group">
                                     <label for="email" class="form-label">
                                         <i class="fas fa-envelope"></i>
                                         Email Address
                                     </label>
-                                    <input type="email" class="form-control" id="email" value="instructor@evsu.edu.ph" readonly>
+                                    <input disabled type="email" class="form-control" id="email" value="{{$user->email5}}" readonly>
                                 </div>
                                 
                                 <div class="form-group">
@@ -1100,7 +1129,7 @@ $id = $user->info->instructor_id;
                                         <i class="fas fa-phone"></i>
                                         Phone Number
                                     </label>
-                                    <input type="tel" class="form-control" id="phone" value="+63 123 456 7890" readonly>
+                                    <input type="tel" class="form-control" id="phone" value="{{$user->info->phone_number}}" readonly>
                                 </div>
                                 
                                 <div class="form-group full-width">
@@ -1108,7 +1137,7 @@ $id = $user->info->instructor_id;
                                         <i class="fas fa-university"></i>
                                         Department
                                     </label>
-                                    <input type="text" class="form-control" id="department" value="Computer Studies Department" readonly>
+                                    <input type="text" class="form-control" id="department" value="{{$user->info->department}}" readonly>
                                 </div>
                                 
                                 <div class="form-group">
@@ -1116,7 +1145,7 @@ $id = $user->info->instructor_id;
                                         <i class="fas fa-briefcase"></i>
                                         Position
                                     </label>
-                                    <input type="text" class="form-control" id="position" value="Assistant Professor" readonly>
+                                    <input disabled type="text" class="form-control" id="position" value="{{$user->user_type}}" readonly>
                                 </div>
                                 
                                 <div class="form-group">
@@ -1124,7 +1153,7 @@ $id = $user->info->instructor_id;
                                         <i class="fas fa-map-marker-alt"></i>
                                         Office
                                     </label>
-                                    <input type="text" class="form-control" id="office" value="CS Building Room 201" readonly>
+                                    <input type="text" class="form-control" id="office" value="{{$user->info->office}}" readonly>
                                 </div>
                                 
                                 <div class="form-group full-width">
@@ -1132,7 +1161,7 @@ $id = $user->info->instructor_id;
                                         <i class="fas fa-file-alt"></i>
                                         Bio
                                     </label>
-                                    <textarea class="form-control" id="bio" rows="3" readonly>Specialized in Software Engineering and Web Development with 5 years of teaching experience.</textarea>
+                                    <textarea class="form-control" id="bio" rows="3" readonly>{{$user->info->bio}}</textarea>
                                 </div>
                             </div>
                             

@@ -925,7 +925,11 @@
             }
 
             #_student_btn {
-            width: 30%;
+            min-width: 100%;
+            gap: 10px;
+            margin-top: 15px;
+            margin-inline: 10px;
+            margin-block: 10px;
             }
 
         }
@@ -1037,6 +1041,7 @@
             min-width: 100%;
             display: flex;
             position: relative;
+            
             }
 
             #_view {

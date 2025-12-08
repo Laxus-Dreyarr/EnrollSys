@@ -1419,7 +1419,7 @@ function initializeInputGrades() {
         const card = document.createElement('div');
         card.className = 'student-card';
         
-        const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(student.firstname + ' ' + student.lastname)}&background=4361ee&color=fff&size=60`;
+        const avatarUrl = student.profile;
         
         let subjectsPreviewHTML = '';
         let allSubjectsHTML = '';
@@ -1557,7 +1557,7 @@ function initializeInputGrades() {
             
             const handleGradeClick = function(e) {
                 e.stopPropagation();
-                openGradeModal(this.dataset, student.subjects);
+                openGradeModal(this.dataset, student.profile, student.subjects);
             };
             
             newButton.addEventListener('click', handleGradeClick);
@@ -1657,14 +1657,14 @@ function initializeInputGrades() {
     }
         
     // Enhanced mobile modal handling
-    function openGradeModal(data, allSubjects = []) {
+    function openGradeModal(data, sp, allSubjects = []) {
         console.log('Opening grade modal with data:', data);
         
-        const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.firstname + ' ' + data.lastname)}&background=4361ee&color=fff&size=80`;
+        const avatarUrl = sp;
         
         // Update student info
         document.getElementById('student_avatar').src = avatarUrl;
-        document.getElementById('student_full_name').textContent = `${data.firstname} ${data.middlename || ''} ${data.lastname}`.trim();
+        document.getElementById('student_full_name').textContent = `${data.firstname} ${data.lastname}`.trim();
         document.getElementById('student_id_display').textContent = `ID: ${data.idNo}`;
         document.getElementById('student_course').textContent = `Year: ${data.yearLevel}`;
         
@@ -2334,6 +2334,8 @@ document.addEventListener('DOMContentLoaded', function() {
     count_students();
     pending_request();
     updateNotificationCount();
+    initializeProfilePictureUpload();
+    handleImageErrors();
 
     // Initialize sidebar toggle
     const sidebarToggle = document.querySelector('.sidebar-toggle');
@@ -3046,8 +3048,8 @@ document.addEventListener('DOMContentLoaded', function() {
             editProfileBtn.style.display = 'flex';
         }
     }
-    
-    function saveProfileChanges() {
+
+    async function saveProfileChanges() {
         // Show loading state
         const submitBtn = document.querySelector('#profile-form .btn-primary');
         const originalText = submitBtn.innerHTML;
@@ -3062,7 +3064,67 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         }, 1500);
+
+        // Collect form data
+        const formData = {
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName').value,
+            middleName: document.getElementById('middleName').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            department: document.getElementById('department').value,
+            office: document.getElementById('office').value,
+            bio: document.getElementById('bio').value,
+        };
+
+        
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            // Send the request to the server
+            const response = await fetch('/instructor/update-profile', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            let A = ''+data.data.firstname +' '+data.data.lastname;
+            let B = ''+data.data.email;
+            document.getElementById('profile-form2').textContent = A;
+            document.getElementById('profile-form3').textContent = B;
+
+            // Disable editing mode
+                disableProfileEditing(originalValues);
+                
+                // Update the page data without reloading (optional)
+                // updateProfileDisplay(data.data);
+                
+            
+        
     }
+    
+    // function saveProfileChanges() {
+    //     // Show loading state
+    //     const submitBtn = document.querySelector('#profile-form .btn-primary');
+    //     const originalText = submitBtn.innerHTML;
+    //     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    //     submitBtn.disabled = true;
+        
+    //     // Simulate API call to save profile
+    //     setTimeout(() => {
+    //         showNotification('Profile updated successfully!', 'success');
+    //         disableProfileEditing();
+            
+    //         submitBtn.innerHTML = originalText;
+    //         submitBtn.disabled = false;
+    //     }, 1500);
+    // }
     
     // Grade Management
     const gradeInputs = document.querySelectorAll('.grade-input');
@@ -3381,6 +3443,302 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCourseManagement();
     initializeStudentFilters();
 });
+
+function initializeProfilePictureUpload() {
+    const avatarContainer = document.getElementById('avatar-container');
+    const changePhotoBtn = document.getElementById('change-photo-btn');
+    const removePhotoBtn = document.getElementById('remove-photo-btn');
+    const profilePictureInput = document.getElementById('profile-picture-input');
+    const profileAvatar = document.getElementById('profile-avatar');
+    const avatarLoadingOverlay = document.getElementById('avatar-loading-overlay');
+    
+    if (!avatarContainer || !profilePictureInput) return;
+    
+    // Open file dialog when clicking avatar or button
+    [avatarContainer, changePhotoBtn].forEach(element => {
+        if (element) {
+            element.addEventListener('click', function(e) {
+                e.preventDefault();
+                profilePictureInput.click();
+            });
+        }
+    });
+    
+    // Handle file selection
+    profilePictureInput.addEventListener('change', handleProfilePictureSelect);
+    
+    // Handle remove photo button
+    if (removePhotoBtn) {
+        removePhotoBtn.addEventListener('click', handleRemoveProfilePicture);
+    }
+}
+
+function handleProfilePictureSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file type and size
+    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    
+    if (!validTypes.includes(file.type)) {
+        showNotification('Please select a valid image file (JPEG, PNG, JPG, GIF).', 'error');
+        return;
+    }
+    
+    if (file.size > maxSize) {
+        showNotification('Image size must be less than 2MB.', 'error');
+        return;
+    }
+    
+    // Show preview and confirmation
+    showProfilePicturePreview(file);
+}
+
+function showProfilePicturePreview(file) {
+    // Create preview modal
+    const previewContainer = document.createElement('div');
+    previewContainer.className = 'avatar-preview-container';
+    previewContainer.innerHTML = `
+        <div class="avatar-preview-content">
+            <h3>Preview Profile Picture</h3>
+            <p>Is this how you want your profile picture to look?</p>
+            <img src="" alt="Preview" class="avatar-preview-image" id="avatar-preview-image">
+            <div class="avatar-preview-actions">
+                <button class="avatar-preview-btn avatar-preview-cancel" id="cancel-upload">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+                <button class="avatar-preview-btn avatar-preview-confirm" id="confirm-upload">
+                    <i class="fas fa-check"></i>
+                    Upload
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(previewContainer);
+    
+    // Show the preview image
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('avatar-preview-image').src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    
+    // Show the modal
+    setTimeout(() => {
+        previewContainer.classList.add('active');
+    }, 10);
+    
+    // Handle cancel button
+    document.getElementById('cancel-upload').addEventListener('click', function() {
+        previewContainer.classList.remove('active');
+        setTimeout(() => {
+            previewContainer.remove();
+            // Clear the file input
+            document.getElementById('profile-picture-input').value = '';
+        }, 300);
+    });
+    
+    // Handle confirm button
+    document.getElementById('confirm-upload').addEventListener('click', function() {
+        uploadProfilePicture(file);
+        previewContainer.classList.remove('active');
+        setTimeout(() => {
+            previewContainer.remove();
+        }, 300);
+    });
+    
+    // Close on background click
+    previewContainer.addEventListener('click', function(e) {
+        if (e.target === previewContainer) {
+            document.getElementById('cancel-upload').click();
+        }
+    });
+}
+
+async function uploadProfilePicture(file) {
+    const avatarLoadingOverlay = document.getElementById('avatar-loading-overlay');
+    const profileAvatar = document.getElementById('profile-avatar');
+    const removePhotoBtn = document.getElementById('remove-photo-btn');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    try {
+        // Show loading overlay
+        avatarLoadingOverlay.classList.add('active');
+        
+        // Create FormData
+        const formData = new FormData();
+        formData.append('profile_picture', file);
+        formData.append('_token', csrfToken);
+        
+        // Send upload request
+        const response = await fetch('/instructor/upload-profile-picture', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update the profile image
+            profileAvatar.src = data.profile_url;
+            profileAvatar.classList.add('updated');
+            
+            // Show success message
+            showNotification(data.message, 'success');
+            
+            // Show remove button if it doesn't exist
+            if (!removePhotoBtn && data.profile_picture !== 'default.png') {
+                addRemovePhotoButton();
+            }
+            
+            // Also update sidebar avatar if it exists
+            updateSidebarAvatar(data.profile_url);
+            
+            // Clear file input
+            document.getElementById('profile-picture-input').value = '';
+            
+            // Remove animation class after animation completes
+            setTimeout(() => {
+                profileAvatar.classList.remove('updated');
+            }, 500);
+            
+        } else {
+            // Show error message
+            let errorMessage = data.message;
+            if (data.errors && data.errors.profile_picture) {
+                errorMessage = data.errors.profile_picture[0];
+            }
+            showNotification(errorMessage, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Upload error:', error);
+        showNotification('Failed to upload profile picture. Please try again.', 'error');
+    } finally {
+        // Hide loading overlay
+        avatarLoadingOverlay.classList.remove('active');
+    }
+}
+
+async function handleRemoveProfilePicture() {
+    if (!confirm('Are you sure you want to remove your profile picture?')) {
+        return;
+    }
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const profileAvatar = document.getElementById('profile-avatar');
+    const removePhotoBtn = document.getElementById('remove-photo-btn');
+    const avatarLoadingOverlay = document.getElementById('avatar-loading-overlay');
+    
+    try {
+        // Show loading overlay
+        if (avatarLoadingOverlay) {
+            avatarLoadingOverlay.classList.add('active');
+        }
+        
+        // Send remove request
+        const response = await fetch('/instructor/remove-profile-picture', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ _token: csrfToken })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update the profile image
+            profileAvatar.src = data.profile_url;
+            profileAvatar.classList.add('updated');
+            
+            // Show success message
+            showNotification(data.message, 'success');
+            
+            // Remove the remove button
+            if (removePhotoBtn) {
+                removePhotoBtn.remove();
+            }
+            
+            // Also update sidebar avatar
+            updateSidebarAvatar(data.profile_url);
+            
+            // Remove animation class after animation completes
+            setTimeout(() => {
+                profileAvatar.classList.remove('updated');
+            }, 500);
+            
+        } else {
+            showNotification(data.message || 'Failed to remove profile picture.', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Remove error:', error);
+        showNotification('Failed to remove profile picture. Please try again.', 'error');
+    } finally {
+        // Hide loading overlay
+        if (avatarLoadingOverlay) {
+            avatarLoadingOverlay.classList.remove('active');
+        }
+    }
+}
+
+function addRemovePhotoButton() {
+    const avatarSection = document.querySelector('.profile-avatar-section');
+    if (!avatarSection) return;
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'btn-secondary btn-remove-avatar';
+    removeBtn.id = 'remove-photo-btn';
+    removeBtn.innerHTML = '<i class="fas fa-trash"></i> Remove Photo';
+    removeBtn.style.marginTop = '8px';
+    
+    removeBtn.addEventListener('click', handleRemoveProfilePicture);
+    
+    // Insert after the Change Photo button
+    const changePhotoBtn = document.getElementById('change-photo-btn');
+    if (changePhotoBtn) {
+        changePhotoBtn.parentNode.insertBefore(removeBtn, changePhotoBtn.nextSibling);
+    }
+}
+
+function updateSidebarAvatar(imageUrl) {
+    // Update sidebar avatar if it exists
+    const sidebarAvatar = document.querySelector('.sidebar .user-avatar');
+    if (sidebarAvatar) {
+        sidebarAvatar.src = imageUrl;
+    }
+    
+    // Update any other avatar on the page
+    const allAvatars = document.querySelectorAll('.user-avatar, .avatar-initials');
+    allAvatars.forEach(avatar => {
+        if (avatar.classList.contains('user-avatar')) {
+            avatar.src = imageUrl;
+        }
+    });
+}
+
+// Handle broken images
+function handleImageErrors() {
+    document.addEventListener('error', function(e) {
+        if (e.target.tagName === 'IMG' && e.target.classList.contains('profile-avatar')) {
+            const firstName = document.getElementById('firstName')?.value || 'Instructor';
+            const lastName = document.getElementById('lastName')?.value || '';
+            const name = encodeURIComponent(firstName + '+' + lastName);
+            e.target.src = `https://ui-avatars.com/api/?name=${name}&background=4361ee&color=fff&size=150`;
+            e.target.onerror = null; // Prevent infinite loop
+        }
+    }, true);
+}
 
 // Additional initialization functions
 function initializeCourseManagement() {

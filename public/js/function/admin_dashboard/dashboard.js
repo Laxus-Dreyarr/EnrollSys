@@ -1169,14 +1169,14 @@ async function insertsupabase2(){
                             <td>${subject.units}</td>
                             <td>${subject.year_level} / ${subject.semester}</td>
                             <td>${subject.curriculum_year || 'N/A'}</td> <!-- Fixed to show curriculum year -->
-                            <td id="_student_btn">
-                                <button id="_view" class="btn btn-sm btn-outline-info" onclick="viewSubject(${subject.id})">
-                                    <i class="fas fa-eye"></i> View
+                            <td id="_student_btn" class="d-inline-flex">
+                                <button id="_view" class="btn btn-sm btn-outline-info m-1" onclick="viewSubject(${subject.id})">
+                                    <i class="fas fa-eye"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-primary ms-1" onclick="editSubject(${subject.id})">
+                                <button class="btn btn-sm btn-outline-primary m-1" onclick="editSubject(${subject.id})">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteSubject(${subject.id})">
+                                <button class="btn btn-sm btn-outline-danger m-1" onclick="deleteSubject(${subject.id})">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
