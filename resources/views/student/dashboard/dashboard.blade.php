@@ -130,7 +130,25 @@ $show_prereg_form = $isEnrollmentActive;
             <!-- Dashboard Section -->
             <div id="dashboard-section" class="content-section active">
                 <!-- Stats Overview -->
-                <div class="stats-grid">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon courses">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        <h3 class="stat-value" id="averageGradeValue" style="font-size: 1rem;"></h3>
+                        <p class="stat-label">Average Grade</p>
+                        <div class="grade-indicator">
+                            <div class="grade-bar">
+                                <div class="grade-fill" id="gradeFill"></div>
+                            </div>
+                            <div class="grade-labels">
+                                <span>1.0</span>
+                                <span>3.0</span>
+                                <span>5.0</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="stat-card" id="d-stat-card-enroll">
                         <div class="stat-icon grades">
                             <i class="fa-solid fa-plus"></i>
@@ -170,16 +188,24 @@ $show_prereg_form = $isEnrollmentActive;
                         <div class="stat-icon courses">
                             <i class="fas fa-book"></i>
                         </div>
-                        <h3 class="stat-value">5</h3>
-                        <p class="stat-label">Enrolled Courses</p>
+                        <h3 class="stat-value" id="enrolled_subjects"></h3>
+                        <p class="stat-label">Enrolled Subjects</p>
                     </div>
+
+                    <!-- <div class="stat-card">
+                        <div class="stat-icon courses">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <h3 class="stat-value" id="enrolled_subjects">1.0</h3>
+                        <p class="stat-label">Average Grade</p>
+                    </div> -->
                     
                     
                     <div class="stat-card">
                         <div class="stat-icon attendance">
                             <i class="fa-solid fa-folder-open"></i>
                         </div>
-                        <h3 class="stat-value">10</h3>
+                        <h3 class="stat-value" id="count_documents"></h3>
                         <p class="stat-label">Documents</p>
                     </div>
                 </div>

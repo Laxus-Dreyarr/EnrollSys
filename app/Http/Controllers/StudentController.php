@@ -958,12 +958,98 @@ class StudentController extends Controller
             ->orderBy('year_level')
             ->orderBy('semester')
             ->get();
+
+        // Calculate average grade (excluding non-numeric grades like INC, DRP)
+        $totalGradePoints = 0;
+        $totalUnits = 0;
+        $gradeCount = 0;
+
+        foreach ($enrolledSubjects as $subject) {
+            // Check if grade is numeric (1.0, 2.0, 3.0, 4.0, 5.0)
+            if (is_numeric($subject->grade)) {
+                $gradeValue = (float)$subject->grade;
+                $units = $subject->units;
+                
+                // For Philippine grading system: 1.0 is highest, 5.0 is lowest
+                // Calculate grade points
+                $totalGradePoints += ($gradeValue * $units);
+                $totalUnits += $units;
+                $gradeCount++;
+            }
+            // Handle INC, DRP, etc. (optional - you might want to exclude these)
+        }
+
+        // Calculate weighted average
+        $averageGrade = ($totalUnits > 0) ? $totalGradePoints / $totalUnits : 0;
+
+        // If you want a simple average instead of weighted:
+        // $averageGrade = ($gradeCount > 0) ? ($totalGradePoints / $gradeCount) : 0;
+
+        // For gauge display, convert to percentage (1.0 = 100%, 5.0 = 0%)
+        $gaugePercentage = 0;
+        if ($averageGrade > 0) {
+            // Convert 1.0-5.0 scale to 0-100% for gauge
+            // Formula: 100 * (5.0 - grade) / 4.0
+            $gaugePercentage = 100 * (5.0 - $averageGrade) / 4.0;
+            $gaugePercentage = max(0, min(100, $gaugePercentage)); // Clamp between 0-100
+        }
         
         // Check if there's an active enrollment period
         $enrollmentPeriod = $this->checkActiveEnrollmentPeriod();
         $isEnrollmentActive = $enrollmentPeriod && $enrollmentPeriod->is_active == 1;
         
-        return view('student.dashboard.dashboard', compact('user', 'isEnrollmentActive', 'enrollmentPeriod', 'enrolledSubjects'));
+        return view('student.dashboard.dashboard', compact('user', 'isEnrollmentActive', 'enrollmentPeriod', 'enrolledSubjects', 'averageGrade', 'gaugePercentage'));
+    }
+
+
+    public function getAverageGrade()
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+
+        // Get enrolled subjects with grades
+        $enrolledSubjects = DB::table('enrolled_sub')
+            ->where('student_id', $student->id)
+            ->get();
+        
+        // Calculate average grade
+        $totalGradePoints = 0;
+        $totalUnits = 0;
+        $gradeCount = 0;
+        
+        foreach ($enrolledSubjects as $subject) {
+            if (is_numeric($subject->grade)) {
+                $gradeValue = (float)$subject->grade;
+                $units = $subject->units;
+                
+                $totalGradePoints += ($gradeValue * $units);
+                $totalUnits += $units;
+                $gradeCount++;
+            }
+        }
+        
+        $averageGrade = ($totalUnits > 0) ? $totalGradePoints / $totalUnits : 0;
+        
+        // Format to 2 decimal places
+        $formattedAverage = number_format($averageGrade, 2);
+        
+        // Calculate gauge percentage
+        $gaugePercentage = 0;
+        if ($averageGrade > 0) {
+            $gaugePercentage = 100 * (5.0 - $averageGrade) / 4.0;
+            $gaugePercentage = max(0, min(100, $gaugePercentage));
+        }
+        
+        return response()->json([
+            'average_grade' => $formattedAverage,
+            'gauge_percentage' => $gaugePercentage,
+            'grade_count' => $gradeCount,
+            'total_units' => $totalUnits
+        ]);
     }
 
     public function logout(Request $request)
@@ -3081,6 +3167,47 @@ class StudentController extends Controller
                 'success' => false,
                 'message' => 'Failed to get enrollment status'
             ]);
+        }
+    }
+
+    public function getEnrolledSub() {
+        try {
+            $user = Auth::guard('student')->user();
+            $student = $user->user_information->student;
+            
+            // Get count of pending enrollment requests
+            $count = DB::table('enrollments')
+                ->where('status', 'Enrolled')
+                ->where('student_id', $student->id)
+                ->count();
+
+            return response()->json([
+                'count' => $count
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching enrollment requests: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch enrollment requests'], 500);
+        }
+    }
+
+    public function countDocuments() {
+        try {
+            $user = Auth::guard('student')->user();
+            $student = $user->user_information->student;
+            
+            // Get count of pending enrollment requests
+            $count = DB::table('student_files')
+                ->where('student_id', $student->id)
+                ->count();
+
+            return response()->json([
+                'count' => $count
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching enrollment requests: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch enrollment requests'], 500);
         }
     }
 

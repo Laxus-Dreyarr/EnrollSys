@@ -20,6 +20,8 @@ function setupRealtimeSubscription() {
             if (payload.new && payload.new.table_name === 'status') {
                 if (payload.new.operation === 'DELETE') {
                     status_update();
+                    count_enrolled_subjects();
+                    count_documents();
                 } else if (payload.new.operation === 'RESTART') {
                     window.location.reload();
                 }
@@ -3392,6 +3394,150 @@ function initializeLogout() {
     // });
 }
 
+function count_enrolled_subjects() {
+    const requestsContainer = document.getElementById('enrolled_subjects');
+    
+    fetch('/student/enrolled_sub', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({}) // Empty body for POST
+    })
+    .then(response => response.json())
+    .then(data => {
+        requestsContainer.textContent = data.count || 0;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        requestsContainer.textContent = '0';
+    });
+}
+
+function loadAverageGradeChart() {
+    // First, fetch the average grade data
+    fetch('/student/average-grade', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update the grade value display
+        document.getElementById('averageGradeValue').textContent = data.average_grade;
+        
+        // Load Google Charts and draw the gauge
+        google.charts.load('current', {'packages':['gauge']});
+        google.charts.setOnLoadCallback(drawChart);
+        
+        function drawChart() {
+            var chartData = google.visualization.arrayToDataTable([
+                ['Label', 'Value'],
+                ['Grade', data.gauge_percentage]
+            ]);
+
+            var options = {
+                width: '100%', 
+                height: 150,
+                redFrom: 0, 
+                redTo: 50,
+                yellowFrom:50, 
+                yellowTo: 75,
+                greenFrom:75, 
+                greenTo: 100,
+                minorTicks: 5,
+                majorTicks: ['0', '25', '50', '75', '100'],
+                max: 100,
+                min: 0
+            };
+
+            var chart = new google.visualization.Gauge(document.getElementById('averageGradeChart'));
+            
+            // Optional: Add animation
+            var animationOptions = {
+                duration: 1000,
+                easing: 'out'
+            };
+            
+            chart.draw(chartData, options);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading average grade:', error);
+        document.getElementById('averageGradeValue').textContent = 'Error';
+    });
+}
+
+function loadSimpleAverageGrade() {
+    fetch('/student/average-grade', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        const averageGrade = parseFloat(data.average_grade);
+        const gradeElement = document.getElementById('averageGradeValue');
+        const gradeFill = document.getElementById('gradeFill');
+        
+        // Display the grade
+        gradeElement.textContent = data.average_grade;
+        
+        // Color code based on grade (Philippine system)
+        if (averageGrade <= 1.5) {
+            gradeElement.style.color = '#4CAF50'; // Green for excellent
+        } else if (averageGrade <= 2.5) {
+            gradeElement.style.color = '#FFC107'; // Yellow for good
+        } else if (averageGrade <= 3.0) {
+            gradeElement.style.color = '#FF9800'; // Orange for fair
+        } else {
+            gradeElement.style.color = '#F44336'; // Red for poor
+        }
+        
+        // Set the fill position on the grade bar
+        // Convert 1.0-5.0 scale to 0-100%
+        let percentage = 100 * (averageGrade - 1.0) / 4.0;
+        percentage = Math.min(100, Math.max(0, percentage));
+        gradeFill.style.width = percentage + '%';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('averageGradeValue').textContent = 'Error';
+    });
+}
+
+function count_documents() {
+    const requestsContainer = document.getElementById('count_documents');
+    
+    fetch('/student/count_documents', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({}) // Empty body for POST
+    })
+    .then(response => response.json())
+    .then(data => {
+        requestsContainer.textContent = data.count || 0;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        requestsContainer.textContent = '0';
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
 
     initializeThemeColorPicker();
@@ -3400,6 +3546,10 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeSubjectView();
     setupRealtimeSubscription();
     status_update();
+    loadSimpleAverageGrade();
+    count_enrolled_subjects();
+    count_documents();
+    // loadAverageGradeChart();
 
     initializeLogout();
     // Toggle sidebar on mobile

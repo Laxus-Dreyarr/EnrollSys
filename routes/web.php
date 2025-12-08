@@ -321,6 +321,12 @@ Route::middleware(['student.auth'])->group(function () {
 
     Route::post('/exe/student_status', [StudentController::class, 'student_status']);
 
+    Route::post('/student/average-grade', [StudentController::class, 'getAverageGrade'])->name('student.average-grade');
+
+    Route::post('/student/enrolled_sub', [StudentController::class, 'getEnrolledSub'])->name('student.enrolled_sub');
+
+    Route::post('/student/count_documents', [StudentController::class, 'countDocuments'])->name('student.count_documents');
+
     Route::post('/student/logout', [StudentController::class, 'logout'])->name('student.logout');
 });
 
