@@ -78,7 +78,7 @@ $show_prereg_form = $isEnrollmentActive;
                     <i class="fas fa-chart-bar"></i>
                     <span>Grades</span>
                 </a> -->
-                <a class="menu-item" data-section="assignments">
+                <a class="menu-item" data-section="files">
                     <i class="fa-solid fa-folder-open"></i>
                     <span>Files</span>
                 </a>
@@ -701,8 +701,8 @@ $show_prereg_form = $isEnrollmentActive;
                                 </div>
                             </div>
                             
-                            <h4 class="mb-4 mt-5">Payment Records</h4>
-                            <div id="payment-files-container" class="files-grid">
+                            <h4 style="display: none;" class="mb-4 mt-5">Payment Records</h4>
+                            <div style="display: none;" id="payment-files-container" class="files-grid">
                                 <!-- Payment files will be loaded here dynamically -->
                             </div>
                         </div>
