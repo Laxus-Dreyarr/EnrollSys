@@ -327,6 +327,14 @@ Route::middleware(['student.auth'])->group(function () {
 
     Route::post('/student/count_documents', [StudentController::class, 'countDocuments'])->name('student.count_documents');
 
+    // Student notification routes
+    Route::post('/student/notifications', [StudentController::class, 'getNotifications']);
+    Route::post('/student/notifications/mark-read', [StudentController::class, 'markNotificationAsRead']);
+    Route::post('/student/notifications/mark-all-read', [StudentController::class, 'markAllNotificationsAsRead']);
+    Route::post('/student/notifications/delete', [StudentController::class, 'deleteNotification']);
+    Route::post('/student/notifications/clear-all', [StudentController::class, 'clearAllNotifications']);
+    Route::get('/student/notifications/check-new', [StudentController::class, 'checkNewNotifications']);
+
     Route::post('/student/logout', [StudentController::class, 'logout'])->name('student.logout');
 });
 

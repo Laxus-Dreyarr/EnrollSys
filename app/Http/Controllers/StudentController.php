@@ -952,6 +952,18 @@ class StudentController extends Controller
         $user = Auth::guard('student')->user();
         $student = $user->user_information->student;
 
+        // Get notifications
+        $notifications = DB::table('notifications')
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        $unreadCount = DB::table('notifications')
+            ->where('user_id', $user->id)
+            ->where('is_read', 0)
+            ->count();
+
         // Get enrolled subjects with grades
         $enrolledSubjects = DB::table('enrolled_sub')
             ->where('student_id', $student->id)
@@ -998,7 +1010,7 @@ class StudentController extends Controller
         $enrollmentPeriod = $this->checkActiveEnrollmentPeriod();
         $isEnrollmentActive = $enrollmentPeriod && $enrollmentPeriod->is_active == 1;
         
-        return view('student.dashboard.dashboard', compact('user', 'isEnrollmentActive', 'enrollmentPeriod', 'enrolledSubjects', 'averageGrade', 'gaugePercentage'));
+        return view('student.dashboard.dashboard', compact('user', 'isEnrollmentActive', 'enrollmentPeriod', 'enrolledSubjects', 'averageGrade', 'gaugePercentage', 'notifications', 'unreadCount'));
     }
 
 
@@ -3209,6 +3221,171 @@ class StudentController extends Controller
             Log::error('Error fetching enrollment requests: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to fetch enrollment requests'], 500);
         }
+    }
+
+    public function getNotifications(Request $request)
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+
+        // Get notifications for this student
+        $query = DB::table('notifications')
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc');
+
+        // Apply filters
+        $filter = $request->input('filter', 'all');
+        if ($filter === 'unread') {
+            $query->where('is_read', 0);
+        } elseif ($filter === 'enrollment') {
+            $query->where('title', 'like', '%Enrollment%');
+        } elseif ($filter === 'grades') {
+            $query->where('title', 'like', '%Grade%');
+        } elseif ($filter === 'documents') {
+            $query->where('title', 'like', '%Document%');
+        }
+
+        // Get total counts
+        $total = $query->count();
+        $unread = DB::table('notifications')
+            ->where('user_id', $user->id)
+            ->where('is_read', 0)
+            ->count();
+
+        // Apply pagination
+        $offset = $request->input('offset', 0);
+        $limit = $request->input('limit', 10);
+        $notifications = $query->offset($offset)->limit($limit)->get();
+
+        return response()->json([
+            'notifications' => $notifications,
+            'total' => $total,
+            'unread' => $unread
+        ]);
+    }
+
+    public function markNotificationAsRead(Request $request)
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $notificationId = $request->input('id');
+        
+        // Mark notification as read
+        DB::table('notifications')
+            ->where('id', $notificationId)
+            ->update(['is_read' => 1]);
+
+        // Get updated counts
+        $user = Auth::guard('student')->user();
+        $total = DB::table('notifications')
+            ->where('user_id', $user->id)
+            ->count();
+        $unread = DB::table('notifications')
+            ->where('user_id', $user->id)
+            ->where('is_read', 0)
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'total' => $total,
+            'unread' => $unread
+        ]);
+    }
+
+    public function markAllNotificationsAsRead(Request $request)
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = Auth::guard('student')->user();
+        
+        // Mark all notifications as read
+        DB::table('notifications')
+            ->where('user_id', $user->id)
+            ->update(['is_read' => 1]);
+
+        return response()->json([
+            'success' => true,
+            'total' => DB::table('notifications')->where('user_id', $user->id)->count(),
+            'unread' => 0
+        ]);
+    }
+
+    public function deleteNotification(Request $request)
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $notificationId = $request->input('id');
+        
+        // Delete notification
+        DB::table('notifications')
+            ->where('id', $notificationId)
+            ->delete();
+
+        // Get updated counts
+        $user = Auth::guard('student')->user();
+        $total = DB::table('notifications')
+            ->where('user_id', $user->id)
+            ->count();
+        $unread = DB::table('notifications')
+            ->where('user_id', $user->id)
+            ->where('is_read', 0)
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'total' => $total,
+            'unread' => $unread
+        ]);
+    }
+
+    public function clearAllNotifications(Request $request)
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = Auth::guard('student')->user();
+        
+        // Delete all notifications
+        DB::table('notifications')
+            ->where('user_id', $user->id)
+            ->delete();
+
+        return response()->json([
+            'success' => true,
+            'total' => 0,
+            'unread' => 0
+        ]);
+    }
+
+    public function checkNewNotifications(Request $request)
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = Auth::guard('student')->user();
+        
+        // Check for notifications created in the last 5 minutes
+        $newCount = DB::table('notifications')
+            ->where('user_id', $user->id)
+            ->where('created_at', '>', now()->subMinutes(5))
+            ->count();
+
+        return response()->json([
+            'hasNew' => $newCount > 0,
+            'count' => $newCount
+        ]);
     }
 
 

@@ -3538,6 +3538,361 @@ function count_documents() {
     });
 }
 
+// Notifications functionality
+let currentFilter = 'all';
+let notificationsOffset = 0;
+const notificationsPerPage = 10;
+
+function loadNotifications() {
+    const notificationsList = document.getElementById('notificationsList');
+    const noNotifications = document.getElementById('noNotifications');
+    const loadingElement = notificationsList.querySelector('.notifications-loading');
+    
+    if (loadingElement) {
+        loadingElement.style.display = 'block';
+    }
+    
+    // Clear existing content if loading first page
+    if (notificationsOffset === 0) {
+        notificationsList.innerHTML = '<div class="notifications-loading"><div class="loading-spinner"></div><p>Loading notifications...</p></div>';
+    }
+    
+    // Fetch notifications from server
+    fetch('/student/notifications', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            filter: currentFilter,
+            offset: notificationsOffset,
+            limit: notificationsPerPage
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove loading indicator
+        if (loadingElement) {
+            loadingElement.style.display = 'none';
+        }
+        
+        if (notificationsOffset === 0) {
+            notificationsList.innerHTML = '';
+        }
+        
+        if (data.notifications && data.notifications.length > 0) {
+            noNotifications.style.display = 'none';
+            
+            data.notifications.forEach(notification => {
+                const notificationElement = createNotificationElement(notification);
+                notificationsList.appendChild(notificationElement);
+            });
+            
+            // Update statistics
+            updateNotificationStats(data.total, data.unread);
+            
+            // Show/hide load more button
+            const loadMoreBtn = document.getElementById('loadMoreNotifications');
+            if (notificationsOffset + notificationsPerPage >= data.total) {
+                loadMoreBtn.style.display = 'none';
+            } else {
+                loadMoreBtn.style.display = 'flex';
+            }
+        } else if (notificationsOffset === 0) {
+            // No notifications
+            notificationsList.innerHTML = '';
+            noNotifications.style.display = 'block';
+            updateNotificationStats(0, 0);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading notifications:', error);
+        notificationsList.innerHTML = '<div class="notification-item"><div class="notification-message" style="color: var(--danger-color);">Failed to load notifications. Please try again.</div></div>';
+    });
+}
+
+function createNotificationElement(notification) {
+    const div = document.createElement('div');
+    div.className = `notification-item ${notification.is_read ? 'read' : 'unread'}`;
+    div.dataset.id = notification.id;
+    
+    // Determine notification type based on title or content
+    let type = 'enrollment';
+    if (notification.title.includes('Grade') || notification.title.includes('grade')) {
+        type = 'grades';
+    } else if (notification.title.includes('Payment') || notification.title.includes('payment')) {
+        type = 'payment';
+    } else if (notification.title.includes('Document') || notification.title.includes('document')) {
+        type = 'documents';
+    }
+    
+    // Format time
+    const time = new Date(notification.created_at);
+    const timeString = time.toLocaleDateString() + ' ' + time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    div.innerHTML = `
+        <div class="notification-header">
+            <div class="notification-title">
+                <i class="fas fa-bell${notification.is_read ? '' : '-slash'}"></i>
+                ${notification.title}
+            </div>
+            <div class="notification-time">${timeString}</div>
+        </div>
+        <div class="notification-message">${notification.message}</div>
+        <div class="notification-type ${type}">
+            <i class="fas ${getNotificationIcon(type)}"></i>
+            ${type.charAt(0).toUpperCase() + type.slice(1)}
+        </div>
+        <div class="notification-status ${notification.is_read ? 'read' : 'unread'}"></div>
+        <div class="notification-actions">
+            <button class="notification-action-btn mark-read" data-id="${notification.id}">
+                <i class="fas fa-check"></i> Mark as Read
+            </button>
+            <button class="notification-action-btn delete-notification" data-id="${notification.id}">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        </div>
+    `;
+    
+    // Add click handler for entire notification
+    div.addEventListener('click', function(e) {
+        if (!e.target.closest('.notification-action-btn')) {
+            markNotificationAsRead(notification.id, div);
+        }
+    });
+    
+    return div;
+}
+
+function getNotificationIcon(type) {
+    const icons = {
+        'enrollment': 'fa-clipboard-check',
+        'grades': 'fa-chart-line',
+        'documents': 'fa-file-alt',
+        'payment': 'fa-credit-card'
+    };
+    return icons[type] || 'fa-bell';
+}
+
+function updateNotificationStats(total, unread) {
+    const unreadCount = document.getElementById('unreadCount');
+    const totalCount = document.getElementById('totalCount');
+    const headerNotificationCount = document.querySelector('.notification-count');
+    
+    if (unreadCount) {
+        unreadCount.textContent = `${unread} unread`;
+    }
+    
+    if (totalCount) {
+        totalCount.textContent = `• ${total} total`;
+    }
+    
+    if (headerNotificationCount) {
+        headerNotificationCount.textContent = unread;
+        if (unread > 0) {
+            headerNotificationCount.style.display = 'flex';
+        } else {
+            headerNotificationCount.style.display = 'none';
+        }
+    }
+}
+
+function markNotificationAsRead(notificationId, element) {
+    fetch('/student/notifications/mark-read', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id: notificationId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (element) {
+                element.classList.remove('unread');
+                element.classList.add('read');
+                element.querySelector('.notification-status').classList.remove('unread');
+                element.querySelector('.notification-status').classList.add('read');
+                element.querySelector('.notification-title i').className = 'fas fa-bell';
+            }
+            
+            // Update statistics
+            const currentUnread = parseInt(document.getElementById('unreadCount').textContent);
+            updateNotificationStats(data.total, data.unread);
+            
+            // Update audit log
+            logNotificationAction('marked as read', notificationId);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function deleteNotification(notificationId) {
+    if (!confirm('Are you sure you want to delete this notification?')) {
+        return;
+    }
+    
+    fetch('/student/notifications/delete', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id: notificationId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remove notification from DOM
+            const notificationElement = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+            if (notificationElement) {
+                notificationElement.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => {
+                    notificationElement.remove();
+                    
+                    // Check if no notifications left
+                    const notificationsList = document.getElementById('notificationsList');
+                    if (notificationsList.children.length === 0) {
+                        document.getElementById('noNotifications').style.display = 'block';
+                    }
+                }, 300);
+            }
+            
+            // Update statistics
+            updateNotificationStats(data.total, data.unread);
+            
+            // Update audit log
+            logNotificationAction('deleted', notificationId);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function markAllNotificationsAsRead() {
+    if (!confirm('Mark all notifications as read?')) {
+        return;
+    }
+    
+    fetch('/student/notifications/mark-all-read', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update all notification elements
+            document.querySelectorAll('.notification-item.unread').forEach(element => {
+                element.classList.remove('unread');
+                element.classList.add('read');
+                element.querySelector('.notification-status').classList.remove('unread');
+                element.querySelector('.notification-status').classList.add('read');
+                element.querySelector('.notification-title i').className = 'fas fa-bell';
+            });
+            
+            // Update statistics
+            updateNotificationStats(data.total, 0);
+            
+            // Update audit log
+            logNotificationAction('marked all as read');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function clearAllNotifications() {
+    if (!confirm('Are you sure you want to clear all notifications? This action cannot be undone.')) {
+        return;
+    }
+    
+    fetch('/student/notifications/clear-all', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Clear notifications list
+            const notificationsList = document.getElementById('notificationsList');
+            notificationsList.innerHTML = '';
+            
+            // Show empty state
+            document.getElementById('noNotifications').style.display = 'block';
+            
+            // Update statistics
+            updateNotificationStats(0, 0);
+            
+            // Update audit log
+            logNotificationAction('cleared all');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function initializeNotifications() {
+    // Load initial notifications
+    loadNotifications();
+    
+    // Event listeners
+    const notificationFilter = document.getElementById('notificationFilter');
+    if (notificationFilter) {
+        notificationFilter.addEventListener('change', function() {
+            currentFilter = this.value;
+            notificationsOffset = 0;
+            loadNotifications();
+        });
+    }
+    
+    const markAllReadBtn = document.getElementById('markAllRead');
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', markAllNotificationsAsRead);
+    }
+    
+    const clearAllBtn = document.getElementById('clearAllNotifications');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', clearAllNotifications);
+    }
+    
+    const loadMoreBtn = document.getElementById('loadMoreNotifications');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', function() {
+            notificationsOffset += notificationsPerPage;
+            loadNotifications();
+        });
+    }
+    
+    // Delegate event listeners for dynamic content
+    document.addEventListener('click', function(e) {
+        // Mark as read button
+        if (e.target.closest('.mark-read')) {
+            const btn = e.target.closest('.mark-read');
+            const notificationId = btn.dataset.id;
+            const notificationElement = btn.closest('.notification-item');
+            markNotificationAsRead(notificationId, notificationElement);
+        }
+        
+        // Delete notification button
+        if (e.target.closest('.delete-notification')) {
+            const btn = e.target.closest('.delete-notification');
+            const notificationId = btn.dataset.id;
+            deleteNotification(notificationId);
+        }
+    });
+    
+}
+
 document.addEventListener('DOMContentLoaded', function() {
 
     initializeThemeColorPicker();
@@ -3549,6 +3904,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSimpleAverageGrade();
     count_enrolled_subjects();
     count_documents();
+    initializeNotifications();
     // loadAverageGradeChart();
 
     initializeLogout();

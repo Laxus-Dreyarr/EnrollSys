@@ -71,8 +71,8 @@ $show_prereg_form = $isEnrollmentActive;
                     <span>My Courses</span>
                 </a>
                 <a class="menu-item" data-section="schedule">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Schedule</span>
+                    <i class="fas fa-bell"></i> <!-- Changed from fa-calendar-alt -->
+                    <span>Notifications</span> <!-- Changed from Schedule -->
                 </a>
                 <!-- <a class="menu-item" data-section="grades">
                     <i class="fas fa-chart-bar"></i>
@@ -119,7 +119,7 @@ $show_prereg_form = $isEnrollmentActive;
                 <div class="header-actions">
                     <div class="notification-btn">
                         <i class="fas fa-bell"></i>
-                        <span class="notification-count">3</span>
+                        <span class="notification-count">5</span>
                     </div>
                     <div class="sidebar-toggle">
                         <i class="fas fa-bars"></i>
@@ -281,7 +281,10 @@ $show_prereg_form = $isEnrollmentActive;
                 </div>
                 
                 <!-- Today's Schedule -->
-                <h2 class="section-title">Today's Schedule</h2>
+    
+                
+                
+                <!-- <h2 class="section-title">Today's Schedule</h2>
                 <div class="schedule-container">
                     <div class="schedule-day">
                         <h4 class="day-header">Monday, August 30</h4>
@@ -310,7 +313,7 @@ $show_prereg_form = $isEnrollmentActive;
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> -->
             </div>
             
             <!-- My Courses Section -->
@@ -399,125 +402,55 @@ $show_prereg_form = $isEnrollmentActive;
             
             <!-- Schedule Section -->
             <div id="schedule-section" class="content-section">
-                <h2 class="section-title">Weekly Schedule</h2>
-                
-                <div class="schedule-container">
-                    <div class="schedule-day">
-                        <h4 class="day-header">Monday</h4>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-time">10:00 AM - 11:30 AM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Software Engineering (IT 373)</div>
-                                <div class="schedule-location">CS-302 | Dr. Smith</div>
-                            </div>
-                        </div>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-time">1:00 PM - 2:30 PM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Calculus II (MATH 202)</div>
-                                <div class="schedule-location">MATH-204 | Dr. Lee</div>
-                            </div>
-                        </div>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-time">3:00 PM - 4:30 PM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Programming Lab</div>
-                                <div class="schedule-location">CS-Lab A | TA Rodriguez</div>
-                            </div>
-                        </div>
-                    </div>
+                <h2 class="section-title">Notifications</h2>
                     
-                    <div class="schedule-day">
-                        <h4 class="day-header">Tuesday</h4>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-time">9:00 AM - 10:30 AM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Composition I (ENG 101)</div>
-                                <div class="schedule-location">LIB-205 | Prof. Davis</div>
+                    <div class="notifications-container">
+                        <div class="notifications-header">
+                            <div class="notifications-actions">
+                                <button class="btn-secondary" id="markAllRead">
+                                    <i class="fas fa-check-double"></i> Mark All as Read
+                                </button>
+                                <button class="btn-secondary" id="clearAllNotifications">
+                                    <i class="fas fa-trash"></i> Clear All
+                                </button>
+                            </div>
+                            <div class="notifications-filter">
+                                <select class="filter-select" id="notificationFilter">
+                                    <option value="all">All Notifications</option>
+                                    <option value="unread">Unread Only</option>
+                                    <option value="enrollment">Enrollment</option>
+                                    <option value="grades">Grades</option>
+                                    <option value="documents">Documents</option>
+                                </select>
                             </div>
                         </div>
                         
-                        <div class="schedule-item">
-                            <div class="schedule-time">2:00 PM - 3:30 PM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Data Structures (CS 301)</div>
-                                <div class="schedule-location">CS-105 | Prof. Johnson</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="schedule-day">
-                        <h4 class="day-header">Wednesday</h4>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-time">10:00 AM - 11:30 AM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Software Engineering (IT 373)</div>
-                                <div class="schedule-location">CS-302 | Dr. Smith</div>
+                        <div class="notifications-list" id="notificationsList">
+                            <!-- Notifications will be loaded dynamically -->
+                            <div class="notifications-loading">
+                                <div class="loading-spinner"></div>
+                                <p>Loading notifications...</p>
                             </div>
                         </div>
                         
-                        <div class="schedule-item">
-                            <div class="schedule-time">1:00 PM - 2:30 PM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Calculus II (MATH 202)</div>
-                                <div class="schedule-location">MATH-204 | Dr. Lee</div>
+                        <div class="notifications-empty-state" id="noNotifications" style="display: none;">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-bell-slash"></i>
                             </div>
+                            <h4>No notifications yet</h4>
+                            <p>You're all caught up! New notifications will appear here.</p>
                         </div>
                         
-                        <div class="schedule-item">
-                            <div class="schedule-time">3:00 PM - 4:30 PM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">World History (HIST 110)</div>
-                                <div class="schedule-location">HSS-102 | Dr. Garcia</div>
+                        <div class="notifications-footer">
+                            <div class="notifications-stats">
+                                <span id="unreadCount">0 unread</span>
+                                <span id="totalCount">• 0 total</span>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div class="schedule-day">
-                        <h4 class="day-header">Thursday</h4>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-time">9:00 AM - 10:30 AM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Composition I (ENG 101)</div>
-                                <div class="schedule-location">LIB-205 | Prof. Davis</div>
-                            </div>
-                        </div>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-time">2:00 PM - 3:30 PM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Data Structures (CS 301)</div>
-                                <div class="schedule-location">CS-105 | Prof. Johnson</div>
-                            </div>
+                            <button class="btn-secondary" id="loadMoreNotifications">
+                                <i class="fas fa-sync-alt"></i> Load More
+                            </button>
                         </div>
                     </div>
-                    
-                    <div class="schedule-day">
-                        <h4 class="day-header">Friday</h4>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-time">1:00 PM - 2:30 PM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Calculus II (MATH 202)</div>
-                                <div class="schedule-location">MATH-204 | Dr. Lee</div>
-                            </div>
-                        </div>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-time">3:00 PM - 4:30 PM</div>
-                            <div class="schedule-details">
-                                <div class="schedule-course">Study Group</div>
-                                <div class="schedule-location">Library Study Room 3</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
             
             <!-- Grades Section -->
