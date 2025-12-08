@@ -3354,6 +3354,59 @@ body.dark-mode .stat-card:hover {
     background: white;
 }
 
+body.dark-mode #d-student_subject_history {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #464747;
+    /* box-shadow: 10px 10px 10px rgb(36, 35, 35); */
+    box-shadow: 10px 10px rgb(36, 35, 35);
+    background: var(--card-dark);
+    color: white;
+}
+
+body.dark-mode #d-student_subject_history #gradeFilter {
+    background: var(--card-dark);
+    color: white;
+    border: 1px solid #464747;
+}
+
+body.dark-mode #d-student_subject_history #yearFilter {
+    background: var(--card-dark);
+    color: white;
+    border: 1px solid #464747;
+}
+
+body.dark-mode #d-student_subject_history #semesterFilter {
+    background: var(--card-dark);
+    color: white;
+    border: 1px solid #464747;
+}
+
+body.dark-mode #d-student_subject_history #searchSubjects {
+    background: var(--card-dark);
+    color: white;
+    border: 1px solid #464747;
+}
+
+body.dark-mode #d-student_subject_history2 {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #464747;
+    box-shadow: 5px 10px rgb(36, 35, 35);
+    background: var(--card-dark);
+    color: white;
+}
+
+body.dark-mode #d-student_subject_history2_1:hover {
+    color: white;
+    background-color: var(--primary-color);
+    transition: 0.5s ease-in-out;
+}
+
+body.dark-mode #d-student_subject_history2_2 {
+    color: rgb(250, 241, 241);
+}
+
 #subjectsHistoryTable {
     width: 100%;
     border-collapse: collapse;
@@ -4648,6 +4701,11 @@ body.dark-mode .schedule-item.read {
 
     body.dark-mode .modal-body h4{
         color: white;   
+    }
+
+    .header-actions2 {
+        align-content: center;
+        justify-items: center;
     }
 
 }

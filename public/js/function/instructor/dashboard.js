@@ -1934,7 +1934,7 @@ function renderSubjectsTable(subjects) {
             }) : 'N/A';
         
         return `
-            <tr>
+            <tr id="d-student_subject_history2_1">
                 <td class="subject-code-cell">
                     <span class="subject-code">${subject.subject_code}</span>
                 </td>

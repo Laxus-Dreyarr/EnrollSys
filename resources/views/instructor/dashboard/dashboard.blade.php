@@ -1295,13 +1295,13 @@ $id = $user->info->instructor_id;
                 <span class="close-modal">&times;</span>
             </div>
             
-            <div class="modal-body">
+            <div class="modal-body" id="d-student_subject_history">
                 <!-- Filters -->
-                <div class="filters-section">
+                <div class="filters-section" id="d-student_subject_history">
                     <div class="filter-row">
                         <div class="filter-group">
-                            <label for="gradeFilter">
-                                <i class="fas fa-filter"></i> Grade Status:
+                            <label for="gradeFilter" id="d-student_subject_history2_2">
+                                <i id="d-student_subject_history2_2" class="fas fa-filter"></i> Grade Status:
                             </label>
                             <select id="gradeFilter" class="form-select">
                                 <option value="all">All Subjects</option>
@@ -1315,8 +1315,8 @@ $id = $user->info->instructor_id;
                         </div>
                         
                         <div class="filter-group">
-                            <label for="yearFilter">
-                                <i class="fas fa-calendar"></i> School Year:
+                            <label id="d-student_subject_history2_2" for="yearFilter">
+                                <i id="d-student_subject_history2_2" class="fas fa-calendar"></i> School Year:
                             </label>
                             <select id="yearFilter" class="form-select">
                                 <option value="all">All Years</option>
@@ -1325,8 +1325,8 @@ $id = $user->info->instructor_id;
                         </div>
                         
                         <div class="filter-group">
-                            <label for="semesterFilter">
-                                <i class="fas fa-calendar-alt"></i> Semester:
+                            <label id="d-student_subject_history2_2" for="semesterFilter">
+                                <i id="d-student_subject_history2_2" class="fas fa-calendar-alt"></i> Semester:
                             </label>
                             <select id="semesterFilter" class="form-select">
                                 <option value="all">All Semesters</option>
@@ -1386,7 +1386,7 @@ $id = $user->info->instructor_id;
                 </div>
                 
                 <!-- Subjects Table -->
-                <div class="table-container">
+                <div id="d-student_subject_history2" class="table-container">
                     <table id="subjectsHistoryTable">
                         <thead>
                             <tr>
