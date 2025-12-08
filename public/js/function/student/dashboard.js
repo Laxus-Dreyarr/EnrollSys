@@ -3303,6 +3303,7 @@ function status_update () {
     .then(data => {
         if (data) {
             if (data.students_status == 'Approved') {
+                $("#enroll_icon").html('<i class="fa-solid fa-circle-check"></i>');
                 $("#determined").text('Officially Enrolled');
             } else {
                 $("#determined").text(data.students_status);

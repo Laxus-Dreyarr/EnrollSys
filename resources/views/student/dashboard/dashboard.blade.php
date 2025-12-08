@@ -150,7 +150,7 @@ $show_prereg_form = $isEnrollmentActive;
                     </div>
 
                     <div class="stat-card" id="d-stat-card-enroll">
-                        <div class="stat-icon grades">
+                        <div class="stat-icon grades" id="enroll_icon">
                             <i class="fa-solid fa-plus"></i>
                         </div>
                         <h3 class="stat-value" id="determined">

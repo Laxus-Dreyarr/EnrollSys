@@ -1370,6 +1370,12 @@ class InstructorController extends Controller
                     'processed_date' => now()
                 ]);
 
+            DB::table('enrollments')
+                ->where('id', $request->request_id)
+                ->update([
+                    'status' => 'Enrolled'
+                ]);
+
             // Update student status
             DB::table('students')
                 ->where('id', $request->student_id)
@@ -1395,6 +1401,57 @@ class InstructorController extends Controller
                 'ip_address' => $clientInfo['ip_address'],
                 'date' => now(),
                 'access_by' => '107568'
+            ]);
+
+            // INSERT TO STUDENT FILE
+            $getDocuments = DB::table('documents')
+                ->where('student_id', $request->student_id)
+                ->where('type', 'FHE')
+                ->orderBy('upload_date', 'desc')
+                ->first();
+
+            $getDocumentsProspectus = DB::table('documents')
+                ->where('student_id', $request->student_id)
+                ->where('type', 'Prospectus')
+                ->orderBy('upload_date', 'desc')
+                ->first();
+
+            $getPayment = DB::table('payments')
+                ->where('student_id', $request->student_id)
+                ->where('type', 'PAYMENT_RECEIPT')
+                ->orderBy('upload_date', 'desc')
+                ->first();
+
+            $insertDocuments = DB::table('student_files')->insert([
+                'student_id' => $request->student_id, // Use the actual user_id
+                'year_level' => $student->year_level,
+                'type' => $getDocuments->type,
+                'file_path' => $getDocuments->file_path,
+                'upload_date' => now()
+            ]);
+
+            $insertDocuments2 = DB::table('student_files')->insert([
+                'student_id' => $request->student_id, // Use the actual user_id
+                'year_level' => $student->year_level,
+                'type' => $getDocumentsProspectus->type,
+                'file_path' => $getDocumentsProspectus->file_path,
+                'upload_date' => now()
+            ]);
+
+            $selectOrg = DB::table('orgs_info')
+                ->whereNotNull('organization_id')
+                ->orderBy('id', 'asc')
+                ->first();
+
+            $insertPayment = DB::table('organizationfees')->insert([
+                'org_id' => $selectOrg->id,
+                'student_id' => $request->student_id, // Use the actual user_id
+                'year_level' => $student->year_level,
+                'amount' => '120.00',
+                'status' => $getPayment->status,
+                'receipt_url' => $getPayment->file_path,
+                'red_flag_reason' => NULL,
+                'uploaded_date' => now()
             ]);
 
             return response()->json([

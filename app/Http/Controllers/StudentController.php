@@ -2443,9 +2443,26 @@ class StudentController extends Controller
                 }
             }
 
+
+
             // Update student status
             $student->status = 'Pending';
             $student->save();
+
+            // Find an id for instructor
+            $instructor = DB::table('instructor')
+                ->whereNotNull('instructor_id')
+                ->orderBy('date_created', 'asc')
+                ->first();
+
+            // Insert to notify the instructor
+            DB::table('notifications_instructor')->insert([
+                'user_id' => $instructor->instructor_id, // Use the actual user_id
+                'title' => $user->user_information->lastname .' (Enrollment Request)',
+                'message' => 'Enrollment Request - '.$student->year_level,
+                'is_read' => 0, // Use integer 0, not string '0'
+                'created_at' => now()
+            ]);
 
             // NEW: Generate and save prospectus PDF
             $prospectusPath = $this->generateProspectusPDF($student->id);
