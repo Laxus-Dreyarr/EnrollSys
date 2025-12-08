@@ -128,7 +128,7 @@ $profile_picture = $user->profile;
                 <div class="search-container">
                     <div class="search-bar">
                         <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="header-search-input" class="search-input" placeholder="Search students, subjects...">
+                        <input type="text" id="header-search-input" class="search-input" placeholder="Search students...">
                         <button id="search-btn" class="search-btn">
                             <i style="color: white;" class="fas fa-search"></i>
                         </button>

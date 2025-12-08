@@ -229,7 +229,7 @@ function createRequestItem(request) {
     item.dataset.requestId = request.request_id;
     item.dataset.studentId = request.student_id;
     
-    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(request.firstname + ' ' + request.lastname)}&background=4361ee&color=fff&size=40`;
+    const avatarUrl = request.profile;
     
     const studentType = request.is_regular === 1 ? 'Regular' : 'Irregular';
     const subjectsCount = request.enrolled_subjects_count || 0;
@@ -285,7 +285,7 @@ function loadRequestDetails(request) {
     const requestDetails = document.getElementById('enrollment-request-details');
     if (!requestDetails) return;
     
-    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(request.firstname + ' ' + request.lastname)}&background=4361ee&color=fff&size=80`;
+    const avatarUrl = request.profile;
     const studentType = request.is_regular === 1 ? 'Regular' : 'Irregular';
     
     let subjectsHTML = '';

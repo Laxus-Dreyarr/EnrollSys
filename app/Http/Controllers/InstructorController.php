@@ -934,6 +934,7 @@ class InstructorController extends Controller
             $requests = DB::table('enrollmentrequests as er')
             ->join('students as s', 'er.student_id', '=', 's.id')
             ->join('user_info as ui', 's.student_id', '=', 'ui.id')
+            ->join('users as u', 'ui.user_id', '=', 'u.id')
             ->where('er.status', 'Pending')
             ->select(
                 'er.id as request_id',
@@ -946,6 +947,8 @@ class InstructorController extends Controller
                 'ui.firstname',
                 'ui.lastname',
                 'ui.middlename',
+                'u.profile',
+                'u.id',
                 // Get FHE document with full web path (add leading slash)
                 // DB::raw("(SELECT CONCAT('/', file_path) 
                 //     FROM documents 
@@ -1005,6 +1008,10 @@ class InstructorController extends Controller
                     ->orderBy('upload_date', 'desc')
                     ->first();
 
+                $profile = DB::table('users')
+                    ->where('id', $request->id)
+                    ->first();
+
                 // Add web_path for file access
                 if ($fheDocument) {
                     $filename = basename($fheDocument->file_path);
@@ -1024,10 +1031,15 @@ class InstructorController extends Controller
                     $paymentReceipt->status = $paymentReceipt->status ?: 'Pending';
                 }
 
+                if ($profile) {
+                    $profile = asset('profile/' . $profile->profile);
+                }
+
                 // Attach documents to the request object
                 $request->fhe_document = $fheDocument;
                 $request->prospectus = $prospectus;
                 $request->payment_receipt = $paymentReceipt;
+                $request->profile = $profile;
                 
                 // Get prerequisites for each subject and check if student has passed them
                 foreach ($subjects as $subject) {
