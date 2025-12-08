@@ -544,7 +544,7 @@ $show_prereg_form = $isEnrollmentActive;
             </div> -->
             
             <!-- Assignments Section -->
-            <div id="assignments-section" class="content-section">
+            <!-- <div id="assignments-section" class="content-section">
                 <h2 class="section-title">My Assignments</h2>
                 
                 <div class="schedule-container">
@@ -600,6 +600,175 @@ $show_prereg_form = $isEnrollmentActive;
                             <p>CS 301 - Submitted: Aug 30, 2023</p>
                         </div>
                         <div class="assignment-status status-done">Graded: 95%</div>
+                    </div>
+                </div>
+            </div> -->
+
+            
+            <!-- Files Storage Section -->
+            <div id="files-section" class="content-section">
+                <h2 class="section-title">My Files & Documents</h2>
+                
+                <!-- Year Level Filter -->
+                <div class="schedule-container mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="mb-0">Files by Year Level</h4>
+                        <div class="year-level-filter">
+                            <select id="yearLevelFilter" class="form-select" style="width: auto;">
+                                <option value="all">All Years</option>
+                                <option value="1st Year">1st Year</option>
+                                <option value="2nd Year">2nd Year</option>
+                                <option value="3rd Year">3rd Year</option>
+                                <option value="4th Year">4th Year</option>
+                                <option value="5th Year">5th Year</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Year Level Navigation -->
+                    <div class="year-level-tabs mb-4">
+                        <div class="nav nav-pills" id="yearTabs" role="tablist">
+                            <button class="nav-link active" id="all-tab" data-bs-toggle="pill" data-bs-target="#all" type="button">All Files</button>
+                            <button class="nav-link" id="year1-tab" data-bs-toggle="pill" data-bs-target="#year1" type="button">1st Year</button>
+                            <button class="nav-link" id="year2-tab" data-bs-toggle="pill" data-bs-target="#year2" type="button">2nd Year</button>
+                            <button class="nav-link" id="year3-tab" data-bs-toggle="pill" data-bs-target="#year3" type="button">3rd Year</button>
+                            <button class="nav-link" id="year4-tab" data-bs-toggle="pill" data-bs-target="#year4" type="button">4th Year</button>
+                        </div>
+                    </div>
+                    
+                    <!-- File Statistics -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <div class="stat-card-small">
+                                <div class="stat-icon-sm">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <div class="stat-content-sm">
+                                    <div class="stat-value-sm" id="totalFiles">0</div>
+                                    <div class="stat-label-sm">Total Files</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card-small">
+                                <div class="stat-icon-sm" style="background: linear-gradient(135deg, #10b981, #059669);">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="stat-content-sm">
+                                    <div class="stat-value-sm" id="academicFiles">0</div>
+                                    <div class="stat-label-sm">Academic Files</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card-small">
+                                <div class="stat-icon-sm" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                    <i class="fas fa-receipt"></i>
+                                </div>
+                                <div class="stat-content-sm">
+                                    <div class="stat-value-sm" id="paymentFiles">0</div>
+                                    <div class="stat-label-sm">Payment Records</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card-small">
+                                <div class="stat-icon-sm" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                                    <i class="fas fa-archive"></i>
+                                </div>
+                                <div class="stat-content-sm">
+                                    <div class="stat-value-sm" id="totalSize">0 MB</div>
+                                    <div class="stat-label-sm">Storage Used</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Files Container -->
+                <div class="tab-content" id="yearTabsContent">
+                    <!-- All Files Tab -->
+                    <div class="tab-pane fade show active" id="all" role="tabpanel">
+                        <div class="schedule-container">
+                            <h4 class="mb-4">All Academic Files</h4>
+                            <div id="all-files-container" class="files-grid">
+                                <!-- Files will be loaded here dynamically -->
+                                <div class="loading-state">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading your files...</p>
+                                </div>
+                            </div>
+                            
+                            <h4 class="mb-4 mt-5">Payment Records</h4>
+                            <div id="payment-files-container" class="files-grid">
+                                <!-- Payment files will be loaded here dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Year 1 Tab -->
+                    <div class="tab-pane fade" id="year1" role="tabpanel">
+                        <div class="schedule-container">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="mb-0">1st Year Files</h4>
+                                <span class="badge bg-primary">2025-2026</span>
+                            </div>
+                            <div id="year1-files" class="files-grid">
+                                <!-- 1st Year files will be loaded here dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Year 2 Tab -->
+                    <div class="tab-pane fade" id="year2" role="tabpanel">
+                        <div class="schedule-container">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="mb-0">2nd Year Files</h4>
+                                <span class="badge bg-primary">2026-2027</span>
+                            </div>
+                            <div id="year2-files" class="files-grid">
+                                <!-- 2nd Year files will be loaded here dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Year 3 Tab -->
+                    <div class="tab-pane fade" id="year3" role="tabpanel">
+                        <div class="schedule-container">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="mb-0">3rd Year Files</h4>
+                                <span class="badge bg-primary">2027-2028</span>
+                            </div>
+                            <div id="year3-files" class="files-grid">
+                                <!-- 3rd Year files will be loaded here dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Year 4 Tab -->
+                    <div class="tab-pane fade" id="year4" role="tabpanel">
+                        <div class="schedule-container">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="mb-0">4th Year Files</h4>
+                                <span class="badge bg-primary">2028-2029</span>
+                            </div>
+                            <div id="year4-files" class="files-grid">
+                                <!-- 4th Year files will be loaded here dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Empty State Template -->
+                <div id="empty-state-template" class="d-none">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-folder-open"></i>
+                        </div>
+                        <h4>No files found</h4>
+                        <p>No files available for this year level.</p>
                     </div>
                 </div>
             </div>

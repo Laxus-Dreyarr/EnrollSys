@@ -335,6 +335,11 @@ Route::middleware(['student.auth'])->group(function () {
     Route::post('/student/notifications/clear-all', [StudentController::class, 'clearAllNotifications']);
     Route::get('/student/notifications/check-new', [StudentController::class, 'checkNewNotifications']);
 
+    // Add to student routes
+    Route::get('/student/files/academic', [StudentController::class, 'getAcademicFiles']);
+    Route::get('/student/files/payments', [StudentController::class, 'getPaymentFiles']);
+    Route::get('/student/files/statistics', [StudentController::class, 'getFileStatistics']);
+
     Route::post('/student/logout', [StudentController::class, 'logout'])->name('student.logout');
 });
 

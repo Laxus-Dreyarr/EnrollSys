@@ -3894,6 +3894,385 @@ function initializeNotifications() {
     
 }
 
+function initializeFilesSystem() {
+    // Load files when the section becomes active
+    const menuItems = document.querySelectorAll('.menu-item');
+    menuItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            if (targetId === 'files-section') {
+                loadAllFiles();
+                updateFileStatistics();
+            }
+        });
+    });
+    
+    // Year level filter change
+    const yearLevelFilter = document.getElementById('yearLevelFilter');
+    if (yearLevelFilter) {
+        yearLevelFilter.addEventListener('change', function() {
+            filterFilesByYear(this.value);
+        });
+    }
+    
+    // Tab change listeners
+    const yearTabs = document.querySelectorAll('#yearTabs button[data-bs-toggle="pill"]');
+    yearTabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(event) {
+            const targetId = event.target.getAttribute('data-bs-target');
+            loadFilesForYear(targetId.replace('#', ''));
+        });
+    });
+    
+    // Initial load if already on files section
+    if (document.getElementById('files-section').classList.contains('active')) {
+        loadAllFiles();
+        updateFileStatistics();
+    }
+}
+
+function loadAllFiles() {
+    // Load academic files
+    loadAcademicFiles();
+    
+    // Load payment files
+    loadPaymentFiles();
+}
+
+function loadAcademicFiles(yearLevel = 'all') {
+    const container = yearLevel === 'all' ? 
+        document.getElementById('all-files-container') : 
+        document.getElementById(`${yearLevel}-files`);
+    
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="loading-state">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading files...</p>
+        </div>
+    `;
+    
+    // Fetch academic files from server
+    fetch('/student/files/academic', {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.files && data.files.length > 0) {
+            let filteredFiles = data.files;
+            
+            if (yearLevel !== 'all' && yearLevel !== 'year1') {
+                // Filter by year level (remove 'year' prefix for comparison)
+                const targetYear = yearLevel.replace('year', '') + ' Year';
+                filteredFiles = data.files.filter(file => file.year_level === targetYear);
+            }
+            
+            displayFiles(filteredFiles, container, 'academic');
+        } else {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <h4>No academic files found</h4>
+                    <p>You haven't uploaded any academic files yet.</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading academic files:', error);
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h4>Error loading files</h4>
+                <p>Unable to load academic files. Please try again later.</p>
+            </div>
+        `;
+    });
+}
+
+
+function loadPaymentFiles() {
+    const container = document.getElementById('payment-files-container');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="loading-state">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading payment records...</p>
+        </div>
+    `;
+    
+    // Fetch payment files from server
+    fetch('/student/files/payments', {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.payments && data.payments.length > 0) {
+            displayPaymentFiles(data.payments, container);
+        } else {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <h4>No payment records found</h4>
+                    <p>You don't have any payment records yet.</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading payment files:', error);
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h4>Error loading payment records</h4>
+                <p>Unable to load payment records. Please try again later.</p>
+            </div>
+        `;
+    });
+}
+
+function loadFilesForYear(yearId) {
+    if (yearId === 'all') {
+        loadAllFiles();
+    } else {
+        loadAcademicFiles(yearId);
+    }
+}
+
+function filterFilesByYear(yearLevel) {
+    const allContainers = ['all-files-container', 'year1-files', 'year2-files', 'year3-files', 'year4-files'];
+    
+    allContainers.forEach(containerId => {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.style.display = 'none';
+        }
+    });
+    
+    if (yearLevel === 'all') {
+        const container = document.getElementById('all-files-container');
+        if (container) {
+            container.style.display = 'grid';
+            loadAcademicFiles('all');
+        }
+    } else {
+        const yearId = 'year' + yearLevel.split(' ')[0];
+        const container = document.getElementById(yearId + '-files');
+        if (container) {
+            container.style.display = 'grid';
+            loadAcademicFiles(yearId);
+        }
+    }
+}
+
+function displayFiles(files, container, type = 'academic') {
+    if (!files || files.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <h4>No files found</h4>
+                <p>No ${type} files available.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    files.forEach(file => {
+        const fileCard = createFileCard(file, type);
+        container.appendChild(fileCard);
+    });
+}
+
+function displayPaymentFiles(payments, container) {
+    if (!payments || payments.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <h4>No payment records found</h4>
+                <p>You don't have any payment records yet.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    payments.forEach(payment => {
+        const paymentCard = createPaymentCard(payment);
+        container.appendChild(paymentCard);
+    });
+}
+
+function createFileCard(file, type) {
+    const div = document.createElement('div');
+    div.className = 'file-card';
+    
+    // Determine file type icon and color
+    let fileIcon = 'document';
+    let fileIconClass = 'document';
+    
+    if (file.file_path) {
+        const ext = file.file_path.split('.').pop().toLowerCase();
+        if (ext === 'pdf') {
+            fileIcon = 'file-pdf';
+            fileIconClass = 'pdf';
+        } else if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
+            fileIcon = 'file-image';
+            fileIconClass = 'image';
+        } else if (['doc', 'docx'].includes(ext)) {
+            fileIcon = 'file-word';
+            fileIconClass = 'document';
+        }
+    }
+    
+    const uploadDate = new Date(file.upload_date || file.created_at);
+    const formattedDate = uploadDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    div.innerHTML = `
+        <div class="file-icon ${fileIconClass}">
+            <i class="fas fa-${fileIcon}"></i>
+        </div>
+        <div class="file-header">
+            <span class="file-type-badge">${file.type || 'Academic'}</span>
+            <span class="badge bg-secondary">${file.year_level || 'N/A'}</span>
+        </div>
+        <h5 class="file-title">${file.title || file.type || 'Academic File'}</h5>
+        <p class="file-description">${file.description || 'Academic document for ' + (file.year_level || 'current year')}</p>
+        <div class="file-meta">
+            <span class="file-date">${formattedDate}</span>
+            <span class="file-size">${file.file_size || 'N/A'}</span>
+        </div>
+        <div class="file-actions">
+            <a href="${file.file_path}" target="_blank" class="btn-file-action primary">
+                <i class="fas fa-eye"></i> View
+            </a>
+            <a href="${file.file_path}" download class="btn-file-action">
+                <i class="fas fa-download"></i> Download
+            </a>
+        </div>
+    `;
+    
+    return div;
+}
+
+function createPaymentCard(payment) {
+    const div = document.createElement('div');
+    div.className = 'file-card';
+    
+    const paymentDate = new Date(payment.payment_date || payment.created_at);
+    const formattedDate = paymentDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    let statusClass = 'pending';
+    let statusText = 'Pending';
+    
+    if (payment.status === 'Completed') {
+        statusClass = 'completed';
+        statusText = 'Completed';
+    } else if (payment.status === 'Failed') {
+        statusClass = 'failed';
+        statusText = 'Failed';
+    }
+    
+    div.innerHTML = `
+        <div class="file-icon payment">
+            <i class="fas fa-receipt"></i>
+        </div>
+        <div class="file-header">
+            <span class="file-type-badge">Payment Receipt</span>
+            <span class="payment-status ${statusClass}">
+                <i class="fas fa-circle"></i> ${statusText}
+            </span>
+        </div>
+        <h5 class="file-title">Payment Receipt #${payment.id || 'N/A'}</h5>
+        <p class="file-description">Payment for enrollment and fees</p>
+        <div class="mb-3">
+            <strong>Amount:</strong> ₱${parseFloat(payment.amount || 0).toFixed(2)}
+        </div>
+        <div class="file-meta">
+            <span class="file-date">${formattedDate}</span>
+            <span class="file-size">Receipt</span>
+        </div>
+        <div class="file-actions">
+            ${payment.receipt_url ? `
+                <a href="${payment.receipt_url}" target="_blank" class="btn-file-action primary">
+                    <i class="fas fa-eye"></i> View Receipt
+                </a>
+                <a href="${payment.receipt_url}" download class="btn-file-action">
+                    <i class="fas fa-download"></i> Download
+                </a>
+            ` : `
+                <button class="btn-file-action" disabled>
+                    <i class="fas fa-exclamation-circle"></i> No Receipt
+                </button>
+            `}
+        </div>
+    `;
+    
+    return div;
+}
+
+function updateFileStatistics() {
+    // Fetch statistics from server
+    fetch('/student/files/statistics', {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('totalFiles').textContent = data.totalFiles || 0;
+            document.getElementById('academicFiles').textContent = data.academicFiles || 0;
+            document.getElementById('paymentFiles').textContent = data.paymentFiles || 0;
+            document.getElementById('totalSize').textContent = (data.totalSize || 0) + ' MB';
+        }
+    })
+    .catch(error => {
+        console.error('Error loading file statistics:', error);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
 
     initializeThemeColorPicker();
@@ -3906,6 +4285,7 @@ document.addEventListener('DOMContentLoaded', function() {
     count_enrolled_subjects();
     count_documents();
     initializeNotifications();
+    initializeFilesSystem();
     // loadAverageGradeChart();
 
     initializeLogout();

@@ -3405,5 +3405,136 @@ class StudentController extends Controller
         ]);
     }
 
+    public function getAcademicFiles()
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized']);
+        }
+
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+
+        // Get academic files from student_files table
+        $academicFiles = DB::table('student_files')
+            ->where('student_id', $student->id)
+            ->orderBy('year_level')
+            ->orderBy('upload_date', 'desc')
+            ->get();
+
+        // Format the files data
+        $files = $academicFiles->map(function ($file) {
+            return [
+                'id' => $file->id,
+                'type' => $file->type,
+                'year_level' => $file->year_level,
+                'file_path' => asset($file->file_path),
+                'upload_date' => $file->upload_date,
+                'title' => $file->type . ' - ' . $file->year_level,
+                'description' => ucfirst($file->type) . ' document for ' . $file->year_level
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'files' => $files
+        ]);
+    }
+
+    public function getPaymentFiles()
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized']);
+        }
+
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+
+        // Get payment files from organizationfees and payments tables
+        $organizationPayments = DB::table('organizationfees')
+            ->where('student_id', $student->id)
+            ->orderBy('payment_date', 'desc')
+            ->get();
+
+        $enrollmentPayments = DB::table('payments')
+            ->where('student_id', $student->id)
+            ->orderBy('upload_date', 'desc')
+            ->get();
+
+        // Combine and format payments
+        $payments = collect();
+        
+        // Add organization fees
+        foreach ($organizationPayments as $payment) {
+            $payments->push([
+                'id' => $payment->id,
+                'type' => 'Organization Fee',
+                'amount' => $payment->amount,
+                'status' => $payment->status,
+                'receipt_url' => $payment->receipt_url ? asset($payment->receipt_url) : null,
+                'payment_date' => $payment->payment_date,
+                'red_flag' => $payment->red_flag
+            ]);
+        }
+
+        // Add enrollment payments
+        foreach ($enrollmentPayments as $payment) {
+            $payments->push([
+                'id' => $payment->id,
+                'type' => 'Enrollment Payment',
+                'amount' => 0, // You might need to adjust this
+                'status' => $payment->status,
+                'receipt_url' => $payment->file_path ? asset($payment->file_path) : null,
+                'payment_date' => $payment->upload_date,
+                'red_flag' => null
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'payments' => $payments
+        ]);
+    }
+
+
+    public function getFileStatistics()
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized']);
+        }
+
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+
+        // Count academic files
+        $academicFilesCount = DB::table('student_files')
+            ->where('student_id', $student->id)
+            ->count();
+
+        // Count payment files
+        $organizationPaymentsCount = DB::table('organizationfees')
+            ->where('student_id', $student->id)
+            ->count();
+
+        $enrollmentPaymentsCount = DB::table('payments')
+            ->where('student_id', $student->id)
+            ->count();
+
+        $paymentFilesCount = $organizationPaymentsCount + $enrollmentPaymentsCount;
+        
+        // Calculate total files
+        $totalFiles = $academicFilesCount + $paymentFilesCount;
+        
+        // Estimate file sizes (this would need actual file size calculation in a real implementation)
+        $totalSize = $totalFiles * 0.5; // Estimate 0.5 MB per file
+
+        return response()->json([
+            'success' => true,
+            'totalFiles' => $totalFiles,
+            'academicFiles' => $academicFilesCount,
+            'paymentFiles' => $paymentFilesCount,
+            'totalSize' => number_format($totalSize, 1)
+        ]);
+    }
+
 
 }//END OF Class
