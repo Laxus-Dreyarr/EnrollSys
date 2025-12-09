@@ -347,6 +347,9 @@ Route::middleware(['student.auth'])->group(function () {
     // Profile picture upload route
     Route::post('/student/upload-avatar', [StudentController::class, 'uploadAvatar'])->name('student.upload.avatar');
 
+    Route::get('/student/profile/data', [StudentController::class, 'getProfileData']);
+    Route::post('/student/profile/update', [StudentController::class, 'updateProfile']);
+
     Route::post('/student/logout', [StudentController::class, 'logout'])->name('student.logout');
 });
 

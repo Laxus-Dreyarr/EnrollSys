@@ -4718,14 +4718,170 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelEditBtn = document.getElementById('cancel-edit');
     const profileForm = document.getElementById('profile-form');
     const formActions = document.getElementById('form-actions');
-    const editableFields = ['firstName', 'lastName', 'email', 'phone', 'address'];
+    const editableFields = ['firstName', 'lastName', 'middlename', 'phone', 'address'];
     
     let originalValues = {};
+
+    loadProfileData();
+    initializeProfileEdit();
     
     // Store original values
-    editableFields.forEach(field => {
-        originalValues[field] = document.getElementById(field).value;
-    });
+    // editableFields.forEach(field => {
+    //     originalValues[field] = document.getElementById(field).value;
+    // });
+
+    // Load profile data
+    function loadProfileData() {
+        fetch('/student/profile/data')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.profile) {
+                    const profile = data.profile;
+                    
+                    // Update form fields
+                    document.getElementById('firstName').value = profile.firstname;
+                    document.getElementById('lastName').value = profile.lastname;
+                    document.getElementById('middlename').value = profile.middlename;
+                    document.getElementById('email').value = profile.email;
+                    document.getElementById('phone').value = profile.phone;
+                    document.getElementById('address').value = profile.address;
+                    document.getElementById('program').value = profile.program;
+                    document.getElementById('yearLevel').value = profile.year_level;
+                    document.getElementById('curriculum').value = profile.curriculum;
+                    
+                    // Store original values
+                    editableFields.forEach(field => {
+                        originalValues[field] = document.getElementById(field).value;
+                    });
+                }
+            })
+            .catch(error => console.error('Error loading profile data:', error));
+    }
+
+
+    function initializeProfileEdit() {
+        // Store original values
+        editableFields.forEach(field => {
+            originalValues[field] = document.getElementById(field).value;
+        });
+        
+        // Edit profile button click
+        editProfileBtn.addEventListener('click', function() {
+            // Enable editing for all fields
+            editableFields.forEach(field => {
+                const input = document.getElementById(field);
+                input.readOnly = false;
+                input.style.background = 'white';
+                input.style.color = '#374151';
+                
+                // Update dark mode styles if active
+                if (document.body.classList.contains('dark-mode')) {
+                    input.style.background = '#1e293b';
+                    input.style.color = '#e2e8f0';
+                }
+            });
+            
+            // Show form actions
+            formActions.style.display = 'flex';
+            
+            // Change edit button to editing state
+            editProfileBtn.innerHTML = '<i class="fas fa-pencil-alt"></i> Editing...';
+            editProfileBtn.style.background = '#fbbf24';
+            editProfileBtn.style.borderColor = '#fbbf24';
+            editProfileBtn.style.color = '#78350f';
+        });
+        
+        // Cancel edit button click
+        cancelEditBtn.addEventListener('click', function() {
+            // Restore original values
+            editableFields.forEach(field => {
+                const input = document.getElementById(field);
+                input.value = originalValues[field];
+                input.readOnly = true;
+                input.style.background = '#f8fafc';
+                input.style.color = '#64748b';
+                
+                // Update dark mode styles if active
+                if (document.body.classList.contains('dark-mode')) {
+                    input.style.background = 'rgba(255, 255, 255, 0.05)';
+                    input.style.color = '#94a3b8';
+                }
+            });
+            
+            // Hide form actions
+            formActions.style.display = 'none';
+            
+            // Reset edit button
+            editProfileBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Profile';
+            editProfileBtn.style.background = 'transparent';
+            editProfileBtn.style.borderColor = 'var(--primary-color)';
+            editProfileBtn.style.color = 'var(--primary-color)';
+        });
+        
+        // Form submission
+        profileForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Collect form data
+            const formData = {
+                firstname: document.getElementById('firstName').value,
+                lastname: document.getElementById('lastName').value,
+                middlename: document.getElementById('middlename').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+            };
+            
+            // Send update request
+            fetch('/student/profile/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Make fields read-only again
+                    editableFields.forEach(field => {
+                        const input = document.getElementById(field);
+                        input.readOnly = true;
+                        input.style.background = '#f8fafc';
+                        input.style.color = '#64748b';
+                        
+                        // Update dark mode styles if active
+                        if (document.body.classList.contains('dark-mode')) {
+                            input.style.background = 'rgba(255, 255, 255, 0.05)';
+                            input.style.color = '#94a3b8';
+                        }
+                        
+                        // Update original values
+                        originalValues[field] = input.value;
+                    });
+                    
+                    // Hide form actions
+                    formActions.style.display = 'none';
+                    
+                    // Reset edit button
+                    editProfileBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Profile';
+                    editProfileBtn.style.background = 'transparent';
+                    editProfileBtn.style.borderColor = 'var(--primary-color)';
+                    editProfileBtn.style.color = 'var(--primary-color)';
+                    
+                    // Show success message
+                    showNotification(data.message, 'success');
+                } else {
+                    showNotification(data.message || 'Failed to update profile', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating profile:', error);
+                showNotification('An error occurred while updating profile', 'error');
+            });
+        });
+    }
+
     
     // Edit profile button click
     editProfileBtn.addEventListener('click', function() {

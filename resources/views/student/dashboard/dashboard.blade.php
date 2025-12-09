@@ -835,7 +835,7 @@ $show_prereg_form = $isEnrollmentActive;
                     </div>
 
                     <!-- Profile Details Card -->
-                    <div class="profile-details-card">
+                    <!-- <div class="profile-details-card">
                         <div class="card-header">
                             <h4>Personal Information</h4>
                             <button class="btn-edit" id="edit-profile-btn">
@@ -916,6 +916,98 @@ $show_prereg_form = $isEnrollmentActive;
                                         Curriculum
                                     </label>
                                     <input type="text" class="form-control" id="semester" value="2023-2024" disabled>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions" id="form-actions" style="display: none;">
+                                <button type="button" class="btn-cancel" id="cancel-edit">Cancel</button>
+                                <button type="submit" class="btn-primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div> -->
+
+                    <!-- Profile Details Card -->
+                    <div class="profile-details-card">
+                        <div class="card-header">
+                            <h4>Personal Information</h4>
+                            <button class="btn-edit" id="edit-profile-btn">
+                                <i class="fas fa-edit"></i>
+                                Edit Profile
+                            </button>
+                        </div>
+                        
+                        <form class="profile-form" id="profile-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="firstName" class="form-label">
+                                        <i class="fas fa-user"></i>
+                                        First Name
+                                    </label>
+                                    <input type="text" class="form-control" id="firstName" value="{{ $userInfo->firstname ?? '' }}" readonly>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="lastName" class="form-label">
+                                        <i class="fas fa-user"></i>
+                                        Last Name
+                                    </label>
+                                    <input type="text" class="form-control" id="lastName" value="{{ $userInfo->lastname ?? '' }}" readonly>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="MiddleName" class="form-label">
+                                        <i class="fas fa-user"></i>
+                                        Middle Name
+                                    </label>
+                                    <input type="text" class="form-control" id="middlename" value="{{ $userInfo->middlename ?? '' }}" readonly>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="email" class="form-label">
+                                        <i class="fas fa-envelope"></i>
+                                        Email Address
+                                    </label>
+                                    <input type="email" class="form-control" id="email" value="{{ $user->email2 ?? '' }}" readonly>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="phone" class="form-label">
+                                        <i class="fas fa-phone"></i>
+                                        Phone Number
+                                    </label>
+                                    <input type="tel" class="form-control" id="phone" value="{{ $userInfo->phone ?? '' }}" readonly>
+                                </div>
+                                
+                                <div class="form-group full-width">
+                                    <label for="address" class="form-label">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        Address
+                                    </label>
+                                    <input type="text" class="form-control" id="address" value="{{ $userInfo->address ?? '' }}" readonly>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="program" class="form-label">
+                                        <i class="fas fa-book"></i>
+                                        Program
+                                    </label>
+                                    <input type="text" class="form-control" id="program" value="BS in Information Technology" disabled>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="yearLevel" class="form-label">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        Year Level
+                                    </label>
+                                    <input type="text" class="form-control" id="yearLevel" value="{{ $student->year_level ?? '' }}" disabled>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="curriculum" class="form-label">
+                                        <i class="fas fa-school"></i>
+                                        Curriculum
+                                    </label>
+                                    <input type="text" class="form-control" id="curriculum" value="{{ $student->curriculum ? $student->curriculum . '-' . ((int)$student->curriculum + 1) : '' }}" disabled>
                                 </div>
                             </div>
                             

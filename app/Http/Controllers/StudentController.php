@@ -944,6 +944,7 @@ class StudentController extends Controller
 
         $user = Auth::guard('student')->user();
         $student = $user->user_information->student;
+        $userInfo = $user->user_information;
 
         // Get notifications
         $notifications = DB::table('notifications')
@@ -1003,7 +1004,7 @@ class StudentController extends Controller
         $enrollmentPeriod = $this->checkActiveEnrollmentPeriod();
         $isEnrollmentActive = $enrollmentPeriod && $enrollmentPeriod->is_active == 1;
         
-        return view('student.dashboard.dashboard', compact('user', 'isEnrollmentActive', 'enrollmentPeriod', 'enrolledSubjects', 'averageGrade', 'gaugePercentage', 'notifications', 'unreadCount'));
+        return view('student.dashboard.dashboard', compact('user', 'isEnrollmentActive', 'enrollmentPeriod', 'enrolledSubjects', 'averageGrade', 'gaugePercentage', 'notifications', 'unreadCount', 'student', 'userInfo'));
     }
 
 
@@ -3668,6 +3669,80 @@ class StudentController extends Controller
             'year_level' => $student->year_level,
             'student_type' => $studentType
         ]);
+    }
+
+    public function getProfileData()
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+        $userInfo = $user->user_information;
+
+        // Format curriculum: add 1 year (e.g., 2018 -> 2018-2019)
+        $curriculumYear = $student->curriculum;
+        $formattedCurriculum = $curriculumYear . '-' . ((int)$curriculumYear + 1);
+
+        return response()->json([
+            'success' => true,
+            'profile' => [
+                'firstname' => $userInfo->firstname ?? '',
+                'lastname' => $userInfo->lastname ?? '',
+                'middlename' => $userInfo->middlename ?? '',
+                'email' => $user->email2 ?? '',
+                'phone' => $userInfo->phone_number ?? '',
+                'address' => $userInfo->address ?? '',
+                'program' => 'BS in Information Technology',
+                'year_level' => $student->year_level ?? '',
+                'curriculum' => $formattedCurriculum,
+                'curriculum_year' => $student->curriculum ?? '',
+            ]
+        ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $validated = $request->validate([
+            'firstname' => 'required|string|max:100',
+            'lastname' => 'required|string|max:100',
+            'middlename' => 'nullable|string|max:100',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $user = Auth::guard('student')->user();
+            $userInfo = $user->user_information;
+
+            // Update user_info table
+            DB::table('user_info')
+                ->where('user_id', $user->id)
+                ->update([
+                    'firstname' => $validated['firstname'],
+                    'lastname' => $validated['lastname'],
+                    'middlename' => $validated['middlename'] ?? '',
+                    'phone_number' => $validated['phone'] ?? '',
+                    'address' => $validated['address'] ?? '',
+                ]);
+
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile updated successfully!'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update profile: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
 

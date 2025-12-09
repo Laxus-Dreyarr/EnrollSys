@@ -2703,7 +2703,7 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, maroon, rgb(138, 33, 33));
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     border: none;
     color: white;
     padding: 12px 24px;
