@@ -775,7 +775,8 @@ $show_prereg_form = $isEnrollmentActive;
                                 <img src="{{ !empty($profile_picture) && $profile_picture !== 'default.png' ? asset('profile/' . $profile_picture) : 'https://ui-avatars.com/api/?name=' . urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) . '&background=4361ee&color=fff&size=150' }}" 
                                     alt="User Avatar" 
                                     class="profile-avatar"
-                                    id="profile-avatar">
+                                    id="profile-avatar"
+                                    data-upload-url="{{ route('student.upload.avatar') }}">
                                 <div class="avatar-overlay" id="avatar-overlay">
                                     <i class="fas fa-camera"></i>
                                 </div>

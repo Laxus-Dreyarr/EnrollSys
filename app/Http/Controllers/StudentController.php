@@ -3536,5 +3536,74 @@ class StudentController extends Controller
         ]);
     }
 
+    public function uploadAvatar(Request $request)
+    {
+        try {
+            // Check if user is authenticated
+            $user = Auth::guard('student')->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Unauthorized. Please login again.'
+                ], 401);
+            }
+
+            // Validate the uploaded file
+            $request->validate([
+                'avatar' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB
+            ]);
+
+            // Handle the file upload
+            if ($request->hasFile('avatar')) {
+                $file = $request->file('avatar');
+                
+                // Generate unique filename
+                $filename = $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                
+                // Delete old profile picture if not default
+                if ($user->profile && $user->profile !== 'default.png' && $user->profile !== 'default.jpg') {
+                    $oldImagePath = public_path('profile/' . $user->profile);
+                    if (file_exists($oldImagePath)) {
+                        @unlink($oldImagePath);
+                    }
+                }
+                
+                // Store the file in public/profile directory
+                $file->move(public_path('profile'), $filename);
+                
+                // Update user's profile in database
+                DB::table('users')
+                    ->where('id', $user->id)
+                    ->update([
+                        'profile' => $filename,
+                        'date_created' => now()
+                    ]);
+                
+                // Generate the URL with version query to avoid caching
+                $profile_url = asset('profile/' . $filename) . '?v=' . time();
+                
+                return response()->json([
+                    'success' => true,
+                    'profile_url' => $profile_url,
+                    'message' => 'Profile picture updated successfully!'
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'error' => 'No file uploaded.'
+            ], 400);
+            
+        } catch (\Exception $e) {
+            Log::error('Profile upload error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'error' => 'An error occurred while uploading. Please try again.'
+            ], 500);
+        }
+    }
+
 
 }//END OF Class

@@ -926,40 +926,112 @@ function initializeProfilePictureUpload() {
     
     // Complete upload process
     function completeUpload(file) {
-        // Show success animation
+        // Show success animation for client-side processing
         successCheckmark.classList.add('active');
+        progressText.textContent = 'Processing complete!';
         
-        // Update progress text
-        progressText.textContent = 'Upload Complete!';
-        
-        // Hide loading after delay
+        // Hide success animation and start actual upload after delay
         setTimeout(() => {
-            uploadLoading.classList.remove('active');
             successCheckmark.classList.remove('active');
-            avatarContainer.classList.remove('uploading');
-            
-            // Re-enable button
-            changePhotoBtn.disabled = false;
-            changePhotoBtn.classList.remove('loading');
-            
-            // In a real application, you would submit the form or send AJAX here
-            simulateServerUpload(file);
-            
-        }, 1500);
+            // Start actual server upload
+            uploadToServer(file);
+        }, 500);
     }
     
-    // Simulate server upload (replace with actual AJAX call)
-    function simulateServerUpload(file) {
-        // Create FormData for actual upload
+    // Actual server upload function
+    function uploadToServer(file) {
         const formData = new FormData();
         formData.append('avatar', file);
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
         
-        // For demo purposes, we'll just show a success message
-        setTimeout(() => {
-            showNotification('Profile picture updated successfully!', 'success');
-        }, 500);
+        // Get upload URL (you should define this in your blade template)
+        const uploadUrl = document.getElementById('avatar-container').getAttribute('data-upload-url') || '/student/upload-avatar';
+        
+        // Create XMLHttpRequest for better progress tracking
+        const xhr = new XMLHttpRequest();
+        
+        xhr.open('POST', uploadUrl, true);
+        
+        // Update progress during upload
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = (e.loaded / e.total) * 100;
+                progressFill.style.width = percentComplete + '%';
+                progressText.textContent = Math.round(percentComplete) + '%';
+                
+                if (percentComplete < 30) {
+                    progressText.textContent = 'Processing image...';
+                } else if (percentComplete < 80) {
+                    progressText.textContent = 'Uploading to server...';
+                }
+            }
+        });
+        
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                
+                if (response.success) {
+                    // Update profile picture on page
+                    profileAvatar.src = response.profile_url;
+
+                    const sidebarAvatar = document.querySelector('.sidebar .user-avatar');
+                    if (sidebarAvatar) {
+                        sidebarAvatar.src = response.profile_url;
+                    }
+                    
+                    // Show success message
+                    showNotification(response.message, 'success');
+                    
+                    // Update progress to complete
+                    progressFill.style.width = '100%';
+                    progressText.textContent = 'Upload Complete!';
+                    
+                    // Show success checkmark
+                    successCheckmark.classList.add('active');
+                    
+                    // After success, hide loading and reset
+                    setTimeout(() => {
+                        uploadLoading.classList.remove('active');
+                        successCheckmark.classList.remove('active');
+                        avatarContainer.classList.remove('uploading');
+                        
+                        // Re-enable button
+                        changePhotoBtn.disabled = false;
+                        changePhotoBtn.classList.remove('loading');
+
+
+                    }, 1500);
+                } else {
+                    showError(response.error || 'Upload failed. Please try again.');
+                    resetUploadState();
+                }
+            } else {
+                showError('Server error occurred. Please try again.');
+                resetUploadState();
+            }
+        };
+        
+        xhr.onerror = function() {
+            showError('Network error occurred. Please check your connection.');
+            resetUploadState();
+        };
+        
+        // Send the request
+        xhr.send(formData);
     }
+
+    function resetUploadState() {
+        setTimeout(() => {
+            uploadLoading.classList.remove('active');
+            avatarContainer.classList.remove('uploading');
+            changePhotoBtn.disabled = false;
+            changePhotoBtn.classList.remove('loading');
+            progressFill.style.width = '0%';
+            progressText.textContent = '0%';
+        }, 1000);
+    }
+
     
     // Show error message
     function showError(message) {
