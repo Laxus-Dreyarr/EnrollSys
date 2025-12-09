@@ -4111,6 +4111,7 @@ function displayFiles(files, container, type = 'academic') {
     });
 }
 
+
 function displayPaymentFiles(payments, container) {
     if (!payments || payments.length === 0) {
         container.innerHTML = `
@@ -4127,10 +4128,124 @@ function displayPaymentFiles(payments, container) {
     
     container.innerHTML = '';
     
-    payments.forEach(payment => {
-        const paymentCard = createPaymentCard(payment);
-        container.appendChild(paymentCard);
+    // Separate organization fees from other payments
+    const organizationFees = payments.filter(p => p.type === 'Organization Fee');
+    const otherPayments = payments.filter(p => p.type !== 'Organization Fee');
+    
+    // Add section header for organization fees if any
+    if (organizationFees.length > 0) {
+        const sectionHeader = document.createElement('h5');
+        
+        organizationFees.forEach(payment => {
+            const paymentCard = createOrganizationFeeCard(payment);
+            container.appendChild(paymentCard);
+        });
+    }
+    
+    // Add section header for other payments if any
+    if (otherPayments.length > 0) {
+        const sectionHeader = document.createElement('h5');
+        sectionHeader.className = 'section-header';
+        sectionHeader.innerHTML = '<i class="fas fa-university"></i> Other Payments';
+        container.appendChild(sectionHeader);
+        
+        otherPayments.forEach(payment => {
+            const paymentCard = createPaymentCard(payment); // Use existing for non-org fees
+            container.appendChild(paymentCard);
+        });
+    }
+}
+
+
+function createOrganizationFeeCard(payment) {
+    const div = document.createElement('div');
+    div.className = 'file-card';
+    
+    // Determine status and icon
+    let statusClass = 'pending';
+    let statusText = payment.status || 'Pending';
+    let fileIcon = 'money-bill-wave'; // Default icon for payments
+    
+    // Map status to appropriate classes
+    if (payment.status === 'Completed' || payment.status === 'Paid') {
+        statusClass = 'completed';
+        fileIcon = 'check-circle';
+    } else if (payment.status === 'Failed' || payment.status === 'Rejected') {
+        statusClass = 'failed';
+        fileIcon = 'times-circle';
+    } else if (payment.status === 'Pending') {
+        statusClass = 'pending';
+        fileIcon = 'clock';
+    } else if (payment.red_flag) {
+        statusClass = 'failed'; // Red flag gets warning color
+        fileIcon = 'exclamation-triangle';
+    }
+    
+    // Format the payment date
+    const paymentDate = new Date(payment.payment_date || payment.uploaded_date || new Date());
+    const formattedDate = paymentDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
     });
+    
+    // Format amount
+    const formattedAmount = payment.amount ? 
+        `₱${parseFloat(payment.amount).toFixed(2)}` : 
+        '₱0.00';
+    
+    // Determine if there's a red flag warning
+    const redFlagWarning = payment.red_flag ? 
+        `<div class="red-flag-warning">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>${payment.red_flag}</span>
+        </div>` : '';
+    
+    div.innerHTML = `
+        <div class="file-icon payment ${statusClass}">
+            <i class="fas fa-${fileIcon}"></i>
+        </div>
+        <div class="file-header">
+            <span class="file-type-badge">${payment.type || 'Organization Fee'}</span>
+            <span class="payment-status ${statusClass}">
+                <i class="fas fa-circle"></i> ${statusText}
+            </span>
+        </div>
+        <h5 class="file-title">${payment.type || 'Organization Fee'} #${payment.id || 'N/A'}</h5>
+        <p class="file-description">${payment.type || 'Organization'} fee payment record</p>
+        
+        ${redFlagWarning}
+        
+        <div class="payment-details">
+            <div class="detail-item">
+                <span class="detail-label">Amount:</span>
+                <span class="detail-value amount">${formattedAmount}</span>
+            </div>
+        </div>
+        
+        <div class="file-meta">
+            <span class="file-date">
+                <i class="far fa-calendar"></i> ${formattedDate}
+            </span>
+            <span class="file-size">Fee</span>
+        </div>
+        <div class="file-actions">
+            ${payment.receipt_url ? `
+                <a href="${payment.receipt_url}" target="_blank" class="btn-file-action primary">
+                    <i class="fas fa-eye"></i> View Receipt
+                </a>
+                <a href="${payment.receipt_url}" download class="btn-file-action">
+                    <i class="fas fa-download"></i> Download
+                </a>
+            ` : `
+                <button class="btn-file-action" disabled>
+                    <i class="fas fa-ban"></i> No Receipt
+                </button>
+            `}
+        </div>
+    `;
+    
+    return div;
 }
 
 function createFileCard(file, type) {
@@ -4285,7 +4400,9 @@ document.addEventListener('DOMContentLoaded', function() {
     count_enrolled_subjects();
     count_documents();
     initializeNotifications();
+    loadAllFiles();
     initializeFilesSystem();
+    updateFileStatistics();
     // loadAverageGradeChart();
 
     initializeLogout();

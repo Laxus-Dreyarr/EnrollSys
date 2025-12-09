@@ -611,19 +611,6 @@ $show_prereg_form = $isEnrollmentActive;
                 
                 <!-- Year Level Filter -->
                 <div class="schedule-container mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h4 class="mb-0">Files by Year Level</h4>
-                        <div class="year-level-filter">
-                            <select id="yearLevelFilter" class="form-select" style="width: auto;">
-                                <option value="all">All Years</option>
-                                <option value="1st Year">1st Year</option>
-                                <option value="2nd Year">2nd Year</option>
-                                <option value="3rd Year">3rd Year</option>
-                                <option value="4th Year">4th Year</option>
-                                <option value="5th Year">5th Year</option>
-                            </select>
-                        </div>
-                    </div>
                     
                     <!-- Year Level Navigation -->
                     <div class="year-level-tabs mb-4">
@@ -701,8 +688,8 @@ $show_prereg_form = $isEnrollmentActive;
                                 </div>
                             </div>
                             
-                            <h4 style="display: none;" class="mb-4 mt-5">Payment Records</h4>
-                            <div style="display: none;" id="payment-files-container" class="files-grid">
+                            <h4 class="mb-4 mt-5">Payment Records</h4>
+                            <div id="payment-files-container" class="files-grid">
                                 <!-- Payment files will be loaded here dynamically -->
                             </div>
                         </div>

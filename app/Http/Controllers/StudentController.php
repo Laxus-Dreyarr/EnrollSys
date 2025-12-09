@@ -3452,7 +3452,7 @@ class StudentController extends Controller
         // Get payment files from organizationfees and payments tables
         $organizationPayments = DB::table('organizationfees')
             ->where('student_id', $student->id)
-            ->orderBy('payment_date', 'desc')
+            ->orderBy('uploaded_date', 'desc')
             ->get();
 
         $enrollmentPayments = DB::table('payments')
@@ -3471,23 +3471,23 @@ class StudentController extends Controller
                 'amount' => $payment->amount,
                 'status' => $payment->status,
                 'receipt_url' => $payment->receipt_url ? asset($payment->receipt_url) : null,
-                'payment_date' => $payment->payment_date,
-                'red_flag' => $payment->red_flag
+                'payment_date' => $payment->uploaded_date,
+                'red_flag' => $payment->red_flag_reason
             ]);
         }
 
         // Add enrollment payments
-        foreach ($enrollmentPayments as $payment) {
-            $payments->push([
-                'id' => $payment->id,
-                'type' => 'Enrollment Payment',
-                'amount' => 0, // You might need to adjust this
-                'status' => $payment->status,
-                'receipt_url' => $payment->file_path ? asset($payment->file_path) : null,
-                'payment_date' => $payment->upload_date,
-                'red_flag' => null
-            ]);
-        }
+        // foreach ($enrollmentPayments as $payment) {
+        //     $payments->push([
+        //         'id' => $payment->id,
+        //         'type' => 'Enrollment Payment',
+        //         'amount' => 0, // You might need to adjust this
+        //         'status' => $payment->status,
+        //         'receipt_url' => $payment->file_path ? asset($payment->file_path) : null,
+        //         'payment_date' => $payment->upload_date,
+        //         'red_flag' => null
+        //     ]);
+        // }
 
         return response()->json([
             'success' => true,
@@ -3515,11 +3515,11 @@ class StudentController extends Controller
             ->where('student_id', $student->id)
             ->count();
 
-        $enrollmentPaymentsCount = DB::table('payments')
-            ->where('student_id', $student->id)
-            ->count();
+        // $enrollmentPaymentsCount = DB::table('payments')
+        //     ->where('student_id', $student->id)
+        //     ->count();
 
-        $paymentFilesCount = $organizationPaymentsCount + $enrollmentPaymentsCount;
+        $paymentFilesCount = $organizationPaymentsCount;
         
         // Calculate total files
         $totalFiles = $academicFilesCount + $paymentFilesCount;
