@@ -1116,6 +1116,7 @@ function initializeTooltips() {
 function initializeStudentInfoModal() {
     const studentInfoModal = document.getElementById('studentInfoModal');
     const studentInfoForm = document.getElementById('studentInfoForm');
+
     
     if (!studentInfoModal) {
         return;
@@ -1154,9 +1155,9 @@ function initializeStudentInfoModal() {
 
     // Populate curriculum dropdown function
     function populateCurriculumDropdown() {
-        const curriculumSelect = document.getElementById('curriculum');
+        const curriculumSelect2 = document.getElementById('curriculum2');
         
-        if (!curriculumSelect) {
+        if (!curriculumSelect2) {
             console.error('Curriculum select element not found');
             return;
         }
@@ -1182,8 +1183,8 @@ function initializeStudentInfoModal() {
             
             if (data.success && data.curricula) {
                 // Clear existing options except the first one
-                while (curriculumSelect.options.length > 1) {
-                    curriculumSelect.remove(1);
+                while (curriculumSelect2.options.length > 1) {
+                    curriculumSelect2.remove(1);
                 }
                 
                 // Add curriculum options
@@ -1191,14 +1192,14 @@ function initializeStudentInfoModal() {
                     const option = document.createElement('option');
                     option.value = curriculum.curriculum_year;
                     option.textContent = `${curriculum.curriculum_year} Curriculum`;
-                    curriculumSelect.appendChild(option);
+                    curriculumSelect2.appendChild(option);
                 });
                 
                 console.log('Curriculum dropdown populated with:', data.curricula.length, 'options');
                 
                 // If there's only one curriculum, select it by default
                 if (data.curricula.length === 1) {
-                    curriculumSelect.value = data.curricula[0].curriculum_year;
+                    curriculumSelect2.value = data.curricula[0].curriculum_year;
                     console.log('Auto-selected curriculum:', data.curricula[0].curriculum_year);
                 }
             } else {
@@ -1214,7 +1215,7 @@ function initializeStudentInfoModal() {
             const option = document.createElement('option');
             option.value = '2019';
             option.textContent = '2019 Curriculum (Default)';
-            curriculumSelect.appendChild(option);
+            curriculumSelect2.appendChild(option);
         });
     }
 
@@ -1275,10 +1276,10 @@ function initializeStudentInfoModal() {
     function validateField(field) {
         const errorElement = document.getElementById(field.id + '_error');
         
-        if (!field.value.trim()) {
-            showFieldError(field, errorElement, 'This field is required');
-            return false;
-        }
+        // if (!field.value.trim()) {
+        //     showFieldError(field, errorElement, 'This field is required');
+        //     return false;
+        // }
         
         if (field.id === 'school_id') {
             return validateSchoolIdFormat(field) && validateSchoolIdCurriculum(field);
@@ -1331,10 +1332,10 @@ function initializeStudentInfoModal() {
         const formData = new FormData();
         formData.append('action', 'complete_student_info');
         formData.append('school_id', document.getElementById('school_id').value);
-        formData.append('curriculum', document.getElementById('curriculum').value);
+        formData.append('curriculum2', document.getElementById('curriculum2').value);
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
-        console.log('Submitting student info with curriculum:', document.getElementById('curriculum').value);
+        console.log('Submitting student info with curriculum:', document.getElementById('curriculum2').value);
 
         // Send request
         fetch('/exe/student', {
@@ -1459,26 +1460,27 @@ function initializeStudentInfoModal2() {
     // Form validation
     studentInfoForm2.addEventListener('submit', function(e) {
         e.preventDefault();
-        if (validateForm()) {
-            submitForm();
-        }
+        submitForm2();
+        // if (validateForm()) {
+        //     submitForm2();
+        // }
     });
 
-    function validateField(field) {
-        const value = field.value.trim();
-        const errorElement = document.getElementById(field.id + '_error');
+    // function validateField(field) {
+    //     const value = field.value.trim();
+    //     const errorElement = document.getElementById(field.id + '_error');
         
-        // Clear previous error
-        clearFieldError(field);
+    //     // Clear previous error
+    //     clearFieldError(field);
         
-        // Required field validation
-        if (!value) {
-            showFieldError(field, errorElement, 'This field is required');
-            return false;
-        }
+    //     // Required field validation
+    //     if (!value) {
+    //         showFieldError(field, errorElement, 'This field is required');
+    //         return false;
+    //     }
         
-        return true;
-    }
+    //     return true;
+    // }
 
     function showFieldError(field, errorElement, message) {
         field.style.borderColor = 'var(--danger-color)';
@@ -1496,24 +1498,24 @@ function initializeStudentInfoModal2() {
         }
     }
 
-    function validateForm() {
-        let isValid = true;
-        const fields = ['year_level', 'student_type'];
+    // function validateForm() {
+    //     let isValid = true;
+    //     const fields = ['year_level', 'student_type'];
         
-        fields.forEach(fieldId => {
-            const field = document.getElementById(fieldId);
-            if (field && !validateField(field)) {
-                isValid = false;
-            }
-        });
+    //     fields.forEach(fieldId => {
+    //         const field = document.getElementById(fieldId);
+    //         if (field && !validateField(field)) {
+    //             isValid = false;
+    //         }
+    //     });
         
-        return isValid;
-    }
+    //     return isValid;
+    // }
 
-    function submitForm() {
+    function submitForm2() {
         const submitBtn = studentInfoForm2.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
-        
+
         // Show loading state
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         submitBtn.classList.add('loading');

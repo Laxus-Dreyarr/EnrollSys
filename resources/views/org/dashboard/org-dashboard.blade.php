@@ -60,10 +60,6 @@ $show_student_form = (strtolower($org_id) === 'none');
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
-                <a class="menu-item" data-section="enrollment-requests">
-                    <i class="fas fa-user-graduate"></i>
-                    <span>Enrollment Requests</span>
-                </a>
                 <a class="menu-item" data-section="payment-verification">
                     <i class="fas fa-money-check"></i>
                     <span>Payment Verification</span>
@@ -167,27 +163,6 @@ $show_student_form = (strtolower($org_id) === 'none');
                 <!-- Quick Actions -->
                 <h2 class="section-title">Quick Actions</h2>
                 <div class="courses-grid">
-                    <div class="course-card" style="cursor: pointer;" onclick="showSection('enrollment-requests')">
-                        <div class="course-header">
-                            <h3 class="course-code"><i class="fas fa-user-graduate"></i></h3>
-                            <p class="course-name">Review Enrollment Requests</p>
-                        </div>
-                        <div class="course-body">
-                            <div class="course-info">
-                                <span>15 pending requests</span>
-                                <span>Priority: High</span>
-                            </div>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span>Processing Rate</span>
-                                    <span>78%</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress" style="width: 78%;"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     
                     <div class="course-card" style="cursor: pointer;" onclick="showSection('payment-verification')">
                         <div class="course-header">
@@ -234,134 +209,7 @@ $show_student_form = (strtolower($org_id) === 'none');
                     </div>
                 </div>
             </div>
-            
-            <!-- Enrollment Requests Section -->
-            <div id="enrollment-requests-section" class="content-section">
-                <div class="section-header">
-                    <h2 class="section-title">Enrollment Requests</h2>
-                    <div class="section-actions">
-                        <button class="btn-primary" id="filter-requests">
-                            <i class="fas fa-filter"></i>
-                            Filter
-                        </button>
-                        <button class="btn-secondary" id="export-requests">
-                            <i class="fas fa-download"></i>
-                            Export
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="schedule-container">
-                    <!-- Filter Options -->
-                    <div class="filter-options">
-                        <div class="filter-group">
-                            <label>Status:</label>
-                            <select id="status-filter" class="filter-select">
-                                <option value="all">All Status</option>
-                                <option value="pending">Pending</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Program:</label>
-                            <select id="program-filter" class="filter-select">
-                                <option value="all">All Programs</option>
-                                <option value="bsit">BS Information Technology</option>
-                                <option value="bscs">BS Computer Science</option>
-                                <option value="bsis">BS Information Systems</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Date Range:</label>
-                            <input type="date" id="date-from" class="filter-date">
-                            <span>to</span>
-                            <input type="date" id="date-to" class="filter-date">
-                        </div>
-                    </div>
-
-                    <!-- Requests Table -->
-                    <div class="requests-table">
-                        <table class="grades-table">
-                            <thead>
-                                <tr>
-                                    <th>Student ID</th>
-                                    <th>Student Name</th>
-                                    <th>Program</th>
-                                    <th>Year Level</th>
-                                    <th>Requested Subjects</th>
-                                    <th>Date Submitted</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>2020-30617</td>
-                                    <td>John Michael Smith</td>
-                                    <td>BS Information Technology</td>
-                                    <td>3rd Year</td>
-                                    <td>5 subjects</td>
-                                    <td>2024-01-15</td>
-                                    <td><span class="status-badge pending">Pending</span></td>
-                                    <td>
-                                        <button class="btn-action view-request" data-id="1">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="btn-action approve-request" data-id="1">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                        <button class="btn-action reject-request" data-id="1">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>2021-45128</td>
-                                    <td>Sarah Marie Johnson</td>
-                                    <td>BS Computer Science</td>
-                                    <td>2nd Year</td>
-                                    <td>6 subjects</td>
-                                    <td>2024-01-14</td>
-                                    <td><span class="status-badge approved">Approved</span></td>
-                                    <td>
-                                        <button class="btn-action view-request" data-id="2">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="btn-action revoke-request" data-id="2">
-                                            <i class="fas fa-undo"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>2019-28745</td>
-                                    <td>Michael Anthony Brown</td>
-                                    <td>BS Information Systems</td>
-                                    <td>4th Year</td>
-                                    <td>4 subjects</td>
-                                    <td>2024-01-13</td>
-                                    <td><span class="status-badge rejected">Rejected</span></td>
-                                    <td>
-                                        <button class="btn-action view-request" data-id="3">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="btn-action reconsider-request" data-id="3">
-                                            <i class="fas fa-redo"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Pagination -->
-                    <div class="pagination">
-                        <button class="page-btn" disabled>Previous</button>
-                        <span class="page-info">Page 1 of 5</span>
-                        <button class="page-btn">Next</button>
-                    </div>
-                </div>
-            </div>
+        
             
             <!-- Payment Verification Section -->
             <div id="payment-verification-section" class="content-section">
@@ -427,7 +275,7 @@ $show_student_form = (strtolower($org_id) === 'none');
                             <tbody>
                                 <tr>
                                     <td>2020-30617</td>
-                                    <td>John Michael Smith</td>
+                                    <td>Emily Willis</td>
                                     <td>₱150.00</td>
                                     <td>GCash</td>
                                     <td>GC-789123456</td>
@@ -449,7 +297,7 @@ $show_student_form = (strtolower($org_id) === 'none');
                                 </tr>
                                 <tr>
                                     <td>2021-45128</td>
-                                    <td>Sarah Marie Johnson</td>
+                                    <td>Lexi Lore</td>
                                     <td>₱150.00</td>
                                     <td>GCash</td>
                                     <td>GC-789123457</td>
@@ -468,7 +316,7 @@ $show_student_form = (strtolower($org_id) === 'none');
                                 </tr>
                                 <tr>
                                     <td>2019-28745</td>
-                                    <td>Michael Anthony Brown</td>
+                                    <td>Abella Danger</td>
                                     <td>₱150.00</td>
                                     <td>GCash</td>
                                     <td>GC-789123458</td>
@@ -860,7 +708,7 @@ $show_student_form = (strtolower($org_id) === 'none');
                                         <i class="fas fa-map-marker-alt"></i>
                                         Address
                                     </label>
-                                    <input type="text" class="form-control" id="orgAddress" value="EVSU Main Campus, Ormoc City, Leyte" readonly>
+                                    <input type="text" class="form-control" id="orgAddress" value="EVSU Ormoc City, Leyte" readonly>
                                 </div>
                                 
                                 <div class="form-group">
@@ -868,7 +716,7 @@ $show_student_form = (strtolower($org_id) === 'none');
                                         <i class="fas fa-user-tie"></i>
                                         Organization Head
                                     </label>
-                                    <input type="text" class="form-control" id="orgHead" value="Dr. Maria Santos" readonly>
+                                    <input type="text" class="form-control" id="orgHead" value="" readonly>
                                 </div>
                                 
                                 <div class="form-group">

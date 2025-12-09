@@ -1344,8 +1344,9 @@ $show_prereg_form = $isEnrollmentActive;
                             <i class="fas fa-book"></i>
                             Your Curriculum
                         </label>
-                        <select id="curriculum" name="curriculum" class="form-control" required>
+                        <select id="curriculum2" name="curriculum" class="form-control" required>
                             <option value="">Select Curriculum</option>
+                            
                             <!-- Options will be populated dynamically -->
                         </select>
                         <div class="form-error" id="curriculum_error"></div>

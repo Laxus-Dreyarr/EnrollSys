@@ -1193,14 +1193,14 @@ class StudentController extends Controller
                     'max:50',
                     'regex:/^\d{4}-\d+$/'
                 ],
-                'curriculum' => [
+                'curriculum2' => [
                     'required'
                 ]
             ], [
                 'school_id.required' => 'School ID is required.',
                 'school_id.max' => 'School ID must not exceed 50 characters.',
                 'school_id.regex' => 'School ID must be in the format: YYYY-XXXXX (e.g., 2020-30617).',
-                'curriculum.required' => 'Please select your curriculum.'
+                'curriculum2.required' => 'Please select your curriculum.'
             ]);
 
             if ($validator->fails()) {
@@ -1212,7 +1212,7 @@ class StudentController extends Controller
 
             // Validate curriculum exists and is active
             $curriculum = DB::table('curriculum')
-                ->where('curriculum_year', $request->curriculum)
+                ->where('curriculum_year', $request->curriculum2)
                 ->where('is_active', 1)
                 ->first();
 
@@ -1284,7 +1284,7 @@ class StudentController extends Controller
                         'id_no' => $request->school_id,
                         'status' => 'Not Enrolled',
                         'is_regular' => '5',
-                        'curriculum' => $request->curriculum // Use the selected curriculum, not school ID year
+                        'curriculum' => $request->curriculum2 // Use the selected curriculum, not school ID year
                     ]);
 
                 if(!$save) {
@@ -1298,7 +1298,7 @@ class StudentController extends Controller
                 // Find the student record for this user
                 $studentInfo = Student::where('student_id', $userInfo->id)->first();
 
-                $this->autoInsertSubjectsForIrregularStudent($studentInfo->id, $request->curriculum);
+                $this->autoInsertSubjectsForIrregularStudent($studentInfo->id, $request->curriculum2);
 
                 // Auto-insert subjects based on student type - USE THE SELECTED CURRICULUM
                 // if ($studentType == '1') { // Regular student
@@ -1363,7 +1363,8 @@ class StudentController extends Controller
                 $studentType = match($request->student_type) {
                     'Regular' => '1',
                     'Irregular' => '2',
-                    'Transferee' => '0',
+                    // 'Transferee' => '0',
+                    // 'Not Set' => '5',
                     default => $request->student_type
                 };
 
