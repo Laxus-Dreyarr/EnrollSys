@@ -273,11 +273,11 @@ async function insertsupabase2(){
                         // Refresh data based on the operation type
                         if (payload.new && payload.new.table_name === 'subject') {
                             if (payload.new.operation === 'INSERT') {
-                                showNotification('New subject has been added!');
+                                // showNotification('New subject has been added!');
                             } else if (payload.new.operation === 'DELETE') {
-                                showNotification('Subject has been deleted!');
+                                // showNotification('Subject has been deleted!');
                             } else if (payload.new.operation === 'UPDATE') {
-                                showNotification('Subject has been updated!');
+                                // showNotification('Subject has been updated!');
                             }
                             // Refresh the notification count when changes occur
                             // fetchNotificationCount();
@@ -374,7 +374,7 @@ async function insertsupabase2(){
         });
                                 
         // Show notification to user
-        showNotification('New subject has been added!');
+        // showNotification('New subject has been added!');
         
 
         // Passkey Generator
@@ -770,6 +770,7 @@ async function insertsupabase2(){
         loadStatistics();
         // loadSubjects2();
         loadSubjects();
+        
 
         // Load audit logs when the audit tab is shown
         $('a[href="#audit"]').on('shown.bs.tab', function(e) {
@@ -1210,32 +1211,51 @@ async function insertsupabase2(){
         });
     }
 
+    
     function loadAuditLogs() {
-        $.post('/admin/ajax/get-stats', {action: 'get_audit_logs', _token: $('meta[name="csrf-token"]').attr('content')}, function(response) {
+        console.log('loadAuditLogs function called');
+        
+        $.post('/admin/ajax/get-audit-logs', { 
+            _token: $('meta[name="csrf-token"]').attr('content')
+        }, function(response) {
+            console.log('Response received:', response);
+            
             if (response.success) {
+                console.log('Logs count:', response.logs.length);
+                console.log('First log:', response.logs[0]);
+                
                 const tbody = $('#auditTableBody');
                 tbody.empty();
                 
+                if (response.logs.length === 0) {
+                    tbody.append('<tr><td colspan="5" class="text-center">No audit logs found</td></tr>');
+                    return;
+                }
+                
                 response.logs.forEach(function(log) {
-                    const timestamp = new Date(log.timestamp).toLocaleString();
-                    const user = log.firstname && log.lastname ? 
-                        `${log.firstname} ${log.lastname}` : 
-                        (log.user_id ? `User ID: ${log.user_id}` : 'System');
+                    // Just use the raw timestamp for now
+                    const timestamp = log.timestamp || 'N/A';
                     
                     const row = `
                         <tr>
                             <td>${timestamp}</td>
-                            <td>${log.action}</td>
-                            <td>${user}</td>
+                            <td>${log.action || 'N/A'}</td>
+                            <td>${log.user_id || 'System'}</td>
                             <td>${log.details || 'N/A'}</td>
                             <td>${log.ip_address || 'N/A'}</td>
                         </tr>
                     `;
                     tbody.append(row);
                 });
+            } else {
+                console.error('Response success is false:', response.message);
+                $('#auditTableBody').html('<tr><td colspan="5" class="text-center text-danger">Error: ' + (response.message || 'Unknown error') + '</td></tr>');
             }
         }, 'json').fail(function(xhr, status, error) {
-            console.error('Error loading audit logs:', error);
+            console.error('AJAX Error:', error);
+            console.log('Status:', status);
+            console.log('XHR Response:', xhr.responseText);
+            $('#auditTableBody').html('<tr><td colspan="5" class="text-center text-danger">AJAX Error: ' + error + '</td></tr>');
         });
     }
 

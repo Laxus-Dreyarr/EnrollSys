@@ -4551,6 +4551,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Add search button functionality
+    const searchBtn5 = document.querySelector('#search-btn');
+    if (searchBtn5) {
+        searchBtn5.addEventListener('click', function() {
+            document.querySelector('[data-section="courses"]').click();
+        });
+    }
+
+    // Allow pressing Enter in search inputs
+    function handleEnterKey(event) {
+        if (event.key === 'Enter') {
+            document.querySelector('[data-section="courses"]').click();
+        }
+    }
+
     // Check irregular student status on page load
     checkIrregularStudent(irregularModal);
 
@@ -4577,7 +4592,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Simulate search (replace with actual search logic)
             setTimeout(() => {
                 searchBar.classList.remove('loading');
-                alert(`Searching for: ${searchTerm}`);
+                // alert(`Searching for: ${searchTerm}`);
                 // Here you would typically filter content or make an API call
             }, 1000);
         }

@@ -105,6 +105,7 @@ Route::middleware(['admin.auth'])->group(function () {
     // AJAX endpoints
     Route::prefix('admin/ajax')->group(function () {
         Route::post('/get-stats', [AdminController::class, 'getStats']);
+        Route::post('/get-audit-logs', [AdminController::class, 'getAuditLogs2']); 
         // Route::post('/get-prerequisites', [AdminController::class, 'getPrerequisites']);
         // Route::post('/get-subjects', [AdminController::class, 'getSubjects']);
         // Route::post('/get-subject/{id}', [AdminController::class, 'getSubject']);
@@ -311,7 +312,8 @@ Route::middleware(['student.auth'])->group(function () {
     Route::post('/student/enrollment/enroll-irregular', [StudentController::class, 'enrollIrregularSubjects']);
 
     // New route for fetching curricula
-    Route::get('/student/curricula', [StudentController::class, 'getAvailableCurricula']);
+    // Route::get('/student/curricula', [StudentController::class, 'getAvailableCurricula']);
+    Route::get('/student/curricula', [StudentController::class, 'getAvailableCurricula'])->name('student.curricula');
 
     Route::post('/student/enrollment/final-enroll', [StudentController::class, 'finalEnroll']);
 

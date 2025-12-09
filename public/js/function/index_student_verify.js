@@ -46,6 +46,12 @@ async function insertsupabase(){
 
 document.addEventListener('DOMContentLoaded', function() {
 
+    if (!sessionStorage.getItem('hasReloaded')) {
+        sessionStorage.setItem('hasReloaded', 'true');
+        setTimeout(() => {
+            window.location.reload();
+        }, 0);
+    }
 
     // Theme Toggle Functionality
     const themeToggleBtn = document.getElementById('themeToggle');

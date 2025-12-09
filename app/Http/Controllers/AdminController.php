@@ -1345,23 +1345,38 @@ class AdminController extends Controller
     public function getAuditLogs(Request $request)
     {
         try {
-            $logs = AuditLog::with(['user' => function($query) {
-                    $query->select('id', 'firstname', 'lastname');
-                }])
-                ->orderBy('timestamp', 'desc')
+            $logs = DB::table('auditlogs')
+                ->select('date as timestamp', 'action', 'details', 'ip_address', 'user_id')
                 ->limit(100)
                 ->get()
                 ->map(function($log) {
-                    return [
-                        'timestamp' => $log->timestamp,
-                        'action' => $log->action,
-                        'details' => $log->details,
-                        'ip_address' => $log->ip_address,
-                        'firstname' => $log->user ? $log->user->firstname : null,
-                        'lastname' => $log->user ? $log->user->lastname : null,
-                        'user_id' => $log->user_id
-                    ];
+                    return (array) $log;
                 });
+
+            return response()->json(['success' => true, 'logs' => $logs]);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch audit logs: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to fetch audit logs']);
+        }
+    }
+
+    public function getAuditLogs2(Request $request)
+    {
+        try {
+            Log::info('getAuditLogs method called'); // Add this line
+            
+            $logs = DB::table('auditlogs')
+                ->select('date as timestamp', 'action', 'details', 'ip_address', 'user_id')
+                ->orderBy('date', 'desc')
+                ->limit(100)
+                ->get()
+                ->map(function($log) {
+                    return (array) $log;
+                });
+
+            Log::info('Logs count: ' . $logs->count()); // Add this line
+            Log::info('Logs data: ', $logs->toArray()); // Add this line
 
             return response()->json(['success' => true, 'logs' => $logs]);
             

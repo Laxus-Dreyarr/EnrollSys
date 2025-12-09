@@ -109,8 +109,8 @@ $show_prereg_form = $isEnrollmentActive;
                 <div class="search-container">
                     <div class="search-bar">
                         <i class="fas fa-search search-icon"></i>
-                        <input type="text" class="search-input" placeholder="Search courses, assignments, grades...">
-                        <button class="search-btn">
+                        <input type="text" id="search-subject2" class="search-input" placeholder="Search courses...">
+                        <button id="search-btn" class="search-btn">
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
@@ -334,8 +334,8 @@ $show_prereg_form = $isEnrollmentActive;
                     </div>
                     
                     <div class="filter-group">
-                        <label for="search-subject">Search:</label>
-                        <input type="text" id="search-subject2" class="search-input" placeholder="Search courses...">
+                        <!-- <label for="search-subject">Search:</label>
+                        <input type="text" id="search-subject2" class="search-input" placeholder="Search courses..."> -->
                     </div>
                 </div>
 

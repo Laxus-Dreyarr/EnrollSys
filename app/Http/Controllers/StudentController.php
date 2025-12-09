@@ -1541,8 +1541,10 @@ class StudentController extends Controller
         try {
             $curricula = DB::table('curriculum')
                 ->where('is_active', 1)
-                ->orderBy('curriculum_year', 'desc')
                 ->get(['id', 'curriculum_year']);
+
+                Log::info('Curricula found: ' . $curricula->count());
+        Log::info('Curricula data: ', $curricula->toArray());
                 
             return response()->json([
                 'success' => true,

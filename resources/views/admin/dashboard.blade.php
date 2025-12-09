@@ -49,7 +49,7 @@ $profile_picture = $user->profile;
                     <li><a href="#organizations" data-bs-toggle="tab"><i class="fas fa-sitemap"></i> <span class="menu-text">Organizations</span></a></li>
                     <li><a href="#audit" data-bs-toggle="tab"><i class="fas fa-history"></i> <span class="menu-text">Audit Logs</span></a></li>
                     <li><a href="#files" data-bs-toggle="tab"><i class="fas fa-file-alt"></i> <span class="menu-text">Files</span></a></li>
-                    <li><a href="#"><i class="fas fa-cog"></i> <span class="menu-text">Settings</span></a></li>
+                    <!-- <li><a href="#"><i class="fas fa-cog"></i> <span class="menu-text">Settings</span></a></li> -->
                     <li>
                         <form id="logout-form" action="{{ route('admin.logout') }}" method="POST" style="display: none;">
                             @csrf
