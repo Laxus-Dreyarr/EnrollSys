@@ -212,6 +212,23 @@ function attachRegistrationEventListeners() {
             const passwordVal = registerPassword.value;
             const repeatPasswordVal = repeatPassword.value;
 
+            // Process middle name - allow empty
+            let processedMiddleName = middleNameVal;
+
+            if (processedMiddleName === "") {
+                processedMiddleName = 'None'; // Set to 'None' for database/storage
+            }
+
+            // Only validate if the user actually entered something
+            if (processedMiddleName !== 'None' && !isValidName(processedMiddleName)) {
+                middleName.classList.add('is-invalid');
+                middleName.nextElementSibling.textContent = 'Middle name must contain only letters and be at least 2 characters long.';
+                isValid = false;
+            } else {
+                // Clear any previous errors if valid
+                middleName.classList.remove('is-invalid');
+            }
+
             const registeremailInputError = document.getElementById('RloginEmailError');
 
             // Reset email error message
@@ -233,11 +250,11 @@ function attachRegistrationEventListeners() {
                 isValid = false;
             }
             
-            if (middleNameVal && !isValidName(middleNameVal)) {
-                middleName.classList.add('is-invalid');
-                middleName.nextElementSibling.textContent = 'Middle name must contain only letters and be at least 2 characters long.';
-                isValid = false;
-            }
+            // if (middleNameVal && !isValidName(middleNameVal)) {
+            //     middleName.classList.add('is-invalid');
+            //     middleName.nextElementSibling.textContent = 'Middle name must contain only letters and be at least 2 characters long.';
+            //     isValid = false;
+            // }
             
             // Validate email
             if (!isValidEmail(emailVal)) {

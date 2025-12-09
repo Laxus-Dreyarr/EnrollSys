@@ -202,13 +202,6 @@ class StudentController extends Controller
                     'max:50',
                     'regex:/^[A-Za-z\s\-\']+$/'
                 ],
-                'middleName' => [
-                    'nullable',
-                    'string',
-                    'min:2',
-                    'max:50',
-                    'regex:/^[A-Za-z\s\-\']+$/'
-                ],
                 'email' => [
                     'required',
                     'email',
@@ -3603,6 +3596,78 @@ class StudentController extends Controller
                 'error' => 'An error occurred while uploading. Please try again.'
             ], 500);
         }
+    }
+
+    public function getAverageGrade2(Request $request)
+    {
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+        
+        // Get all enrolled subjects with grades
+        $subjectsWithGrades = DB::table('enrolled_sub')
+            ->where('student_id', $student->id)
+            ->whereNotNull('grade')
+            ->get();
+        
+        $totalGradePoints = 0;
+        $totalUnits = 0;
+        $numericGradeCount = 0;
+        
+        foreach ($subjectsWithGrades as $subject) {
+            // Check if grade is numeric (1.0, 2.0, 3.0, 4.0, 5.0)
+            if (is_numeric($subject->grade)) {
+                $gradeValue = (float)$subject->grade;
+                $units = $subject->units;
+                
+                $totalGradePoints += ($gradeValue * $units);
+                $totalUnits += $units;
+                $numericGradeCount++;
+            }
+        }
+        
+        $averageGrade = ($totalUnits > 0) ? $totalGradePoints / $totalUnits : 0;
+        
+        return response()->json([
+            'success' => true,
+            'average_grade' => number_format($averageGrade, 2),
+            'numeric_grade_count' => $numericGradeCount,
+            'total_units' => $totalUnits
+        ]);
+    }
+
+    public function getEnrolledSub2(Request $request)
+    {
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+        
+        // Count courses with grades (not NULL)
+        $coursesCount = DB::table('enrolled_sub')
+            ->where('student_id', $student->id)
+            ->whereNotNull('grade')
+            ->count();
+        
+        // Calculate total units for subjects with grades
+        $totalUnits = DB::table('enrolled_sub')
+            ->where('student_id', $student->id)
+            ->whereNotNull('grade')
+            ->sum('units');
+        
+        // Get student type
+        $studentType = '';
+        switch($student->is_regular) {
+            case 1: $studentType = 'Regular'; break;
+            case 2: $studentType = 'Irregular'; break;
+            case 3: $studentType = 'Transferee'; break;
+            default: $studentType = 'Unknown';
+        }
+        
+        return response()->json([
+            'success' => true,
+            'courses_count' => $coursesCount,
+            'total_units' => $totalUnits,
+            'year_level' => $student->year_level,
+            'student_type' => $studentType
+        ]);
     }
 
 

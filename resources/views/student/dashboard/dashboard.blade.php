@@ -189,7 +189,7 @@ $show_prereg_form = $isEnrollmentActive;
                             <i class="fas fa-book"></i>
                         </div>
                         <h3 class="stat-value" id="enrolled_subjects"></h3>
-                        <p class="stat-label">Enrolled Subjects</p>
+                        <p class="stat-label">Enrolled Courses</p>
                     </div>
 
                     <!-- <div class="stat-card">
@@ -210,7 +210,7 @@ $show_prereg_form = $isEnrollmentActive;
                     </div>
                 </div>
                 
-                <h2 class="section-title">My Subjects</h2>
+                <h2 class="section-title">My Courses</h2>
 
                 <!-- Filter Container -->
                 <div class="filter-container">
@@ -228,7 +228,7 @@ $show_prereg_form = $isEnrollmentActive;
                     
                     <div class="filter-group">
                         <label for="search-subject">Search:</label>
-                        <input type="text" id="search-subject" class="search-input" placeholder="Search subject...">
+                        <input type="text" id="search-subject" class="search-input" placeholder="Search courses...">
                     </div>
                 </div>
 
@@ -335,7 +335,7 @@ $show_prereg_form = $isEnrollmentActive;
                     
                     <div class="filter-group">
                         <label for="search-subject">Search:</label>
-                        <input type="text" id="search-subject2" class="search-input" placeholder="Search subject...">
+                        <input type="text" id="search-subject2" class="search-input" placeholder="Search courses...">
                     </div>
                 </div>
 
@@ -386,7 +386,7 @@ $show_prereg_form = $isEnrollmentActive;
                                         data-semester="{{ $subject->semester }}"
                                         data-grade="{{ $subject->grade }}"
                                         data-date-enrolled="{{ $subject->date_enrolled }}">
-                                    View Subject
+                                    View Course
                                 </button>
                             </div>
                         </div>
@@ -394,7 +394,7 @@ $show_prereg_form = $isEnrollmentActive;
                         <div class="no-subjects">
                             <i class="fas fa-book-open"></i>
                             <h3>No Subjects Enrolled</h3>
-                            <p>You haven't enrolled in any subjects yet.</p>
+                            <p>You haven't enrolled in any course yet.</p>
                         </div>
                     @endforelse
                 </div>
@@ -819,7 +819,7 @@ $show_prereg_form = $isEnrollmentActive;
                             
                             <div class="profile-stats">
                                 <div class="profile-stat">
-                                    <span class="stat-number">5</span>
+                                    <span class="stat-number">3</span>
                                     <span class="stat-label">Courses</span>
                                 </div>
                                 <div class="profile-stat">
@@ -827,8 +827,8 @@ $show_prereg_form = $isEnrollmentActive;
                                     <span class="stat-label">Total Units</span>
                                 </div>
                                 <div class="profile-stat">
-                                    <span class="stat-number">10/2025</span>
-                                    <span class="stat-label">Enrolled</span>
+                                    <span class="stat-number">1st Year</span>
+                                    <span class="stat-label">Year Level</span>
                                 </div>
                             </div>
                         </div>
@@ -860,6 +860,14 @@ $show_prereg_form = $isEnrollmentActive;
                                         Last Name
                                     </label>
                                     <input type="text" class="form-control" id="lastName" value="Dreyar" readonly>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="MiddleName" class="form-label">
+                                        <i class="fas fa-user"></i>
+                                        Middle Name
+                                    </label>
+                                    <input type="text" class="form-control" id="middlename" value="Dreyar" readonly>
                                 </div>
                                 
                                 <div class="form-group">
@@ -905,9 +913,9 @@ $show_prereg_form = $isEnrollmentActive;
                                 <div class="form-group">
                                     <label for="semester" class="form-label">
                                         <i class="fas fa-school"></i>
-                                        Semester
+                                        Curriculum
                                     </label>
-                                    <input type="text" class="form-control" id="semester" value="1st Semester 2023-2024" disabled>
+                                    <input type="text" class="form-control" id="semester" value="2023-2024" disabled>
                                 </div>
                             </div>
                             
@@ -929,7 +937,7 @@ $show_prereg_form = $isEnrollmentActive;
                                     <i class="fas fa-university"></i>
                                 </div>
                                 <div class="info-content">
-                                    <!-- <span class="info-label">Department</span> -->
+                                    <span class="info-label">Department</span>
                                     <span class="info-value">Information Technology</span>
                                 </div>
                             </div>
@@ -940,7 +948,7 @@ $show_prereg_form = $isEnrollmentActive;
                                 </div>
                                 <div class="info-content">
                                     <span class="info-label">Student Type</span>
-                                    <span class="info-value">Regular</span>
+                                    <span class="info-value">Irregular</span>
                                 </div>
                             </div>
                             
@@ -950,17 +958,17 @@ $show_prereg_form = $isEnrollmentActive;
                                 </div>
                                 <div class="info-content">
                                     <span class="info-label">Rating</span>
-                                    <span class="info-value">5</span>
+                                    <span class="info-value">2</span>
                                 </div>
                             </div>
                             
                             <div class="info-item">
                                 <div class="info-icon">
-                                    <i class="fas fa-calendar-check"></i>
+                                    <i class="fas fa-chart-line"></i>
                                 </div>
                                 <div class="info-content">
-                                    <span class="info-label">Enrollment Date</span>
-                                    <span class="info-value">August 15, 2023</span>
+                                    <span class="info-label">Average Grade</span>
+                                    <span class="info-value">2.50</span>
                                 </div>
                             </div>
                         </div>
@@ -1120,8 +1128,8 @@ $show_prereg_form = $isEnrollmentActive;
                             <div class="row">
                                 <div class="col-md-6">
                                     <h6 class="text-muted">Basic Information</h6>
-                                    <p><strong>Subject Code:</strong> <span id="modalSubjectCode"></span></p>
-                                    <p><strong>Subject Name:</strong> <span id="modalSubjectName"></span></p>
+                                    <p><strong>CAT NO:</strong> <span id="modalSubjectCode"></span></p>
+                                    <p><strong>Descriptive title:</strong> <span id="modalSubjectName"></span></p>
                                     <p><strong>Units:</strong> <span id="modalSubjectUnits"></span></p>
                                     <p><strong>Year Level:</strong> <span id="modalYearLevel"></span></p>
                                     <p><strong>Semester:</strong> <span id="modalSemester"></span></p>
@@ -1141,7 +1149,7 @@ $show_prereg_form = $isEnrollmentActive;
                             </div>
                             
                             <div class="mt-4">
-                                <h6 class="text-muted">Subject Description</h6>
+                                <h6 class="text-muted">Course Description</h6>
                                 <p id="modalDescription" class="text-muted">No description available.</p>
                             </div>
                         </div>

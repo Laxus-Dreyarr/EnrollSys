@@ -3346,7 +3346,7 @@ function fetchSubjectDetails(subjectId) {
                     html += '</ul>';
                     prerequisitesList.innerHTML = html;
                 } else {
-                    prerequisitesList.innerHTML = '<div class="alert alert-info">No prerequisites required for this subject.</div>';
+                    prerequisitesList.innerHTML = '<div class="alert alert-info">No prerequisites required for this course.</div>';
                 }
             } else {
                 document.getElementById('prerequisitesList').innerHTML = '<div class="alert alert-warning">Unable to load prerequisites.</div>';
@@ -4458,6 +4458,57 @@ function updateFileStatistics() {
     .catch(error => {
         console.error('Error loading file statistics:', error);
     });
+}
+
+
+function loadSimpleAverageGrade2() {
+    fetch('/student/average-grade2', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update average grade
+            document.querySelector('.info-item:last-child .info-value').textContent = data.average_grade;
+            
+            // Calculate and update rating
+            const avg = parseFloat(data.average_grade);
+            let rating = 1;
+            
+            if (avg >= 1.0 && avg <= 1.5) rating = 5;
+            else if (avg > 1.5 && avg <= 2.0) rating = 4;
+            else if (avg > 2.0 && avg <= 2.5) rating = 3;
+            else if (avg > 2.5 && avg <= 3.0) rating = 2;
+            
+            document.querySelector('.info-item:nth-child(3) .info-value').textContent = rating;
+        }
+    })
+    .catch(error => console.error('Error loading average grade:', error));
+}
+
+function count_enrolled_subjects2() {
+    fetch('/student/enrolled_sub2', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update courses count
+            document.querySelector('.profile-stat:first-child .stat-number').textContent = data.courses_count;
+            
+            // Update total units
+            document.querySelector('.profile-stat:nth-child(2) .stat-number').textContent = data.total_units;
+        }
+    })
+    .catch(error => console.error('Error counting enrolled subjects:', error));
 }
 
 document.addEventListener('DOMContentLoaded', function() {

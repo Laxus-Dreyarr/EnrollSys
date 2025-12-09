@@ -323,7 +323,11 @@ Route::middleware(['student.auth'])->group(function () {
 
     Route::post('/student/average-grade', [StudentController::class, 'getAverageGrade'])->name('student.average-grade');
 
+    Route::post('/student/average-grade2', [StudentController::class, 'getAverageGrade2'])->name('student.average-grade2');
+
     Route::post('/student/enrolled_sub', [StudentController::class, 'getEnrolledSub'])->name('student.enrolled_sub');
+
+    Route::post('/student/enrolled_sub2', [StudentController::class, 'getEnrolledSub2'])->name('student.enrolled_sub2');
 
     Route::post('/student/count_documents', [StudentController::class, 'countDocuments'])->name('student.count_documents');
 
