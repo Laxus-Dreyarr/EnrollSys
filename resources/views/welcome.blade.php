@@ -406,7 +406,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="registerForm">
-                        <div class="form-grid">
+                        <!-- <div class="form-grid">
                             <div class="form-group-enhanced">
                                 <label for="givenName" class="form-label">
                                     <i class="fas fa-user"></i>
@@ -432,15 +432,15 @@
                                 </label>
                                 <input type="text" class="form-control-enhanced" id="middleName" placeholder="Middle Name">
                             </div>
-                        </div>
+                        </div> -->
                         
                         <div class="form-group-enhanced">
                             <label for="registerEmail" class="form-label">
                                 <i class="fas fa-envelope"></i>
-                                EVSUmail
+                                Email Address
                             </label>
                             <div class="input-group-enhanced">
-                                <input type="email" class="form-control-enhanced" id="registerEmail" placeholder="input evsumail" required>
+                                <input type="email" class="form-control-enhanced" id="registerEmail" placeholder="input your email address" required>
                                 <i class="form-icon fas fa-at"></i>
                             </div>
                             <div id="RloginEmailError" class="text-danger mt-1 small"></div>

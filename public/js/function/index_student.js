@@ -12,9 +12,12 @@ function isValidName(name) {
 
 // Email validation function
 function isValidEmail(email) {
-    // Check EVSUmail format
-    const emailRegex = /^[^\s@]+@evsu\.edu\.ph$/;
+    // Basic email format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+    // Check EVSUmail format
+    // const emailRegex = /^[^\s@]+@evsu\.edu\.ph$/;
+    // return emailRegex.test(email);
 }
 
 // Password strength checker
@@ -125,25 +128,25 @@ function showSuccessAnimation() {
 // Attach event listeners to registration form
 function attachRegistrationEventListeners() {
     const registerForm = document.getElementById('registerForm');
-    const givenName = document.getElementById('givenName');
-    const lastName = document.getElementById('lastName');
-    const middleName = document.getElementById('middleName');
+    // const givenName = document.getElementById('givenName');
+    // const lastName = document.getElementById('lastName');
+    // const middleName = document.getElementById('middleName');
     const registerEmail = document.getElementById('registerEmail');
     const registerPassword = document.getElementById('registerPassword');
     
     // Real-time name validation
-    [givenName, lastName, middleName].forEach(field => {
-        if (field) {
-            field.addEventListener('blur', function() {
-                if (this.value.trim() !== '' && !isValidName(this.value)) {
-                    this.classList.add('is-invalid');
-                    this.nextElementSibling.textContent = 'Name must contain only letters and be at least 2 characters long.';
-                } else {
-                    this.classList.remove('is-invalid');
-                }
-            });
-        }
-    });
+    // [givenName, lastName, middleName].forEach(field => {
+    //     if (field) {
+    //         field.addEventListener('blur', function() {
+    //             if (this.value.trim() !== '' && !isValidName(this.value)) {
+    //                 this.classList.add('is-invalid');
+    //                 this.nextElementSibling.textContent = 'Name must contain only letters and be at least 2 characters long.';
+    //             } else {
+    //                 this.classList.remove('is-invalid');
+    //             }
+    //         });
+    //     }
+    // });
     
     // Real-time email validation
     if (registerEmail) {
@@ -205,29 +208,28 @@ function attachRegistrationEventListeners() {
             e.preventDefault();
             
             // Get form values
-            const givenNameVal = givenName.value.trim();
-            const lastNameVal = lastName.value.trim();
-            const middleNameVal = middleName.value.trim();
+            // const givenNameVal = givenName.value.trim();
+            // const lastNameVal = lastName.value.trim();
+            // const middleNameVal = middleName.value.trim();
             const emailVal = registerEmail.value.trim();
             const passwordVal = registerPassword.value;
             const repeatPasswordVal = repeatPassword.value;
 
             // Process middle name - allow empty
-            let processedMiddleName = middleNameVal;
+            // let processedMiddleName = middleNameVal;
 
-            if (processedMiddleName === "") {
-                processedMiddleName = 'None'; // Set to 'None' for database/storage
-            }
+            // if (processedMiddleName === "") {
+            //     processedMiddleName = 'None'; // Set to 'None' for database/storage
+            // }
 
             // Only validate if the user actually entered something
-            if (processedMiddleName !== 'None' && !isValidName(processedMiddleName)) {
-                middleName.classList.add('is-invalid');
-                middleName.nextElementSibling.textContent = 'Middle name must contain only letters and be at least 2 characters long.';
-                isValid = false;
-            } else {
-                // Clear any previous errors if valid
-                middleName.classList.remove('is-invalid');
-            }
+            // if (processedMiddleName !== 'None' && !isValidName(processedMiddleName)) {
+            //     middleName.classList.add('is-invalid');
+            //     middleName.nextElementSibling.textContent = 'Middle name must contain only letters and be at least 2 characters long.';
+            //     isValid = false;
+            // } else {
+            //     middleName.classList.remove('is-invalid');
+            // }
 
             const registeremailInputError = document.getElementById('RloginEmailError');
 
@@ -238,17 +240,17 @@ function attachRegistrationEventListeners() {
             // Validate names
             let isValid = true;
             
-            if (!isValidName(givenNameVal)) {
-                givenName.classList.add('is-invalid');
-                givenName.nextElementSibling.textContent = 'Given name must contain only letters and be at least 2 characters long.';
-                isValid = false;
-            }
+            // if (!isValidName(givenNameVal)) {
+            //     givenName.classList.add('is-invalid');
+            //     givenName.nextElementSibling.textContent = 'Given name must contain only letters and be at least 2 characters long.';
+            //     isValid = false;
+            // }
             
-            if (!isValidName(lastNameVal)) {
-                lastName.classList.add('is-invalid');
-                lastName.nextElementSibling.textContent = 'Last name must contain only letters and be at least 2 characters long.';
-                isValid = false;
-            }
+            // if (!isValidName(lastNameVal)) {
+            //     lastName.classList.add('is-invalid');
+            //     lastName.nextElementSibling.textContent = 'Last name must contain only letters and be at least 2 characters long.';
+            //     isValid = false;
+            // }
             
             // if (middleNameVal && !isValidName(middleNameVal)) {
             //     middleName.classList.add('is-invalid');
@@ -258,7 +260,8 @@ function attachRegistrationEventListeners() {
             
             // Validate email
             if (!isValidEmail(emailVal)) {
-                registeremailInputError.textContent = 'Please input a valid evsumail!';
+                // registeremailInputError.textContent = 'Please input a valid evsumail!';
+                registeremailInputError.textContent = 'Invalid email address!';
                 registeremailInputError.style.display = 'block';
                 registerEmail.classList.add('is-invalid');
                 registerEmail.nextElementSibling.textContent = '';
@@ -289,9 +292,9 @@ function attachRegistrationEventListeners() {
             
             // Send verification code instead of registering directly
             sendVerificationCode({
-                givenName: givenNameVal,
-                lastName: lastNameVal,
-                middleName: middleNameVal,
+                // givenName: givenNameVal,
+                // lastName: lastNameVal,
+                // middleName: middleNameVal,
                 email: emailVal,
                 password: passwordVal,
                 repeatPassword: repeatPasswordVal
@@ -307,9 +310,9 @@ function attachRegistrationEventListeners() {
 
         const verificationData = new FormData();
         verificationData.append('action', 'send_verification');
-        verificationData.append('givenName', formData.givenName);
-        verificationData.append('lastName', formData.lastName);
-        verificationData.append('middleName', formData.middleName);
+        // verificationData.append('givenName', formData.givenName);
+        // verificationData.append('lastName', formData.lastName);
+        // verificationData.append('middleName', formData.middleName);
         verificationData.append('email', formData.email);
         verificationData.append('password', formData.password);
         verificationData.append('repeatPassword', formData.repeatPassword);

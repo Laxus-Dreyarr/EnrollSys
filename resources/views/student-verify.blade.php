@@ -10,9 +10,9 @@ $registerData = $email ? Cache::get('registration_' . $email) : null;
 
 $otp = $registerData['otp'] ?? null;
 $password = $registerData['password'];
-$givenName = $registerData['givenName'];
-$lastName = $registerData['lastName'];
-$middleName = $registerData['middleName'];
+// $givenName = $registerData['givenName'];
+// $lastName = $registerData['lastName'];
+// $middleName = $registerData['middleName'];
 ?>
 <!DOCTYPE html>
 <html lang="en">

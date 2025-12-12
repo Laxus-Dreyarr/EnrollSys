@@ -187,32 +187,44 @@ class StudentController extends Controller
     {
         try {
             // Validate the registration data first
+            // $validator = Validator::make($request->all(), [
+            //     'givenName' => [
+            //         'required',
+            //         'string',
+            //         'min:2',
+            //         'max:50',
+            //         'regex:/^[A-Za-z\s\-\']+$/'
+            //     ],
+            //     'lastName' => [
+            //         'required',
+            //         'string',
+            //         'min:2',
+            //         'max:50',
+            //         'regex:/^[A-Za-z\s\-\']+$/'
+            //     ],
+            //     'email' => [
+            //         'required',
+            //         'email',
+            //         'regex:/^[^\s@]+@evsu\.edu\.ph$/'
+            //     ],
+            //     'password' => [
+            //         'required',
+            //         'min:8'
+            //     ]
+            // ], [
+            //     'email.regex' => 'Please enter a valid EVSUmail address (username@evsu.edu.ph).',
+            // ]);
+
             $validator = Validator::make($request->all(), [
-                'givenName' => [
-                    'required',
-                    'string',
-                    'min:2',
-                    'max:50',
-                    'regex:/^[A-Za-z\s\-\']+$/'
-                ],
-                'lastName' => [
-                    'required',
-                    'string',
-                    'min:2',
-                    'max:50',
-                    'regex:/^[A-Za-z\s\-\']+$/'
-                ],
                 'email' => [
                     'required',
-                    'email',
-                    'regex:/^[^\s@]+@evsu\.edu\.ph$/'
+                    'email'
                 ],
                 'password' => [
                     'required',
                     'min:8'
                 ]
             ], [
-                'email.regex' => 'Please enter a valid EVSUmail address (username@evsu.edu.ph).',
             ]);
 
             if ($validator->fails()) {
@@ -222,8 +234,24 @@ class StudentController extends Controller
                 ]);
             }
 
+            // $emailExists = User::where('email2', $request->email)
+            //   ->whereNotNull('password')
+            //   ->exists();
+
+            $find = DB::table('csv')
+                    ->where('email', $request->email)
+                    ->exists();
+
+            if (!$find) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid email account!'
+                ]);
+            }
+
             // Check if email already exists
             $emailExists = User::where('email2', $request->email)->exists();
+
             if ($emailExists) {
                 return response()->json([
                     'success' => false,
@@ -245,11 +273,21 @@ class StudentController extends Controller
             // Get device information
             $deviceInfo = $this->getDeviceInfo();
 
+            // Cache::put('registration_' . $request->email, [
+            //     'otp' => $verificationCode,
+            //     'givenName' => $request->givenName,
+            //     'lastName' => $request->lastName,
+            //     'middleName' => $request->middleName,
+            //     'password' => $request->password,
+            //     'email' => $request->email,
+            //     'attempts' => 0,
+            //     'ip_address' => request()->ip(),
+            //     'device_info' => $deviceInfo, // Store device info in cache
+            //     'device_summary' => $this->getDeviceSummary()
+            // ], now()->addMinutes(10));
+
             Cache::put('registration_' . $request->email, [
                 'otp' => $verificationCode,
-                'givenName' => $request->givenName,
-                'lastName' => $request->lastName,
-                'middleName' => $request->middleName,
                 'password' => $request->password,
                 'email' => $request->email,
                 'attempts' => 0,
@@ -591,8 +629,13 @@ class StudentController extends Controller
             return $x;
         }
 
+
         // Code is valid, proceed with registration
             DB::beginTransaction();
+
+            $find = DB::table('csv')
+            ->where('email', $registrationData['email'])
+            ->first();
 
             $studentId = $this->generateUniqueStudentId();
             $currentDate = now()->toDateTimeString();
@@ -614,11 +657,23 @@ class StudentController extends Controller
             }
 
             // Create user info
+            // $userInfo = new UserInfo();
+            // $userInfo->user_id = $studentId;
+            // $userInfo->firstname = ucfirst(strtolower($registrationData['givenName']));
+            // $userInfo->lastname = ucfirst(strtolower($registrationData['lastName']));
+            // $userInfo->middlename = $registrationData['middleName'] ? ucfirst(strtolower($registrationData['middleName'])) : null;
+            // $userInfo->birthdate = null;
+            // $userInfo->age = null;
+            // $userInfo->address = null;
+
             $userInfo = new UserInfo();
             $userInfo->user_id = $studentId;
-            $userInfo->firstname = ucfirst(strtolower($registrationData['givenName']));
-            $userInfo->lastname = ucfirst(strtolower($registrationData['lastName']));
-            $userInfo->middlename = $registrationData['middleName'] ? ucfirst(strtolower($registrationData['middleName'])) : null;
+            $userInfo->firstname = ucfirst(strtolower($find->firstname));
+            $userInfo->lastname = ucfirst(strtolower($find->lastname));
+            $userInfo->middlename = $find->middlename 
+                ? ucfirst(strtolower($find->middlename)) 
+                : null;
+            $userInfo->phone_number = $find->contact_number ? $find->contact_number : null;
             $userInfo->birthdate = null;
             $userInfo->age = null;
             $userInfo->address = null;
@@ -853,6 +908,18 @@ class StudentController extends Controller
             }
 
             $email = $request->input('email');
+            // $exists = User::where('email2', $email)
+            //   ->whereNotNull('password')
+            //   ->exists();
+
+            $find = DB::table('csv')
+                    ->where('email', $email)
+                    ->exists();
+
+            if(!$find) {
+                return response()->json(['success' => false, 'message' => 'You are not allowed to register with this email!']);
+            } 
+
             $exists = User::where('email2', $email)->exists();
 
             return response()->json([
