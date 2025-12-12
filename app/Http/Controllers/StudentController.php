@@ -122,6 +122,9 @@ class StudentController extends Controller
 
             case 'complete_student_info2':
                 return $this->completeStudentInfo2($request);
+
+            case 'complete_student_info_starter':
+                return $this->completeStudentInformStarter($request);
                 
             default:
                 return response()->json([
@@ -3822,6 +3825,39 @@ class StudentController extends Controller
                 'message' => 'Failed to update profile: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function completeStudentInformStarter(Request $request)
+    {
+        
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+
+        $save = DB::table('curriculum')
+            ->orderBy('curriculum_year', 'desc')
+            ->first();
+
+        $update = DB::table('students')
+            ->where('id', $student->id)
+            ->update([
+                'curriculum' => $save->curriculum_year,
+                'is_regular' => 1, //Set to Regular;
+                'year_level' => '1st Year',
+                'id_no' => $request->school_id3
+            ]);
+            
+
+        $this->autoInsertSubjectsForIrregularStudent($student->id, $save->curriculum_year);
+
+        DB::commit();
+
+                
+        return response()->json([
+            'success' => true,
+            'message' => 'Student information completed successfully'
+        ]);
+
+
     }
 
 

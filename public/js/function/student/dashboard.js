@@ -1627,6 +1627,262 @@ function initializeStudentInfoModal2() {
     }
 }
 
+// Student info modal functionality 3
+function initializeStudentInfoModal3() {
+    const studentInfoModal3 = document.getElementById('studentInfoModal3');
+    const studentInfoForm3 = document.getElementById('studentInfoForm3');
+
+    
+    if (!studentInfoModal3) {
+        return;
+    }
+
+    // Prevent closing modal by clicking outside
+    studentInfoModal3.addEventListener('click', function(e) {
+        if (e.target === studentInfoModal3) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+
+    // Form validation
+    studentInfoForm3.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (validateForm()) {
+            submitForm3();
+        }
+    });
+
+    // Real-time validation for school ID
+    const schoolIdInput = document.getElementById('school_id3');
+    schoolIdInput.addEventListener('input', function() {
+        validateSchoolIdFormat(this);
+    });
+
+    schoolIdInput.addEventListener('blur', function() {
+        validateSchoolIdCurriculum(this);
+    });
+
+    function showCurriculumError(message) {
+        const errorElement = document.getElementById('curriculum_error');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.classList.add('active');
+        }
+    }
+
+    function validateSchoolIdFormat(field) {
+        const errorElement = document.getElementById(field.id + '_error');
+        const schoolId = field.value.trim();
+        
+        if (!schoolId) {
+            showFieldError(field, errorElement, 'School ID is required');
+            return false;
+        }
+        
+        // Check format: YYYY-XXXXX
+        const schoolIdRegex = /^\d{4}-\d+$/;
+        if (!schoolIdRegex.test(schoolId)) {
+            showFieldError(field, errorElement, 'School ID must be in the format: YYYY-XXXXX (e.g., 2020-30617)');
+            return false;
+        }
+        
+        clearFieldError(field);
+        return true;
+    }
+
+    function validateSchoolIdCurriculum(field) {
+        const errorElement = document.getElementById(field.id + '_error');
+        const schoolId = field.value.trim();
+        
+        if (!validateSchoolIdFormat(field)) {
+            return false;
+        }
+        
+        // Extract curriculum year
+        const curriculumYear = parseInt(schoolId.split('-')[0]);
+        const currentYear = new Date().getFullYear();
+        
+        if (curriculumYear < 2013) {
+            showFieldError(field, errorElement, 'Curriculum year must be 2013 or later.');
+            return false;
+        }
+        
+        if (curriculumYear > currentYear) {
+            showFieldError(field, errorElement, 'Curriculum year cannot exceed the current year.');
+            return false;
+        }
+        
+        clearFieldError(field);
+        return true;
+    }
+
+    function validateField(field) {
+        const errorElement = document.getElementById(field.id + '_error');
+        
+        // if (!field.value.trim()) {
+        //     showFieldError(field, errorElement, 'This field is required');
+        //     return false;
+        // }
+        
+        if (field.id === 'school_id3') {
+            return validateSchoolIdFormat(field) && validateSchoolIdCurriculum(field);
+        }
+        
+        clearFieldError(field);
+        return true;
+    }
+
+    function showFieldError(field, errorElement, message) {
+        field.style.borderColor = 'var(--danger-color)';
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.classList.add('active');
+        }
+    }
+
+    function clearFieldError(field) {
+        field.style.borderColor = '';
+        const errorElement = document.getElementById(field.id + '_error');
+        if (errorElement) {
+            errorElement.classList.remove('active');
+        }
+    }
+
+    function validateForm() {
+        let isValid = true;
+        const fields = ['school_id3', 'current_status'];
+        
+        fields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field && !validateField(field)) {
+                isValid = false;
+            }
+        });
+        
+        return isValid;
+    }
+
+
+    function submitForm3() {
+        const submitBtn = studentInfoForm3.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
+        
+        // Get form data
+        const formData = new FormData();
+        formData.append('action', 'complete_student_info_starter');
+        formData.append('current_status', document.getElementById('current_status').value);
+        formData.append('school_id3', document.getElementById('school_id3').value);
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        // Send request
+        fetch('/exe/student', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                showSuccessMessage();
+            } else {
+                // Handle specific field errors
+                if (data.message.includes('School ID')) {
+                    const schoolIdInput = document.getElementById('school_id3');
+                    const schoolIdInputError = document.getElementById('school_id_error');
+                    showFieldError(schoolIdInput, schoolIdInputError, data.message);
+                } else if (data.message.includes('Curriculum year')) {
+                    const schoolIdInput = document.getElementById('school_id3');
+                    const schoolIdInputError = document.getElementById('school_id_error');
+                    showFieldError(schoolIdInput, schoolIdInputError, data.message);
+                } else if (data.message.includes('curriculum')) {
+                    const curriculumInput = document.getElementById('curriculum');
+                    const curriculumInputError = document.getElementById('curriculum_error');
+                    showFieldError(curriculumInput, curriculumInputError, data.message);
+                } else {
+                    // Show generic error
+                    Swal.fire({
+                        title: 'Failed',
+                        text: data.message,
+                        icon: 'error',
+                        confirmButtonText: 'Close',
+                        confirmButtonColor: '#070808ff',
+                        background: '#1a1a2e',
+                        color: '#ffffff',
+                        backdrop: 'rgba(0,0,0,0.7)',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showClass: {
+                            popup: 'animate__animated animate__fadeInDown'
+                        },
+                        hideClass: {
+                            popup: 'animate__animated animate__fadeOutUp'
+                        }
+                    });
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Network Error',
+                text: 'Please check your connection and try again.',
+                icon: 'error',
+                confirmButtonText: 'Close',
+                confirmButtonColor: '#070808ff',
+                background: '#1a1a2e',
+                color: '#ffffff',
+                backdrop: 'rgba(0,0,0,0.7)'
+            });
+        })
+        .finally(() => {
+            // Reset button
+            submitBtn.innerHTML = originalText;
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+        });
+    }
+
+    function showSuccessMessage() {
+        const modalContainer = document.querySelector('.modal-container');
+        const originalContent = modalContainer.innerHTML;
+        
+        modalContainer.innerHTML = `
+            <div class="success-animation">
+                <svg viewBox="0 0 52 52" fill="none">
+                    <circle cx="26" cy="26" r="25" fill="#10b981" stroke="#10b981" stroke-width="2"/>
+                    <path d="M14 27l7 7 17-17" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h4>Information Saved Successfully!</h4>
+                <p>Your student information has been updated. The page will refresh shortly.</p>
+                <div class="loading-bar">
+                    <div class="loading-progress"></div>
+                </div>
+            </div>
+        `;
+        
+        // Animate loading bar
+        const loadingProgress = modalContainer.querySelector('.loading-progress');
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 1;
+            loadingProgress.style.width = progress + '%';
+            if (progress >= 100) {
+                clearInterval(interval);
+            }
+        }, 30);
+        
+        // Refresh page after success
+        setTimeout(() => {
+            window.location.reload();
+        }, 3000);
+    }
+}
+
 // Enhanced notification function
 function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
@@ -4576,6 +4832,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeTooltips();
     initializeStudentInfoModal();
     initializeStudentInfoModal2();
+    initializeStudentInfoModal3();
 
     const studentInfoModal = document.getElementById('studentInfoModal');
     

@@ -2,12 +2,14 @@
 $firstname = $user->user_information->firstname;
 $lastname = $user->user_information->lastname;
 $student_id = $user->user_information->student->id_no ?? 'Not Set';
+$curriculum = $user->user_information->student->curriculum;
 $is_regular = $user->user_information->student->is_regular ?? 'Not Set';
 $profile_picture = $user->profile;
 
 // Check if student ID is 'none' (case-insensitive)
 $show_student_form = (strtolower($student_id) === 'none');
 $show_prereg_form = $isEnrollmentActive;
+$show_student_form3 = $curriculum === null || $curriculum === '';
 ?>
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -1291,7 +1293,7 @@ $show_prereg_form = $isEnrollmentActive;
                             <option value="">Select Student Type</option>
                             <option value="Regular">Regular</option>
                             <option value="Irregular">Irregular</option>
-                            <!-- <option value="Transferee">Transferee</option> -->
+                
                         </select>
                         <div class="form-error" id="student_type_error"></div>
                     </div>
@@ -1314,7 +1316,7 @@ $show_prereg_form = $isEnrollmentActive;
         </div>
     @endif()
 
-        <div id="studentInfoModal" class="modal-overlay <?php echo $show_student_form ? 'active' : ''; ?>">
+        <!-- <div id="studentInfoModal" class="modal-overlay <?php echo $show_student_form ? 'active' : ''; ?>">
             <div class="modal-container">
                 <div class="modal-header">
                     <h3 style="color: white;">Complete Your Student Information</h3>
@@ -1338,7 +1340,7 @@ $show_prereg_form = $isEnrollmentActive;
                         <div class="form-error" id="school_id_error"></div>
                     </div>
                     
-                    <!-- NEW: Curriculum Dropdown -->
+                    
                     <div class="form-group">
                         <label for="curriculum" class="form-label">
                             <i class="fas fa-book"></i>
@@ -1347,7 +1349,7 @@ $show_prereg_form = $isEnrollmentActive;
                         <select id="curriculum2" name="curriculum" class="form-control" required>
                             <option value="">Select Curriculum</option>
                             
-                            <!-- Options will be populated dynamically -->
+                            
                         </select>
                         <div class="form-error" id="curriculum_error"></div>
                         <small class="form-text text-muted" style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
@@ -1368,6 +1370,62 @@ $show_prereg_form = $isEnrollmentActive;
                     <p class="form-note">
                         <i class="fas fa-info-circle"></i>
                         This information is required to access all dashboard features.
+                    </p>
+                </div>
+            </div>
+        </div> -->
+
+        <div id="studentInfoModal3" class="modal-overlay <?php echo $show_student_form3 ? 'active' : ''; ?>">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3 style="color: white;">Complete Your Student Information</h3>
+                </div>
+                
+                <form id="studentInfoForm3" class="modal-form">
+                    @csrf          
+                    <div class="form-group">
+                        <label for="school_id" class="form-label">
+                            <i class="fas fa-id-card"></i>
+                            Student Number
+                        </label>
+                        <input 
+                            type="text" 
+                            id="school_id3" 
+                            name="school_id" 
+                            class="form-control" 
+                            placeholder="Enter your school student number"
+                            required
+                        >
+                        <div class="form-error" id="school_id_error"></div>
+                    </div>
+                         
+                    <div class="form-group">
+                        <label for="curriculum" class="form-label">
+                            <i class="fas fa-book"></i>
+                            Are you
+                        </label>
+                        <select id="current_status" name="current_status" class="form-control" required>
+                            <option value="">Select</option>
+                            <option value="Freshmen">Freshmen</option>
+                            <option value="Transferee">Transferee</option>
+                            <option value="Returnee">Returnee</option>
+                            <option value="Regular">Regular</option>
+                            <option value="Irregular">Irregular</option> 
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary btn-full">
+                            <i class="fas fa-save"></i>
+                            Confirm
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="modal-footer">
+                    <p class="form-note">
+                        <i class="fas fa-info-circle"></i>
+                        I confirm that all information provided is true and correct.
                     </p>
                 </div>
             </div>
