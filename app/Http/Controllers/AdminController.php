@@ -603,9 +603,9 @@ class AdminController extends Controller
         
         try {
             // Check if subject code already exists
-            if (Subject::where('code', $request->code)->exists()) {
-                return response()->json(['success' => false, 'message' => 'Subject code already exists']);
-            }
+            // if (Subject::where('code', $request->code)->exists()) {
+            //     return response()->json(['success' => false, 'message' => 'Subject code already exists']);
+            // }
 
             // Check for duplicate schedules
             $schedules = $request->schedules;
@@ -986,9 +986,9 @@ class AdminController extends Controller
             }
 
             // Check if subject code exists (excluding current subject)
-            if (Subject::where('code', $request->code)->where('id', '!=', $request->subject_id)->exists()) {
-                return response()->json(['success' => false, 'message' => 'Subject code already exists']);
-            }
+            // if (Subject::where('code', $request->code)->where('id', '!=', $request->subject_id)->exists()) {
+            //     return response()->json(['success' => false, 'message' => 'Subject code already exists']);
+            // }
 
             // Check for duplicate schedules
             $schedules = $request->schedules;

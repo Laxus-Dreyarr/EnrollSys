@@ -3558,27 +3558,36 @@ class StudentController extends Controller
                 // Generate unique filename
                 $filename = $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
                 
+                // Define the storage path
+                $storagePath = 'profile/student/' . $filename;
+                
                 // Delete old profile picture if not default
                 if ($user->profile && $user->profile !== 'default.png' && $user->profile !== 'default.jpg') {
-                    $oldImagePath = public_path('profile/' . $user->profile);
-                    if (file_exists($oldImagePath)) {
-                        @unlink($oldImagePath);
+                    // Check if old image exists in storage and delete it
+                    $oldImagePath = 'profile/student/' . $user->profile;
+                    if (Storage::disk('public')->exists($oldImagePath)) {
+                        Storage::disk('public')->delete($oldImagePath);
+                    }
+                    
+                    // Also delete from public_path if it exists (for old files)
+                    $oldPublicPath = public_path('profile/' . $user->profile);
+                    if (file_exists($oldPublicPath)) {
+                        @unlink($oldPublicPath);
                     }
                 }
                 
-                // Store the file in public/profile directory
-                $file->move(public_path('profile'), $filename);
+                // Store the file in storage/app/public/profile/student directory
+                $file->storeAs('profile/student', $filename, 'public');
                 
-                // Update user's profile in database
+                // Update user's profile in database - store the filename only
                 DB::table('users')
                     ->where('id', $user->id)
                     ->update([
-                        'profile' => $filename,
-                        'date_created' => now()
+                        'profile' => $filename
                     ]);
                 
-                // Generate the URL with version query to avoid caching
-                $profile_url = asset('profile/' . $filename) . '?v=' . time();
+                // Generate the URL using Storage facade
+                $profile_url = Storage::url('profile/student/' . $filename) . '?v=' . time();
                 
                 return response()->json([
                     'success' => true,
