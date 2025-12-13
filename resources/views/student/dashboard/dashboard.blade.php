@@ -10,6 +10,7 @@ $profile_picture = $user->profile;
 $show_student_form = (strtolower($student_id) === 'none');
 $show_prereg_form = $isEnrollmentActive;
 $show_student_form3 = $curriculum === null || $curriculum === '';
+$show_student_form4 = $is_regular === 6 || $is_regular === '6';
 ?>
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -1427,6 +1428,291 @@ $show_student_form3 = $curriculum === null || $curriculum === '';
                         <i class="fas fa-info-circle"></i>
                         I confirm that all information provided is true and correct.
                     </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Documents Upload Modal -->
+        <div id="studentDocumentsModal" class="modal-overlay <?php echo $show_student_form4 ? 'active' : ''; ?>">
+            <div class="modal-container documents-upload-modal">
+                <!-- Modal Header -->
+                <div class="modal-header documents-header">
+                    <div class="documents-title-section">
+                        <div class="documents-title-icon">
+                            <i class="fas fa-file-upload"></i>
+                        </div>
+                        <div>
+                            <h3>Upload Your Student Documents</h3>
+                            <p style="color: white;">Upload your documents. You can upload some now and others later.</p>
+                        </div>
+                    </div>
+                    <button type="button" class="close-modal" aria-label="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Main Content -->
+                <form id="studentDocumentsForm" class="modal-form" enctype="multipart/form-data">
+                    @csrf
+                    
+                    <!-- Document Requirements -->
+                    <div class="documents-requirements">
+                        <div class="requirements-header">
+                            <i class="fas fa-info-circle"></i>
+                            <h4>Document Requirements</h4>
+                        </div>
+                        <ul class="requirements-list">
+                            <li><i class="fas fa-check-circle"></i> All files must be in PDF or JPG format</li>
+                            <li><i class="fas fa-check-circle"></i> Maximum file size: 5MB per document</li>
+                            <li><i class="fas fa-check-circle"></i> Ensure documents are clear and readable</li>
+                            <li><i class="fas fa-check-circle"></i> You can upload documents now or complete them later</li>
+                        </ul>
+                    </div>
+
+                    <!-- Document Upload Grid -->
+                    <div class="documents-grid">
+                        <!-- Form 138A -->
+                        <div class="document-card" data-document="form138a">
+                            <div class="document-card-header">
+                                <div class="document-icon">
+                                    <i class="fas fa-file-certificate"></i>
+                                </div>
+                                <div class="document-title">
+                                    <h4>Form 138A (SF9)</h4>
+                                    <span class="document-subtitle">High School Report Card</span>
+                                </div>
+                                <span class="document-status optional">Optional</span>
+                            </div>
+                            <div class="document-card-body">
+                                <div class="document-preview" id="form138a-preview">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>No file selected</p>
+                                </div>
+                                <div class="document-actions">
+                                    <label class="btn-secondary btn-upload">
+                                        <i class="fas fa-upload"></i>
+                                        <span>Choose File</span>
+                                        <input type="file" id="form138a" name="form138a" accept=".pdf,.jpg,.jpeg,.png" class="document-input" data-preview="form138a-preview">
+                                    </label>
+                                    <button type="button" class="btn-preview disabled" disabled>
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="document-card-footer">
+                                <div class="document-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <small>Upload your scanned Form 138A (formerly SF9)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Good Moral Certificate -->
+                        <div class="document-card" data-document="good_moral">
+                            <div class="document-card-header">
+                                <div class="document-icon">
+                                    <i class="fas fa-award"></i>
+                                </div>
+                                <div class="document-title">
+                                    <h4>Good Moral Certificate</h4>
+                                    <span class="document-subtitle">Certificate of Good Moral Character</span>
+                                </div>
+                                <span class="document-status optional">Optional</span>
+                            </div>
+                            <div class="document-card-body">
+                                <div class="document-preview" id="good_moral-preview">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>No file selected</p>
+                                </div>
+                                <div class="document-actions">
+                                    <label class="btn-secondary btn-upload">
+                                        <i class="fas fa-upload"></i>
+                                        <span>Choose File</span>
+                                        <input type="file" id="good_moral" name="good_moral" accept=".pdf,.jpg,.jpeg,.png" class="document-input" data-preview="good_moral-preview">
+                                    </label>
+                                    <button type="button" class="btn-preview disabled" disabled>
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="document-card-footer">
+                                <div class="document-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <small>Issued by your previous school within the last 6 months</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PSA/NSO Birth Certificate -->
+                        <div class="document-card" data-document="psa_nso">
+                            <div class="document-card-header">
+                                <div class="document-icon">
+                                    <i class="fas fa-birthday-cake"></i>
+                                </div>
+                                <div class="document-title">
+                                    <h4>PSA/NSO Birth Certificate</h4>
+                                    <span class="document-subtitle">Authenticated Birth Certificate</span>
+                                </div>
+                                <span class="document-status optional">Optional</span>
+                            </div>
+                            <div class="document-card-body">
+                                <div class="document-preview" id="psa_nso-preview">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>No file selected</p>
+                                </div>
+                                <div class="document-actions">
+                                    <label class="btn-secondary btn-upload">
+                                        <i class="fas fa-upload"></i>
+                                        <span>Choose File</span>
+                                        <input type="file" id="psa_nso" name="psa_nso" accept=".pdf,.jpg,.jpeg,.png" class="document-input" data-preview="psa_nso-preview">
+                                    </label>
+                                    <button type="button" class="btn-preview disabled" disabled>
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="document-card-footer">
+                                <div class="document-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <small>Original or certified true copy from PSA/NSO</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2x2 ID Picture -->
+                        <div class="document-card" data-document="id_picture">
+                            <div class="document-card-header">
+                                <div class="document-icon">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div class="document-title">
+                                    <h4>2x2 ID Picture</h4>
+                                    <span class="document-subtitle">Formal with White Background</span>
+                                </div>
+                                <span class="document-status optional">Optional</span>
+                            </div>
+                            <div class="document-card-body">
+                                <div class="document-preview" id="id_picture-preview">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>No file selected</p>
+                                </div>
+                                <div class="document-actions">
+                                    <label class="btn-secondary btn-upload">
+                                        <i class="fas fa-upload"></i>
+                                        <span>Choose File</span>
+                                        <input type="file" id="id_picture" name="id_picture" accept=".jpg,.jpeg,.png" class="document-input" data-preview="id_picture-preview">
+                                    </label>
+                                    <button type="button" class="btn-preview disabled" disabled>
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="document-card-footer">
+                                <div class="document-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <small>Recent photo, formal attire, white background</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PSA Marriage Certificate (Conditional) -->
+                        <div class="document-card" data-document="marriage_certificate" id="marriageCertificateCard">
+                            <div class="document-card-header">
+                                <div class="document-icon">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div class="document-title">
+                                    <h4>PSA Marriage Certificate</h4>
+                                    <span class="document-subtitle">For Female Married Students</span>
+                                </div>
+                                <span class="document-status conditional">Conditional</span>
+                            </div>
+                            <div class="document-card-body">
+                                <div class="document-condition">
+                                    <div class="form-check">
+                                        <input type="checkbox" id="marriedCheckbox" class="form-check-input">
+                                        <label for="marriedCheckbox" class="form-check-label">
+                                            I am married and need to upload my marriage certificate
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="document-preview disabled" id="marriage_certificate-preview">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>Not required</p>
+                                </div>
+                                <div class="document-actions">
+                                    <label class="btn-secondary btn-upload disabled">
+                                        <i class="fas fa-upload"></i>
+                                        <span>Choose File</span>
+                                        <input type="file" id="marriage_certificate" name="marriage_certificate" accept=".pdf,.jpg,.jpeg,.png" class="document-input" data-preview="marriage_certificate-preview" disabled>
+                                    </label>
+                                    <button type="button" class="btn-preview disabled" disabled>
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="document-card-footer">
+                                <div class="document-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <small>Required only for female married students</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Notes -->
+                    <div class="documents-notes">
+                        <div class="notes-header">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h5>Important Notes</h5>
+                        </div>
+                        <ul class="notes-list">
+                            <li>You can upload documents now or complete them later</li>
+                            <li>Documents will be verified by the Registrar's Office</li>
+                            <li>Ensure all uploaded files are clear and legible</li>
+                            <li>You can come back and upload missing documents anytime</li>
+                        </ul>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="documents-submit-section">
+                        <button type="submit" id="submitBtn" class="btn-primary btn-submit">
+                            <i class="fas fa-paper-plane"></i>
+                            Submit Uploaded Documents
+                        </button>
+                        <button type="button" class="btn-secondary close-modal">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer documents-footer">
+                    <p class="form-note">
+                        <i class="fas fa-shield-alt"></i>
+                        Your documents are securely stored and processed in compliance with data privacy regulations.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Image Preview Modal -->
+        <div class="preview-modal-overlay">
+            <div class="preview-modal-container">
+                <div class="preview-modal-header">
+                    <h4>Document Preview</h4>
+                    <button type="button" class="close-preview">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="preview-modal-body">
+                    <img src="" alt="Document Preview" id="documentPreviewImage">
+                    <div class="preview-notice">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>This is a preview. Ensure the document is clear and readable before submission.</p>
+                    </div>
                 </div>
             </div>
         </div>

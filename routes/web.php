@@ -352,6 +352,12 @@ Route::middleware(['student.auth'])->group(function () {
     Route::get('/student/profile/data', [StudentController::class, 'getProfileData']);
     Route::post('/student/profile/update', [StudentController::class, 'updateProfile']);
 
+
+    Route::post('/student/documents/upload', [StudentController::class, 'uploadStudentDocuments']);
+    Route::get('/student/documents', [StudentController::class, 'getStudentDocuments']);
+    Route::delete('/student/documents/{documentId}', [StudentController::class, 'deleteDocument']);
+    Route::get('/student/documents/{documentId}/download', [StudentController::class, 'downloadDocument']);
+
     Route::post('/student/logout', [StudentController::class, 'logout'])->name('student.logout');
 });
 

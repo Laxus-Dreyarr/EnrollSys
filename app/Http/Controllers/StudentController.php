@@ -3841,7 +3841,7 @@ class StudentController extends Controller
             ->where('id', $student->id)
             ->update([
                 'curriculum' => $save->curriculum_year,
-                'is_regular' => 1, //Set to Regular;
+                'is_regular' => 6, //Set to Regular;
                 'year_level' => '1st Year',
                 'id_no' => $request->school_id3
             ]);
@@ -3858,6 +3858,297 @@ class StudentController extends Controller
         ]);
 
 
+    }
+
+
+    public function uploadStudentDocuments(Request $request)
+    {
+        // Validate the request FIRST
+        $validator = Validator::make($request->all(), [
+            'form138a' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', // 5MB max
+            'good_moral' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'psa_nso' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'id_picture' => 'required|image|mimes:jpg,jpeg,png|max:2048', // 2MB max for images
+            'marriage_certificate' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        ], [
+            'form138a.required' => 'Form 138A is required',
+            'good_moral.required' => 'Good Moral Certificate is required',
+            'psa_nso.required' => 'PSA/NSO document is required',
+            'id_picture.required' => 'ID Picture is required',
+            'id_picture.image' => 'ID Picture must be an image file',
+            '*.max' => 'File size must not exceed :max kilobytes',
+            '*.mimes' => 'File must be one of these types: :values',
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please check the uploaded files',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+        
+        // Get authenticated student
+        $user = Auth::guard('student')->user();
+        
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Please log in again.'
+            ], 401);
+        }
+        
+        // Check if student exists
+        if (!$user->user_information || !$user->user_information->student) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Student record not found.'
+            ], 404);
+        }
+        
+        $student = $user->user_information->student;
+        $yearLevel = $student->year_level ?? 1;
+        
+        // Start transaction for database operations
+        DB::beginTransaction();
+        
+        try {
+            // Define document types and their file inputs
+            $documents = [
+                [
+                    'field' => 'form138a',
+                    'type' => 'FORM138A',
+                    'required' => true
+                ],
+                [
+                    'field' => 'good_moral',
+                    'type' => 'GOOD_MORAL',
+                    'required' => true
+                ],
+                [
+                    'field' => 'psa_nso',
+                    'type' => 'PSA_NSO',
+                    'required' => true
+                ],
+                [
+                    'field' => 'id_picture',
+                    'type' => 'ID_PICTURE',
+                    'required' => true
+                ],
+                [
+                    'field' => 'marriage_certificate',
+                    'type' => 'MARRIAGE_CERTIFICATE',
+                    'required' => false
+                ]
+            ];
+            
+            $uploadedDocuments = [];
+            $now = now();
+            $timestamp = $now->timestamp;
+            
+            foreach ($documents as $document) {
+                $field = $document['field'];
+                
+                // Skip optional documents if not provided
+                if (!$document['required'] && !$request->hasFile($field)) {
+                    continue;
+                }
+                
+                $file = $request->file($field);
+                
+                // Generate unique filename with random component to prevent collisions
+                $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                $extension = $file->getClientOriginalExtension();
+                $random = str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
+                
+                $fileName = "{$field}_{$student->id}_{$timestamp}_{$random}.{$extension}";
+                
+                // Store file
+                $filePath = $file->storeAs('documents/requirements', $fileName, 'public');
+                
+                if (!$filePath) {
+                    throw new \Exception("Failed to store {$document['type']} file");
+                }
+                
+                // Add to array for batch insert
+                $uploadedDocuments[] = [
+                    'student_id' => $student->id,
+                    'year_level' => $yearLevel,
+                    'type' => $document['type'],
+                    'file_path' => $filePath,
+                    'upload_date' => $now,
+                ];
+            }
+            
+            // Check if at least the required documents were uploaded
+            $requiredCount = 4; // form138a, good_moral, psa_nso, id_picture
+            $uploadedRequiredCount = count(array_filter($uploadedDocuments, function($doc) use ($documents) {
+                $docType = $doc['type'];
+                foreach ($documents as $d) {
+                    if ($d['type'] === $docType && $d['required']) {
+                        return true;
+                    }
+                }
+                return false;
+            }));
+            
+            if ($uploadedRequiredCount < $requiredCount) {
+                throw new \Exception('Not all required documents were uploaded');
+            }
+            
+            // Batch insert for better performance
+            // Using DB facade since ImportantDocument model might not exist
+            DB::table('important_documents')->insert($uploadedDocuments);
+
+            DB::table('students')
+            ->where('id', $student->id)
+            ->update([
+                'is_regular' => 1, //Set to Regular;
+            ]);
+            
+            // Commit transaction
+            DB::commit();
+            
+            // Log successful upload
+            Log::info('Documents uploaded successfully', [
+                'student_id' => $student->id,
+                'documents_count' => count($uploadedDocuments),
+                'year_level' => $yearLevel
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Documents uploaded successfully!',
+                'data' => [
+                    'documents_uploaded' => count($uploadedDocuments),
+                    'student_id' => $student->id
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            // Rollback transaction on error
+            DB::rollBack();
+            
+            // Log the error with context
+            Log::error('Document upload failed: ' . $e->getMessage(), [
+                'student_id' => $student->id ?? 'unknown',
+                'year_level' => $yearLevel ?? 'unknown',
+                'error_trace' => $e->getTraceAsString(),
+                'request_files' => array_keys($request->allFiles())
+            ]);
+            
+            $errorMessage = env('APP_ENV') === 'production' 
+                ? 'Failed to upload documents. Please try again.'
+                : $e->getMessage();
+            
+            return response()->json([
+                'success' => false,
+                'message' => $errorMessage,
+                'error' => env('APP_DEBUG') ? [
+                    'message' => $e->getMessage(),
+                    'line' => $e->getLine(),
+                    'file' => $e->getFile()
+                ] : null
+            ], 500);
+        }
+    }
+
+
+    public function getStudentDocuments()
+    {
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+        
+        $documents = DB::table('important_documents')
+            ->where('student_id', $student->id)
+            ->orderBy('upload_date', 'desc')
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'documents' => $documents,
+            'count' => $documents->count()
+        ]);
+    }
+
+
+    public function deleteDocument($documentId)
+    {
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+        
+        // Find the document
+        $document = DB::table('important_documents')
+            ->where('id', $documentId)
+            ->where('student_id', $student->id)
+            ->first();
+        
+        if (!$document) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Document not found'
+            ], 404);
+        }
+        
+        try {
+            // Delete file from storage
+            Storage::disk('public')->delete($document->file_path);
+            
+            // Delete record from database
+            DB::table('important_documents')->where('id', $documentId)->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Document deleted successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Document deletion failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete document'
+            ], 500);
+        }
+    }
+
+
+    public function downloadDocument($documentId)
+    {
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+        
+        $document = DB::table('important_documents')
+            ->where('id', $documentId)
+            ->where('student_id', $student->id)
+            ->first();
+        
+        if (!$document) {
+            abort(404, 'Document not found');
+        }
+        
+        $filePath = storage_path('app/public/' . $document->file_path);
+        
+        if (!file_exists($filePath)) {
+            abort(404, 'File not found');
+        }
+        
+        return response()->download($filePath, $this->getDocumentFileName($document->type));
+    }
+
+
+    private function getDocumentFileName($type)
+    {
+        $names = [
+            'FORM138A' => 'Form-138A-High-School-Report-Card.pdf',
+            'GOOD_MORAL' => 'Good-Moral-Certificate.pdf',
+            'PSA_NSO' => 'PSA-NSO-Birth-Certificate.pdf',
+            'ID_PICTURE' => '2x2-ID-Picture.jpg',
+            'MARRIAGE_CERTIFICATE' => 'PSA-Marriage-Certificate.pdf',
+            'FHE' => 'FHE-Certificate.pdf'
+        ];
+        
+        return $names[$type] ?? 'document.pdf';
     }
 
 
