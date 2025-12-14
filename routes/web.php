@@ -346,6 +346,8 @@ Route::middleware(['student.auth'])->group(function () {
     Route::get('/student/files/payments', [StudentController::class, 'getPaymentFiles']);
     Route::get('/student/files/statistics', [StudentController::class, 'getFileStatistics']);
     Route::get('/student/files/required-documents', [StudentController::class, 'getRequiredDocuments']);
+    
+    Route::post('/student/upload-required-document', [StudentController::class, 'uploadRequiredDocument'])->name('student.uploadRequiredDocument');
 
     // Profile picture upload route
     Route::post('/student/upload-avatar', [StudentController::class, 'uploadAvatar'])->name('student.upload.avatar');

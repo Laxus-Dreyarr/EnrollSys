@@ -4275,5 +4275,56 @@ class StudentController extends Controller
         return $names[$type] ?? 'document.pdf';
     }
 
+    //
+    public function uploadRequiredDocument(Request $request)
+    {
+        $request->validate([
+            'document_type' => 'required|in:FORM138A,GOOD_MORAL,PSA_NSO,ID_PICTURE,MARRIAGE_CERTIFICATE',
+            'document_file' => 'required|file|mimes:jpeg,jpg,png,pdf|max:2048',
+            'year_level' => 'required|in:1st Year,2nd Year,3rd Year,4th Year,5th Year'
+        ]);
+
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+
+        // Check if the student already has a document of the same type for the same year level
+        $existingDocument = DB::table('important_documents')
+            ->where('student_id', $student->id)
+            ->where('year_level', $request->year_level)
+            ->where('type', $request->document_type)
+            ->first();
+
+        // Handle file upload
+        if ($request->hasFile('document_file')) {
+            $file = $request->file('document_file');
+            // Generate a unique file name
+            $fileName = strtolower($request->document_type) . '_' . $student->id . '_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            
+            // Store the file in the public/documents/requirements directory
+            $filePath = $file->storeAs('documents/requirements', $fileName, 'public');
+
+            // If there's an existing document, delete the old file and record
+            if ($existingDocument) {
+                // Delete the old file from storage
+                Storage::disk('public')->delete($existingDocument->file_path);
+                // Delete the old record
+                DB::table('important_documents')->where('id', $existingDocument->id)->delete();
+            }
+
+            // Insert the new document record
+            DB::table('important_documents')->insert([
+                'student_id' => $student->id,
+                'year_level' => $request->year_level,
+                'type' => $request->document_type,
+                'file_path' => $filePath,
+                'upload_date' => now()
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Document uploaded successfully.']);
+        }
+
+        return response()->json(['success' => false, 'message' => 'File upload failed.'], 400);
+    }
+
 
 }//END OF Class

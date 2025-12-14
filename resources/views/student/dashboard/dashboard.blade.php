@@ -696,6 +696,12 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 <!-- Payment files will be loaded here dynamically -->
                             </div>
 
+                            <div class="mb-4">
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
+                                    <i class="fas fa-upload me-2"></i>Upload Document
+                                </button>
+                            </div>
+
                             <h4 class="mb-4 mt-5">Required Documents</h4>
                             <div id="required-documents-container" class="files-grid">
                                 <!-- Required documents will be loaded here dynamically -->
@@ -770,6 +776,49 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         </div>
                         <h4>No files found</h4>
                         <p>No files available for this year level.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Document Modal -->
+            <div class="modal fade" id="uploadDocumentModal" tabindex="-1" aria-labelledby="uploadDocumentModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="uploadDocumentModalLabel">Upload Required Document</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="uploadDocumentForm" enctype="multipart/form-data">
+                                @csrf
+                                <div class="mb-3">
+                                    <label for="documentType" class="form-label">Document Type</label>
+                                    <select class="form-select" id="documentType" name="document_type" required>
+                                        <option value="">Select document type</option>
+                                        <option value="FORM138A">Form 138A</option>
+                                        <option value="GOOD_MORAL">Good Moral Certificate</option>
+                                        <option value="PSA_NSO">PSA NSO</option>
+                                        <option value="ID_PICTURE">2X2 ID Picture</option>
+                                        <option value="MARRIAGE_CERTIFICATE">Marriage Certificate</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="documentFile" class="form-label">File</label>
+                                    <input type="file" class="form-control" id="documentFile" name="document_file" accept=".jpg,.jpeg,.png,.pdf" required>
+                                    <div class="form-text">Accepted file types: JPG, JPEG, PNG, PDF. Max file size: 2MB.</div>
+                                </div>
+                                <div class="mb-3" style="display: none;">
+                                    <label for="documentYearLevel" class="form-label">Year Level</label>
+                                    <select class="form-select" id="documentYearLevel" name="year_level" required>
+                                        <option value="1st Year">1st Year</option>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="uploadDocumentBtn">Upload</button>
+                        </div>
                     </div>
                 </div>
             </div>

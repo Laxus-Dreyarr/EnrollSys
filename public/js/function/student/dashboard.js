@@ -5277,6 +5277,56 @@ function initializeDocumentsUpload() {
     }
 }
 
+
+// 
+// Add this function to your JavaScript file
+function initializeDocumentsUpload2() {
+    // Handle click on the upload button in the modal
+    document.getElementById('uploadDocumentBtn').addEventListener('click', function() {
+        const form = document.getElementById('uploadDocumentForm');
+        const formData = new FormData(form);
+        
+        // Show loading state
+        const uploadBtn = this;
+        uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
+        uploadBtn.disabled = true;
+        
+        // Send AJAX request
+        fetch('/student/upload-required-document', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                alert('Document uploaded successfully.');
+                // Close the modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('uploadDocumentModal'));
+                modal.hide();
+                // Reset the form
+                form.reset();
+                // Reload the required documents section
+                loadRequiredDocuments();
+            } else {
+                alert('Upload failed: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred during upload.');
+        })
+        .finally(() => {
+            // Reset the button
+            uploadBtn.innerHTML = 'Upload';
+            uploadBtn.disabled = false;
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
 
     initializeThemeColorPicker();
@@ -5293,6 +5343,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeFilesSystem();
     updateFileStatistics();
     // loadAverageGradeChart();
+    initializeDocumentsUpload2();
 
     initializeDocumentsUpload();
 

@@ -7870,6 +7870,7 @@ body.dark-mode .document-type-badge .badge {
     color: var(--text-muted-dark);
 }
 
+
 /* Enhanced Mobile Responsiveness */
 @media (max-width: 1200px) {
     .sidebar {
