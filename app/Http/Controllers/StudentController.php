@@ -3865,11 +3865,11 @@ class StudentController extends Controller
     {
         // Validate the request FIRST
         $validator = Validator::make($request->all(), [
-            'form138a' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', // 5MB max
-            'good_moral' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'psa_nso' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'id_picture' => 'required|image|mimes:jpg,jpeg,png|max:2048', // 2MB max for images
-            'marriage_certificate' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'form138a' => 'required|file|mimes:pdf,jpg,jpeg,png,docx,docs,msword|max:5120', // 5MB max
+            'good_moral' => 'required|file|mimes:pdf,jpg,jpeg,png,docx,docs,msword|max:5120',
+            'psa_nso' => 'required|file|mimes:pdf,jpg,jpeg,png,docx,docs,msword|max:5120',
+            'id_picture' => 'required|image|mimes:jpg,jpeg,png,docx,docs,msword|max:2048', // 2MB max for images
+            'marriage_certificate' => 'nullable|file|mimes:pdf,jpg,jpeg,png,docx,docs,msword|max:5120',
         ], [
             'form138a.required' => 'Form 138A is required',
             'good_moral.required' => 'Good Moral Certificate is required',

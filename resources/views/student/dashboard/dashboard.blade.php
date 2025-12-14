@@ -1446,9 +1446,9 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             <p style="color: white;">Upload your documents. You can upload some now and others later.</p>
                         </div>
                     </div>
-                    <button type="button" class="close-modal" aria-label="Close">
+                    <!-- <button type="button" class="close-modal" aria-label="Close">
                         <i class="fas fa-times"></i>
-                    </button>
+                    </button> -->
                 </div>
 
                 <!-- Main Content -->
@@ -1462,10 +1462,10 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             <h4>Document Requirements</h4>
                         </div>
                         <ul class="requirements-list">
-                            <li><i class="fas fa-check-circle"></i> All files must be in PDF or JPG format</li>
+                            <li><i class="fas fa-check-circle"></i> All files must be in DOCX, PDF, PNG or JPG format</li>
                             <li><i class="fas fa-check-circle"></i> Maximum file size: 5MB per document</li>
                             <li><i class="fas fa-check-circle"></i> Ensure documents are clear and readable</li>
-                            <li><i class="fas fa-check-circle"></i> You can upload documents now or complete them later</li>
+                            <li><i class="fas fa-check-circle"></i> You can upload documents now</li>
                         </ul>
                     </div>
 
@@ -1481,7 +1481,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                     <h4>Form 138A (SF9)</h4>
                                     <span class="document-subtitle">High School Report Card</span>
                                 </div>
-                                <span class="document-status optional">Optional</span>
+                                <span class="document-status optional"></span>
                             </div>
                             <div class="document-card-body">
                                 <div class="document-preview" id="form138a-preview">
@@ -1492,11 +1492,11 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                     <label class="btn-secondary btn-upload">
                                         <i class="fas fa-upload"></i>
                                         <span>Choose File</span>
-                                        <input type="file" id="form138a" name="form138a" accept=".pdf,.jpg,.jpeg,.png" class="document-input" data-preview="form138a-preview">
+                                        <input type="file" id="form138a" name="form138a" accept=".pdf,.jpg,.jpeg,.png,.docx,.docs,.msword" class="document-input" data-preview="form138a-preview">
                                     </label>
-                                    <button type="button" class="btn-preview disabled" disabled>
+                                    <!-- <button type="button" class="btn-preview disabled" disabled>
                                         <i class="fas fa-eye"></i>
-                                    </button>
+                                    </button> -->
                                 </div>
                             </div>
                             <div class="document-card-footer">
@@ -1517,7 +1517,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                     <h4>Good Moral Certificate</h4>
                                     <span class="document-subtitle">Certificate of Good Moral Character</span>
                                 </div>
-                                <span class="document-status optional">Optional</span>
+                                <span class="document-status optional"></span>
                             </div>
                             <div class="document-card-body">
                                 <div class="document-preview" id="good_moral-preview">
@@ -1528,11 +1528,11 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                     <label class="btn-secondary btn-upload">
                                         <i class="fas fa-upload"></i>
                                         <span>Choose File</span>
-                                        <input type="file" id="good_moral" name="good_moral" accept=".pdf,.jpg,.jpeg,.png" class="document-input" data-preview="good_moral-preview">
+                                        <input type="file" id="good_moral" name="good_moral" accept=".pdf,.jpg,.jpeg,.png,.docx,.docs" class="document-input" data-preview="good_moral-preview">
                                     </label>
-                                    <button type="button" class="btn-preview disabled" disabled>
+                                    <!-- <button type="button" class="btn-preview disabled" disabled>
                                         <i class="fas fa-eye"></i>
-                                    </button>
+                                    </button> -->
                                 </div>
                             </div>
                             <div class="document-card-footer">
@@ -1553,7 +1553,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                     <h4>PSA/NSO Birth Certificate</h4>
                                     <span class="document-subtitle">Authenticated Birth Certificate</span>
                                 </div>
-                                <span class="document-status optional">Optional</span>
+                                <span class="document-status optional"></span>
                             </div>
                             <div class="document-card-body">
                                 <div class="document-preview" id="psa_nso-preview">
@@ -1564,17 +1564,17 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                     <label class="btn-secondary btn-upload">
                                         <i class="fas fa-upload"></i>
                                         <span>Choose File</span>
-                                        <input type="file" id="psa_nso" name="psa_nso" accept=".pdf,.jpg,.jpeg,.png" class="document-input" data-preview="psa_nso-preview">
+                                        <input type="file" id="psa_nso" name="psa_nso" accept=".pdf,.jpg,.jpeg,.png,.docx,.docs" class="document-input" data-preview="psa_nso-preview">
                                     </label>
-                                    <button type="button" class="btn-preview disabled" disabled>
+                                    <!-- <button type="button" class="btn-preview disabled" disabled>
                                         <i class="fas fa-eye"></i>
-                                    </button>
+                                    </button> -->
                                 </div>
                             </div>
                             <div class="document-card-footer">
                                 <div class="document-info">
                                     <i class="fas fa-info-circle"></i>
-                                    <small>Original or certified true copy from PSA/NSO</small>
+                                    <small>scanned copy PSA/NSO</small>
                                 </div>
                             </div>
                         </div>
@@ -1589,7 +1589,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                     <h4>2x2 ID Picture</h4>
                                     <span class="document-subtitle">Formal with White Background</span>
                                 </div>
-                                <span class="document-status optional">Optional</span>
+                                <span class="document-status optional"></span>
                             </div>
                             <div class="document-card-body">
                                 <div class="document-preview" id="id_picture-preview">
@@ -1602,9 +1602,9 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                         <span>Choose File</span>
                                         <input type="file" id="id_picture" name="id_picture" accept=".jpg,.jpeg,.png" class="document-input" data-preview="id_picture-preview">
                                     </label>
-                                    <button type="button" class="btn-preview disabled" disabled>
+                                    <!-- <button type="button" class="btn-preview disabled" disabled>
                                         <i class="fas fa-eye"></i>
-                                    </button>
+                                    </button> -->
                                 </div>
                             </div>
                             <div class="document-card-footer">
@@ -1644,11 +1644,11 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                     <label class="btn-secondary btn-upload disabled">
                                         <i class="fas fa-upload"></i>
                                         <span>Choose File</span>
-                                        <input type="file" id="marriage_certificate" name="marriage_certificate" accept=".pdf,.jpg,.jpeg,.png" class="document-input" data-preview="marriage_certificate-preview" disabled>
+                                        <input type="file" id="marriage_certificate" name="marriage_certificate" accept=".pdf,.jpg,.jpeg,.png,.docx,.docs" class="document-input" data-preview="marriage_certificate-preview" disabled>
                                     </label>
-                                    <button type="button" class="btn-preview disabled" disabled>
+                                    <!-- <button type="button" class="btn-preview disabled" disabled>
                                         <i class="fas fa-eye"></i>
-                                    </button>
+                                    </button> -->
                                 </div>
                             </div>
                             <div class="document-card-footer">
@@ -1667,10 +1667,9 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             <h5>Important Notes</h5>
                         </div>
                         <ul class="notes-list">
-                            <li>You can upload documents now or complete them later</li>
-                            <li>Documents will be verified by the Registrar's Office</li>
+                            <li>You can upload documents now</li>
+                            <li>Documents will be verified by the Admin</li>
                             <li>Ensure all uploaded files are clear and legible</li>
-                            <li>You can come back and upload missing documents anytime</li>
                         </ul>
                     </div>
 
@@ -1680,10 +1679,10 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             <i class="fas fa-paper-plane"></i>
                             Submit Uploaded Documents
                         </button>
-                        <button type="button" class="btn-secondary close-modal">
+                        <!-- <button type="button" class="btn-secondary close-modal">
                             <i class="fas fa-times"></i>
                             Cancel
-                        </button>
+                        </button> -->
                     </div>
                 </form>
 

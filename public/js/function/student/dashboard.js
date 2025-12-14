@@ -4892,7 +4892,14 @@ function initializeDocumentsUpload() {
                     reader.readAsDataURL(fileData.file);
                 } else if (fileData) {
                     // For PDFs, we could open in new tab or show a message
-                    alert('PDF files cannot be previewed inline. Please download the file to view.');
+                    // alert('PDF files cannot be previewed inline. Please download the file to view.');
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('documentPreviewImage').src = e.target.result;
+                        previewModal.classList.add('active');
+                    };
+                    reader.readAsDataURL(fileData.file);
+                } else if (fileData) {
                 }
             }
         });
@@ -4996,7 +5003,16 @@ function initializeDocumentsUpload() {
                 allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
                 break;
             default:
-                allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+                allowedTypes = [
+                'image/jpeg', 
+                'image/jpg', 
+                'image/png', 
+                'application/pdf', 
+                'application/x-pdf',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX MIME type
+                'application/msword', // DOC MIME type
+                'application/octet-stream' // Fallback for some DOCX files
+            ];
         }
         
         if (!allowedTypes.includes(file.type)) {
