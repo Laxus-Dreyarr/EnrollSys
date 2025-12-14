@@ -73,6 +73,10 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                     <i class="fas fa-book"></i>
                     <span>My Courses</span>
                 </a>
+                <a class="menu-item" data-section="input-grades">
+                    <i class="fas fa-pen-to-square"></i>
+                    <span>Input Grades</span>
+                </a>
                 <a class="menu-item" data-section="schedule">
                     <i class="fas fa-bell"></i> <!-- Changed from fa-calendar-alt -->
                     <span>Notifications</span> <!-- Changed from Schedule -->
@@ -152,6 +156,14 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         </div>
                     </div>
 
+                    <div class="stat-card">
+                        <div class="stat-icon courses">
+                            <i class="fas fa-pen-to-square"></i>
+                        </div>
+                        <h4 class="stat-value">Input Grades</h4>
+                        <p class="stat-label">Update student grades and performance</p>
+                    </div>
+
                     <div class="stat-card" id="d-stat-card-enroll">
                         <div class="stat-icon grades" id="enroll_icon">
                             <i class="fa-solid fa-plus"></i>
@@ -204,13 +216,13 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                     </div> -->
                     
                     
-                    <div class="stat-card">
+                    <!-- <div class="stat-card">
                         <div class="stat-icon attendance">
                             <i class="fa-solid fa-folder-open"></i>
                         </div>
                         <h3 class="stat-value" id="count_documents"></h3>
                         <p class="stat-label">Documents</p>
-                    </div>
+                    </div> -->
                 </div>
                 
                 <h2 class="section-title">My Courses</h2>
@@ -400,6 +412,193 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             <p>You haven't enrolled in any course yet.</p>
                         </div>
                     @endforelse
+                </div>
+            </div>
+
+            <!-- After the courses-section div -->
+            <div id="input-grades-section" class="content-section">
+                <div class="section-header">
+                    <h2 class="section-title">Input Your Grades</h2>
+                </div>
+
+                <div class="grades-filter-container">
+                    <div class="filter-card">
+                        <form id="grade-filter-form">
+                            <div class="filter-row">
+                                <div class="form-group">
+                                    <label for="year_level" class="form-label">
+                                        <i class="fas fa-graduation-cap"></i>
+                                        Year Level
+                                    </label>
+                                    <select name="year_level" id="year_level" class="form-control">
+                                        <option value="">All Year Levels</option>
+                                        <option value="1st Year">1st Year</option>
+                                        <option value="2nd Year">2nd Year</option>
+                                        <option value="3rd Year">3rd Year</option>
+                                        <option value="4th Year">4th Year</option>
+                                        <option value="5th Year">5th Year</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="subject_search" class="form-label">
+                                        <i class="fas fa-book"></i>
+                                        Search Subject
+                                    </label>
+                                    <input type="text" name="subject_search" id="subject_search" class="form-control" placeholder="Search by subject code or name...">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="grade_status" class="form-label">
+                                        <i class="fas fa-filter"></i>
+                                        Grade Status
+                                    </label>
+                                    <select name="grade_status" id="grade_status" class="form-control">
+                                        <option value="ungraded">Ungraded Only</option>
+                                        <option value="graded">Graded Only</option>
+                                        <option value="all">All Subjects</option>
+                                    </select>
+                                </div>
+                                
+                            </div>
+                            
+                            <div class="filter-actions">
+                                <button type="submit" class="btn-primary">
+                                    <i class="fas fa-filter"></i>
+                                    Apply Filters
+                                </button>
+                                <button type="button" id="reset-filters" class="btn-secondary">
+                                    <i class="fas fa-redo"></i>
+                                    Reset
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="subjects-list-container">
+                    <div class="subjects-table-container" id="grades-container">
+                        <!-- Subjects will be loaded here -->
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading subjects...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grade Input Modal -->
+                <div class="modal-overlay" id="grade-modal" style="display: none;">
+                    <div class="modal-container horizontal-modal">
+                        <div class="modal-header">
+                            <h3 style="color: white;">Input Grade</h3>
+                            <button class="close-modal" id="close-grade-modal">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="grade-form">
+                                <input type="hidden" id="grade_student_id" name="student_id">
+                                <input type="hidden" id="grade_subject_id" name="subject_id">
+                                
+                                <div class="modal-grid">
+                                    <!-- Left Column - Student Info -->
+                                    <div class="modal-column student-column">
+                                        <div class="student-info-card">
+                                            <div class="student-avatar">
+                                                <img src="https://ui-avatars.com/api/?name=Student+Name&background=4361ee&color=fff" 
+                                                alt="Student Avatar" id="student_avatar">
+                                            </div>
+                                            <div class="student-details">
+                                                <h4 id="student_full_name"></h4>
+                                                <p class="student-id" id="student_id_display"></p>
+                                                <p class="student-course" id="student_course"></p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="subjects-list-container">
+                                            <h5>Available Subjects</h5>
+                                            <div class="subjects-list" id="subjects_list">
+                                                <!-- Subjects will be populated here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Right Column - Grade Input -->
+                                    <div class="modal-column grade-column">
+                                        <div class="subject-info-card">
+                                            <h5>Subject Information</h5>
+                                            <div class="subject-details-grid">
+                                                <div class="subject-detail-item">
+                                                    <span class="label">Subject Code:</span>
+                                                    <span class="value" id="subject_code">-</span>
+                                                </div>
+                                                <div class="subject-detail-item">
+                                                    <span class="label">Subject Name:</span>
+                                                    <span class="value" id="subject_name">-</span>
+                                                </div>
+                                                <div class="subject-detail-item">
+                                                    <span class="label">Units:</span>
+                                                    <span class="value" id="subject_units">-</span>
+                                                </div>
+                                                <div class="subject-detail-item">
+                                                    <span class="label">Year Level:</span>
+                                                    <span class="value" id="subject_year">-</span>
+                                                </div>
+                                                <div class="subject-detail-item">
+                                                    <span class="label">Semester:</span>
+                                                    <span class="value" id="subject_semester">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="grade-input-card">
+                                            <label for="grade" class="form-label">
+                                                <i class="fas fa-pen"></i>
+                                                Grade
+                                            </label>
+                                            <select name="grade" id="grade" class="form-control" required>
+                                                <option value="">Select Grade</option>
+                                                <option value="1.0">1.0 - Excellent</option>
+                                                <option value="1.1">1.1 - Excellent</option>
+                                                <option value="1.2">1.2 - Very Good</option>
+                                                <option value="1.3">1.3 - Very Good</option>
+                                                <option value="1.4">1.4 - Very Good</option>
+                                                <option value="1.5">1.5 - Good</option>
+                                                <option value="1.6">1.6 - Good</option>
+                                                <option value="1.7">1.7 - Satisfactory</option>
+                                                <option value="1.8">1.8 - Satisfactory</option>
+                                                <option value="1.9">1.9 - Excellent</option>
+                                                <option value="2.0">2.0 - Fair</option>
+                                                <option value="2.1">2.1 - Fair</option>
+                                                <option value="2.2">2.2 - Pass</option>
+                                                <option value="2.3">2.3 - Pass</option>
+                                                <option value="2.4">2.4 - Pass</option>
+                                                <option value="2.5">2.5 - Conditional</option>
+                                                <option value="2.6">2.6 - Fair</option>
+                                                <option value="2.7">2.7 - Conditional</option>
+                                                <option value="2.8">2.8 - Conditional</option>
+                                                <option value="2.9">2.9 - Conditional</option>
+                                                <option value="3.0">3.0 - Conditional</option>
+                                                <option value="4.0">4.0 - Failed</option>
+                                                <option value="5.0">5.0 - Failed</option>
+                                                <option value="INC">INC - Incomplete</option>
+                                                <option value="DRP">DRP - Dropped</option>
+                                            </select>
+                                            <small class="form-text">Select the appropriate grade for the student</small>
+                                        </div>
+                                        
+                                        <div class="form-actions">
+                                            <button type="button" class="btn-cancel" id="cancel-grade">Cancel</button>
+                                            <button type="submit" class="btn-primary">
+                                                <i class="fas fa-save"></i>
+                                                Save Grade
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
             

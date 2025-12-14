@@ -4326,5 +4326,223 @@ class StudentController extends Controller
         return response()->json(['success' => false, 'message' => 'File upload failed.'], 400);
     }
 
+    public function showInputGrades()
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Please login first.'], 401);
+        }
+
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+        
+        // Get student info for the modal
+        $userInfo = $user->user_information;
+
+        // Return JSON response with student info
+        return response()->json([
+            'success' => true,
+            'student' => [
+                'id' => $student->id,
+                'id_no' => $student->id_no,
+                'year_level' => $student->year_level,
+            ],
+            'userInfo' => [
+                'firstname' => $userInfo->firstname,
+                'lastname' => $userInfo->lastname,
+                'full_name' => $userInfo->firstname . ' ' . $userInfo->lastname,
+            ],
+            'initial_subjects' => DB::table('enrolled_sub')
+                ->where('student_id', $student->id)
+                ->orderBy('year_level')
+                ->orderBy('semester')
+                ->get()->toArray()
+        ]);
+    }
+
+    // For initial page load (returns student info)
+    public function getInitialGradeInputData()
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Please login first.'], 401);
+        }
+
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+        $userInfo = $user->user_information;
+
+        return response()->json([
+            'success' => true,
+            'student' => [
+                'id' => $student->id,
+                'id_no' => $student->id_no,
+                'year_level' => $student->year_level,
+                'student_id' => $student->id_no, // For display
+            ],
+            'userInfo' => [
+                'firstname' => $userInfo->firstname,
+                'lastname' => $userInfo->lastname,
+                'full_name' => $userInfo->firstname . ' ' . $userInfo->lastname,
+            ]
+        ]);
+    }
+
+    public function getEnrolledSubjectsForGrades(Request $request)
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+
+        $yearLevel = $request->get('year_level');
+        $subjectSearch = $request->get('subject_search');
+        $gradeStatus = $request->get('grade_status', 'all');
+
+        $query = DB::table('enrolled_sub')
+            ->where('student_id', $student->id);
+
+        // Apply filters
+        if ($yearLevel && $yearLevel !== 'all') {
+            $query->where('year_level', $yearLevel);
+        }
+
+        if ($subjectSearch) {
+            $query->where(function($q) use ($subjectSearch) {
+                $q->where('subject_code', 'like', "%{$subjectSearch}%")
+                ->orWhere('subject_name', 'like', "%{$subjectSearch}%");
+            });
+        }
+
+        if ($gradeStatus === 'ungraded') {
+            $query->whereNull('grade')->orWhere('grade', '');
+        } elseif ($gradeStatus === 'graded') {
+            $query->whereNotNull('grade')->where('grade', '!=', '');
+        }
+
+        $subjects = $query->orderBy('year_level')
+            ->orderBy('semester')
+            ->orderBy('subject_code')
+            ->get();
+
+        // return response()->json($subjects);
+        return response()->json($subjects->toArray());
+    }
+
+    public function getSubjectDetails2($subjectId)
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+
+        // Get subject details from enrolled_sub table
+        $subject = DB::table('enrolled_sub')
+            ->where('id', $subjectId)
+            ->where('student_id', $student->id)
+            ->first();
+
+        if (!$subject) {
+            return response()->json(['error' => 'Subject not found'], 404);
+        }
+
+        // Get student info
+        $userInfo = $user->user_information;
+
+        return response()->json([
+            'subject' => $subject,
+            'student' => [
+                'id' => $student->student_id,
+                'full_name' => $userInfo->firstname . ' ' . $userInfo->lastname,
+                'student_id' => $student->id_no,
+                'year_level' => $student->year_level
+            ]
+        ]);
+    }
+
+    public function updateGrade(Request $request)
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+
+        $validated = $request->validate([
+            'subject_id' => 'required|integer',
+            'grade' => 'required|string|max:10'
+        ]);
+
+        // Check if the student owns this subject
+        $subjectExists = DB::table('enrolled_sub')
+            ->where('id', $validated['subject_id'])
+            ->where('student_id', $student->id)
+            ->exists();
+
+        if (!$subjectExists) {
+            return response()->json(['error' => 'Subject not found or unauthorized'], 404);
+        }
+
+        // Update the grade
+        DB::table('enrolled_sub')
+            ->where('id', $validated['subject_id'])
+            ->where('student_id', $student->id)
+            ->update(['grade' => $validated['grade']]);
+
+        // Check if this is a failed grade and add to failed_subjects if needed
+        $failedGrades = ['4.0', '5.0', 'INC', 'DRP'];
+        if (in_array($validated['grade'], $failedGrades)) {
+            $subject = DB::table('enrolled_sub')
+                ->where('id', $validated['subject_id'])
+                ->first();
+
+            if ($subject) {
+                DB::table('failed_subjects')->updateOrInsert(
+                    [
+                        'student_id' => $student->id,
+                        'subject_id' => $subject->subject_id
+                    ],
+                    [
+                        'grade' => $validated['grade'],
+                        'date' => now()->format('Y-m-d H:i:s')
+                    ]
+                );
+            }
+        }
+
+        // Create audit log
+        // DB::table('auditlogs')->insert([
+        //     'user_id' => $student->id,
+        //     'action' => 'Grade Updated',
+        //     'details' => 'Updated grade for subject ID: ' . $validated['subject_id'] . ' to ' . $validated['grade'],
+        //     'ip_address' => $request->ip(),
+        //     'date' => now()->format('Y-m-d H:i:s'),
+        //     'access_by' => 0 // 0 for student self-update
+        // ]);
+
+        return response()->json(['success' => 'Grade updated successfully']);
+    }
+
+    public function getStudentEnrolledSubjects()
+    {
+        if (!Auth::guard('student')->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+
+        $subjects = DB::table('enrolled_sub')
+            ->where('student_id', $student->id)
+            ->select('id', 'subject_code', 'subject_name', 'grade')
+            ->orderBy('subject_code')
+            ->get();
+
+        return response()->json($subjects);
+    }
+
 
 }//END OF Class

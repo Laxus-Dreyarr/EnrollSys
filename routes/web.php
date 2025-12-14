@@ -361,6 +361,14 @@ Route::middleware(['student.auth'])->group(function () {
     Route::delete('/student/documents/{documentId}', [StudentController::class, 'deleteDocument']);
     Route::get('/student/documents/{documentId}/download', [StudentController::class, 'downloadDocument']);
 
+    // Student grade input routes
+    Route::get('/student/get-initial-grade-data', [StudentController::class, 'getInitialGradeInputData']);
+    Route::get('/student/input-grades', [StudentController::class, 'showInputGrades'])->name('student.input-grades');
+    Route::get('/student/get-enrolled-subjects', [StudentController::class, 'getEnrolledSubjectsForGrades']);
+    Route::get('/student/get-subject-details/{subjectId}', [StudentController::class, 'getSubjectDetails2']);
+    Route::post('/student/update-grade', [StudentController::class, 'updateGrade']);
+    Route::get('/student/enrolled-subjects-list', [StudentController::class, 'getStudentEnrolledSubjects']);
+
     Route::post('/student/logout', [StudentController::class, 'logout'])->name('student.logout');
 });
 

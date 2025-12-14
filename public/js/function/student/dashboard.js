@@ -5327,6 +5327,445 @@ function initializeDocumentsUpload2() {
     });
 }
 
+
+// Initialize Grade Input System
+function initializeGradeInput() {
+    // Load initial student data first
+    loadInitialStudentData();
+    
+    // Then load subjects for main view
+    loadGradeSubjects();
+
+    // Setup form submit
+    $('#grade-filter-form').on('submit', function(e) {
+        e.preventDefault();
+        loadGradeSubjects();
+    });
+
+    // Setup reset filters
+    $('#reset-filters').on('click', function() {
+        $('#grade-filter-form')[0].reset();
+        loadGradeSubjects();
+    });
+
+    // Setup grade form submission
+    $('#grade-form').on('submit', function(e) {
+        e.preventDefault();
+        saveGrade();
+    });
+
+    // Setup modal close
+    $('#close-grade-modal, #cancel-grade').on('click', function() {
+        closeGradeModal();
+    });
+
+    // Setup subject click in modal list
+    $(document).on('click', '.subject-list-item', function() {
+        const subjectId = $(this).data('id');
+        loadSubjectDetails(subjectId);
+    });
+    
+    // Setup click to open grade input from main view
+    $(document).on('click', '.open-grade-modal', function() {
+        const subjectId = $(this).data('id');
+        openGradeModal();
+        loadSubjectDetails(subjectId);
+    });
+}
+
+// Load initial student data
+function loadInitialStudentData() {
+    $.ajax({
+        url: '/student/get-initial-grade-data',
+        type: 'GET',
+        success: function(response) {
+            // Store student data globally or in data attributes
+            window.studentData = response;
+            // You can use this data to pre-fill the modal or other areas
+        },
+        error: function(xhr) {
+            console.error('Error loading student data:', xhr);
+        }
+    });
+}
+
+
+// Load subjects for grade input
+function loadGradeSubjects() {
+    const yearLevel = $('#year_level').val();
+    const subjectSearch = $('#subject_search').val();
+    const gradeStatus = $('#grade_status').val();
+
+    // Show loading in main container
+    $('#grades-container').html(`
+        <div class="loading-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading subjects...</p>
+        </div>
+    `);
+
+    $.ajax({
+        url: '/student/get-enrolled-subjects',
+        type: 'GET',
+        data: {
+            year_level: yearLevel,
+            subject_search: subjectSearch,
+            grade_status: gradeStatus
+        },
+        success: function(response) {
+            renderMainGradeSubjects(response);
+            // Also update modal list
+            renderModalSubjectsList(response);
+        },
+        error: function(xhr) {
+            console.error('Error loading subjects:', xhr);
+            $('#grades-container').html(`
+                <div class="error-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>Failed to load subjects</p>
+                </div>
+            `);
+        }
+    });
+}
+
+// Render subjects in the MAIN VIEW
+function renderMainGradeSubjects(subjects) {
+    const container = $('#grades-container');
+    container.empty();
+
+    if (subjects.length === 0) {
+        container.html(`
+            <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <p>No subjects found</p>
+            </div>
+        `);
+        return;
+    }
+
+    // Create table for main view
+    let tableHTML = `
+        <div class="subjects-table">
+            <div class="table-header">
+                <div class="header-cell">Subject Code</div>
+                <div class="header-cell">Subject Name</div>
+                <div class="header-cell">Year Level</div>
+                <div class="header-cell">Semester</div>
+                <div class="header-cell">Units</div>
+                <div class="header-cell">Grade</div>
+                <div class="header-cell">Action</div>
+            </div>
+            <div class="table-body">
+    `;
+
+    subjects.forEach(subject => {
+        const gradeText = subject.grade ? subject.grade : 'Not Graded';
+        const gradeClass = subject.grade ? 'grade-badge graded' : 'grade-badge ungraded';
+        
+        tableHTML += `
+            <div class="table-row">
+                <div class="table-cell">${subject.subject_code || ''}</div>
+                <div class="table-cell">${subject.subject_name || ''}</div>
+                <div class="table-cell">${subject.year_level || ''}</div>
+                <div class="table-cell">${subject.semester || ''}</div>
+                <div class="table-cell">${subject.units || '0'}</div>
+                <div class="table-cell">
+                    <span class="${gradeClass}">${gradeText}</span>
+                </div>
+                <div class="table-cell">
+                    <button class="btn-primary btn-sm open-grade-modal" data-id="${subject.id}">
+                        <i class="fas fa-pen"></i> Input Grade
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    tableHTML += `
+            </div>
+        </div>
+    `;
+
+    container.html(tableHTML);
+}
+
+// Render subjects in the MODAL LIST (left panel)
+function renderModalSubjectsList(subjects) {
+    const container = $('#subjects_list');
+    container.empty();
+
+    if (subjects.length === 0) {
+        container.html(`
+            <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <p>No subjects found</p>
+            </div>
+        `);
+        return;
+    }
+
+    // Group by year level and semester for modal
+    const groupedSubjects = {};
+    subjects.forEach(subject => {
+        const key = `${subject.year_level} - ${subject.semester}`;
+        if (!groupedSubjects[key]) {
+            groupedSubjects[key] = [];
+        }
+        groupedSubjects[key].push(subject);
+    });
+
+    // Render grouped subjects in modal
+    Object.keys(groupedSubjects).forEach(groupName => {
+        const groupDiv = $(`
+            <div class="subject-group">
+                <div class="group-header">${groupName}</div>
+                <div class="group-subjects"></div>
+            </div>
+        `);
+
+        const groupSubjectsDiv = groupDiv.find('.group-subjects');
+        
+        groupedSubjects[groupName].forEach(subject => {
+            const gradeText = subject.grade ? `Grade: ${subject.grade}` : 'No grade yet';
+            const gradeClass = subject.grade ? 'graded' : 'ungraded';
+            
+            const subjectItem = $(`
+                <div class="subject-list-item ${gradeClass}" data-id="${subject.id}">
+                    <div class="subject-list-code">${subject.subject_code}</div>
+                    <div class="subject-list-name">${subject.subject_name}</div>
+                    <div class="subject-list-grade">${gradeText}</div>
+                </div>
+            `);
+            
+            groupSubjectsDiv.append(subjectItem);
+        });
+
+        container.append(groupDiv);
+    });
+}
+
+// Render subjects in the modal list
+function renderGradeSubjects(subjects) {
+    const container = $('#subjects_list');
+    container.empty();
+
+    if (subjects.length === 0) {
+        container.html(`
+            <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <p>No subjects found</p>
+            </div>
+        `);
+        return;
+    }
+
+    // Group by year level and semester
+    const groupedSubjects = {};
+    subjects.forEach(subject => {
+        const key = `${subject.year_level} - ${subject.semester}`;
+        if (!groupedSubjects[key]) {
+            groupedSubjects[key] = [];
+        }
+        groupedSubjects[key].push(subject);
+    });
+
+    // Render grouped subjects
+    Object.keys(groupedSubjects).forEach(groupName => {
+        const groupDiv = $(`
+            <div class="subject-group">
+                <div class="group-header">${groupName}</div>
+                <div class="group-subjects"></div>
+            </div>
+        `);
+
+        const groupSubjectsDiv = groupDiv.find('.group-subjects');
+        
+        groupedSubjects[groupName].forEach(subject => {
+            const gradeText = subject.grade ? `Grade: ${subject.grade}` : 'No grade yet';
+            const gradeClass = subject.grade ? 'graded' : 'ungraded';
+            
+            const subjectItem = $(`
+                <div class="subject-list-item ${gradeClass}" data-id="${subject.id}">
+                    <div class="subject-list-code">${subject.subject_code}</div>
+                    <div class="subject-list-name">${subject.subject_name}</div>
+                    <div class="subject-list-grade">${gradeText}</div>
+                </div>
+            `);
+            
+            groupSubjectsDiv.append(subjectItem);
+        });
+
+        container.append(groupDiv);
+    });
+}
+
+// Load subject details for grade input
+function loadSubjectDetails(subjectId) {
+    // Show loading in modal
+    $('.modal-body').append(`
+        <div class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p>Loading subject details...</p>
+        </div>
+    `);
+
+    $.ajax({
+        url: `/student/get-subject-details/${subjectId}`,
+        type: 'GET',
+        success: function(response) {
+            $('.modal-body .loading-overlay').remove();
+            populateGradeModal(response);
+        },
+        error: function(xhr) {
+            console.error('Error loading subject details:', xhr);
+            $('.modal-body .loading-overlay').remove();
+            showNotification('Failed to load subject details', 'error');
+        }
+    });
+}
+
+// Populate grade modal with data
+// Update your populateGradeModal function to use window.studentData
+function populateGradeModal(data) {
+    const { subject } = data;
+    const student = window.studentData?.student || {};
+    const userInfo = window.studentData?.userInfo || {};
+    
+    // Set student info
+    $('#student_full_name').text(userInfo.full_name || 'Student Name');
+    $('#student_id_display').text(student.id_no || 'N/A');
+    $('#student_course').text(`Year: ${student.year_level || 'N/A'}`);
+    
+    // Set subject info
+    $('#subject_code').text(subject.subject_code || '-');
+    $('#subject_name').text(subject.subject_name || '-');
+    $('#subject_units').text(subject.units || '0');
+    $('#subject_year').text(subject.year_level || '-');
+    $('#subject_semester').text(subject.semester || '-');
+    
+    // Set hidden inputs
+    $('#grade_subject_id').val(subject.id);
+    $('#grade_student_id').val(student.id || '');
+    
+    // Set current grade
+    $('#grade').val(subject.grade || '');
+    
+    // Highlight selected subject in modal list
+    $('.subject-list-item').removeClass('selected');
+    $(`.subject-list-item[data-id="${subject.id}"]`).addClass('selected');
+}
+
+// Save grade
+function saveGrade() {
+    const subjectId = $('#grade_subject_id').val();
+    const grade = $('#grade').val();
+
+    if (!grade) {
+        showNotification('Please select a grade', 'error');
+        return;
+    }
+
+    // Show loading in form
+    $('#grade-form').append(`
+        <div class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p>Saving grade...</p>
+        </div>
+    `);
+
+    $.ajax({
+        url: '/student/update-grade',
+        type: 'POST',
+        data: {
+            _token: $('meta[name="csrf-token"]').attr('content'),
+            subject_id: subjectId,
+            grade: grade
+        },
+        success: function(response) {
+            showNotification('Grade saved successfully!', 'success');
+            closeGradeModal();
+            loadGradeSubjects(); // Refresh the main list
+        },
+        error: function(xhr) {
+            console.error('Error saving grade:', xhr);
+            const error = xhr.responseJSON?.error || 'Failed to save grade';
+            showNotification(error, 'error');
+            $('#grade-form .loading-overlay').remove();
+        }
+    });
+}
+
+// Open grade modal
+function openGradeModal() {
+    $('#grade-modal').css('display', 'flex');
+    setTimeout(() => {
+        $('#grade-modal').addClass('active');
+    }, 10);
+}
+
+// Close grade modal
+function closeGradeModal() {
+    $('#grade-modal').removeClass('active');
+    setTimeout(() => {
+        $('#grade-modal').css('display', 'none');
+        $('#grade-form')[0].reset();
+        $('#subjects_list').empty(); // Clear modal list
+    }, 300);
+}
+
+// Open grade input for a specific subject
+function openGradeInputForSubject(subjectId) {
+    openGradeModal();
+    loadSubjectDetails(subjectId);
+}
+
+// Helper functions for loading states
+function showLoading(element, message = 'Loading...') {
+    const $element = $(element);
+    $element.append(`
+        <div class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p>${message}</p>
+        </div>
+    `);
+}
+
+function hideLoading(element) {
+    $(element).find('.loading-overlay').remove();
+}
+
+function showError(element, message) {
+    const $element = $(element);
+    $element.append(`
+        <div class="error-state">
+            <i class="fas fa-exclamation-circle"></i>
+            <p>${message}</p>
+        </div>
+    `);
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = $(`
+        <div class="notification notification-${type}">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `);
+    
+    $('body').append(notification);
+    
+    // Show with animation
+    setTimeout(() => notification.addClass('show'), 10);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.removeClass('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
 
     initializeThemeColorPicker();
@@ -5346,6 +5785,11 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeDocumentsUpload2();
 
     initializeDocumentsUpload();
+
+    // Add grade input initialization if we're on the grades page
+    if (document.getElementById('input-grades-section')) {
+        initializeGradeInput();
+    }
 
     initializeLogout();
     // Toggle sidebar on mobile
