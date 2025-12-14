@@ -37,17 +37,17 @@
 }
 
 ::-webkit-scrollbar-track {
-    border-radius: 10px;
+    border-radius: 1px;
     background-color: #292b32;
 }
 
 ::-webkit-scrollbar {
-    width: 5px;
+    width: 1px;
     background-color: var(--accent-color);
 }
 
 ::-webkit-scrollbar-thumb {
-  border-radius: 10px;
+  border-radius: 1px;
   -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
   box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
   background-color: var(--accent-color);
@@ -8205,6 +8205,33 @@ body.dark-mode .subject-list-name {
     color: #dc3545;
 }
 
+.tbl_header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    margin: 2px;
+    white-space: nowrap; 
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    border-radius: 1px;
+    height: 5px;
+    width: 5px;
+    background-color: white;
+}
+
+.table-responsive::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    border-radius: 1px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+}
+
+.tbl_data {
+    white-space: nowrap;
+}
 
 /* Enhanced Mobile Responsiveness */
 @media (max-width: 1200px) {
@@ -8849,6 +8876,11 @@ body.dark-mode .subject-list-name {
     .btn-prev, .btn-next, .btn-submit {
         width: 100%;
     }
+
+    .tbl_header {
+        font-size: 0.9rem;
+    }
+
 }
 
 @media (max-width: 480px) {
@@ -9113,6 +9145,10 @@ body.dark-mode .subject-list-name {
     
     .document-status {
         align-self: flex-start;
+    }
+
+    .tbl_data button {
+        font-size: 0.85rem;
     }
 }
 

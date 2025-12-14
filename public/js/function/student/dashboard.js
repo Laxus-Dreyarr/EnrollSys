@@ -5450,13 +5450,13 @@ function renderMainGradeSubjects(subjects) {
             <table class="table table-bordered table-hover">
                 <thead class="thead-light">
                     <tr>
-                        <th scope="col">Subject Code</th>
-                        <th scope="col">Subject Name</th>
-                        <th scope="col">Year Level</th>
-                        <th scope="col">Semester</th>
-                        <th scope="col">Units</th>
-                        <th scope="col">Grade</th>
-                        <th scope="col">Action</th>
+                        <th class="tbl_header" style="color:white;" scope="col">Subject Code</th>
+                        <th class="tbl_header" style="color:white;" scope="col">Subject Name</th>
+                        <th class="tbl_header" style="color:white;" scope="col">Year Level</th>
+                        <th class="tbl_header" style="color:white;" scope="col">Semester</th>
+                        <th class="tbl_header" style="color:white;" scope="col">Units</th>
+                        <th class="tbl_header" style="color:white;" scope="col">Grade</th>
+                        <th class="tbl_header" style="color:white;" scope="col">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -5468,15 +5468,15 @@ function renderMainGradeSubjects(subjects) {
         
         tableHTML += `
             <tr>
-                <td>${subject.subject_code || ''}</td>
-                <td>${subject.subject_name || ''}</td>
-                <td>${subject.year_level || ''}</td>
-                <td>${subject.semester || ''}</td>
-                <td>${subject.units || '0'}</td>
-                <td>
+                <td class="tbl_data">${subject.subject_code || ''}</td>
+                <td class="tbl_data">${subject.subject_name || ''}</td>
+                <td class="tbl_data">${subject.year_level || ''}</td>
+                <td class="tbl_data">${subject.semester || ''}</td>
+                <td class="tbl_data">${subject.units || '0'}</td>
+                <td class="tbl_data">
                     <span class="${gradeClass}">${gradeText}</span>
                 </td>
-                <td>
+                <td class="tbl_data">
                     <button class="btn btn-primary btn-sm open-grade-modal" data-id="${subject.id}">
                         <i class="fas fa-pen"></i> Input Grade
                     </button>
@@ -5666,10 +5666,10 @@ function saveGrade() {
     const subjectId = $('#grade_subject_id').val();
     const grade = $('#grade').val();
 
-    if (!grade) {
-        showNotification('Please select a grade', 'error');
-        return;
-    }
+    // if (!grade) {
+    //     showNotification('Please select a grade', 'error');
+    //     return;
+    // }
 
     // Show loading in form
     $('#grade-form').append(`

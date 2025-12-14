@@ -555,7 +555,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                                 <i class="fas fa-pen"></i>
                                                 Grade
                                             </label>
-                                            <select name="grade" id="grade" class="form-control" required>
+                                            <select name="grade" id="grade" class="form-control">
                                                 <option value="">Select Grade</option>
                                                 <option value="1.0">1.0 - Excellent</option>
                                                 <option value="1.1">1.1 - Excellent</option>

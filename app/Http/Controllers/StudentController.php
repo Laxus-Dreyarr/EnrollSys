@@ -4472,8 +4472,7 @@ class StudentController extends Controller
         $student = $user->user_information->student;
 
         $validated = $request->validate([
-            'subject_id' => 'required|integer',
-            'grade' => 'required|string|max:10'
+            'subject_id' => 'required|integer'
         ]);
 
         // Check if the student owns this subject
@@ -4485,6 +4484,16 @@ class StudentController extends Controller
         if (!$subjectExists) {
             return response()->json(['error' => 'Subject not found or unauthorized'], 404);
         }
+
+        if($request->grade === null || $request->grade === '') {
+            DB::table('enrolled_sub')
+            ->where('id', $validated['subject_id'])
+            ->where('student_id', $student->id)
+            ->update(['grade' => null]);
+
+            return response()->json(['success' => 'Grade updated successfully']);
+        }
+
 
         // Update the grade
         DB::table('enrolled_sub')
