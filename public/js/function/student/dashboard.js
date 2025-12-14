@@ -5446,17 +5446,20 @@ function renderMainGradeSubjects(subjects) {
 
     // Create table for main view
     let tableHTML = `
-        <div class="subjects-table">
-            <div class="table-header">
-                <div class="header-cell">Subject Code</div>
-                <div class="header-cell">Subject Name</div>
-                <div class="header-cell">Year Level</div>
-                <div class="header-cell">Semester</div>
-                <div class="header-cell">Units</div>
-                <div class="header-cell">Grade</div>
-                <div class="header-cell">Action</div>
-            </div>
-            <div class="table-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="thead-light">
+                    <tr>
+                        <th scope="col">Subject Code</th>
+                        <th scope="col">Subject Name</th>
+                        <th scope="col">Year Level</th>
+                        <th scope="col">Semester</th>
+                        <th scope="col">Units</th>
+                        <th scope="col">Grade</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
     `;
 
     subjects.forEach(subject => {
@@ -5464,28 +5467,30 @@ function renderMainGradeSubjects(subjects) {
         const gradeClass = subject.grade ? 'grade-badge graded' : 'grade-badge ungraded';
         
         tableHTML += `
-            <div class="table-row">
-                <div class="table-cell">${subject.subject_code || ''}</div>
-                <div class="table-cell">${subject.subject_name || ''}</div>
-                <div class="table-cell">${subject.year_level || ''}</div>
-                <div class="table-cell">${subject.semester || ''}</div>
-                <div class="table-cell">${subject.units || '0'}</div>
-                <div class="table-cell">
+            <tr>
+                <td>${subject.subject_code || ''}</td>
+                <td>${subject.subject_name || ''}</td>
+                <td>${subject.year_level || ''}</td>
+                <td>${subject.semester || ''}</td>
+                <td>${subject.units || '0'}</td>
+                <td>
                     <span class="${gradeClass}">${gradeText}</span>
-                </div>
-                <div class="table-cell">
-                    <button class="btn-primary btn-sm open-grade-modal" data-id="${subject.id}">
+                </td>
+                <td>
+                    <button class="btn btn-primary btn-sm open-grade-modal" data-id="${subject.id}">
                         <i class="fas fa-pen"></i> Input Grade
                     </button>
-                </div>
-            </div>
+                </td>
+            </tr>
         `;
     });
 
     tableHTML += `
-            </div>
+                </tbody>
+            </table>
         </div>
     `;
+
 
     container.html(tableHTML);
 }

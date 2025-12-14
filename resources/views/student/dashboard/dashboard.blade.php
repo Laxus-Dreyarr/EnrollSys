@@ -502,13 +502,12 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 
                                 <div class="modal-grid">
                                     <!-- Left Column - Student Info -->
-                                    <div class="modal-column student-column">
+                                    <div style="padding: 10px;" class="modal-column student-column">
                                         <div class="student-info-card">
                                             <div class="student-avatar">
-                                                <img src="https://ui-avatars.com/api/?name=Student+Name&background=4361ee&color=fff" 
-                                                alt="Student Avatar" id="student_avatar">
+                                                <img style="border: 5px solid white; margin-left: 5px;" src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=none&color=fff" alt="User Avatar" class="user-avatar">
                                             </div>
-                                            <div class="student-details">
+                                            <div style="margin-top: 5px;" class="student-details">
                                                 <h4 id="student_full_name"></h4>
                                                 <p class="student-id" id="student_id_display"></p>
                                                 <p class="student-course" id="student_course"></p>
@@ -524,7 +523,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                     </div>
                                     
                                     <!-- Right Column - Grade Input -->
-                                    <div class="modal-column grade-column">
+                                    <div style="padding: 10px;" class="modal-column grade-column">
                                         <div class="subject-info-card">
                                             <h5>Subject Information</h5>
                                             <div class="subject-details-grid">
