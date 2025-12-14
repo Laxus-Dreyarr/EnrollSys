@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Session;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Schema;
 
 
 class StudentController extends Controller
@@ -3582,16 +3583,17 @@ class StudentController extends Controller
             ->where('student_id', $student->id)
             ->count();
 
-        // $enrollmentPaymentsCount = DB::table('payments')
-        //     ->where('student_id', $student->id)
-        //     ->count();
-
         $paymentFilesCount = $organizationPaymentsCount;
         
-        // Calculate total files
-        $totalFiles = $academicFilesCount + $paymentFilesCount;
+        // Count required documents
+        $requiredDocumentsCount = DB::table('important_documents')
+            ->where('student_id', $student->id)
+            ->count();
         
-        // Estimate file sizes (this would need actual file size calculation in a real implementation)
+        // Calculate total files
+        $totalFiles = $academicFilesCount + $paymentFilesCount + $requiredDocumentsCount;
+        
+        // You might want to update the total size calculation to include required documents
         $totalSize = $totalFiles * 0.5; // Estimate 0.5 MB per file
 
         return response()->json([
@@ -3599,8 +3601,130 @@ class StudentController extends Controller
             'totalFiles' => $totalFiles,
             'academicFiles' => $academicFilesCount,
             'paymentFiles' => $paymentFilesCount,
+            'requiredDocuments' => $requiredDocumentsCount, // New field
             'totalSize' => number_format($totalSize, 1)
         ]);
+    }
+
+    public function getRequiredDocuments()
+    {
+        try {
+            Log::info('getRequiredDocuments called');
+            
+            if (!Auth::guard('student')->check()) {
+                Log::warning('Student not authenticated');
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+
+            $user = Auth::guard('student')->user();
+            Log::info('Student user:', ['user_id' => $user->id]);
+            
+            if (!$user->user_information || !$user->user_information->student) {
+                Log::warning('Student information not found', ['user_id' => $user->id]);
+                return response()->json(['success' => false, 'message' => 'Student information not found']);
+            }
+            
+            $student = $user->user_information->student;
+            Log::info('Student ID:', ['student_id' => $student->id]);
+
+            // Check if table exists
+            if (!Schema::hasTable('important_documents')) {
+                Log::error('important_documents table does not exist');
+                return response()->json(['success' => false, 'message' => 'Database table not found']);
+            }
+
+            // Get required documents from important_documents table
+            $requiredDocuments = DB::table('important_documents')
+                ->where('student_id', $student->id)
+                ->orderBy('year_level')
+                ->orderBy('upload_date', 'desc')
+                ->get();
+
+            Log::info('Documents found:', ['count' => $requiredDocuments->count()]);
+
+            // Format the documents data
+            $documents = $requiredDocuments->map(function ($doc) {
+                // Map document type to human-readable name
+                $typeNames = [
+                    'FORM138A' => 'Form 138A (High School Card)',
+                    'FORM138B' => 'Form 138B (Photocopy)',
+                    'GOOD_MORAL' => 'Good Moral Certificate',
+                    'PSA_NSO' => 'PSA/NSO Birth Certificate',
+                    'ID_PICTURE' => '2x2 ID Picture',
+                    'BIRTH_CERTIFICATE' => 'Birth Certificate'
+                ];
+
+                $filePath = $doc->file_path;
+                
+                // Ensure the file path is valid
+                if ($filePath && !filter_var($filePath, FILTER_VALIDATE_URL)) {
+                    // Make it a full URL if it's a relative path
+                    $filePath = asset($filePath);
+                }
+
+                return [
+                    'id' => $doc->id,
+                    'type' => $doc->type,
+                    'type_name' => $typeNames[$doc->type] ?? $doc->type,
+                    'year_level' => $doc->year_level,
+                    'file_path' => $filePath,
+                    'upload_date' => $doc->upload_date,
+                    'file_size' => $this->getFileSize($doc->file_path)
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'documents' => $documents
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error in getRequiredDocuments: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Helper function to get file size (optional)
+    private function getFileSize($filePath)
+    {
+        if (empty($filePath)) {
+            return 'N/A';
+        }
+        
+        Log::info('Getting file size for:', ['path' => $filePath]);
+        
+        // Remove the asset() part if it's already been added
+        $relativePath = str_replace(asset(''), '', $filePath);
+        $fullPath = public_path($relativePath);
+        
+        Log::info('Full path:', ['full' => $fullPath]);
+        
+        if (file_exists($fullPath) && is_file($fullPath)) {
+            $size = filesize($fullPath);
+            return $this->formatBytes($size);
+        }
+        
+        Log::warning('File not found:', ['path' => $fullPath]);
+        return 'N/A';
+    }
+
+    private function formatBytes($bytes, $precision = 2)
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        
+        $bytes /= pow(1024, $pow);
+        
+        return round($bytes, $precision) . ' ' . $units[$pow];
     }
 
     public function uploadAvatar(Request $request)

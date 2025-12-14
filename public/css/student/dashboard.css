@@ -7854,6 +7854,22 @@ body.dark-mode .preview-notice p {
     border-left: 4px solid #2c5282;
 }
 
+.document-type-badge .badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.file-card .badge {
+    margin-left: 4px;
+}
+
+/* Dark mode support */
+body.dark-mode .document-type-badge .badge {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted-dark);
+}
+
 /* Enhanced Mobile Responsiveness */
 @media (max-width: 1200px) {
     .sidebar {

@@ -4267,6 +4267,9 @@ function loadAllFiles() {
     
     // Load payment files
     loadPaymentFiles();
+
+    // Load required documents
+    loadRequiredDocuments();
 }
 
 function loadAcademicFiles(yearLevel = 'all') {
@@ -4390,6 +4393,7 @@ function loadFilesForYear(yearId) {
         loadAllFiles();
     } else {
         loadAcademicFiles(yearId);
+        // Note: Required documents are usually shown for all years
     }
 }
 
@@ -4716,6 +4720,210 @@ function updateFileStatistics() {
     .catch(error => {
         console.error('Error loading file statistics:', error);
     });
+}
+
+
+function loadRequiredDocuments() {
+    const container = document.getElementById('required-documents-container');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="loading-state">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading required documents...</p>
+        </div>
+    `;
+    
+    console.log('Fetching required documents...'); // Debug log
+    
+    // Fetch required documents from server
+    fetch('/student/files/required-documents', {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status); // Debug log
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data); // Debug log
+        if (data.success && data.documents && data.documents.length > 0) {
+            displayRequiredDocuments(data.documents, container);
+        } else if (data.success && (!data.documents || data.documents.length === 0)) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <h4>No required documents found</h4>
+                    <p>You haven't uploaded any required documents yet.</p>
+                </div>
+            `;
+        } else {
+            // Handle server-side error message
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h4>Error loading required documents</h4>
+                    <p>${data.message || 'Unable to load required documents.'}</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading required documents:', error);
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h4>Error loading required documents</h4>
+                <p>Unable to load required documents. Please try again later.</p>
+                <p class="text-muted small">${error.message}</p>
+            </div>
+        `;
+    });
+}
+
+function displayRequiredDocuments(documents, container) {
+    if (!documents || documents.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <h4>No required documents found</h4>
+                <p>You haven't uploaded any required documents yet.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    documents.forEach(doc => {
+        const docCard = createRequiredDocumentCard(doc);
+        container.appendChild(docCard);
+    });
+}
+
+function createRequiredDocumentCard(doc) { 
+    const div = document.createElement('div');
+    div.className = 'file-card';
+    
+    // Determine file type icon and color based on document type
+    let fileIcon = 'file-alt';
+    let fileIconClass = 'document';
+    let badgeColor = 'bg-secondary';
+    
+    switch(doc.type) {  // Changed from document.type to doc.type
+        case 'FORM138A':
+        case 'FORM138B':
+            fileIcon = 'file-contract';
+            fileIconClass = 'prospectus';
+            badgeColor = 'bg-primary';
+            break;
+        case 'GOOD_MORAL':
+            fileIcon = 'file-contract';
+            fileIconClass = 'document';
+            badgeColor = 'bg-success';
+            break;
+        case 'PSA_NSO':
+            fileIcon = 'id-card';
+            fileIconClass = 'payment';
+            badgeColor = 'bg-info';
+            break;
+        case 'ID_PICTURE':
+            fileIcon = 'file-image';
+            fileIconClass = 'image';
+            badgeColor = 'bg-warning';
+            break;
+        case 'BIRTH_CERTIFICATE':
+            fileIcon = 'file-medical';
+            fileIconClass = 'document';
+            badgeColor = 'bg-danger';
+            break;
+    }
+    
+    // Format the upload date
+    const uploadDate = new Date(doc.upload_date);  // Changed from document.upload_date
+    const formattedDate = uploadDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    // Use actual file size from the server response
+    const fileSize = doc.file_size || "N/A";
+    
+    // Create readable document type name
+    const docTypeName = doc.type.split('_').join(' ').replace('ID', 'ID');  // Changed from document.type
+    
+    div.innerHTML = `
+        <div class="file-icon ${fileIconClass}">
+            <i class="fas fa-${fileIcon}"></i>
+        </div>
+        <div class="file-header">
+            <span class="file-type-badge">Required Document</span>
+            <span class="badge ${badgeColor}">${doc.year_level || 'N/A'}</span>  <!-- Changed -->
+        </div>
+        <h5 class="file-title">${doc.type_name || docTypeName}</h5>  <!-- Added type_name from server -->
+        <p class="file-description">${getDocumentDescription(doc.type)}</p>  <!-- Changed -->
+        
+        <div class="document-type-badge mb-3">
+            <span class="badge bg-dark">${doc.type}</span>  <!-- Changed -->
+        </div>
+        
+        <div class="file-meta">
+            <span class="file-date">
+                <i class="far fa-calendar"></i> ${formattedDate}
+            </span>
+            <span class="file-size">
+                <i class="fas fa-hdd"></i> ${fileSize}
+            </span>
+        </div>
+        
+        <div class="file-actions">
+            ${doc.file_path ? `  <!-- Changed -->
+                <a href="${doc.file_path}" target="_blank" class="btn-file-action primary">  <!-- Changed -->
+                    <i class="fas fa-eye"></i> View Document
+                </a>
+                <a href="${doc.file_path}" download class="btn-file-action">  <!-- Changed -->
+                    <i class="fas fa-download"></i> Download
+                </a>
+            ` : `
+                <button class="btn-file-action" disabled>
+                    <i class="fas fa-ban"></i> No File
+                </button>
+            `}
+        </div>
+    `;
+    
+    return div;
+}
+
+function getDocumentDescription(type) {
+    const descriptions = {
+        'FORM138A': 'High School Report Card (Form 138) - Original Copy',
+        'FORM138B': 'High School Report Card (Form 138) - Photocopy',
+        'GOOD_MORAL': 'Certificate of Good Moral Character',
+        'PSA_NSO': 'PSA/NSO Birth Certificate (Original and Photocopy)',
+        'ID_PICTURE': '2x2 ID Picture with White Background',
+        'BIRTH_CERTIFICATE': 'Birth Certificate (Original)'
+    };
+    
+    return descriptions[type] || 'Required document for enrollment';
 }
 
 

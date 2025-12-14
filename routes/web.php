@@ -25,7 +25,7 @@ Route::get('/', function () {
 // File serving routes for documents
 Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {
         // Define allowed folders for security
-        $allowedFolders = ['fhe', 'payment_receipts', 'prospectus'];
+        $allowedFolders = ['fhe', 'payment_receipts', 'prospectus', 'requirements'];
         
         if (!in_array($folder, $allowedFolders)) {
             abort(404, 'Folder not allowed');
@@ -345,6 +345,7 @@ Route::middleware(['student.auth'])->group(function () {
     Route::get('/student/files/academic', [StudentController::class, 'getAcademicFiles']);
     Route::get('/student/files/payments', [StudentController::class, 'getPaymentFiles']);
     Route::get('/student/files/statistics', [StudentController::class, 'getFileStatistics']);
+    Route::get('/student/files/required-documents', [StudentController::class, 'getRequiredDocuments']);
 
     // Profile picture upload route
     Route::post('/student/upload-avatar', [StudentController::class, 'uploadAvatar'])->name('student.upload.avatar');

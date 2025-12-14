@@ -695,6 +695,17 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             <div id="payment-files-container" class="files-grid">
                                 <!-- Payment files will be loaded here dynamically -->
                             </div>
+
+                            <h4 class="mb-4 mt-5">Required Documents</h4>
+                            <div id="required-documents-container" class="files-grid">
+                                <!-- Required documents will be loaded here dynamically -->
+                                <div class="loading-state">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading required documents...</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
