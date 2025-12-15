@@ -1085,15 +1085,28 @@ $profile_picture = $user->profile;
     </div>
 
     <!-- Enrollment Modal -->
+    <!-- Enrollment Modal -->
     <div class="modal fade" id="enrollmentModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Set Enrollment Period</h5>
+                    <h5 class="modal-title" id="modalTitle">Set Enrollment Period</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="enrollmentForm">
+                    <!-- Enrollment Type Toggle -->
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enrollmentTypeSwitch">
+                            <label class="form-check-label" for="enrollmentTypeSwitch">
+                                <span id="switchLabel">Regular Semester</span> 
+                                <span class="text-muted ms-2" id="switchDescription">(Switch to Summer)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Regular Semester Form (Default - Visible) -->
+                    <form id="regularForm" class="enrollment-form">
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="enrollmentSemester" class="form-label">Semester <span class="text-danger">*</span></label>
@@ -1122,6 +1135,37 @@ $profile_picture = $user->profile;
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="isActive" name="is_active" checked>
                                 <label class="form-check-label" for="isActive">Active Enrollment Period</label>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Summer Form (Hidden by default) -->
+                    <form id="summerForm" class="enrollment-form" style="display: none;">
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-sun me-2"></i>
+                            <strong>Summer Enrollment</strong>
+                            <div class="small mt-1">Setting up enrollment period for Summer semester</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label for="summerAcademicYear" class="form-label">Academic Year <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="summerAcademicYear" name="academic_year" placeholder="e.g., 2024-2025" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="summerStartDate" class="form-label">Start Date <span class="text-danger">*</span></label>
+                                <input type="datetime-local" class="form-control" id="summerStartDate" name="start_date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="summerEndDate" class="form-label">End Date <span class="text-danger">*</span></label>
+                                <input type="datetime-local" class="form-control" id="summerEndDate" name="end_date" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="summerIsActive" name="is_active" checked>
+                                <label class="form-check-label" for="summerIsActive">Active Enrollment Period</label>
                             </div>
                         </div>
                     </form>

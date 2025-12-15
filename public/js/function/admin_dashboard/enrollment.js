@@ -14,10 +14,109 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Clear form when modal is hidden
     $('#enrollmentModal').on('hidden.bs.modal', function() {
-        $('#enrollmentForm')[0].reset();
-        $('#enrollmentForm input[name="enrollment_id"]').remove();
+        resetEnrollmentForms();
+    });
+
+    // Handle enrollment type switch
+    $('#enrollmentTypeSwitch').change(function() {
+        toggleEnrollmentForm(this.checked);
     });
 });
+
+function toggleEnrollmentForm(isSummer) {
+    const modalTitle = $('#modalTitle');
+    const switchLabel = $('#switchLabel');
+    const switchDescription = $('#switchDescription');
+    
+    if (isSummer) {
+        // Switch to Summer form
+        $('#regularForm').hide();
+        $('#summerForm').show();
+        modalTitle.text('Set Summer Enrollment Period');
+        switchLabel.text('Summer');
+        switchDescription.text('(Switch to Regular Semester)');
+    } else {
+        // Switch to Regular form
+        $('#summerForm').hide();
+        $('#regularForm').show();
+        modalTitle.text('Set Enrollment Period');
+        switchLabel.text('Regular Semester');
+        switchDescription.text('(Switch to Summer)');
+    }
+}
+
+function resetEnrollmentForms() {
+    // Reset both forms
+    $('#regularForm')[0].reset();
+    $('#summerForm')[0].reset();
+    
+    // Remove hidden enrollment_id fields
+    $('#regularForm input[name="enrollment_id"]').remove();
+    $('#summerForm input[name="enrollment_id"]').remove();
+    
+    // Reset switch to default (Regular Semester)
+    $('#enrollmentTypeSwitch').prop('checked', false);
+    toggleEnrollmentForm(false);
+}
+
+function getActiveFormData() {
+    const isSummer = $('#enrollmentTypeSwitch').is(':checked');
+    
+    if (isSummer) {
+        return {
+            semester: 'Summer',
+            academic_year: $('#summerAcademicYear').val(),
+            start_date: $('#summerStartDate').val(),
+            end_date: $('#summerEndDate').val(),
+            is_active: $('#summerIsActive').is(':checked') ? 1 : 0
+        };
+    } else {
+        return {
+            semester: $('#enrollmentSemester').val(),
+            academic_year: $('#academicYear').val(),
+            start_date: $('#startDate').val(),
+            end_date: $('#endDate').val(),
+            is_active: $('#isActive').is(':checked') ? 1 : 0
+        };
+    }
+}
+
+function setActiveFormData(period) {
+    const isSummer = period.semester === 'Summer';
+    
+    // Set the switch based on semester
+    $('#enrollmentTypeSwitch').prop('checked', isSummer);
+    toggleEnrollmentForm(isSummer);
+    
+    if (isSummer) {
+        // Populate summer form
+        $('#summerAcademicYear').val(period.academic_year);
+        $('#summerStartDate').val(formatDateForInput(period.start_date));
+        $('#summerEndDate').val(formatDateForInput(period.end_date));
+        $('#summerIsActive').prop('checked', period.is_active);
+        
+        // Add hidden field for edit
+        if (!$('#summerForm input[name="enrollment_id"]').length) {
+            $('#summerForm').append(`<input type="hidden" name="enrollment_id" value="${period.id}">`);
+        } else {
+            $('#summerForm input[name="enrollment_id"]').val(period.id);
+        }
+    } else {
+        // Populate regular form
+        $('#enrollmentSemester').val(period.semester);
+        $('#academicYear').val(period.academic_year);
+        $('#startDate').val(formatDateForInput(period.start_date));
+        $('#endDate').val(formatDateForInput(period.end_date));
+        $('#isActive').prop('checked', period.is_active);
+        
+        // Add hidden field for edit
+        if (!$('#regularForm input[name="enrollment_id"]').length) {
+            $('#regularForm').append(`<input type="hidden" name="enrollment_id" value="${period.id}">`);
+        } else {
+            $('#regularForm input[name="enrollment_id"]').val(period.id);
+        }
+    }
+}
 
 function loadEnrollmentData() {
     $.post('/admin/ajax/get-stats', {
@@ -173,17 +272,21 @@ function formatDateTime(dateTimeString) {
 function saveEnrollmentPeriod() {
     const formData = {
         action: 'save_enrollment_period',
-        semester: $('#enrollmentSemester').val(), // Changed from document.getElementById('semester')
-        academic_year: $('#academicYear').val(),
-        start_date: $('#startDate').val(),
-        end_date: $('#endDate').val(),
-        is_active: $('#isActive').is(':checked') ? 1 : 0,
+        ...getActiveFormData(),
         _token: $('meta[name="csrf-token"]').attr('content')
     };
 
     // Validate required fields
-    if (!formData.semester || !formData.academic_year || !formData.start_date || !formData.end_date) {
-        showError('Please fill all required fields');
+    const isSummer = $('#enrollmentTypeSwitch').is(':checked');
+    let missingFields = [];
+    
+    if (!formData.semester) missingFields.push('Semester');
+    if (!formData.academic_year) missingFields.push('Academic Year');
+    if (!formData.start_date) missingFields.push('Start Date');
+    if (!formData.end_date) missingFields.push('End Date');
+    
+    if (missingFields.length > 0) {
+        showError(`Please fill all required fields: ${missingFields.join(', ')}`);
         return;
     }
 
@@ -227,23 +330,13 @@ function editEnrollmentPeriod(enrollmentId) {
         if (response.success) {
             const period = response.enrollment_period;
             
-            // Populate form
-            $('#enrollmentSemester').val(period.semester); // Updated ID
-            $('#academicYear').val(period.academic_year);
-            $('#startDate').val(formatDateForInput(period.start_date));
-            $('#endDate').val(formatDateForInput(period.end_date));
-            $('#isActive').prop('checked', period.is_active);
-            
-            // Add hidden field for edit
-            if (!$('#enrollmentForm input[name="enrollment_id"]').length) {
-                $('#enrollmentForm').append('<input type="hidden" name="enrollment_id" value="' + period.id + '">');
-            } else {
-                $('#enrollmentForm input[name="enrollment_id"]').val(period.id);
-            }
-            
             // Update modal title and button
             $('#enrollmentModal .modal-title').text('Edit Enrollment Period');
             $('#saveEnrollmentBtn').text('Update Enrollment Period');
+            
+            // Populate the appropriate form
+            setActiveFormData(period);
+            
             insertsupabase2();
             $('#enrollmentModal').modal('show');
         } else {

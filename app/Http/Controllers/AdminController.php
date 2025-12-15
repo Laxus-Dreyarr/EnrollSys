@@ -1481,7 +1481,7 @@ class AdminController extends Controller
     {
         try {
             $periods = DB::table('enrollment_date')
-                ->orderBy('start', 'desc') // Changed from 'start_date' to 'Start'
+                ->orderBy('id', 'desc') // Changed from 'start_date' to 'Start'
                 ->where('is_active', 1)
                 ->get()
                 ->map(function($period) {
@@ -1550,8 +1550,8 @@ class AdminController extends Controller
                 'admin_id' => $admin->admin_id
             ];
 
-                DB::table('enrollment_date')
-                ->delete();
+                // DB::table('enrollment_date')
+                // ->delete();
                 // Create new period
                 DB::table('enrollment_date')->insert($data); 
                 
