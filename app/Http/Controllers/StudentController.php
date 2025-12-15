@@ -1410,14 +1410,14 @@ class StudentController extends Controller
         try {
             // Validate the registration data first
             $validator = Validator::make($request->all(), [
-                'year_level' => [
-                    'required'
-                ],
+                // 'year_level' => [
+                //     'required'
+                // ],
                 'student_type' => [
                     'required'
                 ],
             ], [
-                'year_level.required' => 'Please select your year level.',
+                // 'year_level.required' => 'Please select your year level.',
                 'student_type.required' => 'Please select your student type.',
             ]);
 
@@ -1429,6 +1429,12 @@ class StudentController extends Controller
             }
 
             DB::beginTransaction();
+
+            $get_year_level = DB::table('enrollment_date')
+                ->where('is_active', 1)
+                ->first();
+            
+            $year_level = $get_year_level->year_level;
 
             try {
                 $studentType = match($request->student_type) {
@@ -1461,7 +1467,7 @@ class StudentController extends Controller
                 Log::info('Student record: ' . ($student ? 'Found' : 'Not found'));
                 $save = Student::where('student_id', $userInfo->id)
                     ->update([
-                        'year_level' => $request->year_level,
+                        'year_level' => $year_level,
                         'status' => 'Not Enrolled',
                         'is_regular' => $studentType
                     ]);

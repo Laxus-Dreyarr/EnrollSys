@@ -177,6 +177,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         </h3>
                         <p class="stat-label">
                             @if($enrollmentPeriod)
+                                <b style="color: var(--primary-color);">{{ $enrollmentPeriod->year_level }} only</b> <br>
                                 Enrollment is until
                                 {{ \Carbon\Carbon::parse($enrollmentPeriod->start)->format('F j, Y') }} - {{ \Carbon\Carbon::parse($enrollmentPeriod->end)->format('F j, Y') }}
                             @else
@@ -1527,7 +1528,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                 
                 <form id="studentInfoForm2" class="modal-form">
                     @csrf                   
-                    <div class="form-group">
+                    <!-- <div class="form-group">
                         <label for="year_level" class="form-label">
                             <i class="fas fa-graduation-cap"></i>
                             Year Level
@@ -1541,7 +1542,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             <option value="5th Year">5th Year</option>
                         </select>
                         <div class="form-error" id="year_level_error"></div>
-                    </div>
+                    </div> -->
                     
                     <div class="form-group">
                         <label for="student_type" class="form-label">
@@ -1668,8 +1669,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             <option value="Freshmen">Freshmen</option>
                             <option value="Transferee">Transferee</option>
                             <option value="Returnee">Returnee</option>
-                            <option value="Regular">Regular</option>
-                            <option value="Irregular">Irregular</option> 
+                            <option value="Continuing">Continuing</option>
                         </select>
                     </div>
                     
