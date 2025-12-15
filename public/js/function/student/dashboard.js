@@ -5750,26 +5750,26 @@ function showError(element, message) {
     `);
 }
 
-function showNotification(message, type = 'info') {
-    // Create notification element
-    const notification = $(`
-        <div class="notification notification-${type}">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-            <span>${message}</span>
-        </div>
-    `);
+// function showNotification(message, type = 'info') {
+//     // Create notification element
+//     const notification = $(`
+//         <div class="notification notification-${type}">
+//             <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+//             <span>${message}</span>
+//         </div>
+//     `);
     
-    $('body').append(notification);
+//     $('body').append(notification);
     
-    // Show with animation
-    setTimeout(() => notification.addClass('show'), 10);
+//     // Show with animation
+//     setTimeout(() => notification.addClass('show'), 10);
     
-    // Remove after 3 seconds
-    setTimeout(() => {
-        notification.removeClass('show');
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-}
+//     // Remove after 3 seconds
+//     setTimeout(() => {
+//         notification.removeClass('show');
+//         setTimeout(() => notification.remove(), 300);
+//     }, 3000);
+// }
 
 document.addEventListener('DOMContentLoaded', function() {
 

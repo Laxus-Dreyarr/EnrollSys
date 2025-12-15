@@ -3217,10 +3217,25 @@ class StudentController extends Controller
 
     private function calculateTotalUnitsForSemester($yearLevel, $semester)
     {
+
         // Calculate total units for the specific semester and year level
         $totalUnits = Subject::where('year_level', $yearLevel)
             ->where('semester', $semester)
             ->where('is_active', 1)
+            ->where('curriculum_id', function($query) {
+                $user = Auth::guard('student')->user();
+                $student = $user->user_information->student;
+                $curriculum_year = $student->curriculum;
+                $curriculum = DB::table('curriculum')
+                    ->where('curriculum_year', $curriculum_year)
+                    ->where('is_active', 1)
+                    ->first();
+                $query->select('id')
+                    ->from('curriculum')
+                    ->where('curriculum_year', $curriculum_year)
+                    ->where('is_active', 1)
+                    ->limit(1);
+            })
             ->sum('units');
         
         return $totalUnits;
