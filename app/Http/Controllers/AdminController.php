@@ -1482,6 +1482,7 @@ class AdminController extends Controller
         try {
             $periods = DB::table('enrollment_date')
                 ->orderBy('start', 'desc') // Changed from 'start_date' to 'Start'
+                ->where('is_active', 1)
                 ->get()
                 ->map(function($period) {
                     return [
@@ -1706,9 +1707,17 @@ class AdminController extends Controller
 
             // Disable foreign key checks
             DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-            
+
+            $data = [
+                    'is_active' => 0
+                    ];
+
             DB::table('enrollment_date')
-                ->delete();
+                ->where('id', $request->enrollment_id)
+                ->update($data);
+            
+            // DB::table('enrollment_date')
+            //     ->delete();
 
             // Re-enable foreign key checks
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
