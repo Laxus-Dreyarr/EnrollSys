@@ -126,10 +126,15 @@ Route::middleware(['admin.auth'])->group(function () {
     Route::delete('/delete-csv/{id}', [AdminController::class, 'deleteCSV'])->name('admin.csv.delete');
 
 
-
-    Route::post('/upload-csv', [AdminController::class, 'uploadCSV'])->name('admin.upload.csv');
     Route::get('/csv-template', [AdminController::class, 'downloadCSVTemplate'])->name('admin.csv.template');
     Route::delete('/delete-csv/{id}', [AdminController::class, 'deleteCSV'])->name('admin.csv.delete');
+
+
+    Route::post('/upload-csv', [AdminController::class, 'uploadCSV']);
+    Route::get('/admin/recent-csv-uploads', [AdminController::class, 'getRecentUploads']);
+    Route::delete('/admin/delete-upload/{id}', [AdminController::class, 'deleteUpload']);
+    Route::get('/admin/upload-details/{id}', [AdminController::class, 'getUploadDetails']);
+    Route::get('/admin/download-csv/{id}', [AdminController::class, 'downloadCSV']);
 });
 
 //Clear Admin Forgot Cache!

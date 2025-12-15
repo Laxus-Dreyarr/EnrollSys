@@ -2105,9 +2105,9 @@ class AdminController extends Controller
                         $existingRecord = DB::table('csv')
                             ->where(function($query) use ($data) {
                                 $query->where('student_number', $data['student_number'])
-                                    ->orWhere('application_number', $data['application_number'])
-                                    ->orWhere('email', $data['email'])
-                                    ->orWhere('contact_number', $data['contact_number']);
+                                      ->orWhere('application_number', $data['application_number'])
+                                      ->orWhere('email', $data['email'])
+                                      ->orWhere('contact_number', $data['contact_number']);
                             })
                             ->first();
                         
@@ -2130,13 +2130,29 @@ class AdminController extends Controller
                 
                 fclose($handle);
                 
+                // Log the upload to database
+                $uploadLogId = DB::table('csv_uploads')->insertGetId([
+                    'admin_id' => Auth::guard('admin')->id() ?? null,
+                    'file_name' => $file->getClientOriginalName(),
+                    'stored_name' => $fileName,
+                    'file_path' => $filePath,
+                    'total_records' => $totalRows,
+                    'inserted_records' => $insertedRows,
+                    'updated_records' => $updatedRows,
+                    'failed_records' => count($errors),
+                    'status' => count($errors) == 0 ? 'success' : ($insertedRows + $updatedRows > 0 ? 'partial' : 'failed'),
+                    'error_log' => !empty($errors) ? json_encode(array_slice($errors, 0, 10)) : null,
+                    'created_at' => now(),
+                ]);
+                
                 return response()->json([
                     'success' => true,
                     'message' => "CSV processed successfully. Total: $totalRows rows, Inserted: $insertedRows, Updated: $updatedRows",
                     'totalRows' => $totalRows,
                     'insertedRows' => $insertedRows,
                     'updatedRows' => $updatedRows,
-                    'errors' => $errors
+                    'errors' => $errors,
+                    'uploadId' => $uploadLogId
                 ]);
                 
             } else {
@@ -2150,6 +2166,145 @@ class AdminController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Upload failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function getRecentUploads()
+    {
+        try {
+            $uploads = DB::table('csv_uploads')
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get()
+                ->map(function($upload) {
+                    return [
+                        'id' => $upload->id,
+                        'file_name' => $upload->file_name,
+                        'stored_name' => $upload->stored_name,
+                        'date' => date('M d, Y H:i', strtotime($upload->created_at)),
+                        'records' => $upload->inserted_records + $upload->updated_records,
+                        'total' => $upload->total_records,
+                        'status' => $upload->status,
+                        'download_url' => Storage::url($upload->file_path),
+                        'details' => "Total: {$upload->total_records}, Inserted: {$upload->inserted_records}, Updated: {$upload->updated_records}, Failed: {$upload->failed_records}"
+                    ];
+                });
+            
+            return response()->json([
+                'success' => true,
+                'uploads' => $uploads
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load uploads: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Download uploaded CSV file
+    public function downloadCSV($id)
+    {
+        try {
+            $upload = DB::table('csv_uploads')->find($id);
+            
+            if (!$upload) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File not found'
+                ], 404);
+            }
+            
+            // Check if file exists
+            if (!Storage::disk('public')->exists($upload->file_path)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File has been deleted or does not exist'
+                ], 404);
+            }
+            
+            // Get the file path
+            $filePath = storage_path('app/public/' . $upload->file_path);
+            
+            // Return file download
+            return response()->download($filePath, $upload->file_name);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Download failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    // Get upload details
+    public function getUploadDetails($id)
+    {
+        try {
+            $upload = DB::table('csv_uploads')->find($id);
+            
+            if (!$upload) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload record not found'
+                ]);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'upload' => [
+                    'file_name' => $upload->file_name,
+                    'date' => date('M d, Y H:i:s', strtotime($upload->created_at)),
+                    'total_records' => $upload->total_records,
+                    'inserted_records' => $upload->inserted_records,
+                    'updated_records' => $upload->updated_records,
+                    'failed_records' => $upload->failed_records,
+                    'status' => $upload->status,
+                    'error_log' => $upload->error_log ? json_decode($upload->error_log) : []
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load details: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deleteUpload($id)
+    {
+        try {
+            $upload = DB::table('csv_uploads')->find($id);
+            
+            if (!$upload) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload record not found'
+                ], 404);
+            }
+            
+            // Delete the stored file
+            if (Storage::disk('public')->exists($upload->file_path)) {
+                Storage::disk('public')->delete($upload->file_path);
+            }
+            
+            // Delete the upload record
+            DB::table('csv_uploads')->where('id', $id)->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Upload record deleted successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Delete failed: ' . $e->getMessage()
             ], 500);
         }
     }

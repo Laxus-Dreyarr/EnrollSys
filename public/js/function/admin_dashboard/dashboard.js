@@ -322,75 +322,15 @@ async function insertsupabase2(){
             }, 5000);
         }
 
-    
-    // Global function for viewing CSV details
-    function viewCsvDetails(id) {
-        // Implement CSV details viewing logic
-        console.log('View CSV details:', id);
-        // You can open a modal or redirect to a details page
-    }
 
-    document.addEventListener('DOMContentLoaded', function() {        
-        
-        // Theme Toggle
-        const themeToggleBtn = document.getElementById('themeToggle');
-        const body = document.body;
-        
-        // Check for saved theme preference
-        const savedTheme = localStorage.getItem('theme') || 
-                          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        
-        // Apply the saved theme
-        if (savedTheme === 'dark') {
-            body.classList.add('dark-theme');
-            themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-        }
-        
-        // Theme toggle button click event
-        themeToggleBtn.addEventListener('click', function() {
-            body.classList.toggle('dark-theme');
-            
-            if (body.classList.contains('dark-theme')) {
-                localStorage.setItem('theme', 'dark');
-                themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-            } else {
-                localStorage.setItem('theme', 'light');
-                themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
-            }
-        });
-
-
-        // fetchNotificationCount();
-        setupRealtimeSubscription();
-        insertsupabase2();
-
-        loadSubjects();
-        loadStatistics();
-
-        loadCurriculums();
-
-        $(document).on('click', '.curriculum-item', function(e) {
-            e.preventDefault();
-            const curriculumId = $(this).data('id');
-            const curriculumYear = $(this).data('year');
-            selectCurriculum(curriculumId, curriculumYear);
-        });
-        
-        // Create curriculum button
-        $('#createCurriculumBtn').click(function() {
-            createCurriculum();
-        });
-                                
-        // Show notification to user
-        // showNotification('New subject has been added!');
-
-        // Get DOM elements
+    // Simplified CSV Upload JavaScript
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('csvFileInput');
 const uploadBtn = document.getElementById('uploadCsvBtn');
 const resultMessage = document.getElementById('resultMessage');
+const recentUploadsTable = document.getElementById('recentUploads');
 
-// Handle file selection via click or drag & drop
+// File upload functionality
 if (dropZone) {
     dropZone.addEventListener('click', () => fileInput.click());
     
@@ -413,7 +353,7 @@ if (dropZone) {
     });
 }
 
-// Handle file input change
+// File input change
 if (fileInput) {
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length) {
@@ -437,12 +377,9 @@ function updateFileInfo(file) {
 
 // Format file size
 function formatSize(bytes) {
-    const kb = 1024;
-    const mb = kb * 1024;
-    
-    if (bytes < kb) return bytes + ' Bytes';
-    if (bytes < mb) return (bytes / kb).toFixed(2) + ' KB';
-    return (bytes / mb).toFixed(2) + ' MB';
+    if (bytes < 1024) return bytes + ' Bytes';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
 }
 
 // Reset file selection
@@ -478,8 +415,7 @@ async function uploadCSV() {
         
         if (data.success) {
             resetFile();
-            // Optional: Refresh data table if exists
-            if (window.loadCSVData) loadCSVData();
+            loadRecentUploads(); // Refresh the recent uploads table
         }
         
     } catch (error) {
@@ -509,19 +445,203 @@ function hideResult() {
     resultMessage.classList.add('d-none');
 }
 
-// Attach upload function to button
-if (uploadBtn) {
-    uploadBtn.addEventListener('click', uploadCSV);
+// Load recent uploads
+async function loadRecentUploads() {
+    if (!recentUploadsTable) return;
+    
+    try {
+        const response = await fetch('/admin/recent-csv-uploads');
+        const data = await response.json();
+        
+        if (data.success && data.uploads.length > 0) {
+            let html = '';
+            data.uploads.forEach(upload => {
+                const statusClass = upload.status === 'success' ? 'success' : 
+                                 upload.status === 'partial' ? 'warning' : 'danger';
+                
+                html += `
+                        <tr>
+                            <td style="white-space: nowrap;">
+                                <i class="fas fa-file-csv text-primary me-2"></i>
+                                ${upload.file_name}
+                            </td>
+                            <td style="white-space: nowrap;">${upload.date}</td>
+                            <td style="white-space: nowrap;">${upload.records}/${upload.total}</td>
+                            <td style="white-space: nowrap;">
+                                <span class="badge bg-${statusClass}">${upload.status}</span>
+                            </td>
+                            <td id="button-container">
+                                <a href="/admin/download-csv/${upload.id}" class="btn btn-sm btn-outline-primary" 
+                                onclick="event.stopPropagation(); return true;">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-info" onclick="showUploadDetails(${upload.id})">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteUpload(${upload.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        `;
+            });
+            recentUploadsTable.innerHTML = html;
+        } else {
+            recentUploadsTable.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        No recent uploads found
+                    </td>
+                </tr>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading recent uploads:', error);
+        recentUploadsTable.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-4 text-danger">
+                    Failed to load recent uploads
+                </td>
+            </tr>
+        `;
+    }
 }
 
-// Attach remove file button
-const removeBtn = document.getElementById('removeFile');
-if (removeBtn) {
-    removeBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        resetFile();
-    });
+// Show upload details
+async function showUploadDetails(id) {
+    try {
+        const response = await fetch(`/admin/upload-details/${id}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            // Format the details from data.upload object
+            const upload = data.upload;
+            let detailsText = `Upload Details:\n\n`;
+            detailsText += `File Name: ${upload.file_name}\n`;
+            detailsText += `Date: ${upload.date}\n`;
+            detailsText += `Total Records: ${upload.total_records}\n`;
+            detailsText += `Inserted: ${upload.inserted_records}\n`;
+            detailsText += `Updated: ${upload.updated_records}\n`;
+            detailsText += `Failed: ${upload.failed_records}\n`;
+            detailsText += `Status: ${upload.status}\n`;
+            
+            // Add errors if any
+            if (upload.error_log && upload.error_log.length > 0) {
+                detailsText += `\nErrors:\n`;
+                upload.error_log.forEach(error => {
+                    detailsText += `• ${error}\n`;
+                });
+            }
+            
+            alert(detailsText);
+        } else {
+            alert('Error loading details: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error loading details:', error);
+        alert('Error loading details. Please try again.');
+    }
 }
+
+// Delete upload
+async function deleteUpload(id) {
+    if (!confirm('Are you sure you want to delete this upload record and file?')) return;
+    
+    try {
+        const response = await fetch(`/admin/delete-upload/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Upload deleted successfully');
+            loadRecentUploads(); // Refresh table
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        alert('Error deleting upload');
+    }
+}
+
+
+    document.addEventListener('DOMContentLoaded', function() {        
+        
+        // Theme Toggle
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const body = document.body;
+        
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme') || 
+                          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        
+        // Apply the saved theme
+        if (savedTheme === 'dark') {
+            body.classList.add('dark-theme');
+            themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+        
+        // Theme toggle button click event
+        themeToggleBtn.addEventListener('click', function() {
+            body.classList.toggle('dark-theme');
+            
+            if (body.classList.contains('dark-theme')) {
+                localStorage.setItem('theme', 'dark');
+                themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+            } else {
+                localStorage.setItem('theme', 'light');
+                themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+            }
+        });
+
+    
+    // Attach upload function to button
+    if (uploadBtn) {
+        uploadBtn.addEventListener('click', uploadCSV);
+    }
+    
+    // Attach remove file button
+    const removeBtn = document.getElementById('removeFile');
+    if (removeBtn) {
+        removeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            resetFile();
+        });
+    }
+    
+    // Load recent uploads on page load
+    loadRecentUploads();
+
+
+        // fetchNotificationCount();
+        setupRealtimeSubscription();
+        insertsupabase2();
+
+        loadSubjects();
+        loadStatistics();
+
+        loadCurriculums();
+
+        $(document).on('click', '.curriculum-item', function(e) {
+            e.preventDefault();
+            const curriculumId = $(this).data('id');
+            const curriculumYear = $(this).data('year');
+            selectCurriculum(curriculumId, curriculumYear);
+        });
+        
+        // Create curriculum button
+        $('#createCurriculumBtn').click(function() {
+            createCurriculum();
+        });
+                                
+        // Show notification to user
+        // showNotification('New subject has been added!');
+
         
 
         // Passkey Generator

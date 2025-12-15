@@ -1262,6 +1262,13 @@
     transform: translateY(-2px);
 }
 
+#button-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center; 
+    gap: 10px;
+}
+
         /* Responsive */
         @media (max-width: 1200px) {
             .sidebar {
