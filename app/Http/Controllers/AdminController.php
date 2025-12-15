@@ -30,6 +30,8 @@ use Illuminate\Support\Facades\Validator;
 use App\Services\AdminService;
 use Illuminate\Support\Facades\DB;
 use Jenssegers\Agent\Agent;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 
 
 //NOTE: This Controller can detect schedule conflicts when creating/updating subjects.
@@ -1720,7 +1722,591 @@ class AdminController extends Controller
         }
     }
     
+    
+    // public function uploadCSV(Request $request)
+    // {
+    //     // Validation
+    //     $validator = Validator::make($request->all(), [
+    //         'csvFile' => 'required|file|mimes:csv,txt'
+    //         // 'skipHeaders' => 'boolean',
+    //         // 'updateExisting' => 'boolean'
+    //     ]);
+        
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Validation failed: ' . $validator->errors()->first()
+    //         ], 422);
+    //     }
+        
+    //     try {
+    //         $file = $request->file('csvFile');
+    //         // $skipHeaders = $request->boolean('skipHeaders', true);
+    //         // $updateExisting = $request->boolean('updateExisting', true);
+            
+    //         // Generate unique filename
+    //         $fileName = 'applications_' . time() . '_' . uniqid() . '.csv';
+            
+    //         // Store file using Laravel's storage system (public disk)
+    //         $filePath = $file->storeAs('documents/csv', $fileName, 'public');
+            
+    //         // Get the full path to the stored file
+    //         $fullPath = storage_path('app/public/' . $filePath);
+            
+    //         // Open and process CSV file
+    //         if (($handle = fopen($fullPath, 'r')) !== FALSE) {
+    //             // Read headers
+    //             $headers = fgetcsv($handle);
+                
+    //             // Skip headers if option is checked
+                
+    //             if (!$headers) {
+    //                 fclose($handle);
+    //                 Storage::disk('public')->delete($filePath);
+    //                 return response()->json([
+    //                     'success' => false,
+    //                     'message' => 'Error: CSV file is empty or invalid.'
+    //                 ]);
+    //             }
+                
+    //             // Clean and normalize headers
+    //             $cleanedHeaders = array_map(function($header) {
+    //                 // Remove BOM if present
+    //                 $header = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $header);
+    //                 // Trim whitespace and special characters
+    //                 $header = trim($header);
+    //                 // Convert to lowercase and replace spaces/punctuation with underscores
+    //                 $header = strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $header));
+    //                 // Remove multiple underscores
+    //                 $header = preg_replace('/_+/', '_', $header);
+    //                 // Remove leading/trailing underscores
+    //                 $header = trim($header, '_');
+    //                 return $header;
+    //             }, $headers);
+                
+    //             // Debug: Log cleaned headers
+    //             Log::info('Cleaned Headers:', $cleanedHeaders);
+                
+    //             // Expected headers in various possible formats
+    //             $expectedHeaders = [
+    //                 'id' => ['no.', 'no_', 'number', 'id', 'csv_no'],
+    //                 'student_number' => [
+    //                     'no','student_no', 'student_no_', 'stud_no', 'student_number', 'application'
+    //                 ],
+                    
+    //                 'application_number' => ['application_no', 'application_no_', 'app_no', 'application_number', 'application'],
+    //                 'preferred_program' => ['preferred_program', 'program', 'course', 'preferred_course'],
+    //                 'lastname' => ['last_name', 'lastname', 'surname', 'family_name'],
+    //                 'firstname' => ['first_name', 'firstname', 'given_name'],
+    //                 'middlename' => ['middle_name', 'middlename', 'middle_initial'],
+    //                 'email' => ['email', 'e_mail', 'email_address', 'e_mail_address'],
+    //                 'contact_number' => ['contact_number', 'contact', 'phone', 'mobile', 'phone_number']
+    //             ];
+                
+    //             // Map actual headers to expected headers
+    //             $headerMapping = [];
+    //             $missingHeaders = [];
+                
+    //             foreach ($expectedHeaders as $expectedKey => $possibleNames) {
+    //                 $found = false;
+    //                 foreach ($cleanedHeaders as $index => $actualHeader) {
+    //                     if (in_array($actualHeader, $possibleNames)) {
+    //                         $headerMapping[$expectedKey] = $index;
+    //                         $found = true;
+    //                         break;
+    //                     }
+    //                 }
+    //                 if (!$found) {
+    //                     $missingHeaders[] = $expectedKey;
+    //                 }
+    //             }
+                
+    //             // Check for missing required headers
+    //             // $requiredHeaders = ['student_number', 'lastname', 'firstname', 'email'];
+    //             // $missingRequired = array_intersect($requiredHeaders, $missingHeaders);
+                
+    //             // if (!empty($missingRequired)) {
+    //             //     fclose($handle);
+    //             //     Storage::disk('public')->delete($filePath);
+    //             //     return response()->json([
+    //             //         'success' => false,
+    //             //         'message' => 'Error: Missing required columns: ' . implode(', ', $missingRequired) . 
+    //             //                     '<br>Found columns: ' . implode(', ', $cleanedHeaders) .
+    //             //                     '<br>Expected columns: student_number, application_number, preffered_program, lastname, firstname, middlename, email, contact_number'
+    //             //     ]);
+    //             // }
+                
+    //             // Statistics
+    //             $totalRows = 0;
+    //             $successfulRows = 0;
+    //             $failedRows = 0;
+    //             $duplicateRows = 0;
+    //             $errors = [];
+                
+    //             // Start transaction for database operations
+    //             DB::beginTransaction();
+                
+    //             try {
+    //                 // Process each row
+    //                 while (($row = fgetcsv($handle)) !== FALSE) {
+    //                     $totalRows++;
+                        
+    //                     // Skip empty rows
+    //                     if (empty(array_filter($row))) {
+    //                         continue;
+    //                     }
+                        
+    //                     // Prepare data array
+    //                     $data = [];
+    //                     foreach ($headerMapping as $columnName => $columnIndex) {
+    //                         if (isset($row[$columnIndex]) && $row[$columnIndex] !== '') {
+    //                             $data[$columnName] = trim($row[$columnIndex]);
+    //                         } else {
+    //                             $data[$columnName] = null;
+    //                         }
+    //                     }
+                        
+    //                     // Validate required data
+    //                     $rowErrors = [];
+                        
+    //                     // Check required fields
+    //                     // foreach ($requiredHeaders as $required) {
+    //                     //     if (empty($data[$required])) {
+    //                     //         $rowErrors[] = "Missing $required";
+    //                     //     }
+    //                     // }
+                        
+    //                     // Validate email if present
+    //                     if (!empty($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+    //                         $rowErrors[] = "Invalid email format: " . $data['email'];
+    //                     }
+                        
+    //                     // If validation errors, skip this row
+    //                     if (!empty($rowErrors)) {
+    //                         $failedRows++;
+    //                         $errors[] = "Row $totalRows: " . implode('; ', $rowErrors);
+    //                         continue;
+    //                     }
+                        
+    //                     // Sanitize data
+    //                     foreach ($data as $key => $value) {
+    //                         if (is_string($value)) {
+    //                             $data[$key] = htmlspecialchars(strip_tags($value), ENT_QUOTES, 'UTF-8');
+    //                         }
+    //                     }
+                        
+    //                     // Check if record exists
+    //                     // $existing = DB::table('csv')
+    //                     //     ->where('student_number', $data['student_number'])
+    //                     //     ->orWhere('email', $data['email'])
+    //                     //     ->first();
+                        
+    //                     // if ($existing) {
+    //                     //     if ($updateExisting) {
+    //                     //         // Update existing record
+    //                     //         DB::table('csv')
+    //                     //             ->where('id', $existing->id)
+    //                     //             ->update($data);
+    //                     //         $successfulRows++;
+    //                     //     } else {
+    //                     //         $duplicateRows++;
+    //                     //         $errors[] = "Row $totalRows: Duplicate entry for student_number: {$data['student_number']}";
+    //                     //     }
+    //                     // } else {
+    //                     //     // Insert new record
+    //                     //     DB::table('csv')->insert($data);
+    //                     //     $successfulRows++;
+    //                     // }
 
+                    
+    //                         // Insert new record
+    //                         DB::table('csv')->insert($data);
+    //                         $successfulRows++;
+    //                 }
+                    
+    //                 DB::commit();
+                    
+    //             } catch (\Exception $e) {
+    //                 DB::rollBack();
+    //                 fclose($handle);
+    //                 Storage::disk('public')->delete($filePath);
+                    
+    //                 return response()->json([
+    //                     'success' => false,
+    //                     'message' => 'Database error: ' . $e->getMessage()
+    //                 ], 500);
+    //             }
+                
+    //             fclose($handle);
+                
+    //             // Get admin user
+    //             $admin = Auth::guard('admin')->user();
+                
+    //             // Log the upload in audit logs
+    //             $details = "CSV File: " . $file->getClientOriginalName() . 
+    //                     " (Stored as: " . $fileName . ")" .
+    //                     " - Total rows: $totalRows, " .
+    //                     "Successfully imported/updated: $successfulRows, " .
+    //                     "Duplicates: $duplicateRows, " .
+    //                     "Failed: $failedRows";
+                
+    //             if (!empty($errors)) {
+    //                 $details .= ", Errors: " . count($errors) . " rows failed";
+    //             }
+                
+    //             // Store file info in csv_uploads table
+    //             // $uploadLog = DB::table('csv_uploads')->insertGetId([
+    //             //     'admin_id' => $admin->admin_id,
+    //             //     'original_filename' => $file->getClientOriginalName(),
+    //             //     'stored_filename' => $fileName,
+    //             //     'file_path' => $filePath,
+    //             //     'total_rows' => $totalRows,
+    //             //     'successful_rows' => $successfulRows,
+    //             //     'duplicate_rows' => $duplicateRows,
+    //             //     'failed_rows' => $failedRows,
+    //             //     'error_log' => !empty($errors) ? json_encode(array_slice($errors, 0, 20)) : null,
+    //             //     'created_at' => now(),
+    //             //     'updated_at' => now()
+    //             // ]);
+                
+    //             // Prepare response message
+    //             $message = "<div style='background-color: #d4edda; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin: 20px 0;'>";
+    //             $message .= "<h4><i class='fas fa-check-circle me-2'></i> Import Summary</h4>";
+    //             $message .= "<p><strong>File:</strong> " . htmlspecialchars($file->getClientOriginalName()) . "</p>";
+    //             $message .= "<p><strong>Total rows processed:</strong> $totalRows</p>";
+    //             $message .= "<p><strong>Successfully imported/updated:</strong> $successfulRows</p>";
+    //             $message .= "<p><strong>Duplicates skipped:</strong> $duplicateRows</p>";
+    //             $message .= "<p><strong>Failed rows:</strong> $failedRows</p>";
+    //             $message .= "</div>";
+                
+    //             if (!empty($errors)) {
+    //                 $message .= "<h4><i class='fas fa-exclamation-triangle me-2'></i> Error Details:</h4>";
+    //                 $message .= "<div style='background-color: #f8d7da; padding: 15px; border: 1px solid #f5c6cb; border-radius: 5px; max-height: 200px; overflow-y: auto;'>";
+    //                 foreach (array_slice($errors, 0, 10) as $error) {
+    //                     $message .= "<p class='mb-1'>$error</p>";
+    //                 }
+    //                 if (count($errors) > 10) {
+    //                     $message .= "<p class='text-muted'>... and " . (count($errors) - 10) . " more errors</p>";
+    //                 }
+    //                 $message .= "</div>";
+    //             }
+                
+    //             // Add action buttons
+    //             $message .= "<div class='mt-3 d-flex gap-2'>";
+    //             $message .= "<a href='/admin/view-csv-data' class='btn btn-primary' target='_blank'>";
+    //             $message .= "<i class='fas fa-eye me-2'></i>View Imported Data";
+    //             $message .= "</a>";
+    //             $message .= "<button type='button' class='btn btn-outline-primary' onclick='loadCSVData()'>";
+    //             $message .= "<i class='fas fa-sync-alt me-2'></i>Refresh Table";
+    //             $message .= "</button>";
+    //             $message .= "<a href='" . Storage::url($filePath) . "' class='btn btn-outline-success' download>";
+    //             $message .= "<i class='fas fa-download me-2'></i>Download Stored File";
+    //             $message .= "</a>";
+    //             $message .= "</div>";
+                
+    //             return response()->json([
+    //                 'success' => true,
+    //                 'message' => $message,
+    //                 'totalRows' => $totalRows,
+    //                 'successfulRows' => $successfulRows,
+    //                 'duplicateRows' => $duplicateRows,
+    //                 'failedRows' => $failedRows,
+    //                 'errors' => $errors,
+    //                 'filePath' => $filePath,
+    //                 'fileName' => $fileName
+    //                 // 'uploadId' => $uploadLog
+    //             ]);
+                
+    //         } else {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Error: Could not open CSV file.'
+    //             ]);
+    //         }
+            
+    //     } catch (\Exception $e) {
+    //         // Delete stored file if error occurred
+    //         if (isset($filePath) && Storage::disk('public')->exists($filePath)) {
+    //             Storage::disk('public')->delete($filePath);
+    //         }
+            
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Upload failed: ' . $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+    
+    public function uploadCSV(Request $request)
+    {
+        // Validation
+        $validator = Validator::make($request->all(), [
+            'csvFile' => 'required|file|mimes:csv,txt'
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . $validator->errors()->first()
+            ], 422);
+        }
+        
+        try {
+            $file = $request->file('csvFile');
+            
+            // Generate unique filename
+            $fileName = 'applications_' . time() . '_' . uniqid() . '.csv';
+            
+            // Store file
+            $filePath = $file->storeAs('documents/csv', $fileName, 'public');
+            $fullPath = storage_path('app/public/' . $filePath);
+            
+            // Open and process CSV
+            if (($handle = fopen($fullPath, 'r')) !== FALSE) {
+                // Read headers
+                $headers = fgetcsv($handle);
+                
+                if (!$headers) {
+                    fclose($handle);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'CSV file is empty'
+                    ]);
+                }
+                
+                // Process each row
+                $totalRows = 0;
+                $insertedRows = 0;
+                $updatedRows = 0;
+                $errors = [];
+                
+                while (($row = fgetcsv($handle)) !== FALSE) {
+                    $totalRows++;
+                    
+                    // Skip empty rows
+                    if (empty(array_filter($row))) {
+                        continue;
+                    }
+                    
+                    try {
+                        // Prepare data
+                        $data = [
+                            'student_number' => $row[0] ?? null,
+                            'application_number' => $row[1] ?? null,
+                            'preferred_program' => $row[2] ?? null,
+                            'lastname' => $row[3] ?? null,
+                            'firstname' => $row[4] ?? null,
+                            'middlename' => $row[5] ?? null,
+                            'email' => $row[6] ?? null,
+                            'contact_number' => $row[7] ?? null,
+                        ];
+                        
+                        // Check if record exists by any of the unique fields
+                        $existingRecord = DB::table('csv')
+                            ->where(function($query) use ($data) {
+                                $query->where('student_number', $data['student_number'])
+                                    ->orWhere('application_number', $data['application_number'])
+                                    ->orWhere('email', $data['email'])
+                                    ->orWhere('contact_number', $data['contact_number']);
+                            })
+                            ->first();
+                        
+                        if ($existingRecord) {
+                            // Update existing record
+                            DB::table('csv')
+                                ->where('id', $existingRecord->id)
+                                ->update($data);
+                            $updatedRows++;
+                        } else {
+                            // Insert new record
+                            DB::table('csv')->insert($data);
+                            $insertedRows++;
+                        }
+                        
+                    } catch (\Exception $e) {
+                        $errors[] = "Row $totalRows: " . $e->getMessage();
+                    }
+                }
+                
+                fclose($handle);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => "CSV processed successfully. Total: $totalRows rows, Inserted: $insertedRows, Updated: $updatedRows",
+                    'totalRows' => $totalRows,
+                    'insertedRows' => $insertedRows,
+                    'updatedRows' => $updatedRows,
+                    'errors' => $errors
+                ]);
+                
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Could not open CSV file'
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Upload failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function downloadCSVTemplate()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="student_import_template.csv"',
+        ];
+
+        $callback = function() {
+            $file = fopen('php://output', 'w');
+            
+            // Add BOM for UTF-8
+            fwrite($file, "\xEF\xBB\xBF");
+            
+            // Write headers
+            fputcsv($file, [
+                'student_number',
+                'application_number', 
+                'preffered_program',
+                'lastname',
+                'firstname',
+                'middlename',
+                'email',
+                'contact_number'
+            ]);
+            
+            // Write sample data
+            fputcsv($file, [
+                '2020-30617',
+                'APP-2024-001',
+                'BSIT',
+                'Donquixote',
+                'Doflamingo',
+                'Doffy',
+                'student@example.com',
+                '09464930679'
+            ]);
+            
+            // Write another sample
+            fputcsv($file, [
+                '2020-30618',
+                'APP-2024-002',
+                'BSCS',
+                'Smith',
+                'John',
+                'Michael',
+                'john.smith@example.com',
+                '09123456789'
+            ]);
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+
+    public function recentCSVUploads()
+    {
+        try {
+            // Get recent uploads from csv_uploads table
+            $recentUploads = DB::table('csv_uploads')
+                ->join('admin', 'csv_uploads.admin_id', '=', 'admin.admin_id')
+                ->select(
+                    'csv_uploads.*',
+                    'admin.email as admin_email'
+                )
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get()
+                ->map(function ($upload) {
+                    return [
+                        'id' => $upload->id,
+                        'file_name' => $upload->original_filename,
+                        'stored_name' => $upload->stored_filename,
+                        'admin' => $upload->admin_email,
+                        'date' => date('M d, Y H:i', strtotime($upload->created_at)),
+                        'records' => $upload->successful_rows,
+                        'total' => $upload->total_rows,
+                        'status' => $upload->successful_rows > 0 ? 
+                                   ($upload->failed_rows == 0 ? 'success' : 'partial') : 
+                                   'failed',
+                        'download_url' => Storage::url($upload->file_path),
+                        'details' => "Total: {$upload->total_rows}, Success: {$upload->successful_rows}, Duplicates: {$upload->duplicate_rows}, Failed: {$upload->failed_rows}"
+                    ];
+                });
+            
+            return response()->json([
+                'success' => true,
+                'uploads' => $recentUploads
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'uploads' => [],
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function viewCSVData()
+    {
+        try {
+            $csvData = DB::table('csv')
+                ->select('*')
+                ->orderBy('id', 'asc')
+                ->limit(100)
+                ->get();
+            
+            $totalCount = DB::table('csv')->count();
+            
+            return view('admin.csv-data', [
+                'csvData' => $csvData,
+                'totalCount' => $totalCount
+            ]);
+            
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error loading CSV data: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteCSV($id)
+    {
+        try {
+            $upload = DB::table('csv_uploads')->where('id', $id)->first();
+            
+            if (!$upload) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload record not found'
+                ], 404);
+            }
+            
+            // Delete file from storage
+            if (Storage::disk('public')->exists($upload->file_path)) {
+                Storage::disk('public')->delete($upload->file_path);
+            }
+            
+            // Delete record from database
+            DB::table('csv_uploads')->where('id', $id)->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'CSV upload record deleted successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error deleting CSV upload: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
     
 }

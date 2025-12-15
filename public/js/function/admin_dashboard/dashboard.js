@@ -322,6 +322,14 @@ async function insertsupabase2(){
             }, 5000);
         }
 
+    
+    // Global function for viewing CSV details
+    function viewCsvDetails(id) {
+        // Implement CSV details viewing logic
+        console.log('View CSV details:', id);
+        // You can open a modal or redirect to a details page
+    }
+
     document.addEventListener('DOMContentLoaded', function() {        
         
         // Theme Toggle
@@ -375,6 +383,145 @@ async function insertsupabase2(){
                                 
         // Show notification to user
         // showNotification('New subject has been added!');
+
+        // Get DOM elements
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('csvFileInput');
+const uploadBtn = document.getElementById('uploadCsvBtn');
+const resultMessage = document.getElementById('resultMessage');
+
+// Handle file selection via click or drag & drop
+if (dropZone) {
+    dropZone.addEventListener('click', () => fileInput.click());
+    
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+    
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            updateFileInfo(e.dataTransfer.files[0]);
+        }
+    });
+}
+
+// Handle file input change
+if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) {
+            updateFileInfo(e.target.files[0]);
+        }
+    });
+}
+
+// Update file info display
+function updateFileInfo(file) {
+    if (file && (file.type === 'text/csv' || file.name.endsWith('.csv'))) {
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = formatSize(file.size);
+        document.getElementById('fileInfo').classList.remove('d-none');
+        uploadBtn.disabled = false;
+    } else {
+        alert('Please select a CSV file.');
+        resetFile();
+    }
+}
+
+// Format file size
+function formatSize(bytes) {
+    const kb = 1024;
+    const mb = kb * 1024;
+    
+    if (bytes < kb) return bytes + ' Bytes';
+    if (bytes < mb) return (bytes / kb).toFixed(2) + ' KB';
+    return (bytes / mb).toFixed(2) + ' MB';
+}
+
+// Reset file selection
+function resetFile() {
+    fileInput.value = '';
+    document.getElementById('fileInfo').classList.add('d-none');
+    uploadBtn.disabled = true;
+    hideResult();
+}
+
+// Upload CSV file
+async function uploadCSV() {
+    if (!fileInput.files.length) return;
+    
+    const formData = new FormData();
+    formData.append('csvFile', fileInput.files[0]);
+    formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+    
+    // Show loading state
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Uploading...';
+    
+    try {
+        const response = await fetch('/upload-csv', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        // Show result
+        showResult(data.message, data.success ? 'success' : 'danger');
+        
+        if (data.success) {
+            resetFile();
+            // Optional: Refresh data table if exists
+            if (window.loadCSVData) loadCSVData();
+        }
+        
+    } catch (error) {
+        showResult('Upload failed. Please try again.', 'danger');
+        console.error('Upload error:', error);
+    } finally {
+        // Reset button
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload CSV';
+    }
+}
+
+// Show result message
+function showResult(message, type) {
+    resultMessage.innerHTML = message;
+    resultMessage.className = `alert alert-${type}`;
+    resultMessage.classList.remove('d-none');
+    
+    // Auto-hide success messages after 5 seconds
+    if (type === 'success') {
+        setTimeout(() => resultMessage.classList.add('d-none'), 5000);
+    }
+}
+
+// Hide result message
+function hideResult() {
+    resultMessage.classList.add('d-none');
+}
+
+// Attach upload function to button
+if (uploadBtn) {
+    uploadBtn.addEventListener('click', uploadCSV);
+}
+
+// Attach remove file button
+const removeBtn = document.getElementById('removeFile');
+if (removeBtn) {
+    removeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        resetFile();
+    });
+}
         
 
         // Passkey Generator

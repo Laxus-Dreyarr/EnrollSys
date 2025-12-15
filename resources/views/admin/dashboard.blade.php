@@ -211,13 +211,139 @@ $profile_picture = $user->profile;
                     <!-- Dashboard Tab -->
                     <div class="tab-pane fade show active" id="dashboard">
                         <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">Recent Activity</h5>
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-0">Upload CSV File</h5>
+                                    <p class="text-muted mb-0 small">Import student data in bulk</p>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#csvTemplateModal">
+                                    <i class="fas fa-file-download me-1"></i> Template
+                                </button>
                             </div>
                             <div class="card-body">
-                                <p>Welcome to the EnrollSys Admin Dashboard. Here you can manage students, subjects, instructors, and more.</p>
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle me-2"></i> 5 pending enrollment requests to review.
+                                <!-- Upload Area -->
+                                <div class="csv-upload-area mb-4">
+                                    <div class="upload-container text-center p-5 border-2 border-dashed rounded-4" 
+                                        id="dropZone">
+                                        <div class="upload-icon mb-3">
+                                            <i class="fas fa-file-csv text-primary" style="font-size: 3rem;"></i>
+                                        </div>
+                                        <h5 class="mb-2">Drag & Drop CSV File</h5>
+                                        <p class="text-muted mb-4">or click to browse files</p>
+                                        <input type="file" id="csvFileInput" accept=".csv" class="d-none">
+                                        <label for="csvFileInput" class="btn btn-primary px-4">
+                                            <i class="fas fa-upload me-2"></i> Select File
+                                        </label>
+                                        <p class="small text-muted mt-3 mb-0">Maximum file size: 5MB. File must be in CSV format.</p>
+                                    </div>
+                                    
+                                    <!-- File Info (Shown when file is selected) -->
+                                    <div class="selected-file mt-4 d-none" id="fileInfo">
+                                        <div class="alert alert-info d-flex align-items-center justify-content-between">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-file-csv text-primary fs-4 me-3"></i>
+                                                <div>
+                                                    <h6 class="mb-0" id="fileName"></h6>
+                                                    <small class="text-muted" id="fileSize"></small>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" id="removeFile">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <!-- Upload Button -->
+                                <div class="upload-actions">
+                                    <button type="button" class="btn btn-primary btn-lg w-100" id="uploadCsvBtn" disabled>
+                                        <span class="upload-text">
+                                            <i class="fas fa-cloud-upload-alt me-2"></i> Upload CSV
+                                        </span>
+                                        <span class="spinner-border spinner-border-sm d-none" id="uploadSpinner"></span>
+                                    </button>
+                                </div>
+
+                                <!-- Upload Progress -->
+                                <div class="upload-progress mt-4 d-none" id="uploadProgress">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Uploading...</span>
+                                        <span id="progressPercent">0%</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                            role="progressbar" 
+                                            style="width: 0%" 
+                                            id="progressBar"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Result Message -->
+                                <div class="alert d-none mt-3" id="resultMessage"></div>
+                            </div>
+                        </div>
+
+                        <!-- Recently Uploaded Files -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Recent Uploads</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>File Name</th>
+                                                <th>Date</th>
+                                                <th>Records</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recentUploads">
+                                            <!-- Will be populated by AJAX -->
+                                            <tr>
+                                                <td colspan="5" class="text-center py-4">
+                                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    <span class="ms-2">Loading recent uploads...</span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CSV Template Modal -->
+                    <div class="modal fade" id="csvTemplateModal" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">CSV Template</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Download the template file to ensure proper formatting:</p>
+                                    <div class="alert alert-info">
+                                        <h6>Required Columns:</h6>
+                                        <ul class="mb-0">
+                                            <li><code>student_number</code> (e.g., 2020-30617)</li>
+                                            <li><code>application_number</code> (e.g., APP-2024-001)</li>
+                                            <li><code>preffered_program</code> (e.g., BSIT)</li>
+                                            <li><code>lastname</code> (e.g., Donquixote)</li>
+                                            <li><code>firstname</code> (e.g., Doflamingo)</li>
+                                            <li><code>middlename</code> (e.g., Doffy)</li>
+                                            <li><code>email</code> (e.g., student@example.com)</li>
+                                            <li><code>contact_number</code> (e.g., 09464930679)</li>
+                                        </ul>
+                                    </div>
+                                    <a href="/admin/csv-template" class="btn btn-primary w-100 mt-3">
+                                        <i class="fas fa-download me-2"></i> Download Template
+                                    </a>
                                 </div>
                             </div>
                         </div>

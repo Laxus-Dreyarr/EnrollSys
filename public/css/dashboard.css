@@ -858,6 +858,409 @@
 }
 
 
+/* ===== CSV UPLOAD STYLES ===== */
+.csv-upload-area {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.upload-container {
+    background-color: var(--light-gray);
+    border: 2px dashed var(--gray-color);
+    border-radius: 15px;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.dark-theme .upload-container {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.upload-container:hover {
+    background-color: rgba(141, 61, 61, 0.05);
+    border-color: var(--primary-color);
+}
+
+.dark-theme .upload-container:hover {
+    background-color: rgba(141, 61, 61, 0.1);
+    border-color: var(--primary-color);
+}
+
+.upload-container.dragover {
+    background-color: rgba(141, 61, 61, 0.1);
+    border-color: var(--primary-color);
+    border-style: solid;
+    transform: scale(1.02);
+}
+
+.dark-theme .upload-container.dragover {
+    background-color: rgba(141, 61, 61, 0.2);
+}
+
+.upload-icon {
+    margin-bottom: 1.5rem;
+}
+
+.upload-icon i {
+    font-size: 3.5rem;
+    color: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.upload-container h5 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-light);
+}
+
+.dark-theme .upload-container h5 {
+    color: var(--text-dark);
+}
+
+.upload-container p {
+    color: var(--gray-color);
+    margin-bottom: 1.5rem;
+}
+
+.dark-theme .upload-container p {
+    color: var(--text-muted-dark);
+}
+
+.upload-container .btn {
+    border-radius: 30px;
+    padding: 0.75rem 2rem;
+    font-weight: 500;
+    background: var(--primary-color);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.upload-container .btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(141, 61, 61, 0.3);
+}
+
+/* Selected File Info */
+.selected-file .alert {
+    border-radius: 10px;
+    border: none;
+    background: rgba(141, 61, 61, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.dark-theme .selected-file .alert {
+    background: rgba(141, 61, 61, 0.15);
+}
+
+.file-info-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.file-info-icon {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.file-info-text h6 {
+    margin: 0;
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+.dark-theme .file-info-text h6 {
+    color: var(--text-dark);
+}
+
+.file-info-text small {
+    color: var(--gray-color);
+}
+
+.dark-theme .file-info-text small {
+    color: var(--text-muted-dark);
+}
+
+#removeFile {
+    padding: 0.25rem 0.5rem;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#removeFile:hover {
+    background: rgba(255, 51, 51, 0.1);
+    color: var(--error-color);
+}
+
+/* Upload Options */
+.upload-options {
+    background: var(--light-gray);
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.dark-theme .upload-options {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.upload-options h6 {
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+}
+
+.dark-theme .upload-options h6 {
+    color: var(--text-dark);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.form-check-label {
+    color: var(--text-light);
+    cursor: pointer;
+}
+
+.dark-theme .form-check-label {
+    color: var(--text-dark);
+}
+
+/* Upload Button */
+.upload-actions .btn {
+    border-radius: 10px;
+    padding: 1rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    border: none;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.upload-actions .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.upload-actions .btn:not(:disabled):hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(141, 61, 61, 0.3);
+}
+
+.upload-actions .btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+
+.upload-actions .btn:focus:not(:active)::after {
+    animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(20, 20);
+        opacity: 0;
+    }
+}
+
+/* Upload Progress */
+.upload-progress {
+    background: var(--light-gray);
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-top: 1rem;
+}
+
+.dark-theme .upload-progress {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.upload-progress .progress {
+    height: 10px;
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.dark-theme .upload-progress .progress {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    border-radius: 5px;
+    transition: width 0.3s ease;
+}
+
+.progress-bar-animated {
+    animation: progress-animation 1s linear infinite;
+}
+
+@keyframes progress-animation {
+    0% {
+        background-position: 1rem 0;
+    }
+    100% {
+        background-position: 0 0;
+    }
+}
+
+/* Result Message */
+#resultMessage {
+    border-radius: 10px;
+    border: none;
+    padding: 1rem 1.5rem;
+    margin-top: 1rem;
+}
+
+#resultMessage.alert-success {
+    background: rgba(75, 181, 67, 0.1);
+    color: var(--success-color);
+    border-left: 4px solid var(--success-color);
+}
+
+#resultMessage.alert-danger {
+    background: rgba(255, 51, 51, 0.1);
+    color: var(--error-color);
+    border-left: 4px solid var(--error-color);
+}
+
+.dark-theme #resultMessage.alert-success {
+    background: rgba(75, 181, 67, 0.15);
+}
+
+.dark-theme #resultMessage.alert-danger {
+    background: rgba(255, 51, 51, 0.15);
+}
+
+/* Recent Uploads Table */
+#recentUploads tr {
+    transition: all 0.3s ease;
+}
+
+#recentUploads tr:hover {
+    background: rgba(141, 61, 61, 0.05);
+}
+
+.dark-theme #recentUploads tr:hover {
+    background: rgba(141, 61, 61, 0.1);
+}
+
+#recentUploads .badge {
+    padding: 0.35rem 0.75rem;
+    font-weight: 500;
+    border-radius: 20px;
+}
+
+#recentUploads .btn-outline-info {
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+#recentUploads .btn-outline-info:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: rotate(15deg);
+}
+
+/* Modal Styling */
+#csvTemplateModal .modal-content {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+#csvTemplateModal .modal-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    border-bottom: none;
+    padding: 1.5rem 2rem;
+}
+
+#csvTemplateModal .modal-body {
+    padding: 2rem;
+}
+
+#csvTemplateModal .alert-info {
+    background: rgba(141, 61, 61, 0.1);
+    border: none;
+    border-left: 4px solid var(--primary-color);
+    border-radius: 10px;
+}
+
+.dark-theme #csvTemplateModal .alert-info {
+    background: rgba(141, 61, 61, 0.15);
+}
+
+#csvTemplateModal .alert-info h6 {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+#csvTemplateModal .alert-info ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+#csvTemplateModal .alert-info li {
+    margin-bottom: 0.25rem;
+    color: var(--text-light);
+}
+
+.dark-theme #csvTemplateModal .alert-info li {
+    color: var(--text-dark);
+}
+
+#csvTemplateModal .btn {
+    background: var(--primary-color);
+    border: none;
+    padding: 0.75rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+#csvTemplateModal .btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
 
         /* Responsive */
         @media (max-width: 1200px) {
@@ -1071,6 +1474,41 @@
                 display: none;
             }
 
+            .upload-container {
+                padding: 2rem 1rem;
+                min-height: 200px;
+            }
+            
+            .upload-icon i {
+                font-size: 2.5rem;
+            }
+            
+            .upload-container h5 {
+                font-size: 1.1rem;
+            }
+            
+            .upload-container p {
+                font-size: 0.9rem;
+            }
+            
+            .file-info-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+            
+            .upload-options {
+                padding: 1rem;
+            }
+            
+            .upload-progress {
+                padding: 1rem;
+            }
+            
+            #csvTemplateModal .modal-body {
+                padding: 1.5rem;
+            }
+
         }
 
         @media (max-width: 576px) {
@@ -1142,7 +1580,91 @@
                 height: 100%;
                 padding: 6px 12px;
             }
+
+            .upload-container {
+                padding: 1.5rem 1rem;
+            }
+            
+            .upload-container .btn {
+                padding: 0.5rem 1.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .upload-actions .btn {
+                font-size: 1rem;
+                padding: 0.75rem;
+            }
+            
+            #csvTemplateModal .modal-header {
+                padding: 1rem 1.5rem;
+            }
+            
+            #csvTemplateModal .modal-body {
+                padding: 1rem;
+            }
         }
+
+        /* Loading Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.csv-upload-area,
+.upload-options,
+.upload-actions,
+.upload-progress,
+#recentUploads tr {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Smooth transitions for upload state changes */
+.upload-actions .btn,
+.upload-container,
+#removeFile,
+.progress-bar {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom scrollbar for dark theme */
+.dark-theme #recentUploads::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dark-theme #recentUploads::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.dark-theme #recentUploads::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 3px;
+}
+
+.dark-theme #recentUploads::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
+}
+
+/* File type icon colors */
+.fa-file-csv {
+    color: var(--primary-color) !important;
+}
+
+/* Template modal close button adjustment */
+.dark-theme #csvTemplateModal .btn-close {
+    filter: invert(1);
+    opacity: 0.8;
+}
+
+.dark-theme #csvTemplateModal .btn-close:hover {
+    opacity: 1;
+}
 
         /* Overlay for mobile sidebar */
         .sidebar-overlay {

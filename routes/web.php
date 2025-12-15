@@ -115,6 +115,21 @@ Route::middleware(['admin.auth'])->group(function () {
         // Route::post('/generate-passkey', [AdminController::class, 'generatePasskey']);
         // Route::post('/get-audit-logs', [AdminController::class, 'getAuditLogs']);
     });
+
+
+    Route::get('/csv-template', [AdminController::class, 'downloadCSVTemplate'])->name('admin.csv.template');
+
+    // CSV Upload Routes
+    Route::get('/csv-template', [AdminController::class, 'downloadCSVTemplate'])->name('admin.csv.template');
+    Route::get('/recent-csv-uploads', [AdminController::class, 'recentCSVUploads'])->name('admin.csv.recent');
+    Route::get('/view-csv-data', [AdminController::class, 'viewCSVData'])->name('admin.csv.view');
+    Route::delete('/delete-csv/{id}', [AdminController::class, 'deleteCSV'])->name('admin.csv.delete');
+
+
+
+    Route::post('/upload-csv', [AdminController::class, 'uploadCSV'])->name('admin.upload.csv');
+    Route::get('/csv-template', [AdminController::class, 'downloadCSVTemplate'])->name('admin.csv.template');
+    Route::delete('/delete-csv/{id}', [AdminController::class, 'deleteCSV'])->name('admin.csv.delete');
 });
 
 //Clear Admin Forgot Cache!
