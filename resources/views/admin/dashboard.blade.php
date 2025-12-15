@@ -1101,7 +1101,7 @@ $profile_picture = $user->profile;
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="enrollmentTypeSwitch">
                             <label class="form-check-label" for="enrollmentTypeSwitch">
-                                <span id="switchLabel">Regular Semester</span> 
+                                <span id="switchLabel">Switch</span> 
                                 <span class="text-muted ms-2" id="switchDescription">(Switch to Summer)</span>
                             </label>
                         </div>

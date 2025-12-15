@@ -1638,6 +1638,45 @@ class InstructorController extends Controller
         ]);
     }
 
+    public function getStudentFiles($studentId)
+    {
+        try {
+            // Get student files (FHE, Prospectus)
+            $studentFiles = DB::table('student_files')
+                ->where('student_id', $studentId)
+                ->select('type', 'file_path', 'year_level', 'upload_date')
+                ->orderBy('upload_date', 'desc')
+                ->get();
+
+            // Get payment files
+            $paymentFiles = DB::table('organizationfees')
+                ->where('student_id', $studentId)
+                ->select('receipt_url', 'year_level', 'uploaded_date')
+                ->orderBy('uploaded_date', 'desc')
+                ->get();
+
+            // Get important documents
+            $importantDocuments = DB::table('important_documents')
+                ->where('student_id', $studentId)
+                ->select('type', 'file_path', 'year_level', 'upload_date')
+                ->orderBy('upload_date', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'studentFiles' => $studentFiles,
+                'paymentFiles' => $paymentFiles,
+                'importantDocuments' => $importantDocuments
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load student files'
+            ], 500);
+        }
+    }
+
     private function checkEmailExists(Request $request) 
     {
         try {

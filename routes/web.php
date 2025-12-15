@@ -219,6 +219,8 @@ Route::middleware(['instructor.auth'])->group(function () {
     
     Route::post('/instructor/remove-profile-picture', [InstructorController::class, 'removeProfilePicture'])->name('instructor.remove-profile-picture');
 
+    Route::get('/instructor/student-files/{id}', [InstructorController::class, 'getStudentFiles'])->name('instructor.student.files');
+
 
     // Logout
     Route::post('/instructor/logout', [InstructorController::class, 'logout'])->name('instructor.logout');

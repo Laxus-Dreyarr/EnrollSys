@@ -4483,6 +4483,79 @@ class StudentController extends Controller
         ]);
     }
 
+    // public function updateGrade(Request $request)
+    // {
+    //     if (!Auth::guard('student')->check()) {
+    //         return response()->json(['error' => 'Unauthorized'], 401);
+    //     }
+
+    //     $user = Auth::guard('student')->user();
+    //     $student = $user->user_information->student;
+
+    //     $validated = $request->validate([
+    //         'subject_id' => 'required|integer'
+    //     ]);
+
+    //     // Check if the student owns this subject
+    //     $subjectExists = DB::table('enrolled_sub')
+    //         ->where('id', $validated['subject_id'])
+    //         ->where('student_id', $student->id)
+    //         ->exists();
+
+    //     if (!$subjectExists) {
+    //         return response()->json(['error' => 'Subject not found or unauthorized'], 404);
+    //     }
+
+    //     if($request->grade === null || $request->grade === '') {
+    //         DB::table('enrolled_sub')
+    //         ->where('id', $validated['subject_id'])
+    //         ->where('student_id', $student->id)
+    //         ->update(['grade' => null]);
+
+    //         return response()->json(['success' => 'Grade updated successfully']);
+    //     }
+
+
+    //     // Update the grade
+    //     DB::table('enrolled_sub')
+    //         ->where('id', $validated['subject_id'])
+    //         ->where('student_id', $student->id)
+    //         ->update(['grade' => $validated['grade']]);
+
+    //     // Check if this is a failed grade and add to failed_subjects if needed
+    //     $failedGrades = ['4.0', '5.0', 'INC', 'DRP'];
+    //     if (in_array($validated['grade'], $failedGrades)) {
+    //         $subject = DB::table('enrolled_sub')
+    //             ->where('id', $validated['subject_id'])
+    //             ->first();
+
+    //         if ($subject) {
+    //             DB::table('failed_subjects')->updateOrInsert(
+    //                 [
+    //                     'student_id' => $student->id,
+    //                     'subject_id' => $subject->subject_id
+    //                 ],
+    //                 [
+    //                     'grade' => $validated['grade'],
+    //                     'date' => now()->format('Y-m-d H:i:s')
+    //                 ]
+    //             );
+    //         }
+    //     }
+
+    //     // Create audit log
+    //     // DB::table('auditlogs')->insert([
+    //     //     'user_id' => $student->id,
+    //     //     'action' => 'Grade Updated',
+    //     //     'details' => 'Updated grade for subject ID: ' . $validated['subject_id'] . ' to ' . $validated['grade'],
+    //     //     'ip_address' => $request->ip(),
+    //     //     'date' => now()->format('Y-m-d H:i:s'),
+    //     //     'access_by' => 0 // 0 for student self-update
+    //     // ]);
+
+    //     return response()->json(['success' => 'Grade updated successfully']);
+    // }
+
     public function updateGrade(Request $request)
     {
         if (!Auth::guard('student')->check()) {
@@ -4493,28 +4566,79 @@ class StudentController extends Controller
         $student = $user->user_information->student;
 
         $validated = $request->validate([
-            'subject_id' => 'required|integer'
+            'subject_id' => 'required|integer',
+            'grade' => 'nullable|string'
         ]);
 
-        // Check if the student owns this subject
-        $subjectExists = DB::table('enrolled_sub')
+        // Get the enrolled subject record to get the actual subject_id
+        $enrolledSubject = DB::table('enrolled_sub')
             ->where('id', $validated['subject_id'])
             ->where('student_id', $student->id)
-            ->exists();
+            ->first();
 
-        if (!$subjectExists) {
+        if (!$enrolledSubject) {
             return response()->json(['error' => 'Subject not found or unauthorized'], 404);
         }
 
-        if($request->grade === null || $request->grade === '') {
+        // Check prerequisites for this subject
+        $prerequisites = DB::table('subjectprerequisites')
+            ->where('subject_id', $enrolledSubject->subject_id)
+            ->pluck('prerequisite_id');
+
+        $failedGrades = ['4.0', '5.0', 'INC', 'DRP'];
+        
+        foreach ($prerequisites as $prerequisiteId) {
+            $prerequisiteRecord = DB::table('enrolled_sub')
+                ->where('student_id', $student->id)
+                ->where('subject_id', $prerequisiteId)
+                ->first();
+
+            // If prerequisite doesn't exist in student's enrolled subjects
+            if (!$prerequisiteRecord) {
+                // return response()->json([
+                //     'error' => 'Cannot grade this subject. Prerequisite subject (ID: ' . $prerequisiteId . ') has not been taken.'
+                // ], 400);
+                return response()->json([
+                    'error' => 'Cannot grade this subject. Prerequisite subject has not been taken.'
+                ], 400);
+            }
+
+            // If prerequisite grade is null (not graded yet)
+            if ($prerequisiteRecord->grade === null) {
+                // return response()->json([
+                //     'error' => 'Cannot grade this subject. Prerequisite subject (ID: ' . $prerequisiteId . ') has not been graded yet.'
+                // ], 400);
+                return response()->json([
+                    'error' => 'Cannot grade this subject. Prerequisite subject has not been graded yet.'
+                ], 400);
+            }
+
+            // If prerequisite has a failed grade
+            if (in_array($prerequisiteRecord->grade, $failedGrades)) {
+                // return response()->json([
+                //     'error' => 'Cannot grade this subject. Prerequisite subject (ID: ' . $prerequisiteId . ') has a failing grade (' . $prerequisiteRecord->grade . ').'
+                // ], 400);
+                return response()->json([
+                    'error' => 'Cannot grade this subject. Prerequisite subject has a failing grade (' . $prerequisiteRecord->grade . ').'
+                ], 400);
+            }
+        }
+
+        // If we're setting grade to null/empty
+        if($validated['grade'] === null || $validated['grade'] === '') {
             DB::table('enrolled_sub')
-            ->where('id', $validated['subject_id'])
-            ->where('student_id', $student->id)
-            ->update(['grade' => null]);
+                ->where('id', $validated['subject_id'])
+                ->where('student_id', $student->id)
+                ->update(['grade' => null]);
+
+            // Remove from failed_subjects if it exists
+            DB::table('failed_subjects')
+                ->where('student_id', $student->id)
+                ->where('subject_id', $enrolledSubject->subject_id)
+                ->delete();
 
             return response()->json(['success' => 'Grade updated successfully']);
         }
-
 
         // Update the grade
         DB::table('enrolled_sub')
@@ -4523,35 +4647,25 @@ class StudentController extends Controller
             ->update(['grade' => $validated['grade']]);
 
         // Check if this is a failed grade and add to failed_subjects if needed
-        $failedGrades = ['4.0', '5.0', 'INC', 'DRP'];
         if (in_array($validated['grade'], $failedGrades)) {
-            $subject = DB::table('enrolled_sub')
-                ->where('id', $validated['subject_id'])
-                ->first();
-
-            if ($subject) {
-                DB::table('failed_subjects')->updateOrInsert(
-                    [
-                        'student_id' => $student->id,
-                        'subject_id' => $subject->subject_id
-                    ],
-                    [
-                        'grade' => $validated['grade'],
-                        'date' => now()->format('Y-m-d H:i:s')
-                    ]
-                );
-            }
+            DB::table('failed_subjects')->updateOrInsert(
+                [
+                    'student_id' => $student->id,
+                    'subject_id' => $enrolledSubject->subject_id
+                ],
+                [
+                    'grade' => $validated['grade'],
+                    'date' => now()->format('Y-m-d H:i:s')
+                ]
+            );
         }
-
-        // Create audit log
-        // DB::table('auditlogs')->insert([
-        //     'user_id' => $student->id,
-        //     'action' => 'Grade Updated',
-        //     'details' => 'Updated grade for subject ID: ' . $validated['subject_id'] . ' to ' . $validated['grade'],
-        //     'ip_address' => $request->ip(),
-        //     'date' => now()->format('Y-m-d H:i:s'),
-        //     'access_by' => 0 // 0 for student self-update
-        // ]);
+        // } else {
+        //     // If grade is not failed, remove from failed_subjects if it exists
+        //     DB::table('failed_subjects')
+        //         ->where('student_id', $student->id)
+        //         ->where('subject_id', $enrolledSubject->subject_id)
+        //         ->delete();
+        // }
 
         return response()->json(['success' => 'Grade updated successfully']);
     }

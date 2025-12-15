@@ -2562,6 +2562,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Function to load student profile
+    // Function to load student profile
     async function loadStudentProfile(studentId, studentData) {
         // Show the modal
         const profileModal = document.getElementById('studentProfileModal');
@@ -2615,92 +2616,250 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="loading">Loading academic history...</div>
                     </div>
                 </div>
+                <div class="student-files-section" id="studentFilesSection">
+                    <h4>Student Files</h4>
+                    <div id="studentFilesContent">
+                        <div class="loading-files">Loading student files...</div>
+                    </div>
+                </div>
             </div>
         `;
         
         document.getElementById('studentProfileContent').innerHTML = basicInfoHTML;
         
-        // Now fetch academic history using your existing route
+        // Load academic history and files in parallel
         try {
-            const response = await fetch(`/instructor/student-subjects-history/${studentId}`);
-            const data = await response.json();
+            const [academicHistoryData, filesData] = await Promise.all([
+                fetchAcademicHistory(studentId),
+                fetchStudentFiles(studentId)
+            ]);
             
-            if (data.success) {
-                const subjects = data.subjects;
-                let academicHistoryHTML = '';
-                
-                if (subjects && subjects.length > 0) {
-                    // Group subjects by year level and semester
-                    const groupedSubjects = {};
-                    subjects.forEach(subject => {
-                        const key = `${subject.year_level} - ${subject.semester}`;
-                        if (!groupedSubjects[key]) {
-                            groupedSubjects[key] = [];
-                        }
-                        groupedSubjects[key].push(subject);
-                    });
-                    
-                    // Create HTML for each semester
-                    for (const [semester, semesterSubjects] of Object.entries(groupedSubjects)) {
-                        academicHistoryHTML += `
-                            <div class="semester-section">
-                                <h5 id="students_info2">${semester}</h5>
-                                <div class="table-container"> <!-- Add a container div -->
-                                    <table class="subjects-table">
-                                        <thead>
-                                            <tr>
-                                                <th id="students_info3">Subject Code</th>
-                                                <th id="students_info3">Subject Name</th>
-                                                <th id="students_info3">Units</th>
-                                                <th id="students_info3">Grade</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="students_info">
-                                            ${semesterSubjects.map(subject => `
-                                                <tr>
-                                                    <td>${subject.subject_code}</td>
-                                                    <td>${subject.subject_name}</td>
-                                                    <td>${subject.units}</td>
-                                                    <td>
-                                                        <span id="grade-badge ${
-                                                            subject.grade === 'INC' || subject.grade === 'DRP' || subject.grade === '' || subject.grade == '4.0' || subject.grade == '5.0' ? 
-                                                            'grade-incomplete' : 
-                                                            'grade-complete'
-                                                        }" style="color: ${
-                                                            // Red for INC and DRP
-                                                            subject.grade === 'INC' || subject.grade === 'DRP' ? 'rgba(214, 9, 9, 1)' : 
-                                                            // Gray for empty/NULL
-                                                            subject.grade === '' ? 'rgba(128, 128, 128, 1)' : 
-                                                            // Orange for 4.0 and 5.0
-                                                            subject.grade == '4.0' || subject.grade == '5.0' ? 'rgba(255, 165, 0, 1)' : 
-                                                            // Green for everything else
-                                                            'rgba(0, 204, 0, 1)'
-                                                        }">
-                                                            ${subject.grade || 'N/A'}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        `;
-                    }
-                } else {
-                    academicHistoryHTML = '<p>No academic history available.</p>';
-                }
-                
-                document.getElementById('academicHistoryContent').innerHTML = academicHistoryHTML;
-            } else {
-                document.getElementById('academicHistoryContent').innerHTML = 
-                    '<p class="error">Failed to load academic history.</p>';
-            }
+            // Display academic history
+            displayAcademicHistory(academicHistoryData);
+            
+            // Display student files
+            displayStudentFiles(filesData);
+            
         } catch (error) {
-            console.error('Error loading academic history:', error);
+            console.error('Error loading student data:', error);
             document.getElementById('academicHistoryContent').innerHTML = 
                 '<p class="error">Error loading academic history.</p>';
+            document.getElementById('studentFilesContent').innerHTML = 
+                '<p class="error">Error loading student files.</p>';
         }
+    }
+
+    // Helper function to fetch academic history
+    async function fetchAcademicHistory(studentId) {
+        const response = await fetch(`/instructor/student-subjects-history/${studentId}`);
+        return await response.json();
+    }
+
+    // Helper function to fetch student files
+    async function fetchStudentFiles(studentId) {
+        const response = await fetch(`/instructor/student-files/${studentId}`);
+        return await response.json();
+    }
+
+    // Function to display academic history
+    function displayAcademicHistory(data) {
+        const contentDiv = document.getElementById('academicHistoryContent');
+        
+        if (data.success && data.subjects && data.subjects.length > 0) {
+            const subjects = data.subjects;
+            let academicHistoryHTML = '';
+            
+            // Group subjects by year level and semester
+            const groupedSubjects = {};
+            subjects.forEach(subject => {
+                const key = `${subject.year_level} - ${subject.semester}`;
+                if (!groupedSubjects[key]) {
+                    groupedSubjects[key] = [];
+                }
+                groupedSubjects[key].push(subject);
+            });
+            
+            // Create HTML for each semester
+            for (const [semester, semesterSubjects] of Object.entries(groupedSubjects)) {
+                academicHistoryHTML += `
+                    <div class="semester-section">
+                        <h5 id="students_info2">${semester}</h5>
+                        <div class="table-container">
+                            <table class="subjects-table">
+                                <thead>
+                                    <tr>
+                                        <th id="students_info3">Subject Code</th>
+                                        <th id="students_info3">Subject Name</th>
+                                        <th id="students_info3">Units</th>
+                                        <th id="students_info3">Grade</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="students_info">
+                                    ${semesterSubjects.map(subject => `
+                                        <tr>
+                                            <td>${subject.subject_code}</td>
+                                            <td>${subject.subject_name}</td>
+                                            <td>${subject.units}</td>
+                                            <td>
+                                                <span id="grade-badge ${
+                                                    subject.grade === 'INC' || subject.grade === 'DRP' || subject.grade === '' || subject.grade == '4.0' || subject.grade == '5.0' ? 
+                                                    'grade-incomplete' : 
+                                                    'grade-complete'
+                                                }" style="color: ${
+                                                    // Red for INC and DRP
+                                                    subject.grade === 'INC' || subject.grade === 'DRP' ? 'rgba(214, 9, 9, 1)' : 
+                                                    // Gray for empty/NULL
+                                                    subject.grade === '' ? 'rgba(128, 128, 128, 1)' : 
+                                                    // Orange for 4.0 and 5.0
+                                                    subject.grade == '4.0' || subject.grade == '5.0' ? 'rgba(255, 165, 0, 1)' : 
+                                                    // Green for everything else
+                                                    'rgba(0, 204, 0, 1)'
+                                                }">
+                                                    ${subject.grade || 'N/A'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+            contentDiv.innerHTML = academicHistoryHTML;
+        } else {
+            contentDiv.innerHTML = '<p class="no-files">No academic history available.</p>';
+        }
+    }
+
+    // Function to display student files
+    function displayStudentFiles(data) {
+        const contentDiv = document.getElementById('studentFilesContent');
+        
+        if (data.success) {
+            let filesHTML = '';
+            
+            // 1. Student Files (FHE, Prospectus)
+            if (data.studentFiles && data.studentFiles.length > 0) {
+                filesHTML += `
+                    <div class="files-category">
+                        <h5><i class="fas fa-file-alt"></i> Academic Documents</h5>
+                        <div class="files-list">
+                            ${data.studentFiles.map(file => `
+                                <div class="file-item">
+                                    <div class="file-info">
+                                        <span class="file-name">${file.type}</span>
+                                        <div class="file-meta">
+                                            <span class="file-type">${file.year_level}</span>
+                                            <span class="file-date">${formatDate(file.upload_date)}</span>
+                                        </div>
+                                    </div>
+                                    <div class="file-actions">
+                                        <a href="/${file.file_path}" target="_blank" class="btn-view-file">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <a href="/${file.file_path}" download class="btn-download-file">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 2. Payment Files
+            if (data.paymentFiles && data.paymentFiles.length > 0) {
+                filesHTML += `
+                    <div class="files-category">
+                        <h5><i class="fas fa-receipt"></i> Payment Receipts</h5>
+                        <div class="files-list">
+                            ${data.paymentFiles.map(file => `
+                                <div class="file-item">
+                                    <div class="file-info">
+                                        <span class="file-name">Organization Fee Receipt</span>
+                                        <div class="file-meta">
+                                            <span class="file-type">${file.year_level || 'N/A'}</span>
+                                            <span class="file-date">${formatDate(file.uploaded_date)}</span>
+                                        </div>
+                                    </div>
+                                    <div class="file-actions">
+                                        <a href="/${file.receipt_url}" target="_blank" class="btn-view-file">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <a href="/${file.receipt_url}" download class="btn-download-file">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 3. Important Documents
+            if (data.importantDocuments && data.importantDocuments.length > 0) {
+                filesHTML += `
+                    <div class="files-category">
+                        <h5><i class="fas fa-file-certificate"></i> Requirements & Credentials</h5>
+                        <div class="files-list">
+                            ${data.importantDocuments.map(file => `
+                                <div class="file-item">
+                                    <div class="file-info">
+                                        <span class="file-name">${getDocumentName(file.type)}</span>
+                                        <div class="file-meta">
+                                            <span class="file-type">${file.year_level}</span>
+                                            <span class="file-date">${formatDate(file.upload_date)}</span>
+                                        </div>
+                                    </div>
+                                    <div class="file-actions">
+                                        <a href="/${file.file_path}" target="_blank" class="btn-view-file">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <a href="/${file.file_path}" download class="btn-download-file">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // If no files found
+            if (!filesHTML) {
+                filesHTML = '<div class="no-files">No files available for this student.</div>';
+            }
+            
+            contentDiv.innerHTML = filesHTML;
+        } else {
+            contentDiv.innerHTML = '<p class="error">Failed to load student files.</p>';
+        }
+    }
+
+    // Helper function to format date
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+
+    // Helper function to get document display name
+    function getDocumentName(type) {
+        const documentNames = {
+            'FORM138A': 'Form 138-A (Report Card)',
+            'GOOD_MORAL': 'Good Moral Certificate',
+            'PSA_NSO': 'PSA/NSO Birth Certificate',
+            'ID_PICTURE': 'ID Picture'
+        };
+        return documentNames[type] || type;
     }
 
     
