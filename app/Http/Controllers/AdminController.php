@@ -1487,6 +1487,7 @@ class AdminController extends Controller
                 ->map(function($period) {
                     return [
                         'id' => $period->id,
+                        'year' => $period->year_level ?? '',
                         'semester' => $period->semester, // Note the capital 'S'
                         'academic_year' => $period->academic_year ?? null,
                         'start_date' => $period->start, // Note the capital 'S'
@@ -1542,6 +1543,7 @@ class AdminController extends Controller
             $admin = Auth::guard('admin')->user();
             
             $data = [
+                'year_level' => $request->year,
                 'semester' => $request->semester,
                 'academic_year' => $request->academic_year,
                 'start' => $request->start_date,

@@ -72,6 +72,7 @@ function getActiveFormData() {
         };
     } else {
         return {
+            year: $('#enrollmentYear').val(),
             semester: $('#enrollmentSemester').val(),
             academic_year: $('#academicYear').val(),
             start_date: $('#startDate').val(),
@@ -103,6 +104,7 @@ function setActiveFormData(period) {
         }
     } else {
         // Populate regular form
+        $('#enrollmentYear').val(period.year);
         $('#enrollmentSemester').val(period.semester);
         $('#academicYear').val(period.academic_year);
         $('#startDate').val(formatDateForInput(period.start_date));
@@ -209,8 +211,13 @@ function updateEnrollmentTable(periods) {
         const row = `
             <tr>
                 <td>
+                    <strong>${period.year}</strong>
+                </td>
+                <td>
                     <strong>${period.semester}</strong>
-                    ${period.academic_year ? `<br><small class="text-muted">${period.academic_year}</small>` : ''}
+                </td>
+                <td>
+                    <strong>${period.academic_year}</strong>
                 </td>
                 <td>${formatDateTime(period.start_date)}</td>
                 <td>${formatDateTime(period.end_date)}</td>

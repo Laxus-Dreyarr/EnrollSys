@@ -521,7 +521,9 @@ $profile_picture = $user->profile;
                                     <table class="table table-hover" id="enrollmentTable">
                                         <thead>
                                             <tr>
+                                                <th>Year Level</th>
                                                 <th>Semester</th>
+                                                <th>Academic Year</th>
                                                 <th>Start Date</th>
                                                 <th>End Date</th>
                                                 <th>Status</th>
@@ -1109,6 +1111,16 @@ $profile_picture = $user->profile;
                     <form id="regularForm" class="enrollment-form">
                         <div class="row">
                             <div class="col-md-6 mb-3">
+                                <label for="enrollmentYear" class="form-label">Year Level <span class="text-danger">*</span></label>
+                                <select class="form-select" id="enrollmentYear" name="year" required>
+                                    <option value="">Select Year Level</option>
+                                    <option value="1st Year">1st Year</option>
+                                    <option value="2nd Year">2nd Year</option>
+                                    <option value="3rd Year">3rd Year</option>
+                                    <option value="4th Year">4th Year</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
                                 <label for="enrollmentSemester" class="form-label">Semester <span class="text-danger">*</span></label>
                                 <select class="form-select" id="enrollmentSemester" name="semester" required>
                                     <option value="">Select Semester</option>
@@ -1118,7 +1130,36 @@ $profile_picture = $user->profile;
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="academicYear" class="form-label">Academic Year <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="academicYear" name="academic_year" placeholder="e.g., 2024-2025" required>
+                                <!-- <input type="text" class="form-control" id="academicYear" name="academic_year" placeholder="e.g., 2024-2025" required> -->
+                                <select class="form-select" id="academicYear" name="academic_year" required>
+                                    <option value="">Select Academic Year</option>
+                                    <option value="2025-2026">2025-2026</option>
+                                    <option value="2026-2027">2026-2027</option>
+                                    <option value="2027-2028">2027-2028</option>
+                                    <option value="2028-2029">2028-2029</option>
+                                    <option value="2029-2030">2029-2030</option>
+                                    <option value="2030-2031">2030-2031</option>
+                                    <option value="2031-2032">2031-2032</option>
+                                    <option value="2032-2033">2032-2033</option>
+                                    <option value="2033-2034">2033-2034</option>
+                                    <option value="2034-2035">2034-2035</option>
+                                    <option value="2035-2036">2035-2036</option>
+                                    <option value="2036-2037">2036-2037</option>
+                                    <option value="2037-2038">2037-2038</option>
+                                    <option value="2038-2039">2038-2039</option>
+                                    <option value="2039-2040">2039-2040</option>
+                                    <option value="2040-2041">2040-2041</option>
+                                    <option value="2041-2042">2041-2042</option>
+                                    <option value="2042-2043">2042-2043</option>
+                                    <option value="2043-2044">2043-2044</option>
+                                    <option value="2044-2045">2044-2045</option>
+                                    <option value="2045-2046">2045-2046</option>
+                                    <option value="2046-2047">2046-2047</option>
+                                    <option value="2047-2048">2047-2048</option>
+                                    <option value="2048-2049">2048-2049</option>
+                                    <option value="2049-2050">2049-2050</option>
+                                    <option value="2050-2051">2050-2051</option>
+                                </select>
                             </div>
                         </div>
                         <div class="row">
