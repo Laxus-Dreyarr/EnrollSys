@@ -75,13 +75,13 @@ $profile_picture = $user->profile;
                     <span class="menu-text">Dashboard</span>
                     <div class="menu-hover-effect"></div>
                 </a>
-                <a class="menu-item" data-section="input-grades">
+                <!-- <a class="menu-item" data-section="input-grades">
                     <div class="menu-icon">
                         <i class="fas fa-pen-to-square"></i>
                     </div>
                     <span class="menu-text">Input Grades</span>
                     <div class="menu-hover-effect"></div>
-                </a>
+                </a> -->
                 <a class="menu-item" data-section="students">
                     <div class="menu-icon">
                         <i class="fas fa-user-group"></i>
@@ -207,6 +207,7 @@ $profile_picture = $user->profile;
                             <h3 class="stat-value" style="font-size: 20px;">Enrollment Date</h3>
                             <p class="stat-label" id="enrollment_period">
                                  @if($enrollmentPeriod)
+                                    <b style="color: var(--primary-color);">{{ $enrollmentPeriod->year_level ?? 'Summer' }} only</b> <br>
                                     Enrollment is until
                                     {{ \Carbon\Carbon::parse($enrollmentPeriod->start)->format('F j, Y') }} - {{ \Carbon\Carbon::parse($enrollmentPeriod->end)->format('F j, Y') }}
                                 @else
@@ -229,14 +230,14 @@ $profile_picture = $user->profile;
                         <div class="action-hover-effect"></div>
                     </div>
                     
-                    <div class="quick-action-card" data-action="input-grades">
+                    <!-- <div class="quick-action-card" data-action="input-grades">
                         <div class="action-icon">
                             <i class="fas fa-pen-to-square"></i>
                         </div>
                         <h4>Input Grades</h4>
                         <p>Update student grades and performance</p>
                         <div class="action-hover-effect"></div>
-                    </div>
+                    </div> -->
                     
                     <div class="quick-action-card" data-action="view-students">
                         <div class="action-icon">
