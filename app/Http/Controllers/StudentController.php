@@ -2072,6 +2072,7 @@ class StudentController extends Controller
             // Calculate total units for the semester
             $totalUnits = $this->calculateTotalUnitsForSemester($yearLevel, $currentSemester);
             
+            
             // Format the response with proper data structure
             $response = [
                 'success' => true,
@@ -2257,12 +2258,21 @@ class StudentController extends Controller
                     'status' => 'Pending'
                 ]);
             }
+
+            $currentDate = now()->format('Y-m-d');
+
+            $enrollmentPeriod2 = DB::table('enrollment_date')
+                ->where('is_active', 1)
+                ->whereDate('start', '<=', $currentDate)
+                ->whereDate('end', '>=', $currentDate)
+                ->first();
             
             // Create enrollment request
             $enrollmentRequest = new EnrollmentRequest();
             $enrollmentRequest->student_id = $student->id;
             $enrollmentRequest->status = 'Pending';
             $enrollmentRequest->request_date = now();
+            $enrollmentRequest->$enrollmentPeriod2->year_level;
             $enrollmentRequest->save();
             
             // Create enrollment records for each subject with selected section

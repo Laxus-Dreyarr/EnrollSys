@@ -247,7 +247,7 @@ function createRequestItem(request) {
             <div class="request-meta">
                 <span class="meta-item">
                     <i class="fas fa-calendar"></i>
-                    ${request.year_level}
+                    ${request.request_year_level}
                 </span>
                 <span class="meta-item">
                     <i class="fas fa-book"></i>

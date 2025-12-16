@@ -939,6 +939,7 @@ class InstructorController extends Controller
             ->select(
                 'er.id as request_id',
                 'er.student_id',
+                'er.year_level as request_year_level',
                 'er.request_date',
                 's.id_no',
                 's.year_level',
