@@ -450,7 +450,7 @@ $password = $registerData['password'];
                     <div class="text-center mb-4">
                         <i class="fas fa-envelope-circle-check fa-4x text-primary"></i>
                     </div>
-                    <h4 class="text-center mb-3">Please verify your email</h4>
+                    <h4 class="text-center mb-3">Please verify your email/{{$otp}}</h4>
                     <p>We've sent a verification code to <strong id="userEmail"><?=$email?></strong>. </p>
                     <p>Please check your inbox and enter the code below to verify your account.</p>
                     

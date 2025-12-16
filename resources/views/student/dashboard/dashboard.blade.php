@@ -4,6 +4,7 @@ $lastname = $user->user_information->lastname;
 $student_id = $user->user_information->student->id_no ?? 'Not Set';
 $curriculum = $user->user_information->student->curriculum;
 $is_regular = $user->user_information->student->is_regular ?? 'Not Set';
+$en = $user->user_information->student->enrolled ?? 'Not Set';
 $profile_picture = $user->profile;
 
 // Check if student ID is 'none' (case-insensitive)
@@ -1061,7 +1062,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 accept="image/*" 
                                 style="display: none;">
                             
-                            <button class="btn-secondary btn-avatar" id="change-photo-btn">
+                            <button style="display: none;" class="btn-secondary btn-avatar" id="change-photo-btn">
                                 <i class="fas fa-camera"></i>
                                 Change Photo
                             </button>
@@ -1519,7 +1520,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
 
     <!-- Student Information Modal -->
     
-    @if($isEnrollmentActive == 1 && $is_regular == 5)
+    @if($isEnrollmentActive == 1 && $en == 0)
         <div id="studentInfoModal2" class="modal-overlay <?php echo $show_prereg_form ? 'active' : ''; ?>">
             <div class="modal-container">
                 <div class="modal-header">

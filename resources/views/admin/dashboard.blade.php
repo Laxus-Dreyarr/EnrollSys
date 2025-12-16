@@ -1240,7 +1240,7 @@ $profile_picture = $user->profile;
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" style="background-color: maroon;" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="resetEnrollment" style="background-color: maroon;" class="btn btn-secondary" data-bs-dismiss="modal">Reset</button>
                     <button type="button" style="background-color: maroon;" class="btn btn-primary" id="saveEnrollmentBtn">Save Enrollment Period</button>
                 </div>
             </div>

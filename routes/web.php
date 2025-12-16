@@ -135,6 +135,8 @@ Route::middleware(['admin.auth'])->group(function () {
     Route::delete('/admin/delete-upload/{id}', [AdminController::class, 'deleteUpload']);
     Route::get('/admin/upload-details/{id}', [AdminController::class, 'getUploadDetails']);
     Route::get('/admin/download-csv/{id}', [AdminController::class, 'downloadCSV']);
+
+    Route::post('/admin/resetEnrollment', [AdminController::class, 'resetEnrollment']);
 });
 
 //Clear Admin Forgot Cache!

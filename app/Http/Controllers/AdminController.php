@@ -1566,23 +1566,25 @@ class AdminController extends Controller
                 //         'status' => 'Not Enrolled',
                 //         'is_regular' => 5
                 //     ]);
-                Student::whereNotIn('is_regular', ['7', '8'])
-                    ->update([
-                        'status' => 'Not Enrolled',
-                        'is_regular' => 5
-                    ]);
+                // Student::whereNotIn('is_regular', ['7', '8'])
+                //     ->update([
+                //         'status' => 'Not Enrolled',
+                //         'is_regular' => 5
+                //     ]);
+
+                // IMPORTANT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     
                 // Disable foreign key checks
-                DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+                // DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
-                // Delete records
-                DB::table('enrollmentrequests')->delete();
-                DB::table('enrollments')->delete();
-                DB::table('documents')->delete();
-                DB::table('payments')->delete();
+                // // Delete records
+                // DB::table('enrollmentrequests')->delete();
+                // DB::table('enrollments')->delete();
+                // DB::table('documents')->delete();
+                // DB::table('payments')->delete();
 
-                // Re-enable foreign key checks
-                DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+                // // Re-enable foreign key checks
+                // DB::statement('SET FOREIGN_KEY_CHECKS=1;');
                 
 
                 $message = 'Enrollment period created successfully';
@@ -1596,6 +1598,27 @@ class AdminController extends Controller
             Log::error('Failed to save enrollment period: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to save enrollment period: ' . $e->getMessage()]);
         }
+    }
+
+    public function resetEnrollment()
+    {
+        Student::whereNotIn('is_regular', ['7', '8'])
+            ->update([
+                'status' => 'Not Enrolled',
+                'enrolled' => 0
+            ]);
+
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+        // Delete records
+        DB::table('enrollmentrequests')->delete();
+        DB::table('enrollments')->delete();
+        DB::table('documents')->delete();
+        DB::table('payments')->delete();
+
+        // Re-enable foreign key checks
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
     }
 
     public function updateStudentYearCountWithTransaction()

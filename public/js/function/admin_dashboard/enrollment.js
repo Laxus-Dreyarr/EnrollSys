@@ -8,6 +8,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Save enrollment period
+    $('#resetEnrollment').click(function() {
+        resetEnrollmentPeriod();
+    });
+
     $('#saveEnrollmentBtn').click(function() {
         saveEnrollmentPeriod();
     });
@@ -274,6 +278,24 @@ function formatDateTime(dateTimeString) {
         hour: '2-digit', 
         minute: '2-digit' 
     });
+}
+
+function resetEnrollmentPeriod() {
+        const formData = new FormData();
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        fetch('/admin/resetEnrollment', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            // First check if response is ok
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            // Try to parse as text first since your backend returns plain text
+            return response.text();
+        })
 }
 
 function saveEnrollmentPeriod() {
