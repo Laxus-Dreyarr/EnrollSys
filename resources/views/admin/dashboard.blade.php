@@ -679,7 +679,7 @@ $profile_picture = $user->profile;
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="yearLevel" class="form-label">Year Level <span class="text-danger">*</span></label>
-                                <select class="form-select" id="yearLevel" name="yearLevel" required>
+                                <select class="form-select" id="yearLevel" name="yearLevel">
                                     <option value="">Select Year Level</option>
                                     <option value="1st Year">1st Year</option>
                                     <option value="2nd Year">2nd Year</option>

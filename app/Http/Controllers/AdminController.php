@@ -632,7 +632,7 @@ class AdminController extends Controller
                 'name' => $request->name,
                 'description' => $request->description ?? '',
                 'units' => $request->units,
-                'year_level' => $request->year_level,
+                'year_level' => $request->year_level ?? '',
                 'semester' => $request->semester,
                 'max_students' => $request->max_students,
                 'curriculum_id' => $request->curr,
@@ -1015,7 +1015,7 @@ class AdminController extends Controller
                 'name' => $request->name,
                 'description' => $request->description ?? '',
                 'units' => $request->units,
-                'year_level' => $request->year_level,
+                'year_level' => $request->year_level ?? '',
                 'semester' => $request->semester,
                 'max_students' => $request->max_students,
                 // 'curriculum_id' => $request->curr, // Add this line
@@ -1481,7 +1481,7 @@ class AdminController extends Controller
     {
         try {
             $periods = DB::table('enrollment_date')
-                ->orderBy('id', 'desc') // Changed from 'start_date' to 'Start'
+                ->orderBy('id', 'asc') // Changed from 'start_date' to 'Start'
                 ->where('is_active', 1)
                 ->get()
                 ->map(function($period) {

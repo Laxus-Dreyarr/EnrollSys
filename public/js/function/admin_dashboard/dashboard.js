@@ -1169,7 +1169,7 @@ async function deleteUpload(id) {
         
         // Validate required fields
         if (!formData.code || !formData.name || !formData.units || 
-            !formData.max_students || !formData.year_level || !formData.semester) {
+            !formData.max_students || !formData.semester) {
             alert('Please fill all required fields');
             return;
         }
@@ -1780,7 +1780,7 @@ async function deleteUpload(id) {
         
         // Validate required fields
         if (!formData.code || !formData.name || !formData.units || 
-            !formData.max_students || !formData.year_level || !formData.semester) {
+            !formData.max_students || !formData.semester) {
             alert('Please fill all required fields');
             return;
         }

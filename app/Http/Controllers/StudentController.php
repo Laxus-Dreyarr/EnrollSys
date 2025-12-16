@@ -1161,18 +1161,57 @@ class StudentController extends Controller
         ], 401);
     }
 
+    // private function checkActiveEnrollmentPeriod()
+    // {
+    //     try {
+    //         $currentDate = now()->format('Y-m-d');
+            
+    //         // Check if there's an active enrollment period where current date is between start and end
+    //         $enrollmentPeriod = DB::table('enrollment_date')
+    //             ->where('is_active', 1)
+    //             ->whereDate('start', '<=', $currentDate)
+    //             ->whereDate('end', '>=', $currentDate)
+    //             ->first();
+
+                
+    //         Log::info('Enrollment period check', [
+    //             'current_date' => $currentDate,
+    //             'found_period' => $enrollmentPeriod ? true : false,
+    //             'period_details' => $enrollmentPeriod
+    //         ]);
+            
+    //         return $enrollmentPeriod;
+            
+    //     } catch (\Exception $e) {
+    //         Log::error('Error checking enrollment period: ' . $e->getMessage());
+    //         return null;
+    //     }
+    // }
+
     private function checkActiveEnrollmentPeriod()
     {
         try {
             $currentDate = now()->format('Y-m-d');
             
-            // Check if there's an active enrollment period where current date is between start and end
+            // First: Find and deactivate any expired enrollment periods
+            DB::table('enrollment_date')
+                ->where('is_active', 1)
+                ->whereDate('end', '<', $currentDate)  // Past the end date
+                ->update(['is_active' => 0]);
+            
+            // Also deactivate any not-yet-started periods if needed
+            // DB::table('enrollment_date')
+            //     ->where('is_active', 1)
+            //     ->whereDate('start', '>', $currentDate)
+            //     ->update(['is_active' => 0]);
+            
+            // Then: Check for current active enrollment period
             $enrollmentPeriod = DB::table('enrollment_date')
                 ->where('is_active', 1)
                 ->whereDate('start', '<=', $currentDate)
                 ->whereDate('end', '>=', $currentDate)
                 ->first();
-                
+
             Log::info('Enrollment period check', [
                 'current_date' => $currentDate,
                 'found_period' => $enrollmentPeriod ? true : false,
@@ -1959,7 +1998,13 @@ class StudentController extends Controller
             }
 
             // Get student's year level
-            $yearLevel = $student->year_level;
+            // $yearLevel = $student->year_level;
+
+            //Get the year level from enrollment_date table
+            $yearLevelRecord = DB::table('enrollment_date')
+                ->where('is_active', 1)
+                ->first();
+            $yearLevel = $yearLevelRecord->year_level;
 
             $enrollment_date = DB::table('enrollment_date')
                 ->where('is_active', 1)
@@ -3159,7 +3204,7 @@ class StudentController extends Controller
             $currentSemester = $currentEnrollment->semester;
 
             $allSubjects = Subject::where('is_active', 1)
-                ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year'])
+                ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year', ''])
                 ->where('curriculum_id', $curriculum_id)
                 ->where('semester', $currentSemester)
                 ->whereNotIn('id', $passedSubjects) // Only exclude passed subjects, not failed ones
@@ -3217,6 +3262,30 @@ class StudentController extends Controller
 
     private function calculateTotalUnitsForSemester($yearLevel, $semester)
     {
+
+        if($yearLevel == '') {
+            // Calculate total units for the specific semester and year level
+            $totalUnits = Subject::where('year_level', '')
+                ->where('semester', $semester)
+                ->where('is_active', 1)
+                ->where('curriculum_id', function($query) {
+                    $user = Auth::guard('student')->user();
+                    $student = $user->user_information->student;
+                    $curriculum_year = $student->curriculum;
+                    $curriculum = DB::table('curriculum')
+                        ->where('curriculum_year', $curriculum_year)
+                        ->where('is_active', 1)
+                        ->first();
+                    $query->select('id')
+                        ->from('curriculum')
+                        ->where('curriculum_year', $curriculum_year)
+                        ->where('is_active', 1)
+                        ->limit(1);
+                })
+                ->sum('units');
+            
+            return $totalUnits;
+        }
 
         // Calculate total units for the specific semester and year level
         $totalUnits = Subject::where('year_level', $yearLevel)
