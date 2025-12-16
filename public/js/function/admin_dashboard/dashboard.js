@@ -1435,8 +1435,8 @@ async function deleteUpload(id) {
                             <td>${subject.code}</td>
                             <td>${subject.name}</td>
                             <td>${subject.units}</td>
-                            <td>${subject.year_level} / ${subject.semester}</td>
-                            <td>${subject.curriculum_year || 'N/A'}</td> <!-- Fixed to show curriculum year -->
+                            <td>${subject.year_level === '' ? subject.semester : `${subject.year_level} / ${subject.semester}`}</td>
+                            <td>${subject.curriculum_year ? (subject.year_level === '' ? subject.curriculum_year : `${subject.curriculum_year}-${parseInt(subject.curriculum_year) + 1}`) : 'N/A'}</td>
                             <td id="_student_btn" class="d-inline-flex">
                                 <button id="_view" class="btn btn-sm btn-outline-info m-1" onclick="viewSubject(${subject.id})">
                                     <i class="fas fa-eye"></i>

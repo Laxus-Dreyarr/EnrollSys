@@ -34,13 +34,13 @@ function toggleEnrollmentForm(isSummer) {
         $('#summerForm').show();
         modalTitle.text('Set Summer Enrollment Period');
         switchLabel.text('Summer');
-        switchDescription.text('(Switch to Regular Semester)');
+        switchDescription.text('(Go back)');
     } else {
         // Switch to Regular form
         $('#summerForm').hide();
         $('#regularForm').show();
         modalTitle.text('Set Enrollment Period');
-        switchLabel.text('Regular Semester');
+        switchLabel.text('Switch');
         switchDescription.text('(Switch to Summer)');
     }
 }
