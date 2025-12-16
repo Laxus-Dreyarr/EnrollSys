@@ -293,6 +293,7 @@ function resetEnrollmentPeriod() {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
+            insertsupabase2();
             // Try to parse as text first since your backend returns plain text
             return response.text();
         })

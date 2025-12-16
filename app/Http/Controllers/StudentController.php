@@ -1508,7 +1508,8 @@ class StudentController extends Controller
                     ->update([
                         'year_level' => $year_level,
                         'status' => 'Not Enrolled',
-                        'is_regular' => $studentType
+                        'is_regular' => $studentType,
+                        'enrolled' => '5'
                     ]);
                 Log::error('Student complete_info2 update error: ');
                 
@@ -2046,6 +2047,7 @@ class StudentController extends Controller
                 'passed_subjects' => $passedSubjects,
                 'failed_subjects' => $failedSubjects
             ]);
+
             
             // In the getEnrollmentSubjects method, update the subject query to include sections:
             if ($student->is_regular == 1) {
@@ -2067,6 +2069,10 @@ class StudentController extends Controller
             } else {
                 // Irregular student logic
                 $subjects = $this->getAvailableSubjectsForIrregular($student, $yearLevel, $currentSemester, $passedSubjects, $allTakenSubjects, $failedSubjects);
+            }
+
+            if($student->enrolled == '1') {
+                $subjects = $this->getAvailableSubjectsForFreshmen($student, $passedSubjects, $allTakenSubjects, $failedSubjects);
             }
             
             // Calculate total units for the semester
@@ -2539,11 +2545,16 @@ class StudentController extends Controller
             // Re-enable foreign key checks
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
+            $enrollment_year = DB::table('enrollment_date')
+                ->where('is_active', 1)
+                ->first();
+
             // Create enrollment request
             $enrollmentRequest = new EnrollmentRequest();
             $enrollmentRequest->student_id = $student->id;
             $enrollmentRequest->status = 'Pending';
             $enrollmentRequest->request_date = now();
+            $enrollmentRequest->year_level = $enrollment_year->year_level;
             $enrollmentRequest->save();
 
             // Create enrollment records for each subject
@@ -3266,6 +3277,72 @@ class StudentController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error in getAvailableSubjectsForIrregular: ' . $e->getMessage());
+            return collect();
+        }
+    }
+
+
+    // For freshmen:
+    private function getAvailableSubjectsForFreshmen($student, $passedSubjects, $allTakenSubjects, $failedSubjects)
+    {
+        Log::info('Getting available subjects for freshmen student', [
+            'student_id' => $student->id,
+            'passed_subjects_count' => count($passedSubjects),
+            'failed_subjects_count' => count($failedSubjects),
+            'all_taken_subjects_count' => count($allTakenSubjects)
+        ]);
+
+        try {
+            $curriculum_year = $student->curriculum;
+            $curriculum = DB::table('curriculum')
+                ->where('curriculum_year', $curriculum_year)
+                ->where('is_active', 1)
+                ->first();
+
+            if (!$curriculum) {
+                Log::error('No active curriculum found for student', ['student_id' => $student->id]);
+                return collect();
+            }
+
+            $curriculum_id = $curriculum->id;
+
+            // Get only 1st Year 1st Semester subjects
+            $allSubjects = Subject::where('is_active', 1)
+                ->where('year_level', '1st Year')  // Only 1st Year
+                ->where('curriculum_id', $curriculum_id)
+                ->where('semester', '1st Sem')  // Only 1st Semester
+                ->whereNotIn('id', $passedSubjects)
+                ->with(['schedules', 'prerequisites'])
+                ->get();
+
+            Log::info('Total 1st Year 1st Semester subjects found for freshmen', [
+                'count' => $allSubjects->count(),
+                'subject_codes' => $allSubjects->pluck('code')->toArray()
+            ]);
+
+            // Filter subjects based on prerequisites
+            $availableSubjects = $allSubjects->filter(function($subject) use ($passedSubjects, $failedSubjects) {
+                // If this is a failed subject that needs retaking, always include it
+                if (in_array($subject->id, $failedSubjects)) {
+                    return true;
+                }
+                
+                // If subject has no prerequisites, it's available
+                if ($subject->prerequisites->isEmpty()) {
+                    return true;
+                }
+                
+                // Check if all prerequisites are completed WITH PASSING GRADES
+                $prerequisiteIds = $subject->prerequisites->pluck('id')->toArray();
+                $completedPrerequisites = array_intersect($prerequisiteIds, $passedSubjects);
+                
+                return count($prerequisiteIds) === count($completedPrerequisites);
+            });
+
+            return $availableSubjects;
+
+        } catch (\Exception $e) {
+            Log::error('Error in getAvailableSubjectsForFreshmen: ' . $e->getMessage());
             return collect();
         }
     }
@@ -4229,6 +4306,13 @@ class StudentController extends Controller
             ->update([
                 'is_regular' => 1, //Set to Regular;
             ]);
+
+            // 1 in enrolled means freshmen
+            DB::table('students')
+            ->where('id', $student->id)
+            ->update([
+                'enrolled' => 1, //Set to Regular;
+            ]);
             
             // Commit transaction
             DB::commit();
@@ -4239,6 +4323,7 @@ class StudentController extends Controller
                 'documents_count' => count($uploadedDocuments),
                 'year_level' => $yearLevel
             ]);
+            
             
             return response()->json([
                 'success' => true,

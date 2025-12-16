@@ -231,7 +231,7 @@ function createRequestItem(request) {
     
     const avatarUrl = request.profile;
     
-    const studentType = request.is_regular === 1 ? 'Regular' : 'Irregular';
+    const studentType = request.is_regular === 1 ? 'Irregular' : 'Regular';
     const subjectsCount = request.enrolled_subjects_count || 0;
     
     item.innerHTML = `
@@ -251,7 +251,7 @@ function createRequestItem(request) {
                 </span>
                 <span class="meta-item">
                     <i class="fas fa-book"></i>
-                    ${studentType}
+                    ${request.is_regular === 1 ? 'Irregular' : 'Regular'}
                 </span>
                 <span class="meta-item">
                     <i class="fas fa-graduation-cap"></i>
@@ -286,7 +286,7 @@ function loadRequestDetails(request) {
     if (!requestDetails) return;
     
     const avatarUrl = request.profile;
-    const studentType = request.is_regular === 1 ? 'Regular' : 'Irregular';
+    const studentType = request.is_regular === 1 ? 'Irregular' : 'Regular';
     
     let subjectsHTML = '';
     if (request.subjects && request.subjects.length > 0) {

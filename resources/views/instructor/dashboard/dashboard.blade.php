@@ -207,7 +207,7 @@ $profile_picture = $user->profile;
                             <h3 class="stat-value" style="font-size: 20px;">Enrollment Date</h3>
                             <p class="stat-label" id="enrollment_period">
                                  @if($enrollmentPeriod)
-                                    <b style="color: var(--primary-color);">{{ $enrollmentPeriod->year_level ?? 'Summer' }} only</b> <br>
+                                    <b style="color: red; text-shadow: 2px 0.1px black;">{{ $enrollmentPeriod->year_level ?? 'Summer' }} only</b> <br>
                                     Enrollment is until
                                     {{ \Carbon\Carbon::parse($enrollmentPeriod->start)->format('F j, Y') }} - {{ \Carbon\Carbon::parse($enrollmentPeriod->end)->format('F j, Y') }}
                                 @else

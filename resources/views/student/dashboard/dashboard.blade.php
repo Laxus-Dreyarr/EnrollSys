@@ -178,7 +178,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         </h3>
                         <p class="stat-label">
                             @if($enrollmentPeriod)
-                                <b style="color: var(--primary-color);">{{ $enrollmentPeriod->year_level ?? 'Summer' }} only</b> <br>
+                                <b style="color: red; text-shadow: 2px 0.1px black;">{{ $enrollmentPeriod->year_level ?? 'Summer' }} only</b> <br>
                                 Enrollment is until
                                 {{ \Carbon\Carbon::parse($enrollmentPeriod->start)->format('F j, Y') }} - {{ \Carbon\Carbon::parse($enrollmentPeriod->end)->format('F j, Y') }}
                             @else
@@ -1000,12 +1000,15 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                         <option value="PSA_NSO">PSA NSO</option>
                                         <option value="ID_PICTURE">2X2 ID Picture</option>
                                         <option value="MARRIAGE_CERTIFICATE">Marriage Certificate</option>
+                                        <option value="MARRIAGE_CERTIFICATE">Marriage Certificate</option>
+                                        <option value="HONOR_DISMISSAL">Honor Dismissal</option>
+                                        <option value="TOR">TOR</option>
                                     </select>
                                 </div>
                                 <div class="mb-3">
                                     <label for="documentFile" class="form-label">File</label>
                                     <input type="file" class="form-control" id="documentFile" name="document_file" accept=".jpg,.jpeg,.png,.pdf" required>
-                                    <div class="form-text">Accepted file types: JPG, JPEG, PNG, PDF. Max file size: 2MB.</div>
+                                    <div class="form-text">Accepted file types: JPG, JPEG, PNG, PDF. Max file size: 5MB.</div>
                                 </div>
                                 <div class="mb-3" style="display: none;">
                                     <label for="documentYearLevel" class="form-label">Year Level</label>
@@ -1520,7 +1523,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
 
     <!-- Student Information Modal -->
     
-    @if($isEnrollmentActive == 1 && $en == 0)
+    @if($isEnrollmentActive === 1 && $en === 0)
         <div id="studentInfoModal2" class="modal-overlay <?php echo $show_prereg_form ? 'active' : ''; ?>">
             <div class="modal-container">
                 <div class="modal-header">
