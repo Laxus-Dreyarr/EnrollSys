@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="bingbot" content="noarchive">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5"> -->
     <meta name="application-title" content="EnrollSys">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#101126">
     <meta name="msapplication-navbutton-color" content="#101126">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>enrollsys evsu</title>
-    <link rel="website icon" href="{{ asset('img/logo.png') }}">
+    <link rel="website icon" href="{{ asset('img/evsu-logo.png') }}">
     <!-- Bootstrap CSS -->
     <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> -->
      <link href="{{ asset('style/bootstrap.css') }}" rel="stylesheet">
@@ -60,12 +61,12 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#contact">Contact</a>
                     </li>
-                    <li class="nav-item ms-lg-3">
+                    <!-- <li class="nav-item ms-lg-3">
                         <button style="background-color: rgb(138, 30, 30); border-color: maroon" class="btn btn-primary btn-login" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
                     </li>
                     <li class="nav-item ms-lg-2">
                         <button style="border-color: maroon;" class="btn btn-outline-primary btn-register" data-bs-toggle="modal" data-bs-target="#registerModal">Register</button>
-                    </li>
+                    </li> -->
                 </ul>
             </div>
         </div>
@@ -80,8 +81,8 @@
                     <h1 class="hero-title">Welcome to <span>EnrollSys</span></h1>
                     <p class="hero-subtitle">Your seamless gateway to academic enrollment and management</p>
                     <div class="hero-buttons">
-                        <button class="btn btn-primary btn-lg me-3" data-bs-toggle="modal" data-bs-target="#registerModal" style="background-color: maroon; border-color: maroon">Get Started</button>
-                        <button class="btn btn-outline-light btn-lg">Learn More</button>
+                        <button class="btn btn-primary btn-lg me-3" data-bs-toggle="modal" data-bs-target="#registerModal" style="background-color: maroon; border-color: maroon">Register</button>
+                        <button data-bs-toggle="modal" data-bs-target="#loginModal" class="btn btn-outline-light btn-lg">Login</button>
                     </div>
                 </div>
                 <div class="col-lg-5 d-none d-lg-block">
@@ -276,43 +277,8 @@
                         <h4>EnrollSys</h4>
                         <p>The premier student enrollment system for Eastern Visayas State University, designed to make academic management simple and efficient.</p>
                         <div class="social-links">
-                            <a href="#"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                            <a href="#"><i class="fab fa-instagram"></i></a>
-                            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                            <a href="https://www.facebook.com/JPCSEVSUOCC"><i class="fab fa-facebook-f"></i></a>
                         </div>
-                    </div>
-                </div>
-                <div class="col-lg-2 col-md-6">
-                    <div class="footer-links">
-                        <h4>Quick Links</h4>
-                        <ul>
-                            <li><a href="#">Home</a></li>
-                            <li><a href="#features">Features</a></li>
-                            <li><a href="#about">About</a></li>
-                            <li><a href="#contact">Contact</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-lg-2 col-md-6">
-                    <div class="footer-links">
-                        <h4>Resources</h4>
-                        <ul>
-                            <li><a href="#">Help Center</a></li>
-                            <li><a href="#">FAQs</a></li>
-                            <li><a href="#">Privacy Policy</a></li>
-                            <li><a href="#">Terms of Service</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="footer-newsletter">
-                        <h4>Newsletter</h4>
-                        <p>Subscribe to our newsletter for the latest updates and announcements.</p>
-                        <form class="newsletter-form">
-                            <input type="email" placeholder="Your Email">
-                            <button type="submit"><i class="fas fa-paper-plane"></i></button>
-                        </form>
                     </div>
                 </div>
             </div>
@@ -329,9 +295,12 @@
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="fas fa-sign-in-alt"></i>
-                        Student Login
+                        Student Login <span class="text-muted" style="font-size: 0.8rem; "></span>
                     </h5>
-                    <button type="button" class="btn-close btn-close-enhanced" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">
+                        <i class='fas fa-times-circle' data-bs-dismiss="modal" style='font-size:36px'></i>
+                    </h5>
+                    <!-- <button type="button" class="btn-close btn-close-enhanced" data-bs-dismiss="modal" aria-label="Close"></button> -->
                 </div>
                 <div class="modal-body">
                     <form id="loginForm">
@@ -341,8 +310,7 @@
                                 EVSUmail
                             </label>
                             <div class="input-group-enhanced">
-                                <input type="email" class="form-control-enhanced" id="email" placeholder="username@evsu.edu.ph" required>
-                                <i class="form-icon fas fa-at"></i>
+                                <input style="width: 100%;" type="email" class="form-control-enhanced" id="email" placeholder="username@evsu.edu.ph" required>
                                 <div id="loginEmailError" class="text-danger mt-1 small"></div>
                             </div>
                         </div>
@@ -353,8 +321,7 @@
                                 Password
                             </label>
                             <div class="input-group-enhanced">
-                                <input type="password" class="form-control-enhanced" id="password" placeholder="Enter your password" required>
-                                <i class="form-icon fas fa-key"></i>
+                                <input style="width: 100%;" type="password" class="form-control-enhanced" id="password" placeholder="Enter your password" required>
                                 <div id="loginPasswordError" class="text-danger mt-1 small" style="display: none;"></div>
                             </div>
                         </div>
@@ -394,116 +361,227 @@
     </div>
 
     <!-- Enhanced Register Modal -->
-    <div class="modal fade" id="registerModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+    <div class="modal fade" id="registerModal" tabindex="-1" aria-hidden="true" style="touch-action: pan-y;">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-user-plus"></i>
-                        Student Registration
-                    </h5>
-                    <button type="button" class="btn-close btn-close-enhanced" data-bs-dismiss="modal" aria-label="Close"></button>
+                <!-- Modal Header -->
+                <div class="modal-header-enhanced">
+                    <div class="header-content">
+                        <div class="icon-container">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="header-text">
+                            <h5 class="modal-title">Create Student Account</h5>
+                            <p class="modal-subtitle">Fill in your details to get started</p>
+                        </div>
+                        <h5 class="modal-title">
+                            <i class='fas fa-times-circle' data-bs-dismiss="modal" style='font-size:36px'></i>
+                        </h5>
+                    </div>
+                    <!-- <button style="float: right; top: 5px; background-color: white; color: red; font-size: 24px" type="button" class="btn-close btn-close-enhanced" data-bs-dismiss="modal" aria-label="Close">×</button> -->
                 </div>
+                
+                <!-- Modal Body -->
                 <div class="modal-body">
-                    <form id="registerForm">
-                        <!-- <div class="form-grid">
-                            <div class="form-group-enhanced">
-                                <label for="givenName" class="form-label">
-                                    <i class="fas fa-user"></i>
-                                    Given Name
-                                </label>
-                                <input type="text" class="form-control-enhanced" id="givenName" placeholder="First Name" required>
-                                <div class="invalid-feedback">Please enter your given name</div>
+                    <form id="registerForm" class="enhanced-form">
+                        <!-- Personal Information Section -->
+                        <div class="form-section">
+                            <div class="section-header">
+                                <h6><i class="fas fa-user-circle"></i> Personal Information</h6>
                             </div>
-                            
-                            <div class="form-group-enhanced">
-                                <label for="lastName" class="form-label">
-                                    <i class="fas fa-user"></i>
-                                    Last Name
-                                </label>
-                                <input type="text" class="form-control-enhanced" id="lastName" placeholder="Last Name" required>
-                                <div class="invalid-feedback">Please enter your last name</div>
-                            </div>
-                            
-                            <div class="form-group-enhanced form-grid-full">
-                                <label for="middleName" class="form-label">
-                                    <i class="fas fa-user"></i>
-                                    Middle Name <small class="text-muted">(Optional)</small>
-                                </label>
-                                <input type="text" class="form-control-enhanced" id="middleName" placeholder="Middle Name">
-                            </div>
-                        </div> -->
-                        
-                        <div class="form-group-enhanced">
-                            <label for="registerEmail" class="form-label">
-                                <i class="fas fa-envelope"></i>
-                                Email Address
-                            </label>
-                            <div class="input-group-enhanced">
-                                <input type="email" class="form-control-enhanced" id="registerEmail" placeholder="input your email address" required>
-                                <i class="form-icon fas fa-at"></i>
-                            </div>
-                            <div id="RloginEmailError" class="text-danger mt-1 small"></div>
-                            <!-- <div class="invalid-feedback">Please enter a valid EVSUmail address (@evsu.edu.ph)</div> -->
-                        </div>
-                        
-                        <div class="form-group-enhanced">
-                            <label for="registerPassword" class="form-label">
-                                <i class="fas fa-lock"></i>
-                                Password
-                            </label>
-                            <div class="input-group-enhanced">
-                                <input type="password" class="form-control-enhanced" id="registerPassword" placeholder="Create a strong password" required>
-                                <i class="form-icon fas fa-key"></i>
-                            </div>
-                            
-                            <div class="password-strength">
-                                <div class="strength-meter">
-                                    <div class="strength-meter-fill" id="passwordStrengthBar"></div>
+                            <div class="form-grid responsive-grid">
+                                <div class="form-group-enhanced">
+                                    <label for="birthDate" class="form-label">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        Birth Date
+                                    </label>
+                                    <div class="input-with-icon">
+                                        <input type="date" class="form-control-enhanced" id="birthDate" required>
+                                        <i class="fas fa-calendar input-icon-right"></i>
+                                    </div>
                                 </div>
-                                <div class="strength-text" id="passwordStrengthText">Password strength</div>
+                                
+                                <div class="form-group-enhanced">
+                                    <label for="gender" class="form-label">
+                                        <i class="fas fa-venus-mars"></i>
+                                        Gender
+                                    </label>
+                                    <div class="custom-select">
+                                        <select class="form-control-enhanced" id="gender" required>
+                                            <option value="" disabled selected>Select gender</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                        </select>
+                                        <i class="fas fa-chevron-down select-arrow"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Address Information Section -->
+                        <div class="form-section">
+                            <div class="section-header">
+                                <h6><i class="fas fa-home"></i> Address Information</h6>
+                            </div>
+                            <div class="address-grid">
+                                <div class="form-group-enhanced">
+                                    <label for="houseStreet" class="form-label">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        House No. / Street
+                                    </label>
+                                    <input type="text" class="form-control-enhanced" id="houseStreet" placeholder="e.g., 123 Main St" required>
+                                </div>
+                                
+                                <div class="form-group-enhanced">
+                                    <label for="barangay" class="form-label">
+                                        <i class="fas fa-location-dot"></i>
+                                        Barangay
+                                    </label>
+                                    <input type="text" class="form-control-enhanced" id="barangay" placeholder="Enter barangay" required>
+                                </div>
+                                
+                                <div class="form-group-enhanced">
+                                    <label for="cityMunicipality" class="form-label">
+                                        <i class="fas fa-city"></i>
+                                        City/Municipality
+                                    </label>
+                                    <input type="text" class="form-control-enhanced" id="cityMunicipality" placeholder="Enter city/municipality" required>
+                                </div>
+                                
+                                <div class="form-group-enhanced">
+                                    <label for="province" class="form-label">
+                                        <i class="fas fa-map"></i>
+                                        Province
+                                    </label>
+                                    <input type="text" class="form-control-enhanced" id="province" placeholder="Enter province" required>
+                                </div>
+                                
+                                <div class="form-group-enhanced">
+                                    <label for="zipCode" class="form-label">
+                                        <i class="fas fa-mail-bulk"></i>
+                                        Zip Code
+                                    </label>
+                                    <input type="text" class="form-control-enhanced" id="zipCode" placeholder="e.g., 6500" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account Information Section -->
+                        <div class="form-section">
+                            <div class="section-header">
+                                <h6><i class="fas fa-user-lock"></i> Account Information</h6>
                             </div>
                             
-                            <div class="password-requirements-enhanced">
-                                <p>Password Requirements:</p>
-                                <ul>
-                                    <li id="req-length"><i class="fas fa-circle"></i> At least 8 characters</li>
-                                    <li id="req-uppercase"><i class="fas fa-circle"></i> One uppercase letter</li>
-                                    <li id="req-lowercase"><i class="fas fa-circle"></i> One lowercase letter</li>
-                                    <li id="req-number"><i class="fas fa-circle"></i> One number</li>
-                                    <li id="req-special"><i class="fas fa-circle"></i> One special character</li>
-                                </ul>
+                            <div class="form-group-enhanced">
+                                <label for="registerEmail" class="form-label">
+                                    <i class="fas fa-envelope"></i>
+                                    Email Address
+                                </label>
+                                <div class="input-with-icon">
+                                    <input type="email" class="form-control-enhanced" id="registerEmail" placeholder="student@evsu.edu.ph" required>
+                                    <span class="email-domain">@evsu.edu.ph</span>
+                                </div>
+                                <div id="RloginEmailError" class="form-hint">Must use valid EVSU email address</div>
+                            </div>
+                            
+                            <div class="form-group-enhanced">
+                                <label for="registerPassword" class="form-label">
+                                    <i class="fas fa-lock"></i>
+                                    Password
+                                </label>
+                                <div class="password-input-container">
+                                    <input type="password" class="form-control-enhanced" id="registerPassword" placeholder="Create a strong password" required>
+                                    <button type="button" class="toggle-password" data-target="registerPassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Password Strength Meter -->
+                                <div class="password-strength-enhanced">
+                                    <div class="strength-header">
+                                        <span>Password Strength:</span>
+                                        <span class="strength-text" id="passwordStrengthText">Weak</span>
+                                    </div>
+                                    <div class="strength-meter">
+                                        <div class="strength-segment" data-strength="weak"></div>
+                                        <div class="strength-segment" data-strength="medium"></div>
+                                        <div class="strength-segment" data-strength="strong"></div>
+                                        <div class="strength-segment" data-strength="very-strong"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Password Requirements -->
+                                <div class="password-requirements-grid">
+                                    <div class="requirement-item" id="req-length">
+                                        <i class="fas fa-circle"></i>
+                                        <span>8+ characters</span>
+                                    </div>
+                                    <div class="requirement-item" id="req-uppercase">
+                                        <i class="fas fa-circle"></i>
+                                        <span>Uppercase letter</span>
+                                    </div>
+                                    <div class="requirement-item" id="req-lowercase">
+                                        <i class="fas fa-circle"></i>
+                                        <span>Lowercase letter</span>
+                                    </div>
+                                    <div class="requirement-item" id="req-number">
+                                        <i class="fas fa-circle"></i>
+                                        <span>Number</span>
+                                    </div>
+                                    <div class="requirement-item" id="req-special">
+                                        <i class="fas fa-circle"></i>
+                                        <span>Special character</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group-enhanced">
+                                <label for="repeatPassword" class="form-label">
+                                    <i class="fas fa-redo"></i>
+                                    Confirm Password
+                                </label>
+                                <div class="password-input-container">
+                                    <input type="password" class="form-control-enhanced" id="repeatPassword" placeholder="Re-enter your password" required>
+                                    <button type="button" class="toggle-password" data-target="repeatPassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="password-match" id="passwordMatchIndicator">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Passwords match</span>
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="form-group-enhanced">
-                            <label for="repeatPassword" class="form-label">
-                                <i class="fas fa-redo"></i>
-                                Confirm Password
-                            </label>
-                            <div class="input-group-enhanced">
-                                <input type="password" class="form-control-enhanced" id="repeatPassword" placeholder="Repeat your password" required>
-                                <i class="form-icon fas fa-key"></i>
+
+                        <!-- Terms and Submit -->
+                        <div class="form-section">
+                            <div class="terms-container">
+                                <div class="form-check-enhanced">
+                                    <input type="checkbox" class="form-check-input-enhanced" id="termsAgreement" required>
+                                    <label class="form-check-label-enhanced" for="termsAgreement">
+                                        I agree to the <a href="#" class="terms-link">Terms of Service</a> and <a href="#" class="terms-link">Privacy Policy</a>
+                                    </label>
+                                </div>
                             </div>
-                            <div class="invalid-feedback">Passwords do not match</div>
+                            
+                            <button type="submit" class="btn btn-primary-enhanced w-100">
+                                <span class="btn-text">Create Account</span>
+                                <i class="fas fa-arrow-right btn-icon"></i>
+                            </button>
                         </div>
-                        
-                        <div class="form-check-enhanced">
-                            <input type="checkbox" class="form-check-input-enhanced" id="register_show_password">
-                            <label class="form-check-label-enhanced" for="register_show_password">
-                                Show Password
-                            </label>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-enhanced btn-enhanced-primary w-100">
-                            Create Account
-                        </button>
                     </form>
                 </div>
+                
+                <!-- Modal Footer -->
                 <div class="modal-footer-enhanced">
-                    <p>Already have an account? 
-                        <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">
-                            Sign In
+                    <p class="footer-text">
+                        Already have an account?
+                        <a href="#" class="footer-link" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">
+                            Sign In Here
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                        <a href="#" class="footer-link" data-bs-dismiss="modal">
+                            ← back
                         </a>
                     </p>
                 </div>
