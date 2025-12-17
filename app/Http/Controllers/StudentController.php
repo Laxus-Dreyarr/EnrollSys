@@ -4240,6 +4240,16 @@ class StudentController extends Controller
                     'field' => 'marriage_certificate',
                     'type' => 'MARRIAGE_CERTIFICATE',
                     'required' => false
+                ],
+                [
+                    'field' => 'honor_dismissal', // or whatever field name you use
+                    'type' => 'HONOR_DISMISSAL',
+                    'required' => false // or true if required
+                ],
+                [
+                    'field' => 'tor',
+                    'type' => 'TOR',
+                    'required' => false // or true if required
                 ]
             ];
             
@@ -4464,7 +4474,7 @@ class StudentController extends Controller
     public function uploadRequiredDocument(Request $request)
     {
         $request->validate([
-            'document_type' => 'required|in:FORM138A,GOOD_MORAL,PSA_NSO,ID_PICTURE,MARRIAGE_CERTIFICATE',
+            'document_type' => 'required|in:FORM138A,GOOD_MORAL,PSA_NSO,ID_PICTURE,MARRIAGE_CERTIFICATE,HONOR_DISMISSAL,TOR', // Added TOR
             'document_file' => 'required|file|mimes:jpeg,jpg,png,pdf|max:2048',
             'year_level' => 'required|in:1st Year,2nd Year,3rd Year,4th Year,5th Year'
         ]);
@@ -4489,12 +4499,12 @@ class StudentController extends Controller
             $filePath = $file->storeAs('documents/requirements', $fileName, 'public');
 
             // If there's an existing document, delete the old file and record
-            if ($existingDocument) {
-                // Delete the old file from storage
-                Storage::disk('public')->delete($existingDocument->file_path);
-                // Delete the old record
-                DB::table('important_documents')->where('id', $existingDocument->id)->delete();
-            }
+            // if ($existingDocument) {
+            //     // Delete the old file from storage
+            //     Storage::disk('public')->delete($existingDocument->file_path);
+            //     // Delete the old record
+            //     DB::table('important_documents')->where('id', $existingDocument->id)->delete();
+            // }
 
             // Insert the new document record
             DB::table('important_documents')->insert([

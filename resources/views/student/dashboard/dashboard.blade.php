@@ -1000,7 +1000,6 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                         <option value="PSA_NSO">PSA NSO</option>
                                         <option value="ID_PICTURE">2X2 ID Picture</option>
                                         <option value="MARRIAGE_CERTIFICATE">Marriage Certificate</option>
-                                        <option value="MARRIAGE_CERTIFICATE">Marriage Certificate</option>
                                         <option value="HONOR_DISMISSAL">Honor Dismissal</option>
                                         <option value="TOR">TOR</option>
                                     </select>
