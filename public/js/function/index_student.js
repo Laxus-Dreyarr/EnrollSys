@@ -1179,6 +1179,17 @@ const passwordInput_reg2 = document.getElementById('registerPassword');
 });
 
 function send_question() {
+
+    // Get button elements
+    const sendBtn = document.getElementById('sendBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+    
+    // Disable button and show spinner
+    sendBtn.disabled = true;
+    btnText.textContent = 'Sending...';
+    btnSpinner.classList.remove('d-none');
+
     // Get form values
     let q_name = document.getElementById("q_name").value.trim();
     let q_email = document.getElementById("q_email").value.trim();
@@ -1205,6 +1216,7 @@ function send_question() {
                 popup: 'animate__animated animate__fadeOutUp'
             }
         });
+        resetButton(sendBtn, btnText, btnSpinner);
         return false;
     
     }
@@ -1229,6 +1241,7 @@ function send_question() {
                 popup: 'animate__animated animate__fadeOutUp'
             }
         });
+        resetButton(sendBtn, btnText, btnSpinner);
         return false;
     }
     
@@ -1252,6 +1265,7 @@ function send_question() {
                 popup: 'animate__animated animate__fadeOutUp'
             }
         });
+        resetButton(sendBtn, btnText, btnSpinner);
         return false;
     }
     
@@ -1275,6 +1289,7 @@ function send_question() {
                 popup: 'animate__animated animate__fadeOutUp'
             }
         });
+        resetButton(sendBtn, btnText, btnSpinner);
         return false;
     }
     
@@ -1283,10 +1298,73 @@ function send_question() {
     // All validations passed - send the question
     console.log("Sending question:", { q_name, q_email, q_subject, q_ms });
     
-    // Here you would typically:
-    // 1. Send AJAX request
-    // 2. Show success message
-    // 3. Reset form
+    const QuestionData = new FormData();
+    QuestionData.append('action', 'send_question');
+    QuestionData.append('q_name', q_name);  // FIXED: was formData.q_name
+    QuestionData.append('q_email', q_email); // FIXED: was formData.q_email
+    QuestionData.append('q_subject', q_subject); // FIXED: was formData.q_subject
+    QuestionData.append('q_ms', q_ms); // FIXED: was formData.q_ms
+    QuestionData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+    fetch('/exe/student', {
+        method: 'POST',
+        body: QuestionData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: 'Message Sent!',
+                text: ''+ data.message,
+                icon: 'success',
+                confirmButtonText: 'Close',
+                confirmButtonColor: '#070808ff',
+                background: '#1a1a2e',
+                color: '#ffffff',
+                backdrop: 'rgba(0,0,0,0.7)',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showClass: {
+                    popup: 'animate__animated animate__fadeInDown'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutUp'
+                }
+            });
+            window.location.reload();
+        } else {
+            Swal.fire({
+                title: 'Send Failed!',
+                text: ''+ data.message,
+                icon: 'error',
+                confirmButtonText: 'Close',
+                confirmButtonColor: '#070808ff',
+                background: '#1a1a2e',
+                color: '#ffffff',
+                backdrop: 'rgba(0,0,0,0.7)',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showClass: {
+                    popup: 'animate__animated animate__fadeInDown'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutUp'
+                }
+            });
+             resetButton(sendBtn, btnText, btnSpinner);
+            return false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to send verification code. Please try again.');
+    })
     
     return false; // Prevent default form submission if using in form onSubmit
+}
+
+function resetButton(button, textElement, spinnerElement) {
+    button.disabled = false;
+    textElement.textContent = 'Send Message';
+    spinnerElement.classList.add('d-none');
 }

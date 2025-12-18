@@ -231,7 +231,10 @@
                         <div class="mb-3">
                             <textarea id="q_ms" class="form-control" rows="5" placeholder="Your Message"></textarea>
                         </div>
-                        <button onclick="send_question()" style="background-color: maroon; border-color: rgb(146, 54, 54)" type="submit" class="btn btn-primary">Send Message</button>
+                        <button id="sendBtn" type="button" onclick="send_question()" style="background-color: maroon; border-color: rgb(146, 54, 54)" class="btn btn-primary">
+                            <span id="btnText">Send Message</span>
+                            <span id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        </button>
                     </form>
                 </div>
                 <div class="col-lg-6">
@@ -260,7 +263,7 @@
                             </div>
                             <div class="info-content">
                                 <h4>Email</h4>
-                                <p>enrollsys.evsu.edu.ph</p>
+                                <p>carljames.duallo.evsu.edu.ph</p>
                             </div>
                         </div>
                     </div>
@@ -308,10 +311,10 @@
                         <div class="form-group-enhanced">
                             <label for="email" class="form-label">
                                 <i class="fas fa-envelope"></i>
-                                EVSUmail
+                                Email
                             </label>
                             <div class="input-group-enhanced">
-                                <input style="width: 100%;" type="email" class="form-control-enhanced" id="email" placeholder="username@evsu.edu.ph" required>
+                                <input style="width: 100%;" type="email" class="form-control-enhanced" id="email" placeholder="your email address..." required>
                                 <div id="loginEmailError" class="text-danger mt-1 small"></div>
                             </div>
                         </div>

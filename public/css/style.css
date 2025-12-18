@@ -2242,6 +2242,32 @@ ul {
     color: #fffafa;
   }
 
+/* Button loading state styles */
+#sendBtn {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+#sendBtn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.spinner-border {
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
+/* Optional: Add smooth transitions */
+.btn-primary {
+    transition: all 0.3s ease-in-out;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(146, 54, 54, 0.3);
+}
+
 /* Responsive Styles */
 @media (max-width: 992px) {
 

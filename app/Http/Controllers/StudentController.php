@@ -20,6 +20,7 @@ use App\Models\Section;
 use App\Models\Enrollment;
 use App\Models\EnrollmentRequest;
 use App\Mail\RegistrationVerification;
+use App\Mail\SendQuestion;
 use Illuminate\Support\Facades\Log;
 use App\Mail\PasswordResetOtp;
 use Illuminate\Support\Str;
@@ -126,6 +127,9 @@ class StudentController extends Controller
 
             case 'complete_student_info_starter':
                 return $this->completeStudentInformStarter($request);
+
+            case 'send_question':
+                return $this->SendQuestion2($request);
                 
             default:
                 return response()->json([
@@ -338,6 +342,38 @@ class StudentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    private function SendQuestion2(Request $request) 
+    {
+        try {
+            Mail::to('carljamesduallo661@gmail.com')->send(new SendQuestion($request->q_name, $request->q_email, $request->q_subject, $request->q_ms));
+
+            // Check if email was actually sent
+            if (count(Mail::failures()) > 0) {
+                Log::error('Email failed to send to: ' . $request->email);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to send verification email. Please try again.'
+                ]);
+            }
+
+            Log::info('Verification code sent successfully to: ' . $request->email);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Verification code sent to your email!'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send verification email: ' . $e->getMessage());
+            Log::error('Email error details: ', ['exception' => $e]);
+                
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send verification email: ' . $e->getMessage()
             ]);
         }
     }
