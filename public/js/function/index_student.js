@@ -982,18 +982,35 @@ document.addEventListener('DOMContentLoaded', function() {
     const passwordInput_reg = document.getElementById('registerPassword');
     const passwordInput_reg_rep = document.getElementById('repeatPassword');
     const showPasswordCheckbox = document.getElementById('register_show_password');
-    
+
     if (showPasswordCheckbox) {
-        showPasswordCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                passwordInput_reg.type = 'text';
-                passwordInput_reg_rep.type = 'text';
-            } else {
-                passwordInput_reg.type = 'password';
-                passwordInput_reg_rep.type = 'password';
-            }
-        });
-    }
+    showPasswordCheckbox.addEventListener('click', function() {
+        const currentType = passwordInput_reg.type;
+        const newType = currentType === 'password' ? 'text' : 'password';
+        
+        passwordInput_reg.type = newType;
+        passwordInput_reg_rep.type = newType;
+
+    });
+
+}
+
+const passwordInput_reg2 = document.getElementById('registerPassword');
+    const passwordInput_reg2_rep = document.getElementById('repeatPassword');
+    const showPasswordCheckbox2 = document.getElementById('register_show_password2');
+
+    if (showPasswordCheckbox2) {
+    showPasswordCheckbox2.addEventListener('click', function() {
+        const currentType2 = passwordInput_reg2.type;
+        const newType2 = currentType2 === 'password' ? 'text' : 'password';
+        
+        passwordInput_reg2.type = newType2;
+        passwordInput_reg2_rep.type = newType2;
+
+    });
+
+ }
+    
 
     // Show/Hide password functionality for login form
     const passwordInput_log = document.getElementById('password');
@@ -1160,3 +1177,116 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 });
+
+function send_question() {
+    // Get form values
+    let q_name = document.getElementById("q_name").value.trim();
+    let q_email = document.getElementById("q_email").value.trim();
+    let q_subject = "Question";
+    let q_ms = document.getElementById("q_ms").value.trim();
+    
+    // Validation
+    if (!q_name || q_name === "") { 
+        Swal.fire({
+            title: 'Login Failed!',
+             text: 'Name is required',
+            icon: 'error',
+            confirmButtonText: 'Close',
+            confirmButtonColor: '#070808ff',
+            background: '#1a1a2e',
+            color: '#ffffff',
+            backdrop: 'rgba(0,0,0,0.7)',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showClass: {
+                popup: 'animate__animated animate__fadeInDown'
+            },
+            hideClass: {
+                popup: 'animate__animated animate__fadeOutUp'
+            }
+        });
+        return false;
+    
+    }
+    
+    // Check if name contains only numbers
+    if (/^\d+$/.test(q_name)) {
+        Swal.fire({
+            title: 'Send Failed!',
+             text: 'Name cannot contain only numbers.',
+            icon: 'error',
+            confirmButtonText: 'Close',
+            confirmButtonColor: '#070808ff',
+            background: '#1a1a2e',
+            color: '#ffffff',
+            backdrop: 'rgba(0,0,0,0.7)',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showClass: {
+                popup: 'animate__animated animate__fadeInDown'
+            },
+            hideClass: {
+                popup: 'animate__animated animate__fadeOutUp'
+            }
+        });
+        return false;
+    }
+    
+    // Check if name contains any letters (at least one non-digit)
+    if (!/[a-zA-Z]/.test(q_name)) {
+        Swal.fire({
+            title: 'Send Failed!',
+             text: 'Name must contain letters..',
+            icon: 'error',
+            confirmButtonText: 'Close',
+            confirmButtonColor: '#070808ff',
+            background: '#1a1a2e',
+            color: '#ffffff',
+            backdrop: 'rgba(0,0,0,0.7)',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showClass: {
+                popup: 'animate__animated animate__fadeInDown'
+            },
+            hideClass: {
+                popup: 'animate__animated animate__fadeOutUp'
+            }
+        });
+        return false;
+    }
+    
+    // Email validation (basic)
+    if (!q_email || !q_email.includes("@")) {
+        Swal.fire({
+            title: 'Send Failed!',
+             text: 'Valid email is required',
+            icon: 'error',
+            confirmButtonText: 'Close',
+            confirmButtonColor: '#070808ff',
+            background: '#1a1a2e',
+            color: '#ffffff',
+            backdrop: 'rgba(0,0,0,0.7)',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showClass: {
+                popup: 'animate__animated animate__fadeInDown'
+            },
+            hideClass: {
+                popup: 'animate__animated animate__fadeOutUp'
+            }
+        });
+        return false;
+    }
+    
+    // Message validation
+    
+    // All validations passed - send the question
+    console.log("Sending question:", { q_name, q_email, q_subject, q_ms });
+    
+    // Here you would typically:
+    // 1. Send AJAX request
+    // 2. Show success message
+    // 3. Reset form
+    
+    return false; // Prevent default form submission if using in form onSubmit
+}

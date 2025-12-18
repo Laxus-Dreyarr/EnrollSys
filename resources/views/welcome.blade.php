@@ -167,7 +167,7 @@
                     <p>Our platform offers a seamless, intuitive experience for students to manage their academic journey from enrollment to graduation.</p>
                     <ul class="about-features">
                         <li><i class="fas fa-check-circle"></i> Easy course registration</li>
-                        <li><i class="fas fa-check-circle"></i> Real-time schedule management</li>
+                        <li><i class="fas fa-check-circle"></i> Real-time status tracking</li>
                         <li><i class="fas fa-check-circle"></i> Academic progress tracking</li>
                         <li><i class="fas fa-check-circle"></i> Secure document submission</li>
                     </ul>
@@ -218,19 +218,20 @@
             <div class="row">
                 <div class="col-lg-6">
                     <form class="contact-form">
+                        @csrf
                         <div class="mb-3">
-                            <input type="text" class="form-control" placeholder="Your Name">
+                            <input id="q_name" type="text" class="form-control" placeholder="Your Name" required>
                         </div>
                         <div class="mb-3">
-                            <input type="email" class="form-control" placeholder="Your Email">
+                            <input id="q_email" type="email" class="form-control" placeholder="Your Email" required>
+                        </div>
+                        <div style="display: none;" class="mb-3">
+                            <input id="q_subject" type="text" class="form-control" placeholder="Subject">
                         </div>
                         <div class="mb-3">
-                            <input type="text" class="form-control" placeholder="Subject">
+                            <textarea id="q_ms" class="form-control" rows="5" placeholder="Your Message"></textarea>
                         </div>
-                        <div class="mb-3">
-                            <textarea class="form-control" rows="5" placeholder="Your Message"></textarea>
-                        </div>
-                        <button style="background-color: maroon; border-color: rgb(146, 54, 54)" type="submit" class="btn btn-primary">Send Message</button>
+                        <button onclick="send_question()" style="background-color: maroon; border-color: rgb(146, 54, 54)" type="submit" class="btn btn-primary">Send Message</button>
                     </form>
                 </div>
                 <div class="col-lg-6">
@@ -298,7 +299,7 @@
                         Student Login <span class="text-muted" style="font-size: 0.8rem; "></span>
                     </h5>
                     <h5 class="modal-title">
-                        <i class='fas fa-times-circle' data-bs-dismiss="modal" style='font-size:36px'></i>
+                        <i id="_fa-times-circle" class='fas fa-times-circle' data-bs-dismiss="modal"></i>
                     </h5>
                     <!-- <button type="button" class="btn-close btn-close-enhanced" data-bs-dismiss="modal" aria-label="Close"></button> -->
                 </div>
@@ -333,10 +334,16 @@
                             </label>
                         </div>
                         
-                        <button type="submit" class="btn btn-enhanced btn-enhanced-primary w-100" id="loginBtn">
+                        <!-- <button type="submit" class="btn btn-enhanced btn-enhanced-primary w-100" id="loginBtn">
                             <span id="loginBtnText">Login to Account</span>
                             <span class="spinner-border spinner-border-sm" style="display: none;" id="loginSpinner"></span>
+                        </button> -->
+
+                        <button type="submit" class="btn btn-primary-enhanced w-100" id="loginBtn">
+                            <span class="btn-text">Login Account</span>
+                            <i class="fas fa-arrow-right btn-icon"></i>
                         </button>
+
                         
                         <div class="mb-3 success-message" id="successMessage"></div>
                     </form>
@@ -375,7 +382,7 @@
                             <p class="modal-subtitle">Fill in your details to get started</p>
                         </div>
                         <h5 class="modal-title">
-                            <i class='fas fa-times-circle' data-bs-dismiss="modal" style='font-size:36px'></i>
+                            <i id="_fa-times-circle" class='fas fa-times-circle' data-bs-dismiss="modal"></i>
                         </h5>
                     </div>
                     <!-- <button style="float: right; top: 5px; background-color: white; color: red; font-size: 24px" type="button" class="btn-close btn-close-enhanced" data-bs-dismiss="modal" aria-label="Close">×</button> -->
@@ -411,6 +418,21 @@
                                             <option value="" disabled selected>Select gender</option>
                                             <option value="Male">Male</option>
                                             <option value="Female">Female</option>
+                                        </select>
+                                        <i class="fas fa-chevron-down select-arrow"></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group-enhanced">
+                                    <label for="gender" class="form-label">
+                                        <i class="fas fa-user"></i>
+                                        Status
+                                    </label>
+                                    <div class="custom-select">
+                                        <select class="form-control-enhanced" id="status" required>
+                                            <option value="" disabled selected>Status</option>
+                                            <option value="Single">Single</option>
+                                            <option value="Married">Married</option>
                                         </select>
                                         <i class="fas fa-chevron-down select-arrow"></i>
                                     </div>
@@ -478,8 +500,8 @@
                                     Email Address
                                 </label>
                                 <div class="input-with-icon">
-                                    <input type="email" class="form-control-enhanced" id="registerEmail" placeholder="student@evsu.edu.ph" required>
-                                    <span class="email-domain">@evsu.edu.ph</span>
+                                    <input type="email" class="form-control-enhanced" id="registerEmail" placeholder="your email address..." required>
+                                    <!-- <span class="email-domain">@evsu.edu.ph</span> -->
                                 </div>
                                 <div id="RloginEmailError" class="form-hint">Must use valid EVSU email address</div>
                             </div>
@@ -491,7 +513,7 @@
                                 </label>
                                 <div class="password-input-container">
                                     <input type="password" class="form-control-enhanced" id="registerPassword" placeholder="Create a strong password" required>
-                                    <button type="button" class="toggle-password" data-target="registerPassword">
+                                    <button id="register_show_password" type="button" class="toggle-password">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
@@ -503,10 +525,7 @@
                                         <span class="strength-text" id="passwordStrengthText">Weak</span>
                                     </div>
                                     <div class="strength-meter">
-                                        <div class="strength-segment" data-strength="weak"></div>
-                                        <div class="strength-segment" data-strength="medium"></div>
-                                        <div class="strength-segment" data-strength="strong"></div>
-                                        <div class="strength-segment" data-strength="very-strong"></div>
+                                        <div class="strength-meter-fill" id="passwordStrengthBar"></div>
                                     </div>
                                 </div>
                                 
@@ -542,7 +561,7 @@
                                 </label>
                                 <div class="password-input-container">
                                     <input type="password" class="form-control-enhanced" id="repeatPassword" placeholder="Re-enter your password" required>
-                                    <button type="button" class="toggle-password" data-target="repeatPassword">
+                                    <button id="register_show_password2" type="button" class="toggle-password">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
@@ -580,7 +599,7 @@
                             Sign In Here
                             <i class="fas fa-arrow-right"></i>
                         </a>
-                        <a href="#" class="footer-link" data-bs-dismiss="modal">
+                        <a href="#" id="_home" class="footer-link" data-bs-dismiss="modal">
                             ← back
                         </a>
                     </p>
@@ -670,6 +689,7 @@
     <!-- Custom JS -->
      <script src="{{asset('js/jquery.js')}}"></script>
     <!-- <script src="script.js"></script> -->
-    <script src="{{asset('js/function/index_student.js')}}"></script>
+     <script src="{{asset('js/function/index_student.js')}}"></script>
+    <script src="{{asset('js/sweetalert2.js')}}"></script>
 </body>
 </html>

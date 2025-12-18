@@ -88,6 +88,10 @@
   background-color: var(--accent-color);
 }
 
+#_home {
+    display: none;
+}
+
 body {
     font-family: 'Poppins', sans-serif;
     line-height: 1.6;
@@ -2226,6 +2230,18 @@ ul {
     gap: 16px;
 }
 
+#_fa-times-circle {
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 30px;
+    color: #fffafa;
+}
+
+#_fa-times-circle:hover {
+    transform: rotate(90deg);
+    color: #fffafa;
+  }
+
 /* Responsive Styles */
 @media (max-width: 992px) {
 
@@ -2554,6 +2570,7 @@ ul {
 }
 
 .btn-primary-enhanced:hover {
+    color: rgb(40, 231, 40);
     transform: translateY(-2px);
     box-shadow: 0 10px 25px rgba(148, 58, 58, 0.3);
 }
@@ -2828,6 +2845,8 @@ ul {
     border-radius: 50%;
     padding: 5px;
   }
+
+  
   
   /* Form grid adjustments */
   .responsive-grid {
@@ -2929,6 +2948,14 @@ ul {
     gap: 8px;
     text-align: center;
   }
+
+  #_home {
+    display: block;
+  }
+
+  .header-content {
+    display: none;
+}
     
 }
 
@@ -3114,6 +3141,7 @@ ul {
   .select-arrow {
     right: 14px;
   }
+
 }
 
 /* iPhone SE and very small devices */
