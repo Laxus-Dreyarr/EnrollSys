@@ -778,18 +778,38 @@ class StudentController extends Controller
     private function sendStudentOtpForgotPass(Request $request) {
         try {
             // Validate the registration data first
+            // $validator = Validator::make($request->all(), [
+            //     'email' => [
+            //         'required',
+            //         'email',
+            //         'regex:/^[^\s@]+@evsu\.edu\.ph$/'
+            //     ],
+            //     'password' => [
+            //         'required',
+            //         'min:8'
+            //     ]
+            // ], [
+            //     'email.regex' => 'Please enter a valid EVSUmail address (username@evsu.edu.ph).',
+            // ]);
+
+            // if ($validator->fails()) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => $validator->errors()->first()
+            //     ]);
+            // }
+
             $validator = Validator::make($request->all(), [
                 'email' => [
                     'required',
-                    'email',
-                    'regex:/^[^\s@]+@evsu\.edu\.ph$/'
+                    'email'
                 ],
                 'password' => [
                     'required',
                     'min:8'
                 ]
             ], [
-                'email.regex' => 'Please enter a valid EVSUmail address (username@evsu.edu.ph).',
+                
             ]);
 
             if ($validator->fails()) {

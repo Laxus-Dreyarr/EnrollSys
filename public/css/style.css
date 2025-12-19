@@ -73,19 +73,20 @@
 
 ::-webkit-scrollbar-track {
     border-radius: 10px;
-    background-color: #292b32;
+    background-color: none;
 }
 
 ::-webkit-scrollbar {
     width: 5px;
-    background-color: var(--accent-color);
+    background-color: none;
 }
 
 ::-webkit-scrollbar-thumb {
   border-radius: 10px;
   -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
   box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
-  background-color: var(--accent-color);
+  /* background-color: var(--accent-color); */
+  background-color: none;
 }
 
 #_home {
@@ -3260,6 +3261,17 @@ ul {
   .dark-theme .form-control-enhanced:focus {
     background: rgba(255, 255, 255, 0.08);
   }
+
+  #status{
+    font-size: 0.80rem;
+  }
+
+    #gender {
+        font-size: 0.80rem;
+    }
+
+
+
 }
 
 /* Touch-friendly improvements */

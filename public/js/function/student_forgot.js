@@ -3,7 +3,7 @@
 // Email validation function
 function isValidEmail(email) {
     // Check EVSUmail format
-    const emailRegex = /^[^\s@]+@evsu\.edu\.ph$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
 

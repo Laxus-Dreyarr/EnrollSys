@@ -372,7 +372,7 @@
 
     <!-- Enhanced Register Modal -->
     <div class="modal fade" id="registerModal" tabindex="-1" aria-hidden="true" style="touch-action: pan-y;">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div id="_unscroll" class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <!-- Modal Header -->
                 <div class="modal-header-enhanced">
@@ -418,7 +418,7 @@
                                     </label>
                                     <div class="custom-select">
                                         <select class="form-control-enhanced" id="gender" required>
-                                            <option value="" disabled selected>Select gender</option>
+                                            <option id="_option" value="" disabled selected>Select gender</option>
                                             <option value="Male">Male</option>
                                             <option value="Female">Female</option>
                                         </select>
@@ -694,6 +694,6 @@
     <!-- <script src="script.js"></script> -->
      <script src="{{asset('js/function/index_student.js')}}"></script>
     <script src="{{asset('js/sweetalert2.js')}}"></script>
-    <script src="{{asset('js/sweetalert3.js')}}"></script>
+    <!-- <script src="{{asset('js/sweetalert3.js')}}"></script> -->
 </body>
 </html>

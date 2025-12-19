@@ -336,13 +336,12 @@
                         <div class="form-group-enhanced">
                             <label for="registerEmail" class="form-label">
                                 <i class="fas fa-envelope"></i>
-                                EVSUmail
+                                Email
                             </label>
                             <div class="input-group-enhanced">
-                                <input type="email" class="form-control-enhanced" id="registerEmail" placeholder="input evsumail" required>
-                                <i class="form-icon fas fa-at"></i>
+                                <input type="email" class="form-control-enhanced" id="registerEmail" placeholder="email address" required>
                             </div>
-                            <div class="invalid-feedback">Please enter a valid EVSUmail address (@evsu.edu.ph)</div>
+                            <div class="invalid-feedback"></div>
                         </div>
                         
                         <div class="form-group-enhanced">
@@ -352,7 +351,6 @@
                             </label>
                             <div class="input-group-enhanced">
                                 <input type="password" class="form-control-enhanced" id="registerPassword" placeholder="Create a strong password" required>
-                                <i class="form-icon fas fa-key"></i>
                             </div>
                             
                             <div class="password-strength">
@@ -381,7 +379,6 @@
                             </label>
                             <div class="input-group-enhanced">
                                 <input type="password" class="form-control-enhanced" id="repeatPassword" placeholder="Repeat your password" required>
-                                <i class="form-icon fas fa-key"></i>
                             </div>
                             <div class="invalid-feedback">Passwords do not match</div>
                         </div>

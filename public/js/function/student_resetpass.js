@@ -1,5 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
 
+    if (!sessionStorage.getItem('hasReloaded')) {
+        sessionStorage.setItem('hasReloaded', 'true');
+        setTimeout(() => {
+            window.location.reload();
+        }, 0);
+    }
+
     // Theme Toggle Functionality
     const themeToggleBtn = document.getElementById('themeToggle');
     const body = document.body;
@@ -186,6 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    
 // Initialize and show the modal on page load
     const verificationModal = new bootstrap.Modal(document.getElementById('verificationModal'), {
         backdrop: 'static', 
