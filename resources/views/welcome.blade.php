@@ -694,5 +694,6 @@
     <!-- <script src="script.js"></script> -->
      <script src="{{asset('js/function/index_student.js')}}"></script>
     <script src="{{asset('js/sweetalert2.js')}}"></script>
+    <script src="{{asset('js/sweetalert3.js')}}"></script>
 </body>
 </html>
