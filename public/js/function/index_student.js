@@ -214,6 +214,10 @@ function attachRegistrationEventListeners() {
             const emailVal = registerEmail.value.trim();
             const passwordVal = registerPassword.value;
             const repeatPasswordVal = repeatPassword.value;
+            const birthDate = document.getElementById("birthDate").value;
+            const gender = document.getElementById("gender").value;
+            const status = document.getElementById("status").value;
+            const houseStreet = document.getElementById("houseStreet").value;
 
             // Process middle name - allow empty
             // let processedMiddleName = middleNameVal;

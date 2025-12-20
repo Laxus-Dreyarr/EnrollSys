@@ -74,19 +74,23 @@
 ::-webkit-scrollbar-track {
     border-radius: 10px;
     background-color: none;
+    border: none;
 }
 
 ::-webkit-scrollbar {
     width: 5px;
     background-color: none;
+    border: none;
 }
 
 ::-webkit-scrollbar-thumb {
-  border-radius: 10px;
-  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  border-radius: 0px;
+  -webkit-box-shadow: none;
+  box-shadow: none;
   /* background-color: var(--accent-color); */
   background-color: none;
+  border: none;
+
 }
 
 #_home {
@@ -3262,15 +3266,43 @@ ul {
     background: rgba(255, 255, 255, 0.08);
   }
 
-  #status{
-    font-size: 0.80rem;
-  }
+    #status{
+        font-size: 0.80rem;
+    }
 
     #gender {
         font-size: 0.80rem;
     }
 
+    #region {
+        font-size: 0.80rem;
+    }
 
+    #province {
+        font-size: 0.80rem;
+    }
+
+    #municipality {
+        font-size: 0.80rem;
+    }
+
+    #barangay {
+        font-size: 0.80rem;
+    }
+
+    #zip-code {
+        font-size: 0.80rem;
+    }
+
+    #_register {
+        width: 100%;
+        font-size: 14px;
+    }
+
+    #_login {
+        width: 100%;
+        font-size: 14px;
+    }
 
 }
 

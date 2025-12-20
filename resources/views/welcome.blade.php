@@ -81,8 +81,8 @@
                     <h1 class="hero-title">Welcome to <span>EnrollSys</span></h1>
                     <p class="hero-subtitle">Your seamless gateway to academic enrollment and management</p>
                     <div class="hero-buttons">
-                        <button class="btn btn-primary btn-lg me-3" data-bs-toggle="modal" data-bs-target="#registerModal" style="background-color: maroon; border-color: maroon">Register</button>
-                        <button data-bs-toggle="modal" data-bs-target="#loginModal" class="btn btn-outline-light btn-lg">Login</button>
+                        <button id="_register" class="btn btn-primary btn-lg me-3" data-bs-toggle="modal" data-bs-target="#registerModal" style="background-color: maroon; border-color: maroon">Register</button>
+                        <button id="_login" data-bs-toggle="modal" data-bs-target="#loginModal" class="btn btn-outline-light btn-lg">Login</button>
                     </div>
                 </div>
                 <div class="col-lg-5 d-none d-lg-block">
@@ -456,29 +456,60 @@
                                     </label>
                                     <input type="text" class="form-control-enhanced" id="houseStreet" placeholder="e.g., 123 Main St" required>
                                 </div>
-                                
+
                                 <div class="form-group-enhanced">
-                                    <label for="barangay" class="form-label">
-                                        <i class="fas fa-location-dot"></i>
-                                        Barangay
+                                    <label for="gender" class="form-label">
+                                        <i class="fas fa-user"></i>
+                                        Region
                                     </label>
-                                    <input type="text" class="form-control-enhanced" id="barangay" placeholder="Enter barangay" required>
+                                    <div class="custom-select">
+                                        <select class="form-control-enhanced" id="region" onchange="loadProvinces(this.value)" required>
+                                            <option value="">Select Region</option>
+                                            @foreach(App\Helpers\PSGC::getRegions() as $region)
+                                                <option value="{{ $region['designation'] }}">{{ $region['name'] }}</option>
+                                            @endforeach
+                                        </select>
+                                        <i class="fas fa-chevron-down select-arrow"></i>
+                                    </div>
                                 </div>
-                                
+
                                 <div class="form-group-enhanced">
-                                    <label for="cityMunicipality" class="form-label">
-                                        <i class="fas fa-city"></i>
-                                        City/Municipality
-                                    </label>
-                                    <input type="text" class="form-control-enhanced" id="cityMunicipality" placeholder="Enter city/municipality" required>
-                                </div>
-                                
-                                <div class="form-group-enhanced">
-                                    <label for="province" class="form-label">
-                                        <i class="fas fa-map"></i>
+                                    <label for="gender" class="form-label">
+                                        <i class="fas fa-user"></i>
                                         Province
                                     </label>
-                                    <input type="text" class="form-control-enhanced" id="province" placeholder="Enter province" required>
+                                    <div class="custom-select">
+                                        <select class="form-control-enhanced" id="province" onchange="loadMunicipalities(this.value)" required>
+                                            <option value="">Select Province</option>
+                                        </select>
+                                        <i class="fas fa-chevron-down select-arrow"></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group-enhanced">
+                                    <label for="gender" class="form-label">
+                                        <i class="fas fa-user"></i>
+                                        Municipality/City
+                                    </label>
+                                    <div class="custom-select">
+                                        <select class="form-control-enhanced" id="municipality" onchange="loadBarangays(this.value)" required>
+                                            <option value="">Select Municipality/City</option>
+                                        </select>
+                                        <i class="fas fa-chevron-down select-arrow"></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group-enhanced">
+                                    <label for="gender" class="form-label">
+                                        <i class="fas fa-user"></i>
+                                        Barangay
+                                    </label>
+                                    <div class="custom-select">
+                                        <select class="form-control-enhanced" id="barangay" required>
+                                            <option value="">Select Barangay</option>
+                                        </select>
+                                        <i class="fas fa-chevron-down select-arrow"></i>
+                                    </div>
                                 </div>
                                 
                                 <div class="form-group-enhanced">
@@ -486,7 +517,11 @@
                                         <i class="fas fa-mail-bulk"></i>
                                         Zip Code
                                     </label>
-                                    <input type="text" class="form-control-enhanced" id="zipCode" placeholder="e.g., 6500" required>
+                                    <div class="custom-select">
+                                        <select class="form-control-enhanced" id="zip-code" required>
+                                        </select>
+                                        <i class="fas fa-chevron-down select-arrow"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -694,6 +729,165 @@
     <!-- <script src="script.js"></script> -->
      <script src="{{asset('js/function/index_student.js')}}"></script>
     <script src="{{asset('js/sweetalert2.js')}}"></script>
-    <!-- <script src="{{asset('js/sweetalert3.js')}}"></script> -->
+    <script src="{{ asset('js/psgc/psgc-handler.js') }}"></script>
+    <script src="{{ asset('js/psgc/smart-zip-codes.js') }}"></script>
+    <script>
+        // Initialize smart zip codes
+        smartZipCodes.load();
+        
+        function loadProvinces(regionDesignation) {
+            const provinceSelect = document.getElementById('province');
+            provinceSelect.innerHTML = '<option value="">Select Province</option>';
+            
+            // Clear dependent fields
+            document.getElementById('municipality').innerHTML = '<option value="">Select Municipality/City</option>';
+            document.getElementById('barangay').innerHTML = '<option value="">Select Barangay</option>';
+            document.getElementById('zip-code').innerHTML = '<option value="">Select Zip Code</option>';
+            
+            if (regionDesignation) {
+                const provinces = psgc.provinces.findByRegion(regionDesignation);
+                provinces.forEach(province => {
+                    const option = document.createElement('option');
+                    option.value = province.name;
+                    option.textContent = province.name;
+                    provinceSelect.appendChild(option);
+                });
+            }
+        }
+
+        function loadMunicipalities(provinceName) {
+            const municipalitySelect = document.getElementById('municipality');
+            municipalitySelect.innerHTML = '<option value="">Select Municipality/City</option>';
+            
+            // Clear dependent fields
+            document.getElementById('barangay').innerHTML = '<option value="">Select Barangay</option>';
+            document.getElementById('zip-code').innerHTML = '<option value="">Select Zip Code</option>';
+            
+            if (provinceName) {
+                const municipalities = psgc.municipalities.findByProvince(provinceName);
+                municipalities.forEach(municipality => {
+                    const option = document.createElement('option');
+                    option.value = municipality.name;
+                    option.textContent = `${municipality.name} ${municipality.city ? '(City)' : ''}`;
+                    municipalitySelect.appendChild(option);
+                });
+            }
+        }
+
+        function loadBarangays(municipalityName) {
+            const barangaySelect = document.getElementById('barangay');
+            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+            
+            // Clear zip code
+            document.getElementById('zip-code').innerHTML = '<option value="">Select Zip Code</option>';
+            
+            if (municipalityName) {
+                const barangays = psgc.barangays.findByMunicipality(municipalityName);
+                barangays.forEach(barangay => {
+                    const option = document.createElement('option');
+                    option.value = barangay.code;
+                    option.textContent = barangay.name;
+                    barangaySelect.appendChild(option);
+                });
+                
+                // Load zip codes for this municipality
+                loadZipCodes(municipalityName);
+            }
+        }
+
+        function loadZipCodes(municipalityName) {
+            const zipSelect = document.getElementById('zip-code');
+            zipSelect.innerHTML = '<option value="">Select Zip Code</option>';
+            
+            if (municipalityName) {
+                // Get municipality data to check if it's a city
+                const municipality = psgc.municipalities.find(municipalityName);
+                const isCity = municipality ? municipality.city : false;
+                
+                // Get zip codes for this municipality
+                const zipCodes = smartZipCodes.getZipCodesForMunicipality(municipalityName, isCity);
+                
+                if (zipCodes.length > 0) {
+                    zipCodes.forEach(zipCode => {
+                        const option = document.createElement('option');
+                        option.value = zipCode;
+                        option.textContent = zipCode;
+                        zipSelect.appendChild(option);
+                    });
+                } else {
+                    // If no zip codes found, show a message
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No zip code available';
+                    option.disabled = true;
+                    zipSelect.appendChild(option);
+                }
+            }
+        }
+
+        setTimeout(() => {
+            console.log('Testing mapping...');
+            console.log('Ormoc zip codes:', smartZipCodes.getZipCodesForMunicipality('Ormoc', true));
+            console.log('Baybay zip codes:', smartZipCodes.getZipCodesForMunicipality('Baybay', true));
+            console.log('Mandaluyong zip codes:', smartZipCodes.getZipCodesForMunicipality('Mandaluyong', true));
+        }, 2000);
+    </script>
+    <!-- <script>
+        // Wait for data to load
+        setTimeout(() => {
+            console.log('All Regions:', psgc.regions.all());
+            console.log('NCR:', psgc.regions.find('National Capital Region'));
+            console.log('Regions with "Visayas":', psgc.regions.filter('visayas'));
+            
+            // Example: Get all provinces in NCR
+            console.log('Provinces in NCR:', psgc.provinces.findByRegion('NCR'));
+        }, 1000);
+
+        function loadProvinces(regionDesignation) {
+            const provinceSelect = document.getElementById('province');
+            provinceSelect.innerHTML = '<option value="">Select Province</option>';
+            
+            if (regionDesignation) {
+                const provinces = psgc.provinces.findByRegion(regionDesignation);
+                provinces.forEach(province => {
+                    const option = document.createElement('option');
+                    option.value = province.name;
+                    option.textContent = province.name;
+                    provinceSelect.appendChild(option);
+                });
+            }
+        }
+
+        function loadMunicipalities(provinceName) {
+            const municipalitySelect = document.getElementById('municipality');
+            municipalitySelect.innerHTML = '<option value="">Select Municipality/City</option>';
+            
+            if (provinceName) {
+                const municipalities = psgc.municipalities.findByProvince(provinceName);
+                municipalities.forEach(municipality => {
+                    const option = document.createElement('option');
+                    option.value = municipality.name;
+                    option.textContent = `${municipality.name} ${municipality.city ? '(City)' : ''}`;
+                    municipalitySelect.appendChild(option);
+                });
+            }
+        }
+
+        function loadBarangays(municipalityName) {
+            const barangaySelect = document.getElementById('barangay');
+            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+            
+            if (municipalityName) {
+                const barangays = psgc.barangays.findByMunicipality(municipalityName);
+                barangays.forEach(barangay => {
+                    const option = document.createElement('option');
+                    option.value = barangay.code;
+                    option.textContent = barangay.name;
+                    barangaySelect.appendChild(option);
+                });
+            }
+        }
+    </script> -->
+    <script src="{{asset('js/sweetalert3.js')}}"></script>
 </body>
 </html>

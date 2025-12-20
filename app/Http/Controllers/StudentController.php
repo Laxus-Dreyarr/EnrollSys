@@ -974,7 +974,7 @@ class StudentController extends Controller
 
             $find = DB::table('csv')
                     ->where('email', $email)
-                    ->exists();
+                    ->first();
 
             if(!$find) {
                 return response()->json(['success' => false, 'message' => 'You are not allowed to register with this email!']);

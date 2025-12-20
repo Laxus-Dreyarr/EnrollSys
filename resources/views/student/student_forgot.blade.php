@@ -420,5 +420,6 @@
      <script src="{{asset('js/jquery.js')}}"></script>
     <!-- <script src="script.js"></script> -->
     <script src="{{asset('js/function/student_forgot.js')}}"></script>
+     <script src="{{asset('js/sweetalert3.js')}}"></script>
 </body>
 </html>
