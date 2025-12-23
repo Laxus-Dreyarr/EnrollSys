@@ -403,6 +403,17 @@
                                 <div class="form-group-enhanced">
                                     <label for="birthDate" class="form-label">
                                         <i class="fas fa-calendar-alt"></i>
+                                        Student Number
+                                    </label>
+                                    <div class="input-with-icon">
+                                        <input type="text" class="form-control-enhanced" id="studentNo" required>
+                                        <i class='fas fa-user-graduate input-icon-right'></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group-enhanced">
+                                    <label for="birthDate" class="form-label">
+                                        <i class="fas fa-calendar-alt"></i>
                                         Birth Date
                                     </label>
                                     <div class="input-with-icon">
@@ -785,7 +796,7 @@
                 const barangays = psgc.barangays.findByMunicipality(municipalityName);
                 barangays.forEach(barangay => {
                     const option = document.createElement('option');
-                    option.value = barangay.code;
+                    option.value = barangay.name;
                     option.textContent = barangay.name;
                     barangaySelect.appendChild(option);
                 });

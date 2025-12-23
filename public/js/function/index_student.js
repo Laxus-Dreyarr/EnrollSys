@@ -211,6 +211,7 @@ function attachRegistrationEventListeners() {
             // const givenNameVal = givenName.value.trim();
             // const lastNameVal = lastName.value.trim();
             // const middleNameVal = middleName.value.trim();
+            const studentNo = document.getElementById("studentNo").value;
             const emailVal = registerEmail.value.trim();
             const passwordVal = registerPassword.value;
             const repeatPasswordVal = repeatPassword.value;
@@ -305,6 +306,7 @@ function attachRegistrationEventListeners() {
                 // givenName: givenNameVal,
                 // lastName: lastNameVal,
                 // middleName: middleNameVal,
+                studentNo: studentNo,
                 email: emailVal,
                 password: passwordVal,
                 repeatPassword: repeatPasswordVal,
@@ -332,6 +334,7 @@ function attachRegistrationEventListeners() {
         // verificationData.append('givenName', formData.givenName);
         // verificationData.append('lastName', formData.lastName);
         // verificationData.append('middleName', formData.middleName);
+        verificationData.append('studentNo', formData.studentNo);
         verificationData.append('email', formData.email);
         verificationData.append('password', formData.password);
         verificationData.append('repeatPassword', formData.repeatPassword);
