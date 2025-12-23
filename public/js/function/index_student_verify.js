@@ -339,134 +339,145 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '/clear';
     });
     
-
-        // Code input automation
-    const codeInputs = document.querySelectorAll('.verification-digit');
-    const hiddenCodeInput = document.getElementById('verificationCode');
     
-    // Function to update the hidden input with the complete code
-    function updateCodeValue() {
-        let code = '';
-        codeInputs.forEach(input => {
-            code += input.value;
-        });
-        hiddenCodeInput.value = code;
-    }
-    
-    // Add event listeners to code inputs
-    codeInputs.forEach((input, index) => {
-        // Move to next input on digit entry
-        input.addEventListener('input', function() {
-            updateCodeValue();
-            
-            if (this.value.length === 1 && index < codeInputs.length - 1) {
-                codeInputs[index + 1].focus();
-            }
-        });
-        
-        // Move to previous input on backspace
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Backspace' && this.value === '' && index > 0) {
-                codeInputs[index - 1].focus();
-            }
-        });
-    });
-    
-    // Auto-focus first code input
-    if (codeInputs.length > 0) {
-        codeInputs[0].focus();
-    }
-    
-    // Form submission handler
-    const resetBtn = document.getElementById('verifyButton');
+    // Single OTP input field functionality
+    const verificationCodeInput = document.getElementById('verificationCodeInput');
+    const verifyButton = document.getElementById('verifyButton');
     const statusMessage = document.getElementById('statusMessage');
     let wrongAttempts = 0; // Track wrong attempts globally
 
-    
+    // Auto-focus on the input field when modal opens
+    verificationModal.show();
+    setTimeout(() => {
+        verificationCodeInput.focus();
+    }, 500);
+
+
+
+    // Function to validate and auto-verify OTP
+    function validateAndAutoVerify() {
+        const enteredCode = verificationCodeInput.value.trim();
+        const actualCode = document.getElementById('code').value;
+        
+        // Only proceed if we have exactly 6 digits
+        if (enteredCode.length !== 6 || !/^\d+$/.test(enteredCode)) {
+            return false;
+        }
+        
+        // If code matches, auto-verify
+        if (enteredCode === actualCode) {
+            performVerification();
+            return true;
+        }
+        
+        return false;
+    }
+
+    // Add input event listener for auto-verification
+    verificationCodeInput.addEventListener('input', function(e) {
+        // Remove any non-digit characters
+        this.value = this.value.replace(/\D/g, '');
+        
+        // Auto-verify when 6 digits are entered
+        if (this.value.length === 6) {
+            validateAndAutoVerify();
+        }
+        
+        // Clear any previous error messages when typing
+        if (this.value.length > 0) {
+            statusMessage.style.display = 'none';
+        }
+    });
+
+    // Also check on paste event
+    verificationCodeInput.addEventListener('paste', function(e) {
+        // Get pasted text
+        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+        
+        // Only keep digits and limit to 6
+        const digitsOnly = pastedText.replace(/\D/g, '').substring(0, 6);
+        
+        // Update input value
+        this.value = digitsOnly;
+        
+        // Auto-verify if we have 6 digits
+        if (digitsOnly.length === 6) {
+            setTimeout(() => {
+                validateAndAutoVerify();
+            }, 100);
+        }
+        
+        e.preventDefault();
+    });
+
+
+    // Manual verification button click
     verifyButton.addEventListener('click', function(e) {
         e.preventDefault();
         
-        // Get form values
-        const verificationCode = hiddenCodeInput.value;
-        const vcode = document.getElementById('code').value;
-        const nemail = document.getElementById('resetEmail').value;
+        const enteredCode = verificationCodeInput.value.trim();
         
         // Validate form
-        if (verificationCode.length !== 6) {
+        if (enteredCode.length !== 6) {
             showStatus('Please enter the complete 6-digit verification code', 'error');
+            verificationCodeInput.focus();
             return;
         }
         
+        if (!/^\d+$/.test(enteredCode)) {
+            showStatus('Please enter numbers only', 'error');
+            verificationCodeInput.focus();
+            verificationCodeInput.select();
+            return;
+        }
+        
+        const actualCode = document.getElementById('code').value;
+        
         // Verify the code
-        if (verificationCode !== vcode) {
+        if (enteredCode !== actualCode) {
             wrongAttempts++; // Increment wrong attempts
 
             if (wrongAttempts >= 3) {
                 showStatus('Too many failed attempts. Refreshing page...', 'error');
                 setTimeout(() => {
-                     window.location.href = '/clear';
+                    window.location.href = '/clear';
                 }, 2000); // Optional: 2 second delay to show message
                 return;
             }
 
             const remainingAttempts = 3 - wrongAttempts;
-
             showStatus(`Invalid verification code. ${remainingAttempts} attempt(s) remaining.`, 'error');
-            
+            verificationCodeInput.focus();
+            verificationCodeInput.select();
             return;
         }
         
-        // If code is correct, update password
-        saveAccount(nemail);
+        // If code is correct, proceed with verification
+        performVerification();
     });
-    
-    // Function to update password via AJAX
-    function saveAccount(nemail) {
-        // Show loading state
-        resetBtn.disabled = true;
-        resetBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+
+    // Function to perform the actual verification
+    function performVerification() {
+        const nemail = document.getElementById('resetEmail').value;
         
-        // Simulate AJAX call (replace with actual API call)
-        setTimeout(() => {
-            $.ajax({
-                url: '/exe/student',
-                method: 'POST',
-                data: {
-                    email: nemail,
-                    action: 'confirm_account',
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                    if(response == '0'){
-                        showStatus('Something went wrong!', 'error');
-                        resetBtn.disabled = false;
-                    }else if (response == '7') {
-                        showStatus('Failed to save user record!', 'error');
-                        resetBtn.disabled = false;
-                        setTimeout(() => {
-                            window.location.href = '/';
-                        }, 2000);
-                    }else if (response == '9') {
-                        insertsupabase();
-                        showStatus('Registration Complete...', 'success');
-                        setTimeout(() => {
-                            window.location.href = '/';
-                        }, 5000);
-                    }
-                },
-                error: function() {
-                    showStatus('An error occurred. Please try again.', 'error');
-                    resetBtn.disabled = false;
-                    resetBtn.innerHTML = 'Verify';
-                }
-            });
-            
-        }, 1500);
+        // Show loading state on verify button
+        verifyButton.disabled = true;
+        verifyButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verifying...';
+        
+        // Also disable the input field
+        verificationCodeInput.disabled = true;
+        
+        // Clear any error messages
+        statusMessage.style.display = 'none';
+        
+        // Show success message
+        showStatus('Verification successful! Saving account...', 'success');
+        
+        // Save account (your existing AJAX call)
+        saveAccount(nemail);
     }
 
-    
-
-        // Function to show status messages
+    // Function to show status messages
     function showStatus(message, type) {
         statusMessage.textContent = message;
         statusMessage.className = 'status-message ' + type;
@@ -478,6 +489,47 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusMessage.style.display = 'none';
             }, 5000);
         }
+    }
+
+    // Function to update password via AJAX
+    function saveAccount(nemail) {
+        $.ajax({
+            url: '/exe/student',
+            method: 'POST',
+            data: {
+                email: nemail,
+                action: 'confirm_account',
+                _token: $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if(response == '0'){
+                    showStatus('Something went wrong!', 'error');
+                    verifyButton.disabled = false;
+                    verificationCodeInput.disabled = false;
+                    verifyButton.innerHTML = '<i class="fas fa-check me-2"></i>Verify';
+                }else if (response == '7') {
+                    showStatus('Failed to save user record!', 'error');
+                    verifyButton.disabled = false;
+                    verificationCodeInput.disabled = false;
+                    verifyButton.innerHTML = '<i class="fas fa-check me-2"></i>Verify';
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                }else if (response == '9') {
+                    insertsupabase();
+                    showStatus('Registration Complete! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 3000);
+                }
+            },
+            error: function() {
+                showStatus('An error occurred. Please try again.', 'error');
+                verifyButton.disabled = false;
+                verificationCodeInput.disabled = false;
+                verifyButton.innerHTML = '<i class="fas fa-check me-2"></i>Verify';
+            }
+        });
     }
     
     

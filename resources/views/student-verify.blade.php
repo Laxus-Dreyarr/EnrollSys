@@ -450,7 +450,7 @@ $password = $registerData['password'];
                     <div class="text-center mb-4">
                         <i class="fas fa-envelope-circle-check fa-4x text-primary"></i>
                     </div>
-                    <h4 class="text-center mb-3">Please verify your email/{{$otp}}</h4>
+                    <h4 class="text-center mb-3">Please verify your email</h4>
                     <p>We've sent a verification code to <strong id="userEmail"><?=$email?></strong>. </p>
                     <p>Please check your inbox and enter the code below to verify your account.</p>
                     
@@ -459,18 +459,19 @@ $password = $registerData['password'];
                     </div>
                     
                     <div class="verification-code-inputs mb-4">
-                        <div class="d-flex justify-content-between mb-3">
-                            <input type="text" class="form-control verification-digit" maxlength="1" data-index="1" placeholder="_">
-                            <input type="text" class="form-control verification-digit" maxlength="1" data-index="2" placeholder="_">
-                            <input type="text" class="form-control verification-digit" maxlength="1" data-index="3" placeholder="_">
-                            <input type="text" class="form-control verification-digit" maxlength="1" data-index="4" placeholder="_">
-                            <input type="text" class="form-control verification-digit" maxlength="1" data-index="5" placeholder="_">
-                            <input type="text" class="form-control verification-digit" maxlength="1" data-index="6" placeholder="_">
+                        <div class="mb-3 text-center">
+                            <!-- Single input field for OTP -->
+                            <input type="text" 
+                                class="form-control verification-code-single" 
+                                id="verificationCodeInput" 
+                                maxlength="6" 
+                                placeholder="Enter 6-digit code"
+                                style="font-size: 1.5rem; letter-spacing: 10px; text-align: center; padding: 15px;">
+                            <div class="text-center mt-2">
+                                <small class="text-muted">Enter the 6-digit code sent to your email</small>
+                            </div>
                         </div>
-                        <input type="hidden" id="verificationCode" name="verificationCode">
-                        <div class="text-center">
-                            <small class="text-muted">Enter the 6-digit code sent to your email</small>
-                        </div>
+                        <!-- Hidden input for the actual OTP value -->
                         <input type="hidden" id="code" value="{{ $otp }}">
                         <input type="hidden" id="resetEmail" value="{{ $email ?? '' }}">
                     </div>

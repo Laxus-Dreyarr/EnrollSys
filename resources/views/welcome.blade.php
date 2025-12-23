@@ -888,6 +888,6 @@
             }
         }
     </script> -->
-    <script src="{{asset('js/sweetalert3.js')}}"></script>
+    <!-- <script src="{{asset('js/sweetalert3.js')}}"></script> -->
 </body>
 </html>

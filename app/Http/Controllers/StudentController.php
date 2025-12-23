@@ -30,7 +30,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Session;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Schema;
-
+use Carbon\Carbon;
+use DateTime;
 
 class StudentController extends Controller
 {
@@ -194,35 +195,7 @@ class StudentController extends Controller
     private function sendVerificationCode(Request $request)
     {
         try {
-            // Validate the registration data first
-            // $validator = Validator::make($request->all(), [
-            //     'givenName' => [
-            //         'required',
-            //         'string',
-            //         'min:2',
-            //         'max:50',
-            //         'regex:/^[A-Za-z\s\-\']+$/'
-            //     ],
-            //     'lastName' => [
-            //         'required',
-            //         'string',
-            //         'min:2',
-            //         'max:50',
-            //         'regex:/^[A-Za-z\s\-\']+$/'
-            //     ],
-            //     'email' => [
-            //         'required',
-            //         'email',
-            //         'regex:/^[^\s@]+@evsu\.edu\.ph$/'
-            //     ],
-            //     'password' => [
-            //         'required',
-            //         'min:8'
-            //     ]
-            // ], [
-            //     'email.regex' => 'Please enter a valid EVSUmail address (username@evsu.edu.ph).',
-            // ]);
-
+            // Validate the registration data
             $validator = Validator::make($request->all(), [
                 'email' => [
                     'required',
@@ -231,8 +204,58 @@ class StudentController extends Controller
                 'password' => [
                     'required',
                     'min:8'
+                ],
+                'birthDate' => [
+                    'required',
+                    'date',
+                    function ($attribute, $value, $fail) {
+                        try {
+                            $birthDate = Carbon::parse($value);
+                            $today = Carbon::now();
+                            $age = $birthDate->diffInYears($today);
+                            
+                            // Check if born in 2018 or earlier
+                            $birthYear = $birthDate->year;
+                            
+                            if ($birthYear > 2008) {
+                                $fail('You must be born in 2018 or earlier to register.');
+                            }
+                            
+                            // Check minimum age of 6 years
+                            if ($age < 17) {
+                                $fail('You must be at least 17 years old to register.');
+                            }
+                        } catch (\Exception $e) {
+                            $fail('Invalid date format.');
+                        }
+                    }
+                ],
+                'gender' => [
+                    'required'
+                ],
+                'status' => [
+                    'required'
+                ],
+                'houseStreet' => [
+                    'required'
+                ],
+                'region' => [
+                    'required'
+                ],
+                'province' => [
+                    'required'
+                ],
+                'municipality' => [
+                    'required'
+                ],
+                'barangay' => [
+                    'required'
+                ],
+                'zip_code' => [
+                    'required'
                 ]
             ], [
+                // Custom messages if needed
             ]);
 
             if ($validator->fails()) {
@@ -242,9 +265,9 @@ class StudentController extends Controller
                 ]);
             }
 
-            // $emailExists = User::where('email2', $request->email)
-            //   ->whereNotNull('password')
-            //   ->exists();
+            // Calculate and store age for later use
+            $birthDate = Carbon::parse($request->birthDate);
+            $age = $birthDate->diffInYears(Carbon::now());
 
             $find = DB::table('csv')
                     ->where('email', $request->email)
@@ -281,26 +304,21 @@ class StudentController extends Controller
             // Get device information
             $deviceInfo = $this->getDeviceInfo();
 
-            // Cache::put('registration_' . $request->email, [
-            //     'otp' => $verificationCode,
-            //     'givenName' => $request->givenName,
-            //     'lastName' => $request->lastName,
-            //     'middleName' => $request->middleName,
-            //     'password' => $request->password,
-            //     'email' => $request->email,
-            //     'attempts' => 0,
-            //     'ip_address' => request()->ip(),
-            //     'device_info' => $deviceInfo, // Store device info in cache
-            //     'device_summary' => $this->getDeviceSummary()
-            // ], now()->addMinutes(10));
-
             Cache::put('registration_' . $request->email, [
                 'otp' => $verificationCode,
                 'password' => $request->password,
                 'email' => $request->email,
+                'birthDate' => $request->birthDate,
+                'age' => $age, // Store calculated age
+                'houseStreet' => $request->houseStreet,
+                'region' => $request->region,
+                'province' => $request->province,
+                'municipality' => $request->municipality,
+                'barangay' => $request->barangay,
+                'zip_code' => $request->zip_code,
                 'attempts' => 0,
                 'ip_address' => request()->ip(),
-                'device_info' => $deviceInfo, // Store device info in cache
+                'device_info' => $deviceInfo,
                 'device_summary' => $this->getDeviceSummary()
             ], now()->addMinutes(10));
 
@@ -308,7 +326,7 @@ class StudentController extends Controller
 
             // Send verification email
             try {
-                Mail::to($request->email)->send(new RegistrationVerification($verificationCode, $request->givenName, $request->lastName));
+                 Mail::to($request->email)->send(new RegistrationVerification($verificationCode, $request->givenName, $request->lastName));
 
                 // Check if email was actually sent
                 if (count(Mail::failures()) > 0) {
@@ -345,6 +363,8 @@ class StudentController extends Controller
             ]);
         }
     }
+
+
 
     private function SendQuestion2(Request $request) 
     {
@@ -714,9 +734,9 @@ class StudentController extends Controller
                 ? ucfirst(strtolower($find->middlename)) 
                 : null;
             $userInfo->phone_number = $find->contact_number ? $find->contact_number : null;
-            $userInfo->birthdate = null;
-            $userInfo->age = null;
-            $userInfo->address = null;
+            $userInfo->birthdate = $registrationData['birthDate'];
+            $userInfo->age = $registrationData['age'];
+            $userInfo->address = ''.$registrationData['houseStreet'].', '.$registrationData['barangay'] .', '.$registrationData['municipality'] .', '.$registrationData['province'];
 
             if (!$userInfo->save()) {
                 $x = '7';

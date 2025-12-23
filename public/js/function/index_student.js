@@ -218,6 +218,12 @@ function attachRegistrationEventListeners() {
             const gender = document.getElementById("gender").value;
             const status = document.getElementById("status").value;
             const houseStreet = document.getElementById("houseStreet").value;
+            const region = document.getElementById("region").value;
+            const province = document.getElementById("province").value;
+            const municipality = document.getElementById("municipality").value;
+            const barangay = document.getElementById("barangay").value;
+            const zip_code = document.getElementById("zip-code").value;
+
 
             // Process middle name - allow empty
             // let processedMiddleName = middleNameVal;
@@ -301,7 +307,16 @@ function attachRegistrationEventListeners() {
                 // middleName: middleNameVal,
                 email: emailVal,
                 password: passwordVal,
-                repeatPassword: repeatPasswordVal
+                repeatPassword: repeatPasswordVal,
+                birthDate: birthDate,
+                gender: gender,
+                status: status,
+                houseStreet: houseStreet,
+                region: region,
+                province: province,
+                municipality: municipality,
+                barangay: barangay,
+                zip_code: zip_code
             });
         });
     }
@@ -320,6 +335,15 @@ function attachRegistrationEventListeners() {
         verificationData.append('email', formData.email);
         verificationData.append('password', formData.password);
         verificationData.append('repeatPassword', formData.repeatPassword);
+        verificationData.append('birthDate', formData.birthDate);
+        verificationData.append('gender', formData.gender);
+        verificationData.append('status', formData.status);
+        verificationData.append('houseStreet', formData.houseStreet);
+        verificationData.append('region', formData.region);
+        verificationData.append('province', formData.province);
+        verificationData.append('municipality', formData.municipality);
+        verificationData.append('barangay', formData.barangay);
+        verificationData.append('zip_code', formData.zip_code);
         verificationData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
         fetch('/exe/student', {
@@ -352,7 +376,25 @@ function attachRegistrationEventListeners() {
                 // startVerificationTimer();
                 
             } else {
-                alert('Failed to send verification code: ' + data.message);
+                Swal.fire({
+                        title: 'Failed to send verification code!',
+                        text: ''+data.message,
+                        icon: 'error',
+                        confirmButtonText: 'Close',
+                        confirmButtonColor: '#070808ff',
+                        background: '#1a1a2e',
+                        color: '#ffffff',
+                        backdrop: 'rgba(0,0,0,0.7)',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showClass: {
+                            popup: 'animate__animated animate__fadeInDown'
+                        },
+                        hideClass: {
+                            popup: 'animate__animated animate__fadeOutUp'
+                        }
+                    });
+                // alert('Failed to send verification code: ' + data.message);
             }
         })
         .catch(error => {
