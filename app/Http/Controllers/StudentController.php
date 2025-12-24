@@ -287,7 +287,7 @@ class StudentController extends Controller
                         }
                     }
                 ],
-                'gender' => [
+                'sex' => [
                     'required'
                 ],
                 'status' => [
@@ -396,12 +396,14 @@ class StudentController extends Controller
                     'email' => $request->email,
                     'birthDate' => $request->birthDate,
                     'age' => $age, // Store calculated age
+                    'sex' => $request->sex,
                     'houseStreet' => $request->houseStreet,
                     'region' => $request->region,
                     'province' => $request->province,
                     'municipality' => $request->municipality,
                     'barangay' => $request->barangay,
                     'zip_code' => $request->zip_code,
+                    'relationship_status' => $request->status,
                     'is_regular' => '2',
                     'year_level' => "NONE",
                     'curriculum' => $assignedCurriculum,
@@ -477,12 +479,14 @@ class StudentController extends Controller
                     'email' => $request->email,
                     'birthDate' => $request->birthDate,
                     'age' => $age, // Store calculated age
+                    'sex' => $request->sex,
                     'houseStreet' => $request->houseStreet,
                     'region' => $request->region,
                     'province' => $request->province,
                     'municipality' => $request->municipality,
                     'barangay' => $request->barangay,
                     'zip_code' => $request->zip_code,
+                    'relationship_status' => $request->status,
                     'is_regular' => '1',
                     'year_level' => "1st Year",
                     'curriculum' => $assignedCurriculum,
@@ -910,7 +914,9 @@ class StudentController extends Controller
             $userInfo->phone_number = $find->contact_number ? $find->contact_number : null;
             $userInfo->birthdate = $registrationData['birthDate'];
             $userInfo->age = $registrationData['age'];
+            $userInfo->sex = $registrationData['sex'];
             $userInfo->address = ''.$registrationData['houseStreet'].', '.$registrationData['barangay'] .', '.$registrationData['municipality'] .', '.$registrationData['province'];
+            $userInfo->relationship_status = $registrationData['relationship_status'];
 
             if (!$userInfo->save()) {
                 $x = '7';
@@ -928,7 +934,7 @@ class StudentController extends Controller
             $student->student_id = $userInfo->id;
             $student->id_no = $registrationData['studentNo'];
             $student->year_level = $registrationData['year_level'];
-            $student->is_regular = $registrationData['is_regular'];
+            $student->is_regular = 6;
             $student->status = 'Not Enrolled';
             $student->curriculum = $registrationData['curriculum'];
 
@@ -956,7 +962,7 @@ class StudentController extends Controller
             // $ipaddress = $this->getClientRealIp();
             $ipaddress = $this->getClientDeviceInfo();
             
-
+            
 
             //Save to AuditLogs!
             $audit = new AuditLog();
@@ -4428,18 +4434,15 @@ class StudentController extends Controller
 
     public function uploadStudentDocuments(Request $request)
     {
-        // Validate the request FIRST
+        // Validate the request - making all required fields nullable except form138a
         $validator = Validator::make($request->all(), [
             'form138a' => 'required|file|mimes:pdf,jpg,jpeg,png,docx,docs,msword|max:5120', // 5MB max
-            'good_moral' => 'required|file|mimes:pdf,jpg,jpeg,png,docx,docs,msword|max:5120',
-            'psa_nso' => 'required|file|mimes:pdf,jpg,jpeg,png,docx,docs,msword|max:5120',
-            'id_picture' => 'required|image|mimes:jpg,jpeg,png,docx,docs,msword|max:2048', // 2MB max for images
+            'good_moral' => 'nullable|file|mimes:pdf,jpg,jpeg,png,docx,docs,msword|max:5120',
+            'psa_nso' => 'nullable|file|mimes:pdf,jpg,jpeg,png,docx,docs,msword|max:5120',
+            'id_picture' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // 2MB max for images
             'marriage_certificate' => 'nullable|file|mimes:pdf,jpg,jpeg,png,docx,docs,msword|max:5120',
         ], [
             'form138a.required' => 'Form 138A is required',
-            'good_moral.required' => 'Good Moral Certificate is required',
-            'psa_nso.required' => 'PSA/NSO document is required',
-            'id_picture.required' => 'ID Picture is required',
             'id_picture.image' => 'ID Picture must be an image file',
             '*.max' => 'File size must not exceed :max kilobytes',
             '*.mimes' => 'File must be one of these types: :values',
@@ -4488,44 +4491,35 @@ class StudentController extends Controller
                 [
                     'field' => 'good_moral',
                     'type' => 'GOOD_MORAL',
-                    'required' => true
+                    'required' => false
                 ],
                 [
                     'field' => 'psa_nso',
                     'type' => 'PSA_NSO',
-                    'required' => true
+                    'required' => false
                 ],
                 [
                     'field' => 'id_picture',
                     'type' => 'ID_PICTURE',
-                    'required' => true
+                    'required' => false
                 ],
                 [
                     'field' => 'marriage_certificate',
                     'type' => 'MARRIAGE_CERTIFICATE',
                     'required' => false
                 ],
-                [
-                    'field' => 'honor_dismissal', // or whatever field name you use
-                    'type' => 'HONOR_DISMISSAL',
-                    'required' => false // or true if required
-                ],
-                [
-                    'field' => 'tor',
-                    'type' => 'TOR',
-                    'required' => false // or true if required
-                ]
             ];
             
             $uploadedDocuments = [];
+            $uploadedCount = 0;
             $now = now();
             $timestamp = $now->timestamp;
             
             foreach ($documents as $document) {
                 $field = $document['field'];
                 
-                // Skip optional documents if not provided
-                if (!$document['required'] && !$request->hasFile($field)) {
+                // Skip if file not provided
+                if (!$request->hasFile($field)) {
                     continue;
                 }
                 
@@ -4553,40 +4547,40 @@ class StudentController extends Controller
                     'file_path' => $filePath,
                     'upload_date' => $now,
                 ];
+                
+                $uploadedCount++;
             }
             
-            // Check if at least the required documents were uploaded
-            $requiredCount = 4; // form138a, good_moral, psa_nso, id_picture
-            $uploadedRequiredCount = count(array_filter($uploadedDocuments, function($doc) use ($documents) {
-                $docType = $doc['type'];
-                foreach ($documents as $d) {
-                    if ($d['type'] === $docType && $d['required']) {
-                        return true;
-                    }
-                }
-                return false;
-            }));
-            
-            if ($uploadedRequiredCount < $requiredCount) {
-                throw new \Exception('Not all required documents were uploaded');
+            // Check if at least Form 138A was uploaded
+            if ($uploadedCount === 0) {
+                throw new \Exception('No documents were uploaded');
             }
             
             // Batch insert for better performance
-            // Using DB facade since ImportantDocument model might not exist
             DB::table('important_documents')->insert($uploadedDocuments);
-
-            DB::table('students')
-            ->where('id', $student->id)
-            ->update([
-                'is_regular' => 1, //Set to Regular;
-            ]);
-
-            // 1 in enrolled means freshmen
-            DB::table('students')
-            ->where('id', $student->id)
-            ->update([
-                'enrolled' => 1, //Set to Regular;
-            ]);
+            
+            // Check if all required documents are now uploaded
+            $requiredDocumentTypes = ['FORM138A', 'GOOD_MORAL', 'PSA_NSO', 'ID_PICTURE'];
+            
+            $existingDocuments = DB::table('important_documents')
+                ->where('student_id', $student->id)
+                ->where('year_level', $yearLevel)
+                ->whereIn('type', $requiredDocumentTypes)
+                ->pluck('type')
+                ->toArray();
+            
+            // Check if all required types are present (unique)
+            $hasAllRequiredDocuments = count(array_intersect($requiredDocumentTypes, array_unique($existingDocuments))) === count($requiredDocumentTypes);
+            
+            // Update student status if all required documents are uploaded
+            if ($hasAllRequiredDocuments) {
+                DB::table('students')
+                    ->where('id', $student->id)
+                    ->update([
+                        'is_regular' => 1,
+                        'enrolled' => 1,
+                    ]);
+            }
             
             // Commit transaction
             DB::commit();
@@ -4595,16 +4589,22 @@ class StudentController extends Controller
             Log::info('Documents uploaded successfully', [
                 'student_id' => $student->id,
                 'documents_count' => count($uploadedDocuments),
-                'year_level' => $yearLevel
+                'year_level' => $yearLevel,
+                'has_all_required' => $hasAllRequiredDocuments
             ]);
             
+            $message = $hasAllRequiredDocuments 
+                ? 'All required documents submitted successfully! You are now marked as a regular student.'
+                : 'Documents uploaded successfully! You can upload remaining documents later.';
             
             return response()->json([
                 'success' => true,
-                'message' => 'Documents uploaded successfully!',
+                'message' => $message,
                 'data' => [
                     'documents_uploaded' => count($uploadedDocuments),
-                    'student_id' => $student->id
+                    'student_id' => $student->id,
+                    'is_regular' => $hasAllRequiredDocuments ? 1 : 0,
+                    'enrolled' => $hasAllRequiredDocuments ? 1 : 0
                 ]
             ]);
             

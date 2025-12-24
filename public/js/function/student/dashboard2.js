@@ -1320,6 +1320,7 @@ function initializeStudentInfoModal() {
     }
 
     function submitForm() {
+        alert("yeahhhh")
         const submitBtn = studentInfoForm.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
         
@@ -4978,8 +4979,332 @@ function count_enrolled_subjects2() {
 }
 
 // Document Upload Modal JavaScript
-// Document Upload Modal JavaScript with Step-by-Step Process
 function initializeDocumentsUpload() {
+    const modal = document.getElementById('studentDocumentsModal');
+    const form = document.getElementById('studentDocumentsForm2');
+    const closeModalBtns = modal.querySelectorAll('.close-modal');
+    const marriedCheckbox = document.getElementById('marriedCheckbox');
+    const marriageCertificateCard = document.getElementById('marriageCertificateCard');
+    const fileInputs = document.querySelectorAll('.document-input');
+    const previewButtons = document.querySelectorAll('.btn-preview');
+    const previewModal = document.querySelector('.preview-modal-overlay');
+    const closePreview = document.querySelector('.close-preview');
+    const submitBtn = form.querySelector('.btn-submit');
+    
+    const uploadedFiles = {};
+    
+    // Close Modal
+    closeModalBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+    });
+    
+    // Married checkbox logic
+    
+    
+    // File Upload Handling
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function(e) {
+            const file = this.files[0];
+            const documentType = this.name;
+            const previewDiv = document.getElementById(this.dataset.preview);
+            const previewBtn = this.closest('.document-actions').querySelector('.btn-preview');
+            
+            if (file) {
+                // Validate file
+                if (!validateFile(file, documentType)) {
+                    this.value = '';
+                    return;
+                }
+                
+                // Store file
+                uploadedFiles[documentType] = {
+                    file: file,
+                    name: file.name,
+                    size: formatFileSize(file.size),
+                    type: file.type,
+                    lastModified: new Date(file.lastModified).toLocaleDateString()
+                };
+                
+                // Update preview
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewDiv.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    previewDiv.innerHTML = `
+                        <i class="fas fa-file-pdf" style="color: #e53e3e;"></i>
+                        <p>${file.name}</p>
+                        <small>${formatFileSize(file.size)}</small>
+                    `;
+                }
+                
+                // Enable preview button
+                previewBtn.classList.remove('disabled');
+                previewBtn.disabled = false;
+                
+                // Update status text
+                const documentCard = this.closest('.document-card');
+                const statusSpan = documentCard.querySelector('.document-status');
+                statusSpan.textContent = 'Uploaded';
+                statusSpan.className = 'document-status uploaded';
+                
+                // Show success animation
+                showUploadSuccess(previewDiv);
+            }
+        });
+    });
+    
+    // Preview Buttons
+    previewButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (!this.classList.contains('disabled')) {
+                const documentCard = this.closest('.document-card');
+                const documentType = documentCard.dataset.document;
+                const fileData = uploadedFiles[documentType];
+                
+                if (fileData && fileData.file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('documentPreviewImage').src = e.target.result;
+                        previewModal.classList.add('active');
+                    };
+                    reader.readAsDataURL(fileData.file);
+                } else if (fileData) {
+                    // For PDFs, we could open in new tab or show a message
+                    // alert('PDF files cannot be previewed inline. Please download the file to view.');
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('documentPreviewImage').src = e.target.result;
+                        previewModal.classList.add('active');
+                    };
+                    reader.readAsDataURL(fileData.file);
+                } else if (fileData) {
+                }
+            }
+        });
+    });
+    
+    // Close Preview
+    closePreview.addEventListener('click', () => {
+        previewModal.classList.remove('active');
+    });
+    
+    // Form Submission
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Check if any files were uploaded
+        if (Object.keys(uploadedFiles).length === 0) {
+            if (confirm('No files have been uploaded. Do you want to submit anyway?')) {
+                submitForm();
+            }
+            return;
+        }
+        
+        submitForm();
+    });
+    
+    
+
+    // 
+    async function submitForm() {
+        alert("uhhh")
+        // Get elements
+        const submitBtn = document.getElementById('submitBtn');
+        const modal = document.getElementById('studentDocumentsModal');
+        
+        if (!submitBtn) {
+            console.error('Submit button not found');
+            return;
+        }
+        
+        // Get the form
+        const form = document.getElementById('studentDocumentsForm2');
+        if (!form) {
+            console.error('Form not found');
+            return;
+        }
+        
+        // Create FormData from the form
+        const formData = new FormData(form);
+        
+        // Show loading state
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        submitBtn.disabled = true;
+        
+        try {
+            const response = await fetch('/student/documents/upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('Documents submitted successfully!', 'success');
+                
+                setTimeout(() => {
+                    if (modal) modal.classList.remove('active');
+                    location.reload();
+                }, 1500);
+            } else {
+                // Show validation errors if any
+                let errorMessage = result.message || 'Upload failed';
+                if (result.errors) {
+                    errorMessage += ': ' + Object.values(result.errors).flat().join(', ');
+                }
+                showNotification(errorMessage, 'error');
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            showNotification(error.message || 'An error occurred', 'error');
+            submitBtn.innerHTML = originalBtnText;
+            submitBtn.disabled = false;
+        }
+    }
+    
+    // Helper Functions
+    function validateFile(file, documentType) {
+        // File size validation (5MB)
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+            showNotification(`File size must be less than 5MB. Your file is ${formatFileSize(file.size)}.`, 'error');
+            return false;
+        }
+        
+        // File type validation
+        let allowedTypes = [];
+        
+        switch(documentType) {
+            case 'id_picture':
+                allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                break;
+            default:
+                allowedTypes = [
+                'image/jpeg', 
+                'image/jpg', 
+                'image/png', 
+                'application/pdf', 
+                'application/x-pdf',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX MIME type
+                'application/msword', // DOC MIME type
+                'application/octet-stream' // Fallback for some DOCX files
+            ];
+        }
+        
+        if (!allowedTypes.includes(file.type)) {
+            showNotification(`Please upload ${allowedTypes.includes('application/pdf') ? 'PDF or image files' : 'image files only'}.`, 'error');
+            return false;
+        }
+        
+        return true;
+    }
+    
+    function showUploadSuccess(element) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'upload-success';
+        successDiv.innerHTML = `
+            <i class="fas fa-check-circle"></i>
+            <span>Uploaded</span>
+        `;
+        
+        element.appendChild(successDiv);
+        
+        setTimeout(() => {
+            successDiv.remove();
+        }, 2000);
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        `;
+        
+        // Add to body
+        document.body.appendChild(notification);
+        
+        // Show with animation
+        setTimeout(() => notification.classList.add('show'), 10);
+        
+        // Remove after delay
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+}
+
+
+// 
+// Add this function to your JavaScript file
+// function initializeDocumentsUpload2() {
+//     // Handle click on the upload button in the modal
+//     document.getElementById('uploadDocumentBtn').addEventListener('click', function() {
+//         const form = document.getElementById('uploadDocumentForm');
+//         const formData = new FormData(form);
+        
+//         // Show loading state
+//         const uploadBtn = this;
+//         uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
+//         uploadBtn.disabled = true;
+        
+//         // Send AJAX request
+//         fetch('/student/upload-required-document', {
+//             method: 'POST',
+//             body: formData,
+//             headers: {
+//                 'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+//             }
+//         })
+//         .then(response => response.json())
+//         .then(data => {
+//             if (data.success) {
+//                 // Show success message
+//                 alert('Document uploaded successfully.');
+//                 // Close the modal
+//                 const modal = bootstrap.Modal.getInstance(document.getElementById('uploadDocumentModal'));
+//                 modal.hide();
+//                 // Reset the form
+//                 form.reset();
+//                 // Reload the required documents section
+//                 loadRequiredDocuments();
+//             } else {
+//                 alert('Upload failed: ' + data.message);
+//             }
+//         })
+//         .catch(error => {
+//             console.error('Error:', error);
+//             alert('An error occurred during upload.');
+//         })
+//         .finally(() => {
+//             // Reset the button
+//             uploadBtn.innerHTML = 'Upload';
+//             uploadBtn.disabled = false;
+//         });
+//     });
+// }
+
+// Document Upload Modal JavaScript with Step-by-Step Process
+function initializeDocumentsUpload2() {
     const modal = document.getElementById('studentDocumentsModal');
     const form = document.getElementById('studentDocumentsForm');
     const fileInputs = document.querySelectorAll('.document-input');
@@ -5298,7 +5623,8 @@ function initializeDocumentsUpload() {
     
     // Form submission function (keep existing)
     async function submitForm() {
-        const submitBtn = document.getElementById('submitBtn_intro');
+        alert("ughh")
+        const submitBtn = document.getElementById('submitBtn');
         const modal = document.getElementById('studentDocumentsModal');
         
         if (!submitBtn) return;
@@ -5343,56 +5669,6 @@ function initializeDocumentsUpload() {
             submitBtn.disabled = false;
         }
     }
-}
-
-
-// 
-// Add this function to your JavaScript file
-function initializeDocumentsUpload2() {
-    // Handle click on the upload button in the modal
-    document.getElementById('uploadDocumentBtn').addEventListener('click', function() {
-        const form = document.getElementById('uploadDocumentForm');
-        const formData = new FormData(form);
-        
-        // Show loading state
-        const uploadBtn = this;
-        uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
-        uploadBtn.disabled = true;
-        
-        // Send AJAX request
-        fetch('/student/upload-required-document', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Show success message
-                alert('Document uploaded successfully.');
-                // Close the modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('uploadDocumentModal'));
-                modal.hide();
-                // Reset the form
-                form.reset();
-                // Reload the required documents section
-                loadRequiredDocuments();
-            } else {
-                alert('Upload failed: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred during upload.');
-        })
-        .finally(() => {
-            // Reset the button
-            uploadBtn.innerHTML = 'Upload';
-            uploadBtn.disabled = false;
-        });
-    });
 }
 
 

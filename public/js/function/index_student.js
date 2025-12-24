@@ -216,7 +216,7 @@ function attachRegistrationEventListeners() {
             const passwordVal = registerPassword.value;
             const repeatPasswordVal = repeatPassword.value;
             const birthDate = document.getElementById("birthDate").value;
-            const gender = document.getElementById("gender").value;
+            const sex = document.getElementById("sex").value;
             const status = document.getElementById("status").value;
             const houseStreet = document.getElementById("houseStreet").value;
             const region = document.getElementById("region").value;
@@ -311,7 +311,7 @@ function attachRegistrationEventListeners() {
                 password: passwordVal,
                 repeatPassword: repeatPasswordVal,
                 birthDate: birthDate,
-                gender: gender,
+                sex: sex,
                 status: status,
                 houseStreet: houseStreet,
                 region: region,
@@ -339,7 +339,7 @@ function attachRegistrationEventListeners() {
         verificationData.append('password', formData.password);
         verificationData.append('repeatPassword', formData.repeatPassword);
         verificationData.append('birthDate', formData.birthDate);
-        verificationData.append('gender', formData.gender);
+        verificationData.append('sex', formData.sex);
         verificationData.append('status', formData.status);
         verificationData.append('houseStreet', formData.houseStreet);
         verificationData.append('region', formData.region);

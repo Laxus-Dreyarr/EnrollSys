@@ -1,10 +1,12 @@
 <?php
 $firstname = $user->user_information->firstname;
 $lastname = $user->user_information->lastname;
+$relationship_status = $user->user_information->relationship_status;
 $student_id = $user->user_information->student->id_no ?? 'Not Set';
 $curriculum = $user->user_information->student->curriculum;
 $is_regular = $user->user_information->student->is_regular ?? 'Not Set';
 $en = $user->user_information->student->enrolled ?? 'Not Set';
+$sex = $user->user_information->sex;
 $profile_picture = $user->profile;
 
 // Check if student ID is 'none' (case-insensitive)
@@ -1693,7 +1695,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
             </div>
         </div>
 
-        <!-- Student Documents Upload Modal -->
+        <!-- Student Documents Upload Modal - Step by Step -->
         <div id="studentDocumentsModal" class="modal-overlay <?php echo $show_student_form4 ? 'active' : ''; ?>">
             <div class="modal-container documents-upload-modal">
                 <!-- Modal Header -->
@@ -1704,36 +1706,73 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         </div>
                         <div>
                             <h3>Upload Your Student Documents</h3>
-                            <p style="color: white;">Upload your documents. You can upload some now and others later.</p>
+                            <p style="color: white;">Complete each step to upload all required documents.</p>
                         </div>
                     </div>
-                    <!-- <button type="button" class="close-modal" aria-label="Close">
-                        <i class="fas fa-times"></i>
-                    </button> -->
+                </div>
+
+                <!-- Progress Indicator -->
+                <div class="documents-progress-section">
+                    <div class="documents-progress-bar">
+                        <div class="progress-fill" id="uploadProgressFill"></div>
+                    </div>
+                    <div class="documents-progress-steps">
+                        <div class="progress-step active" data-step="1">
+                            <div class="step-number">1</div>
+                            <div class="step-label">Form 138A</div>
+                        </div>
+                        <div class="progress-step" data-step="2">
+                            <div class="step-number">2</div>
+                            <div class="step-label">Good Moral</div>
+                        </div>
+                        <div class="progress-step" data-step="3">
+                            <div class="step-number">3</div>
+                            <div class="step-label">PSA/NSO</div>
+                        </div>
+                        <div class="progress-step" data-step="4">
+                            <div class="step-number">4</div>
+                            <div class="step-label">ID Picture</div>
+                        </div>
+                        <?php if($relationship_status == 'Married' && $sex == 'Female'): ?>
+                        <div class="progress-step" data-step="5">
+                            <div class="step-number">5</div>
+                            <div class="step-label">Marriage Cert</div>
+                        </div>
+                        <div class="progress-step" data-step="6">
+                            <div class="step-number">6</div>
+                            <div class="step-label">Review</div>
+                        </div>
+                        <?php else: ?>
+                        <div class="progress-step" data-step="5">
+                            <div class="step-number">5</div>
+                            <div class="step-label">Review</div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <!-- Main Content -->
                 <form id="studentDocumentsForm" class="modal-form" enctype="multipart/form-data">
                     @csrf
                     
-                    <!-- Document Requirements -->
-                    <div class="documents-requirements">
-                        <div class="requirements-header">
-                            <i class="fas fa-info-circle"></i>
-                            <h4>Document Requirements</h4>
+                    <!-- Step 1: Form 138A -->
+                    <div class="documents-step active" data-step="1">
+                        <!-- Document Requirements -->
+                        <div class="documents-requirements">
+                            <div class="requirements-header">
+                                <i class="fas fa-info-circle"></i>
+                                <h4>Step 1: Upload Form 138A (SF9)</h4>
+                            </div>
+                            <ul class="requirements-list">
+                                <li><i class="fas fa-check-circle"></i> Must be a clear scan of your original Form 138A</li>
+                                <li><i class="fas fa-check-circle"></i> Accepted formats: PDF, JPG, PNG, DOCX</li>
+                                <li><i class="fas fa-check-circle"></i> Maximum file size: 5MB</li>
+                                <li><i class="fas fa-check-circle"></i> Ensure all details are visible and readable</li>
+                            </ul>
                         </div>
-                        <ul class="requirements-list">
-                            <li><i class="fas fa-check-circle"></i> All files must be in DOCX, PDF, PNG or JPG format</li>
-                            <li><i class="fas fa-check-circle"></i> Maximum file size: 5MB per document</li>
-                            <li><i class="fas fa-check-circle"></i> Ensure documents are clear and readable</li>
-                            <li><i class="fas fa-check-circle"></i> You can upload documents now</li>
-                        </ul>
-                    </div>
 
-                    <!-- Document Upload Grid -->
-                    <div class="documents-grid">
-                        <!-- Form 138A -->
-                        <div class="document-card" data-document="form138a">
+                        <!-- Form 138A Document Card -->
+                        <div class="document-card required" data-document="form138a">
                             <div class="document-card-header">
                                 <div class="document-icon">
                                     <i class="fas fa-file-certificate"></i>
@@ -1742,7 +1781,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                     <h4>Form 138A (SF9)</h4>
                                     <span class="document-subtitle">High School Report Card</span>
                                 </div>
-                                <span class="document-status optional"></span>
+                                <span class="document-status required">Required</span>
                             </div>
                             <div class="document-card-body">
                                 <div class="document-preview" id="form138a-preview">
@@ -1755,21 +1794,33 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                         <span>Choose File</span>
                                         <input type="file" id="form138a" name="form138a" accept=".pdf,.jpg,.jpeg,.png,.docx,.docs,.msword" class="document-input" data-preview="form138a-preview">
                                     </label>
-                                    <!-- <button type="button" class="btn-preview disabled" disabled>
-                                        <i class="fas fa-eye"></i>
-                                    </button> -->
                                 </div>
                             </div>
                             <div class="document-card-footer">
                                 <div class="document-info">
                                     <i class="fas fa-info-circle"></i>
-                                    <small>Upload your scanned Form 138A (formerly SF9)</small>
+                                    <small>This is your high school report card. Ensure it shows all your grades and is properly signed.</small>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Good Moral Certificate -->
-                        <div class="document-card" data-document="good_moral">
+                    <!-- Step 2: Good Moral Certificate -->
+                    <div class="documents-step" data-step="2">
+                        <div class="documents-requirements">
+                            <div class="requirements-header">
+                                <i class="fas fa-info-circle"></i>
+                                <h4>Step 2: Upload Good Moral Certificate</h4>
+                            </div>
+                            <ul class="requirements-list">
+                                <li><i class="fas fa-check-circle"></i> Must be issued within the last 6 months</li>
+                                <li><i class="fas fa-check-circle"></i> Must have school seal and signature</li>
+                                <li><i class="fas fa-check-circle"></i> Accepted formats: PDF, JPG, PNG, DOCX</li>
+                                <li><i class="fas fa-check-circle"></i> Maximum file size: 5MB</li>
+                            </ul>
+                        </div>
+
+                        <div class="document-card required" data-document="good_moral">
                             <div class="document-card-header">
                                 <div class="document-icon">
                                     <i class="fas fa-award"></i>
@@ -1778,7 +1829,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                     <h4>Good Moral Certificate</h4>
                                     <span class="document-subtitle">Certificate of Good Moral Character</span>
                                 </div>
-                                <span class="document-status optional"></span>
+                                <span class="document-status required">Required</span>
                             </div>
                             <div class="document-card-body">
                                 <div class="document-preview" id="good_moral-preview">
@@ -1791,21 +1842,33 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                         <span>Choose File</span>
                                         <input type="file" id="good_moral" name="good_moral" accept=".pdf,.jpg,.jpeg,.png,.docx,.docs" class="document-input" data-preview="good_moral-preview">
                                     </label>
-                                    <!-- <button type="button" class="btn-preview disabled" disabled>
-                                        <i class="fas fa-eye"></i>
-                                    </button> -->
                                 </div>
                             </div>
                             <div class="document-card-footer">
                                 <div class="document-info">
                                     <i class="fas fa-info-circle"></i>
-                                    <small>Issued by your previous school within the last 6 months</small>
+                                    <small>Issued by your previous school certifying your good moral character</small>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- PSA/NSO Birth Certificate -->
-                        <div class="document-card" data-document="psa_nso">
+                    <!-- Step 3: PSA/NSO Birth Certificate -->
+                    <div class="documents-step" data-step="3">
+                        <div class="documents-requirements">
+                            <div class="requirements-header">
+                                <i class="fas fa-info-circle"></i>
+                                <h4>Step 3: Upload PSA/NSO Birth Certificate</h4>
+                            </div>
+                            <ul class="requirements-list">
+                                <li><i class="fas fa-check-circle"></i> Must be a clear scan of the PSA/NSO copy</li>
+                                <li><i class="fas fa-check-circle"></i> All details must be legible</li>
+                                <li><i class="fas fa-check-circle"></i> Accepted formats: PDF, JPG, PNG, DOCX</li>
+                                <li><i class="fas fa-check-circle"></i> Maximum file size: 5MB</li>
+                            </ul>
+                        </div>
+
+                        <div class="document-card required" data-document="psa_nso">
                             <div class="document-card-header">
                                 <div class="document-icon">
                                     <i class="fas fa-birthday-cake"></i>
@@ -1814,7 +1877,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                     <h4>PSA/NSO Birth Certificate</h4>
                                     <span class="document-subtitle">Authenticated Birth Certificate</span>
                                 </div>
-                                <span class="document-status optional"></span>
+                                <span class="document-status required">Required</span>
                             </div>
                             <div class="document-card-body">
                                 <div class="document-preview" id="psa_nso-preview">
@@ -1827,30 +1890,42 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                         <span>Choose File</span>
                                         <input type="file" id="psa_nso" name="psa_nso" accept=".pdf,.jpg,.jpeg,.png,.docx,.docs" class="document-input" data-preview="psa_nso-preview">
                                     </label>
-                                    <!-- <button type="button" class="btn-preview disabled" disabled>
-                                        <i class="fas fa-eye"></i>
-                                    </button> -->
                                 </div>
                             </div>
                             <div class="document-card-footer">
                                 <div class="document-info">
                                     <i class="fas fa-info-circle"></i>
-                                    <small>scanned copy PSA/NSO</small>
+                                    <small>Scanned copy of your authenticated PSA/NSO birth certificate</small>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- 2x2 ID Picture -->
-                        <div class="document-card" data-document="id_picture">
+                    <!-- Step 4: ID Picture -->
+                    <div class="documents-step" data-step="4">
+                        <div class="documents-requirements">
+                            <div class="requirements-header">
+                                <i class="fas fa-info-circle"></i>
+                                <h4>Step 4: Upload 2x2 ID Picture</h4>
+                            </div>
+                            <ul class="requirements-list">
+                                <li><i class="fas fa-check-circle"></i> Recent photo (taken within last 6 months)</li>
+                                <li><i class="fas fa-check-circle"></i> White background, formal attire</li>
+                                <li><i class="fas fa-check-circle"></i> Accepted formats: JPG, JPEG, PNG only</li>
+                                <li><i class="fas fa-check-circle"></i> Maximum file size: 5MB</li>
+                            </ul>
+                        </div>
+
+                        <div class="document-card required" data-document="id_picture">
                             <div class="document-card-header">
                                 <div class="document-icon">
                                     <i class="fas fa-user-circle"></i>
                                 </div>
                                 <div class="document-title">
                                     <h4>2x2 ID Picture</h4>
-                                    <span class="document-subtitle">Formal with White Background</span>
+                                    <span class="document-subtitle">Recent Photo with White Background</span>
                                 </div>
-                                <span class="document-status optional"></span>
+                                <span class="document-status required">Required</span>
                             </div>
                             <div class="document-card-body">
                                 <div class="document-preview" id="id_picture-preview">
@@ -1863,21 +1938,34 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                         <span>Choose File</span>
                                         <input type="file" id="id_picture" name="id_picture" accept=".jpg,.jpeg,.png" class="document-input" data-preview="id_picture-preview">
                                     </label>
-                                    <!-- <button type="button" class="btn-preview disabled" disabled>
-                                        <i class="fas fa-eye"></i>
-                                    </button> -->
                                 </div>
                             </div>
                             <div class="document-card-footer">
                                 <div class="document-info">
                                     <i class="fas fa-info-circle"></i>
-                                    <small>Recent photo, formal attire, white background</small>
+                                    <small>Recent formal photo with white background for your student ID</small>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- PSA Marriage Certificate (Conditional) -->
-                        <div class="document-card" data-document="marriage_certificate" id="marriageCertificateCard">
+                    <!-- Step 5: Marriage Certificate (Conditional) -->
+                    <?php if($relationship_status == 'Married' && $sex == 'Female'): ?>
+                    <div class="documents-step" data-step="5">
+                        <div class="documents-requirements">
+                            <div class="requirements-header">
+                                <i class="fas fa-info-circle"></i>
+                                <h4>Step 5: Upload PSA Marriage Certificate</h4>
+                            </div>
+                            <ul class="requirements-list">
+                                <li><i class="fas fa-check-circle"></i> Required for female married students only</li>
+                                <li><i class="fas fa-check-circle"></i> Must be a clear scan of PSA copy</li>
+                                <li><i class="fas fa-check-circle"></i> Accepted formats: PDF, JPG, PNG, DOCX</li>
+                                <li><i class="fas fa-check-circle"></i> Maximum file size: 5MB</li>
+                            </ul>
+                        </div>
+
+                        <div class="document-card conditional" data-document="marriage_certificate">
                             <div class="document-card-header">
                                 <div class="document-icon">
                                     <i class="fas fa-heart"></i>
@@ -1889,27 +1977,16 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 <span class="document-status conditional">Conditional</span>
                             </div>
                             <div class="document-card-body">
-                                <div class="document-condition">
-                                    <div class="form-check">
-                                        <input type="checkbox" id="marriedCheckbox" class="form-check-input">
-                                        <label for="marriedCheckbox" class="form-check-label">
-                                            I am married and need to upload my marriage certificate
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="document-preview disabled" id="marriage_certificate-preview">
+                                <div class="document-preview" id="marriage_certificate-preview">
                                     <i class="fas fa-cloud-upload-alt"></i>
-                                    <p>Not required</p>
+                                    <p>No file selected</p>
                                 </div>
                                 <div class="document-actions">
-                                    <label class="btn-secondary btn-upload disabled">
+                                    <label class="btn-secondary btn-upload">
                                         <i class="fas fa-upload"></i>
                                         <span>Choose File</span>
-                                        <input type="file" id="marriage_certificate" name="marriage_certificate" accept=".pdf,.jpg,.jpeg,.png,.docx,.docs" class="document-input" data-preview="marriage_certificate-preview" disabled>
+                                        <input type="file" id="marriage_certificate" name="marriage_certificate" accept=".pdf,.jpg,.jpeg,.png,.docx,.docs" class="document-input" data-preview="marriage_certificate-preview">
                                     </label>
-                                    <!-- <button type="button" class="btn-preview disabled" disabled>
-                                        <i class="fas fa-eye"></i>
-                                    </button> -->
                                 </div>
                             </div>
                             <div class="document-card-footer">
@@ -1920,6 +1997,128 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             </div>
                         </div>
                     </div>
+                    <?php endif; ?>
+
+                    <!-- Review Step -->
+                    <div class="documents-step" data-step="<?php echo ($relationship_status == 'Married' && $sex == 'Female') ? '6' : '5'; ?>">
+                        <div class="review-header">
+                            <div class="review-icon">
+                                <i class="fas fa-clipboard-check"></i>
+                            </div>
+                            <div class="review-title">
+                                <h4>Review Your Uploads</h4>
+                                <p>Please review all uploaded documents before submission</p>
+                            </div>
+                        </div>
+
+                        <div class="review-grid">
+                            <!-- Form 138A Review -->
+                            <div class="review-document">
+                                <div class="review-document-icon">
+                                    <i class="fas fa-file-certificate"></i>
+                                </div>
+                                <div class="review-document-info">
+                                    <h5>Form 138A (SF9)</h5>
+                                    <p id="form138a-review-status">Not uploaded</p>
+                                </div>
+                                <div class="review-document-status">
+                                    <div class="status-indicator missing" id="form138a-status-indicator"></div>
+                                    <span class="status-text missing" id="form138a-status-text">Missing</span>
+                                </div>
+                            </div>
+
+                            <!-- Good Moral Review -->
+                            <div class="review-document">
+                                <div class="review-document-icon">
+                                    <i class="fas fa-award"></i>
+                                </div>
+                                <div class="review-document-info">
+                                    <h5>Good Moral Certificate</h5>
+                                    <p id="good_moral-review-status">Not uploaded</p>
+                                </div>
+                                <div class="review-document-status">
+                                    <div class="status-indicator missing" id="good_moral-status-indicator"></div>
+                                    <span class="status-text missing" id="good_moral-status-text">Missing</span>
+                                </div>
+                            </div>
+
+                            <!-- PSA/NSO Review -->
+                            <div class="review-document">
+                                <div class="review-document-icon">
+                                    <i class="fas fa-birthday-cake"></i>
+                                </div>
+                                <div class="review-document-info">
+                                    <h5>PSA/NSO Birth Certificate</h5>
+                                    <p id="psa_nso-review-status">Not uploaded</p>
+                                </div>
+                                <div class="review-document-status">
+                                    <div class="status-indicator missing" id="psa_nso-status-indicator"></div>
+                                    <span class="status-text missing" id="psa_nso-status-text">Missing</span>
+                                </div>
+                            </div>
+
+                            <!-- ID Picture Review -->
+                            <div class="review-document">
+                                <div class="review-document-icon">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div class="review-document-info">
+                                    <h5>2x2 ID Picture</h5>
+                                    <p id="id_picture-review-status">Not uploaded</p>
+                                </div>
+                                <div class="review-document-status">
+                                    <div class="status-indicator missing" id="id_picture-status-indicator"></div>
+                                    <span class="status-text missing" id="id_picture-status-text">Missing</span>
+                                </div>
+                            </div>
+
+                            <!-- Marriage Certificate Review (Conditional) -->
+                            <?php if($relationship_status == 'Married' && $sex == 'Female'): ?>
+                            <div class="review-document">
+                                <div class="review-document-icon">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div class="review-document-info">
+                                    <h5>PSA Marriage Certificate</h5>
+                                    <p id="marriage_certificate-review-status">Not uploaded</p>
+                                </div>
+                                <div class="review-document-status">
+                                    <div class="status-indicator missing" id="marriage_certificate-status-indicator"></div>
+                                    <span class="status-text missing" id="marriage_certificate-status-text">Missing</span>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Additional Notes -->
+                        <div class="review-confirmation">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirmationCheckbox">
+                                <label class="form-check-label" for="confirmationCheckbox">
+                                    I confirm that all uploaded documents are clear, readable, and authentic. I understand that submitting false documents may result in my application being rejected.
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="documents-navigation">
+                        <div class="navigation-progress">
+                            Step <span class="current-step">1</span> of 
+                            <span class="total-steps"><?php echo ($relationship_status == 'Married' && $sex == 'Female') ? '6' : '5'; ?></span>
+                        </div>
+                        <div class="navigation-buttons">
+                            <button type="button" class="btn-secondary btn-prev" disabled>
+                                <i class="fas fa-arrow-left"></i> Previous
+                            </button>
+                            <button type="button" class="btn-primary btn-next">
+                                Next <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <button id="submitBtn_intro" type="submit" class="btn-primary btn-submit" style="display: none;">
+                                <i class="fas fa-paper-plane"></i> Submit All Documents
+                            </button>
+                        </div>
+                    </div>
 
                     <!-- Additional Notes -->
                     <div class="documents-notes">
@@ -1928,22 +2127,11 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             <h5>Important Notes</h5>
                         </div>
                         <ul class="notes-list">
-                            <li>You can upload documents now</li>
-                            <li>Documents will be verified by the Admin</li>
+                            <li>You must complete all required steps before submission</li>
+                            <li>Documents will be verified by the Admin within 3-5 working days</li>
                             <li>Ensure all uploaded files are clear and legible</li>
+                            <li>You can go back to previous steps to make changes</li>
                         </ul>
-                    </div>
-
-                    <!-- Submit Button -->
-                    <div class="documents-submit-section">
-                        <button type="submit" id="submitBtn" class="btn-primary btn-submit">
-                            <i class="fas fa-paper-plane"></i>
-                            Submit Uploaded Documents
-                        </button>
-                        <!-- <button type="button" class="btn-secondary close-modal">
-                            <i class="fas fa-times"></i>
-                            Cancel
-                        </button> -->
                     </div>
                 </form>
 
@@ -1957,21 +2145,20 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
             </div>
         </div>
 
-
-        <!-- Image Preview Modal -->
+        <!-- Preview Modal (keep existing) -->
         <div class="preview-modal-overlay">
             <div class="preview-modal-container">
                 <div class="preview-modal-header">
                     <h4>Document Preview</h4>
-                    <button type="button" class="close-preview">
+                    <button type="button" class="close-preview" aria-label="Close">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 <div class="preview-modal-body">
-                    <img src="" alt="Document Preview" id="documentPreviewImage">
+                    <img id="documentPreviewImage" src="" alt="Document Preview">
                     <div class="preview-notice">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>This is a preview. Ensure the document is clear and readable before submission.</p>
+                        <i class="fas fa-info-circle"></i>
+                        <p>This is a preview of your uploaded document. Ensure all details are clear before proceeding.</p>
                     </div>
                 </div>
             </div>

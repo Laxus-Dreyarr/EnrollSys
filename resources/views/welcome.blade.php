@@ -425,10 +425,10 @@
                                 <div class="form-group-enhanced">
                                     <label for="gender" class="form-label">
                                         <i class="fas fa-venus-mars"></i>
-                                        Gender
+                                        Sex
                                     </label>
                                     <div class="custom-select">
-                                        <select class="form-control-enhanced" id="gender" required>
+                                        <select class="form-control-enhanced" id="sex" required>
                                             <option id="_option" value="" disabled selected>Select gender</option>
                                             <option value="Male">Male</option>
                                             <option value="Female">Female</option>
