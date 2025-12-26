@@ -5902,6 +5902,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    const notificationbtn = document.querySelector('#notification-btn');
+    if (notificationbtn) {
+        notificationbtn.addEventListener('click', function() {
+            document.querySelector('[data-section="schedule"]').click();
+        });
+    }
+
+    const inputyourgrades = document.querySelector('#inputyourgrades');
+    if (inputyourgrades) {
+        inputyourgrades.addEventListener('click', function() {
+            document.querySelector('[data-section="input-grades"]').click();
+        });
+    }
+
     // Check irregular student status on page load
     checkIrregularStudent(irregularModal);
 
@@ -6001,6 +6015,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update page title
             const sectionName = this.querySelector('span').textContent;
             pageTitle.textContent = sectionName;
+
+
+            // if(sectionName !== 'Student Dashboard' && sectionName !== 'Dashboard' && sectionName !== 'Input Grades') {
+            //     $(".search-container").css("display", "none");
+            // } else {
+            //     $(".search-container").css("display", "block");
+            // }
+            
         });
     });
     

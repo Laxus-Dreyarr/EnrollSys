@@ -72,7 +72,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
-                <a class="menu-item" data-section="courses">
+                <a style="display: none;" class="menu-item" data-section="courses">
                     <i class="fas fa-book"></i>
                     <span>My Courses</span>
                 </a>
@@ -116,9 +116,9 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                 <h1 class="page-title">Student Dashboard</h1>
 
                 <!-- Search Bar -->
-                <div class="search-container">
+                <div style="display: none;" class="search-container">
                     <div class="search-bar">
-                        <!-- <i class="fas fa-search search-icon"></i> -->
+                        <i class="fas fa-search search-icon"></i>
                         <input type="text" id="search-subject2" class="search-input" placeholder="Search courses...">
                         <button id="search-btn" class="search-btn">
                             <i class="fas fa-search"></i>
@@ -127,7 +127,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                 </div>
 
                 <div class="header-actions">
-                    <div class="notification-btn">
+                    <div class="notification-btn" id="notification-btn">
                         <i class="fas fa-bell"></i>
                         <span class="notification-count">5</span>
                     </div>
@@ -136,22 +136,27 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                     </div>
                 </div>
             </div>
+
+
+            <div class="header2">
+                <h1 class="page-title">SY: 2025-2026 SEM 1</h1>
+            </div>
             
             <!-- Dashboard Section -->
             <div id="dashboard-section" class="content-section active">
                 <!-- Stats Overview -->
-                    <div class="stats-grid">
-                        <div class="stat-card">
+                    <div class="stats-grid" style="color: white;">
+                        <div class="stat-card" style="background: var(--primary-gradient);">
                             <div class="stat-icon courses">
                                 <i class="fas fa-chart-line"></i>
                             </div>
-                        <h3 class="stat-value" id="averageGradeValue" style="font-size: 0.5rem;"></h3>
-                        <p class="stat-label">Average Grade</p>
+                        <h3 class="stat-value" id="averageGradeValue" style="font-size: 0.5rem; color: white;"></h3>
+                        <p class="stat-label" style="color: white;">Average Grade</p>
                         <div class="grade-indicator">
                             <div class="grade-bar">
                                 <div class="grade-fill" id="gradeFill"></div>
                             </div>
-                            <div class="grade-labels">
+                            <div class="grade-labels" style="color: white;">
                                 <span>1.0</span>
                                 <span>3.0</span>
                                 <span>5.0</span>
@@ -159,26 +164,26 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         </div>
                     </div>
 
-                    <div class="stat-card">
+                    <div class="stat-card" id="inputyourgrades" style="background: var(--success-gradient); color: white;">
                         <div class="stat-icon courses">
                             <i class="fas fa-pen-to-square"></i>
                         </div>
-                        <h4 class="stat-value">Input Grades</h4>
-                        <p class="stat-label">Update student grades and performance</p>
+                        <h4 style="color: white;" class="stat-value">Input Grades</h4>
+                        <p style="color: white;" class="stat-label">Update student grades and performance</p>
                     </div>
 
-                    <div class="stat-card" id="d-stat-card-enroll">
+                    <div class="stat-card" id="d-stat-card-enroll" style="background: var(--warning-gradient); color: white;">
                         <div class="stat-icon grades" id="enroll_icon">
                             <i class="fa-solid fa-plus"></i>
                         </div>
-                        <h3 class="stat-value" id="determined">
+                        <h3 class="stat-value" id="determined" style="color: white;">
                             @if($user->user_information->student->status === 'None' || !$isEnrollmentActive)
                                 Enrollment Not Available
                             @else
                                 Enroll Now
                             @endif
                         </h3>
-                        <p class="stat-label">
+                        <p class="stat-label" style="color: white;">
                             @if($enrollmentPeriod)
                                 <b style="color: red; text-shadow: 2px 0.1px black;">{{ $enrollmentPeriod->year_level ?? 'Summer' }} only</b> <br>
                                 Enrollment is until
@@ -189,7 +194,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         </p>
                         
                         <!-- Debug information (you can remove this after testing) -->
-                        <div style="display: none;" class="debug-info">
+                        <div style="display: none; color: white" class="debug-info">
                             <p>Student Status: {{ $user->user_information->student->status }}</p>
                             <p>Is Enrollment Active: {{ $isEnrollmentActive ? 'Yes' : 'No' }}</p>
                             <p>Enrollment Period: {{ $enrollmentPeriod ? $enrollmentPeriod->semester . ' ' . $enrollmentPeriod->academic_year : 'None' }}</p>
@@ -203,12 +208,12 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                     </div>
 
                     <!-- Rest of your stat cards remain the same -->
-                    <div class="stat-card">
+                    <div class="stat-card" style="background: var(--secondary-gradient); color: white;">
                         <div class="stat-icon courses">
                             <i class="fas fa-book"></i>
                         </div>
-                        <h3 class="stat-value" id="enrolled_subjects"></h3>
-                        <p class="stat-label">Enrolled Courses</p>
+                        <h3 style="color: white;" class="stat-value" id="enrolled_subjects"></h3>
+                        <p style="color: white;" class="stat-label">Enrolled Courses</p>
                     </div>
 
                     <!-- <div class="stat-card">
@@ -338,7 +343,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
             </div>
             
             <!-- My Courses Section -->
-            <div id="courses-section" class="content-section">
+            <div style="display: none;" id="courses-section" class="content-section">
 
                 <!-- Filter Container -->
                 <div class="filter-container">
@@ -423,9 +428,6 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
 
             <!-- After the courses-section div -->
             <div id="input-grades-section" class="content-section">
-                <div class="section-header">
-                    <h2 class="section-title">Input Your Grades</h2>
-                </div>
 
                 <div class="grades-filter-container">
                     <div class="filter-card">
@@ -520,7 +522,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                             </div>
                                         </div>
                                         
-                                        <div class="subjects-list-container">
+                                        <div style="display: none;" class="subjects-list-container">
                                             <h5>Available Subjects</h5>
                                             <div class="subjects-list" id="subjects_list">
                                                 <!-- Subjects will be populated here -->
@@ -594,7 +596,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                         
                                         <div class="form-actions">
                                             <button type="button" class="btn-cancel" id="cancel-grade">Cancel</button>
-                                            <button type="submit" class="btn-primary">
+                                            <button type="submit" class="btn-primary3">
                                                 <i class="fas fa-save"></i>
                                                 Save Grade
                                             </button>
@@ -609,7 +611,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
             
             <!-- Schedule Section -->
             <div id="schedule-section" class="content-section">
-                <h2 class="section-title">Notifications</h2>
+                <!-- <h2 class="section-title">Notifications</h2> -->
                     
                     <div class="notifications-container">
                         <div class="notifications-header">
@@ -814,7 +816,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
             
             <!-- Files Storage Section -->
             <div id="files-section" class="content-section">
-                <h2 class="section-title">My Files & Documents</h2>
+                <!-- <h2 class="section-title">My Files & Documents</h2> -->
                 
                 <!-- Year Level Filter -->
                 <div class="schedule-container mb-4">
@@ -1032,7 +1034,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
             <!-- Profile Section -->
             <div id="profile-section" class="content-section">
                 <div class="profile-header">
-                    <h2 class="section-title">My Profile</h2>
+                    <!-- <h2 class="section-title">My Profile</h2> -->
                     <p class="profile-subtitle">Manage your personal information</p>
                 </div>
                 
@@ -1315,16 +1317,6 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             
                             <div class="info-item">
                                 <div class="info-icon">
-                                    <i class="fas fa-star"></i>
-                                </div>
-                                <div class="info-content">
-                                    <span class="info-label">Rating</span>
-                                    <span class="info-value">2</span>
-                                </div>
-                            </div>
-                            
-                            <div class="info-item">
-                                <div class="info-icon">
                                     <i class="fas fa-chart-line"></i>
                                 </div>
                                 <div class="info-content">
@@ -1339,7 +1331,6 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
             
             <!-- Settings Section -->
             <div id="settings-section" class="content-section">
-                <h2 class="section-title">Settings</h2>
                 
                 <!-- <div class="settings-card">
                     <h4>Account Settings</h4>
