@@ -118,7 +118,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                 <!-- Search Bar -->
                 <div class="search-container">
                     <div class="search-bar">
-                        <i class="fas fa-search search-icon"></i>
+                        <!-- <i class="fas fa-search search-icon"></i> -->
                         <input type="text" id="search-subject2" class="search-input" placeholder="Search courses...">
                         <button id="search-btn" class="search-btn">
                             <i class="fas fa-search"></i>
@@ -145,7 +145,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             <div class="stat-icon courses">
                                 <i class="fas fa-chart-line"></i>
                             </div>
-                        <h3 class="stat-value" id="averageGradeValue" style="font-size: 1rem;"></h3>
+                        <h3 class="stat-value" id="averageGradeValue" style="font-size: 0.5rem;"></h3>
                         <p class="stat-label">Average Grade</p>
                         <div class="grade-indicator">
                             <div class="grade-bar">
@@ -229,10 +229,11 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                     </div> -->
                 </div>
                 
-                <h2 class="section-title">My Courses</h2>
+                <!-- HIDE -->
+                <!-- <h2 class="section-title">My Courses</h2> -->
 
                 <!-- Filter Container -->
-                <div class="filter-container">
+                <!-- <div class="filter-container">
                     <div class="filter-group">
                         <label for="year-level-filter">Year Level:</label>
                         <select id="year-level-filter" class="filter-select">
@@ -249,10 +250,10 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         <label for="search-subject">Search:</label>
                         <input type="text" id="search-subject" class="search-input" placeholder="Search courses...">
                     </div>
-                </div>
+                </div> -->
 
                 <!-- Subjects Grid -->
-                <div class="courses-grid" id="courses-grid">
+                <!-- <div class="courses-grid" id="courses-grid">
                     @forelse($enrolledSubjects as $subject)
                         <div class="course-card" 
                             data-year-level="{{ $subject->year_level }}"
@@ -297,7 +298,8 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             <p>You haven't enrolled in any subjects yet.</p>
                         </div>
                     @endforelse
-                </div>
+                </div> -->
+               <!-- END HIDE -->
                 
                 <!-- Today's Schedule -->
     
@@ -3196,6 +3198,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{asset('js/jquery.js')}}"></script>
     <script src="{{asset('js/sweetalert2.js')}}"></script>
+    <!-- <script src="{{asset('js/sweetalert3.js')}}"></script> -->
     <script src="{{asset('js/function/student/dashboard.js')}}"></script>
 </body>
 </html>
