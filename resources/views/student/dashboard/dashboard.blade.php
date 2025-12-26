@@ -1768,7 +1768,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         <div class="document-card required" data-document="form138a">
                             <div class="document-card-header">
                                 <div class="document-icon">
-                                    <i class="fas fa-file-certificate"></i>
+                                    <i class="fas fa-receipt"></i>
                                 </div>
                                 <div class="document-title">
                                     <h4>Form 138A (SF9)</h4>

@@ -898,9 +898,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (successMessage) {
                         successMessage.textContent = 'Login Successfully!';
                         successMessage.style.display = 'block';
-                        setTimeout(() => {
-                            window.location.href = '/student-dashboard';
-                        }, 5000);
+                        window.location.href = '/student-dashboard';
                     }
                 }
             })
@@ -1129,7 +1127,7 @@ const passwordInput_reg2 = document.getElementById('registerPassword');
                 clearInterval(verificationTimer);
                 
                 // Show success and redirect
-                setTimeout(() => {
+                
                     const verificationModal = bootstrap.Modal.getInstance(document.getElementById('verificationModal'));
                     if (verificationModal) {
                         verificationModal.hide();
@@ -1146,7 +1144,7 @@ const passwordInput_reg2 = document.getElementById('registerPassword');
                         successMessage.style.display = 'block';
                     }
                     
-                }, 2000);
+                
                 
             } else {
                 // Error case - try to parse as JSON for error message

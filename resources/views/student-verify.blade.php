@@ -503,5 +503,6 @@ $password = $registerData['password'];
      <script src="{{asset('js/jquery.js')}}"></script>
     <!-- Custom JS -->
     <script src="{{ asset('js/function/index_student_verify.js') }}"></script>
+    <script src="{{asset('js/sweetalert3.js')}}"></script>
 </body>
 </html>

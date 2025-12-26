@@ -6017,11 +6017,11 @@ document.addEventListener('DOMContentLoaded', function() {
             pageTitle.textContent = sectionName;
 
 
-            // if(sectionName !== 'Student Dashboard' && sectionName !== 'Dashboard' && sectionName !== 'Input Grades') {
-            //     $(".search-container").css("display", "none");
-            // } else {
-            //     $(".search-container").css("display", "block");
-            // }
+            if(sectionName === 'Notifications' || sectionName === 'Files' || sectionName === 'Input Grades' || sectionName === 'Profile') {
+                $(".header2").css("display", "none");
+            } else {
+                $(".header2").css("display", "block");
+            }
             
         });
     });
