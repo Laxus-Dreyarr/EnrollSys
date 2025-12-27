@@ -5512,55 +5512,119 @@ function renderMainGradeSubjects(subjects) {
         return;
     }
 
-    // Create table for main view
-    let tableHTML = `
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover">
-                <thead class="thead-light">
-                    <tr>
-                        <th class="tbl_header" style="color:white;" scope="col">Subject Code</th>
-                        <th class="tbl_header" style="color:white;" scope="col">Subject Name</th>
-                        <th class="tbl_header" style="color:white;" scope="col">Year Level</th>
-                        <th class="tbl_header" style="color:white;" scope="col">Semester</th>
-                        <th class="tbl_header" style="color:white;" scope="col">Units</th>
-                        <th class="tbl_header" style="color:white;" scope="col">Grade</th>
-                        <th class="tbl_header" style="color:white;" scope="col">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-
+    // Group subjects by year level and semester
+    const groupedSubjects = {};
     subjects.forEach(subject => {
-        const gradeText = subject.grade ? subject.grade : 'Not Graded';
-        const gradeClass = subject.grade ? 'grade-badge graded' : 'grade-badge ungraded';
+        const yearLevel = subject.year_level || '';
+        const semester = subject.semester || '';
         
-        tableHTML += `
-            <tr>
-                <td class="tbl_data">${subject.subject_code || ''}</td>
-                <td class="tbl_data">${subject.subject_name || ''}</td>
-                <td class="tbl_data">${subject.year_level || ''}</td>
-                <td class="tbl_data">${subject.semester || ''}</td>
-                <td class="tbl_data">${subject.units || '0'}</td>
-                <td class="tbl_data">
-                    <span class="${gradeClass}">${gradeText}</span>
-                </td>
-                <td class="tbl_data">
-                    <button class="btn btn-primary btn-sm open-grade-modal" data-id="${subject.id}">
-                        <i class="fas fa-pen"></i> Input Grade
-                    </button>
-                </td>
-            </tr>
-        `;
+        // Create a special label for 3rd Year Summer
+        let groupLabel = `${yearLevel} ${semester}`;
+        if (yearLevel === '3rd Year' && semester === 'Summer') {
+            groupLabel = 'Summer or Third Term';
+        }
+        
+        if (!groupedSubjects[groupLabel]) {
+            groupedSubjects[groupLabel] = {
+                yearLevel: yearLevel,
+                semester: semester,
+                subjects: []
+            };
+        }
+        groupedSubjects[groupLabel].subjects.push(subject);
     });
 
-    tableHTML += `
-                </tbody>
-            </table>
-        </div>
-    `;
+    let allTablesHTML = '';
 
+    // Sort groups: 1st Year 1st Sem, 1st Year 2nd Sem, 2nd Year 1st Sem, etc.
+    const groupKeys = Object.keys(groupedSubjects).sort((a, b) => {
+        const yearOrder = { '1st Year': 1, '2nd Year': 2, '3rd Year': 3, '4th Year': 4, '5th Year': 5 };
+        const semOrder = { '1st Sem': 1, '2nd Sem': 2, 'Summer': 3 };
+        
+        const getYear = (label) => {
+            if (label === 'Summer or Third Term') return '3rd Year';
+            return Object.keys(yearOrder).find(year => label.includes(year)) || '';
+        };
+        
+        const getSemester = (label) => {
+            if (label === 'Summer or Third Term') return 'Summer';
+            return Object.keys(semOrder).find(sem => label.includes(sem)) || '';
+        };
+        
+        const yearA = getYear(a);
+        const yearB = getYear(b);
+        const semA = getSemester(a);
+        const semB = getSemester(b);
+        
+        if (yearOrder[yearA] !== yearOrder[yearB]) {
+            return yearOrder[yearA] - yearOrder[yearB];
+        }
+        return (semOrder[semA] || 0) - (semOrder[semB] || 0);
+    });
 
-    container.html(tableHTML);
+    groupKeys.forEach(groupLabel => {
+        const group = groupedSubjects[groupLabel];
+        
+        // Create header for this group
+        allTablesHTML += `
+            <div class="subject-group-header">
+                <h3>${groupLabel}</h3>
+            </div>
+        `;
+
+        // Create table for this group
+        let tableHTML = `
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th class="tbl_header" style="color:white;" scope="col">Subject Code</th>
+                            <th class="tbl_header" style="color:white;" scope="col">Subject Name</th>
+                            <th class="tbl_header" style="color:white;" scope="col">Units</th>
+                            <th class="tbl_header" style="color:white;" scope="col">Prerequisite</th>
+                            <th class="tbl_header" style="color:white;" scope="col">Grade</th>
+                            <th class="tbl_header" style="color:white;" scope="col">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        group.subjects.forEach(subject => {
+            const gradeText = subject.grade ? subject.grade : 'Not Graded';
+            const gradeClass = subject.grade ? 'grade-badge graded' : 'grade-badge ungraded';
+            
+            // Get prerequisites for this subject (you'll need to fetch this from backend)
+            const prerequisites = subject.prerequisites || subject.prerequisite_codes || 'None';
+            
+            tableHTML += `
+                <tr>
+                    <td class="tbl_data">${subject.subject_code || ''}</td>
+                    <td class="tbl_data">${subject.subject_name || ''}</td>
+                    <td class="tbl_data">${subject.units || '0'}</td>
+                    <td class="tbl_data">${prerequisites}</td>
+                    <td class="tbl_data">
+                        <span class="${gradeClass}">${gradeText}</span>
+                    </td>
+                    <td class="tbl_data">
+                        <button class="btn btn-primary btn-sm open-grade-modal" data-id="${subject.id}">
+                            <i class="fas fa-pen"></i> Input Grade
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tableHTML += `
+                    </tbody>
+                </table>
+            </div>
+            <div class="group-spacer"></div>
+        `;
+
+        allTablesHTML += tableHTML;
+    });
+
+    container.html(allTablesHTML);
 }
 
 // Render subjects in the MODAL LIST (left panel)

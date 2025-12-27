@@ -8703,7 +8703,7 @@ background: linear-gradient(135deg, #38a169, #2f855a);
         margin-left: 260px;
         padding: 20px;
     }
-
+    
     .profile-container {
         grid-template-columns: 1fr 1.5fr;
     }
