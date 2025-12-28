@@ -57,6 +57,23 @@ Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {
 })->where('filename', '.*')->name('documents.serve');
 
 
+Route::get('/profile-image/{userId}', function($userId) {
+    $user = \App\Models\User::find($userId);
+    
+    if (!$user || empty($user->profile)) {
+        abort(404);
+    }
+    
+    $path = storage_path('app/public/' . $user->profile);
+    
+    if (!file_exists($path)) {
+        abort(404);
+    }
+    
+    return response()->file($path);
+})->name('profile.image')->middleware('auth:student');
+
+
 //Admin Routes
 Route::get('/admin', function () {
     app(AdminController::class)->cleanupExpiredPasskeys();

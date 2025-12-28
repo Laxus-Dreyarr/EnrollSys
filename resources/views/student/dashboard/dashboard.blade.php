@@ -52,10 +52,9 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
             </div>
             
             <div class="user-profile">
-                @if(!empty($profile_picture) && $profile_picture !== 'default.png')
-                    <img src="{{ asset('profile/' . $profile_picture) }}" alt="User Avatar" class="user-avatar">
+                @if(!empty($user->profile) && $user->profile !== 'default.png')
+                    <img src="{{ route('profile.image', ['userId' => $user->id]) }}" alt="Profile Picture" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
                 @else
-
                     <div class="avatar-container">
                         <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=none&color=fff" alt="User Avatar" class="user-avatar">
                         <div class="status-indicator"></div>
@@ -139,7 +138,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
 
 
             <div class="header2">
-                <h1 class="page-title">SY: 2025-2026 SEM 1</h1>
+                <h1 class="page-title">{{ $pageTitle }}</h1>
             </div>
             
             <!-- Dashboard Section -->
@@ -1043,15 +1042,21 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                     <div class="profile-summary-card">
                         <div class="profile-avatar-section">
                             <div class="avatar-container" id="avatar-container">
-                                <img src="{{ !empty($profile_picture) && $profile_picture !== 'default.png' ? asset('profile/' . $profile_picture) : 'https://ui-avatars.com/api/?name=' . urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) . '&background=4361ee&color=fff&size=150' }}" 
-                                    alt="User Avatar" 
-                                    class="profile-avatar"
-                                    id="profile-avatar"
-                                    data-upload-url="{{ route('student.upload.avatar') }}">
-                                <div class="avatar-overlay" id="avatar-overlay">
-                                    <i class="fas fa-camera"></i>
-                                </div>
-                                
+                                @if(!empty($user->profile) && $user->profile !== 'default.png')
+                                    <img style="width:100%; hieght: 100%;" src="{{ route('profile.image', ['userId' => $user->id]) }}" alt="Profile Picture" class="profile-avatar" id="profile-avatar"
+                                    data-upload-url="{{ route('student.upload.avatar') }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+                                @else
+                                    <div class="avatar-container">
+                                        <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=none&color=fff" alt="User Avatar" class="profile-avatar" id="profile-avatar"
+                                    data-upload-url="{{ route('student.upload.avatar') }}" class="user-avatar">
+                                        <div class="status-indicator"></div>
+                                    </div>
+
+                                    <div class="avatar-overlay" id="avatar-overlay">
+                                        <i class="fas fa-camera"></i>
+                                    </div>
+                                @endif
+                            
                                 <!-- Loading Animation -->
                                 <div class="upload-loading" id="upload-loading">
                                     <div class="loading-spinner"></div>
@@ -1104,98 +1109,6 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             </div>
                         </div>
                     </div>
-
-                    <!-- Profile Details Card -->
-                    <!-- <div class="profile-details-card">
-                        <div class="card-header">
-                            <h4>Personal Information</h4>
-                            <button class="btn-edit" id="edit-profile-btn">
-                                <i class="fas fa-edit"></i>
-                                Edit Profile
-                            </button>
-                        </div>
-                        
-                        <form class="profile-form" id="profile-form">
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label for="firstName" class="form-label">
-                                        <i class="fas fa-user"></i>
-                                        First Name
-                                    </label>
-                                    <input type="text" class="form-control" id="firstName" value="Laxus" readonly>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="lastName" class="form-label">
-                                        <i class="fas fa-user"></i>
-                                        Last Name
-                                    </label>
-                                    <input type="text" class="form-control" id="lastName" value="Dreyar" readonly>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="MiddleName" class="form-label">
-                                        <i class="fas fa-user"></i>
-                                        Middle Name
-                                    </label>
-                                    <input type="text" class="form-control" id="middlename" value="Dreyar" readonly>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="email" class="form-label">
-                                        <i class="fas fa-envelope"></i>
-                                        Email Address
-                                    </label>
-                                    <input type="email" class="form-control" id="email" value="laxus@evsu.edu.ph" readonly>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="phone" class="form-label">
-                                        <i class="fas fa-phone"></i>
-                                        Phone Number
-                                    </label>
-                                    <input type="tel" class="form-control" id="phone" value="+63 123 456 7890" readonly>
-                                </div>
-                                
-                                <div class="form-group full-width">
-                                    <label for="address" class="form-label">
-                                        <i class="fas fa-map-marker-alt"></i>
-                                        Address
-                                    </label>
-                                    <input type="text" class="form-control" id="address" value="Ormoc City, Leyte" readonly>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="program" class="form-label">
-                                        <i class="fas fa-book"></i>
-                                        Program
-                                    </label>
-                                    <input type="text" class="form-control" id="program" value="BS in Information Technology" disabled>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="yearLevel" class="form-label">
-                                        <i class="fas fa-calendar-alt"></i>
-                                        Year Level
-                                    </label>
-                                    <input type="text" class="form-control" id="yearLevel" value="3rd Year" disabled>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="semester" class="form-label">
-                                        <i class="fas fa-school"></i>
-                                        Curriculum
-                                    </label>
-                                    <input type="text" class="form-control" id="semester" value="2023-2024" disabled>
-                                </div>
-                            </div>
-                            
-                            <div class="form-actions" id="form-actions" style="display: none;">
-                                <button type="button" class="btn-cancel" id="cancel-edit">Cancel</button>
-                                <button type="submit" class="btn-primary">Save Changes</button>
-                            </div>
-                        </form>
-                    </div> -->
 
                     <!-- Profile Details Card -->
                     <div class="profile-details-card">

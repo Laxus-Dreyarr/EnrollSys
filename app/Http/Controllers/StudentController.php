@@ -978,6 +978,9 @@ class StudentController extends Controller
                 return $x;
             }
 
+            $this->autoInsertSubjectsForIrregularStudent($student->id, $registrationData['curriculum']);
+
+
             DB::commit();
 
             // Clear the cache
@@ -1287,6 +1290,23 @@ class StudentController extends Controller
         $student = $user->user_information->student;
         $userInfo = $user->user_information;
 
+        // Get current date for SY and SEM calculation
+        $currentYear = date('Y');
+        $currentMonth = date('n'); // 1-12
+        
+        // Calculate School Year and Semester
+        if ($currentMonth >= 7 && $currentMonth <= 12) {
+            // July to December: First Semester of current school year
+            $schoolYear = $currentYear . '-' . ($currentYear + 1);
+            $semester = 'SEM 1';
+        } else {
+            // January to June: Second Semester of previous school year
+            $schoolYear = ($currentYear - 1) . '-' . $currentYear;
+            $semester = 'SEM 2';
+        }
+        
+        $pageTitle = "SY: $schoolYear $semester";
+
         // Get notifications
         $notifications = DB::table('notifications')
             ->where('user_id', $user->id)
@@ -1329,9 +1349,6 @@ class StudentController extends Controller
         // Calculate weighted average
         $averageGrade = ($totalUnits > 0) ? $totalGradePoints / $totalUnits : 0;
 
-        // If you want a simple average instead of weighted:
-        // $averageGrade = ($gradeCount > 0) ? ($totalGradePoints / $gradeCount) : 0;
-
         // For gauge display, convert to percentage (1.0 = 100%, 5.0 = 0%)
         $gaugePercentage = 0;
         if ($averageGrade > 0) {
@@ -1345,7 +1362,19 @@ class StudentController extends Controller
         $enrollmentPeriod = $this->checkActiveEnrollmentPeriod();
         $isEnrollmentActive = $enrollmentPeriod && $enrollmentPeriod->is_active == 1;
         
-        return view('student.dashboard.dashboard', compact('user', 'isEnrollmentActive', 'enrollmentPeriod', 'enrolledSubjects', 'averageGrade', 'gaugePercentage', 'notifications', 'unreadCount', 'student', 'userInfo'));
+        return view('student.dashboard.dashboard', compact(
+            'user', 
+            'isEnrollmentActive', 
+            'enrollmentPeriod', 
+            'enrolledSubjects', 
+            'averageGrade', 
+            'gaugePercentage', 
+            'notifications', 
+            'unreadCount', 
+            'student', 
+            'userInfo',
+            'pageTitle'
+        ));
     }
 
 
@@ -4515,6 +4544,10 @@ class StudentController extends Controller
             $now = now();
             $timestamp = $now->timestamp;
             
+            // Variable to track if ID picture was uploaded
+            $idPictureUploaded = false;
+            $idPictureFilePath = null;
+            
             foreach ($documents as $document) {
                 $field = $document['field'];
                 
@@ -4539,6 +4572,12 @@ class StudentController extends Controller
                     throw new \Exception("Failed to store {$document['type']} file");
                 }
                 
+                // If this is the ID picture, we also need to update the user's profile
+                if ($field === 'id_picture') {
+                    $idPictureUploaded = true;
+                    $idPictureFilePath = $filePath;
+                }
+                
                 // Add to array for batch insert
                 $uploadedDocuments[] = [
                     'student_id' => $student->id,
@@ -4558,6 +4597,14 @@ class StudentController extends Controller
             
             // Batch insert for better performance
             DB::table('important_documents')->insert($uploadedDocuments);
+            
+            // If ID picture was uploaded, update the user's profile in users table
+            if ($idPictureUploaded && $idPictureFilePath) {
+                // Update the profile column in users table
+                DB::table('users')
+                    ->where('id', $user->id)
+                    ->update(['profile' => $idPictureFilePath]);
+            }
             
             // Check if all required documents are now uploaded
             $requiredDocumentTypes = ['FORM138A', 'GOOD_MORAL', 'PSA_NSO', 'ID_PICTURE'];
@@ -4590,7 +4637,8 @@ class StudentController extends Controller
                 'student_id' => $student->id,
                 'documents_count' => count($uploadedDocuments),
                 'year_level' => $yearLevel,
-                'has_all_required' => $hasAllRequiredDocuments
+                'has_all_required' => $hasAllRequiredDocuments,
+                'profile_updated' => $idPictureUploaded
             ]);
             
             $message = $hasAllRequiredDocuments 
@@ -4604,7 +4652,8 @@ class StudentController extends Controller
                     'documents_uploaded' => count($uploadedDocuments),
                     'student_id' => $student->id,
                     'is_regular' => $hasAllRequiredDocuments ? 1 : 0,
-                    'enrolled' => $hasAllRequiredDocuments ? 1 : 0
+                    'enrolled' => $hasAllRequiredDocuments ? 1 : 0,
+                    'profile_updated' => $idPictureUploaded
                 ]
             ]);
             
