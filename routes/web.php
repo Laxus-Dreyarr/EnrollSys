@@ -56,7 +56,7 @@ Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {
         return $response;
 })->where('filename', '.*')->name('documents.serve');
 
-
+// Student
 Route::get('/profile-image/{userId}', function($userId) {
     $user = \App\Models\User::find($userId);
     
@@ -132,6 +132,27 @@ Route::middleware(['admin.auth'])->group(function () {
         // Route::post('/generate-passkey', [AdminController::class, 'generatePasskey']);
         // Route::post('/get-audit-logs', [AdminController::class, 'getAuditLogs']);
     });
+
+    // Admin profile image route
+    Route::get('/admin/profile-image/{adminId}', function($adminId) {
+        // Find admin with proper guard
+        $admin = \App\Models\Admin::find($adminId);
+        
+        if (!$admin) {
+            // Return default image
+            $path = storage_path('app/public/profile/admin/default.png');
+        } else {
+            // Use admin's profile path
+            $profilePath = $admin->profile ?: 'profile/admin/default.png';
+            $path = storage_path('app/public/' . $profilePath);
+        }
+        
+        if (!file_exists($path)) {
+            $path = storage_path('app/public/profile/admin/default.png');
+        }
+        
+        return response()->file($path);
+    })->name('admin.image');
 
 
     Route::get('/csv-template', [AdminController::class, 'downloadCSVTemplate'])->name('admin.csv.template');

@@ -221,18 +221,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         } else if(response == '0'){
                             alert('Your account has been suspended. Please contact the administrator for assistance.');
                         } else if(response == '3'){
-                            // showSuccess('Access granted! Redirecting to dashboard...');
-                            // submitBtn.classList.add('pulse');
-                            // $('#successMessage').text('Login successful! Redirecting...');
-                             //Redirect or close modal after success
-                             //Redirect after delay
                              $('#successMessage').text('Access granted! Redirecting to dashboard...');
                              submitBtn.classList.add('pulse');
-                            // Redirect or close modal after success
-                            setTimeout(() => {
-                                //  window.location.href = 'dashboard.php';
-                                window.location.href = '/ad-dashboard';
-                            }, 2000);
+                             window.location.href = '/ad-dashboard';
                             
                                     
                         }

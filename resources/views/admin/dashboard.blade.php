@@ -80,10 +80,20 @@ $profile_picture = $user->profile;
                     <!-- User Profile - centered -->
                     <div class="user-profile me-2">
                         <div class="user-avatar">
-                            <img src="profile/{{ $profile_picture }}" alt="user_avatar" class="rounded-circle">
+                            @php
+                                // Get the admin user from Auth
+                                $admin = Auth::guard('admin')->user();
+                                $profileImageUrl = $admin && $admin->profile 
+                                    ? route('admin.image', ['adminId' => $admin->admin_id])
+                                    : asset('storage/profile/admin/default.png');
+                            @endphp
+                            
+                            <img style="object-fit: cover;" src="{{ $profileImageUrl }}" alt="user_avatar" class="rounded-circle">
                         </div>
                         <div class="user-info d-none d-md-block">
-                            <div class="user-name">{{ $firstname }}</div>
+                            <div class="user-name">
+                                {{ $admin->info->firstname ?? $admin->email }}
+                            </div>
                             <div class="user-role">Administrator</div>
                         </div>
                     </div>
