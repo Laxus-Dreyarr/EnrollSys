@@ -590,7 +590,13 @@ class AdminController extends Controller
 
             case 'save_enrollment_period':
                 return $this->saveEnrollmentPeriod($request);
+            
+            case 'start_enrollment_period':
+                return $this->startEnrollmentPeriod($request);
 
+            case 'stop_enrollment_period':
+                return $this->stopEnrollmentPeriod($request);
+                
             case 'delete_enrollment_period':
                 return $this->deleteEnrollmentPeriod($request);
                 
@@ -1477,33 +1483,7 @@ class AdminController extends Controller
 
 
 
-    public function getEnrollmentPeriods(Request $request)
-    {
-        try {
-            $periods = DB::table('enrollment_date')
-                ->orderBy('id', 'asc') // Changed from 'start_date' to 'Start'
-                ->where('is_active', 1)
-                ->get()
-                ->map(function($period) {
-                    return [
-                        'id' => $period->id,
-                        'year' => $period->year_level ?? '',
-                        'semester' => $period->semester, // Note the capital 'S'
-                        'academic_year' => $period->academic_year ?? null,
-                        'start_date' => $period->start, // Note the capital 'S'
-                        'end_date' => $period->end,     // Note the capital 'E'
-                        'is_active' => $period->is_active ?? true,
-                        'admin_id' => $period->admin_id
-                    ];
-                });
-
-            return response()->json(['success' => true, 'enrollment_periods' => $periods]);
-            
-        } catch (\Exception $e) {
-            Log::error('Failed to fetch enrollment periods: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to fetch enrollment periods']);
-        }
-    }
+    //PAST FOR START ENROLLMENT
 
     public function getEnrollmentPeriod(Request $request)
     {
@@ -1620,6 +1600,101 @@ class AdminController extends Controller
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
     }
+
+
+    // NEW FOR START ENROLLMENT
+    public function startEnrollmentPeriod(Request $request)
+    {
+        DB::beginTransaction();
+        
+        try {
+            $admin = Auth::guard('admin')->user();
+            
+            // First, deactivate all existing enrollment periods
+            DB::table('enrollment_date')->update(['is_active' => 0]);
+            
+            // Create new active enrollment period
+            $data = [
+                'semester' => $request->semester,
+                'academic_year' => $request->academic_year,
+                'is_active' => 1,
+                'admin_id' => $admin->admin_id
+            ];
+            
+            DB::table('enrollment_date')->insert($data); 
+            
+            // Update student year count
+            $this->updateStudentYearCountWithTransaction();
+            
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Enrollment period started successfully']);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to start enrollment period: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to start enrollment period: ' . $e->getMessage()]);
+        }
+    }
+
+
+    public function stopEnrollmentPeriod(Request $request)
+    {
+        DB::beginTransaction();
+        
+        try {
+            // Deactivate all enrollment periods
+            DB::table('enrollment_date')->update(['is_active' => 0]);
+            
+            // Reset student enrollment status
+            Student::whereNotIn('is_regular', ['7', '8'])
+                ->update([
+                    'status' => 'Not Enrolled',
+                    'enrolled' => 0
+                ]);
+
+            // Clear enrollment data
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            DB::table('enrollmentrequests')->delete();
+            DB::table('enrollments')->delete();
+            DB::table('documents')->delete();
+            DB::table('payments')->delete();
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Enrollment period stopped successfully']);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to stop enrollment period: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to stop enrollment period: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getEnrollmentPeriods(Request $request)
+    {
+        try {
+            $periods = DB::table('enrollment_date')
+                ->orderBy('id', 'asc')
+                ->where('is_active', 1)
+                ->get()
+                ->map(function($period) {
+                    return [
+                        'id' => $period->id,
+                        'semester' => $period->semester,
+                        'academic_year' => $period->academic_year ?? null,
+                        'is_active' => $period->is_active ?? true,
+                        'admin_id' => $period->admin_id
+                    ];
+                });
+
+            return response()->json(['success' => true, 'enrollment_periods' => $periods]);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch enrollment periods: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to fetch enrollment periods']);
+        }
+    }
+
 
     public function updateStudentYearCountWithTransaction()
     {

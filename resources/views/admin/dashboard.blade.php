@@ -531,13 +531,8 @@ $profile_picture = $user->profile;
                                     <table class="table table-hover" id="enrollmentTable">
                                         <thead>
                                             <tr>
-                                                <th>Year Level</th>
                                                 <th>Semester</th>
                                                 <th>Academic Year</th>
-                                                <th>Start Date</th>
-                                                <th>End Date</th>
-                                                <th>Status</th>
-                                                <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody id="enrollmentTableBody">
@@ -1097,7 +1092,6 @@ $profile_picture = $user->profile;
     </div>
 
     <!-- Enrollment Modal -->
-    <!-- Enrollment Modal -->
     <div class="modal fade" id="enrollmentModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -1117,141 +1111,69 @@ $profile_picture = $user->profile;
                         </div>
                     </div>
 
-                    <!-- Regular Semester Form (Default - Visible) -->
-                    <form id="regularForm" class="enrollment-form">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="enrollmentYear" class="form-label">Year Level <span class="text-danger">*</span></label>
-                                <select class="form-select" id="enrollmentYear" name="year" required>
-                                    <option value="">Select Year Level</option>
-                                    <option value="1st Year">1st Year</option>
-                                    <option value="2nd Year">2nd Year</option>
-                                    <option value="3rd Year">3rd Year</option>
-                                    <option value="4th Year">4th Year</option>
-                                </select>
+                    <!-- Enrollment Status Display -->
+                    <div id="enrollmentStatusDisplay" class="mb-4 p-3 border rounded">
+                        <div id="regularStatusInfo" class="enrollment-info">
+                            <h6 class="mb-2">Regular Semester Enrollment</h6>
+                            <div class="row small text-muted">
+                                <div class="col-md-4">
+                                    <strong>Year Level:</strong>
+                                    <div class="mt-1">All Year Levels</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Semester:</strong>
+                                    <div class="mt-1" id="semesterDisplay">Will be determined based on current month</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Academic Year:</strong>
+                                    <div class="mt-1" id="academicYearDisplay">Will be determined based on current year</div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="enrollmentSemester" class="form-label">Semester <span class="text-danger">*</span></label>
-                                <select class="form-select" id="enrollmentSemester" name="semester" required>
-                                    <option value="">Select Semester</option>
-                                    <option value="1st Sem">1st Semester</option>
-                                    <option value="2nd Sem">2nd Semester</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="academicYear" class="form-label">Academic Year <span class="text-danger">*</span></label>
-                                <!-- <input type="text" class="form-control" id="academicYear" name="academic_year" placeholder="e.g., 2024-2025" required> -->
-                                <select class="form-select" id="academicYear" name="academic_year" required>
-                                    <option value="">Select Academic Year</option>
-                                    <option value="2025-2026">2025-2026</option>
-                                    <option value="2026-2027">2026-2027</option>
-                                    <option value="2027-2028">2027-2028</option>
-                                    <option value="2028-2029">2028-2029</option>
-                                    <option value="2029-2030">2029-2030</option>
-                                    <option value="2030-2031">2030-2031</option>
-                                    <option value="2031-2032">2031-2032</option>
-                                    <option value="2032-2033">2032-2033</option>
-                                    <option value="2033-2034">2033-2034</option>
-                                    <option value="2034-2035">2034-2035</option>
-                                    <option value="2035-2036">2035-2036</option>
-                                    <option value="2036-2037">2036-2037</option>
-                                    <option value="2037-2038">2037-2038</option>
-                                    <option value="2038-2039">2038-2039</option>
-                                    <option value="2039-2040">2039-2040</option>
-                                    <option value="2040-2041">2040-2041</option>
-                                    <option value="2041-2042">2041-2042</option>
-                                    <option value="2042-2043">2042-2043</option>
-                                    <option value="2043-2044">2043-2044</option>
-                                    <option value="2044-2045">2044-2045</option>
-                                    <option value="2045-2046">2045-2046</option>
-                                    <option value="2046-2047">2046-2047</option>
-                                    <option value="2047-2048">2047-2048</option>
-                                    <option value="2048-2049">2048-2049</option>
-                                    <option value="2049-2050">2049-2050</option>
-                                    <option value="2050-2051">2050-2051</option>
-                                </select>
+                            <div class="mt-3 small">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <span>Click "On" to start enrollment. The semester and academic year will be automatically set based on today's date.</span>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="startDate" class="form-label">Start Date <span class="text-danger">*</span></label>
-                                <input type="datetime-local" class="form-control" id="startDate" name="start_date" required>
+                        
+                        <div id="summerStatusInfo" class="enrollment-info" style="display: none;">
+                            <h6 class="mb-2">Summer Semester Enrollment</h6>
+                            <div class="row small text-muted">
+                                <div class="col-md-4">
+                                    <strong>Year Level:</strong>
+                                    <div class="mt-1">NULL</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Semester:</strong>
+                                    <div class="mt-1">Summer</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Academic Year:</strong>
+                                    <div class="mt-1" id="summerAcademicYearDisplay">Will be set to current year</div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="endDate" class="form-label">End Date <span class="text-danger">*</span></label>
-                                <input type="datetime-local" class="form-control" id="endDate" name="end_date" required>
+                            <div class="mt-3 small">
+                                <i class="fas fa-sun me-1"></i>
+                                <span>Click "On" to start summer enrollment. The academic year will be set to the current year only.</span>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="isActive" name="is_active" checked>
-                                <label class="form-check-label" for="isActive">Active Enrollment Period</label>
-                            </div>
-                        </div>
+                    </div>
+
+                    <!-- Hidden forms for data submission (no visible fields) -->
+                    <form id="regularForm" class="enrollment-form" style="display: none;">
+                        <input type="hidden" id="regularSemester" name="semester">
+                        <input type="hidden" id="regularAcademicYear" name="academic_year">
+                        <input type="hidden" id="regularIsActive" name="is_active" value="1">
                     </form>
 
-                    <!-- Summer Form (Hidden by default) -->
                     <form id="summerForm" class="enrollment-form" style="display: none;">
-                        <div class="alert alert-info mb-3">
-                            <i class="fas fa-sun me-2"></i>
-                            <strong>Summer Enrollment</strong>
-                            <div class="small mt-1">Setting up enrollment period for Summer semester</div>
-                        </div>
-                        <div class="row">
-                            <div class="col-12 mb-3">
-                                <label for="summerAcademicYear" class="form-label">Academic Year <span class="text-danger">*</span></label>
-                                <select class="form-select" id="summerAcademicYear" name="academic_year" required>
-                                    <option value="">Select Academic Year</option>
-                                    <option value="2025">2025</option>
-                                    <option value="2026">2026</option>
-                                    <option value="2027">2027</option>
-                                    <option value="2028">2028</option>
-                                    <option value="2029">2029</option>
-                                    <option value="2030">2030</option>
-                                    <option value="2031">2031</option>
-                                    <option value="2032">2032</option>
-                                    <option value="2033">2033</option>
-                                    <option value="2034">2034</option>
-                                    <option value="2035">2035</option>
-                                    <option value="2036">2036</option>
-                                    <option value="2037">2037</option>
-                                    <option value="2038">2038</option>
-                                    <option value="2039">2039</option>
-                                    <option value="2040">2040</option>
-                                    <option value="2041">2041</option>
-                                    <option value="2042">2042</option>
-                                    <option value="2043">2043</option>
-                                    <option value="2044">2044</option>
-                                    <option value="2045">2045</option>
-                                    <option value="2046">2046</option>
-                                    <option value="2047">2047</option>
-                                    <option value="2048">2048</option>
-                                    <option value="2049">2049</option>
-                                    <option value="2050">2050</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="summerStartDate" class="form-label">Start Date <span class="text-danger">*</span></label>
-                                <input type="datetime-local" class="form-control" id="summerStartDate" name="start_date" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="summerEndDate" class="form-label">End Date <span class="text-danger">*</span></label>
-                                <input type="datetime-local" class="form-control" id="summerEndDate" name="end_date" required>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="summerIsActive" name="is_active" checked>
-                                <label class="form-check-label" for="summerIsActive">Active Enrollment Period</label>
-                            </div>
-                        </div>
+                        <input type="hidden" id="summerAcademicYear" name="academic_year">
+                        <input type="hidden" id="summerSemester" name="semester" value="Summer">
+                        <input type="hidden" id="summerIsActive" name="is_active" value="1">
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" id="resetEnrollment" style="background-color: maroon;" class="btn btn-secondary" data-bs-dismiss="modal">Reset</button>
-                    <button type="button" style="background-color: maroon;" class="btn btn-primary" id="saveEnrollmentBtn">Save Enrollment Period</button>
+                    <button type="button" id="offBtn" style="background-color: maroon;" class="btn btn-secondary" data-bs-dismiss="modal">Off</button>
+                    <button type="button" style="background-color: maroon;" class="btn btn-primary" id="onBtn">On</button>
                 </div>
             </div>
         </div>
