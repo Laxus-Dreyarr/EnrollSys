@@ -2714,24 +2714,14 @@ function initializeEnhancedEnrollmentModal() {
         });
     }
 
-    // displayEnhancedSubjects function to include section selection
+    // Revised displayEnhancedSubjects function for table format grouped by year level and semester
     function displayEnhancedSubjects(data) {
-        console.log('Displaying enhanced subjects with data:', data);
+        console.log('Displaying enhanced subjects in table format with data:', data);
         
         if (!data || typeof data !== 'object') {
             console.error('Invalid data received:', data);
             showEnhancedError('Invalid response from server');
             return;
-        }
-
-        // Clear available sections
-        availableSections.clear();
-
-        // Ensure subjects is an array
-        let subjects = data.subjects || [];
-        if (subjects && typeof subjects === 'object' && !Array.isArray(subjects)) {
-            console.log('Converting subjects object to array in displayEnhancedSubjects');
-            subjects = Object.values(subjects);
         }
 
         // Update header information
@@ -2753,10 +2743,13 @@ function initializeEnhancedEnrollmentModal() {
             maxUnitsElement.textContent = enhancedMaxUnits;
         }
         
-        // USE PASSED SUBJECTS FROM DATA
-        const passedSubjects = data.passed_subjects || [];
-        const failedSubjects = data.failed_subjects || [];
-        
+        // Ensure subjects is an array
+        let subjects = data.subjects || [];
+        if (subjects && typeof subjects === 'object' && !Array.isArray(subjects)) {
+            console.log('Converting subjects object to array');
+            subjects = Object.values(subjects);
+        }
+
         if (subjects.length === 0) {
             showEnhancedEmptyState();
             return;
@@ -2764,149 +2757,235 @@ function initializeEnhancedEnrollmentModal() {
 
         hideEnhancedEmptyState();
 
-        let subjectsHTML = '';
+        // Auto-select all subjects for regular 1st year 1st sem students
+        const shouldAutoSelect = data.is_regular && data.year_level === '1st Year' && data.semester === '1st Sem';
         
-        subjects.forEach(subject => {
-            console.log('Processing enhanced subject:', subject);
+        // Clear previous selection before auto-selecting
+        if (shouldAutoSelect) {
+            enhancedSelectedSubjects.clear();
+            enhancedTotalUnits = 0;
             
+            // Auto-select all available subjects
+            subjects.forEach(subject => {
+                const units = parseInt(subject.units || 0);
+                const newTotal = enhancedTotalUnits + units;
+                
+                if (newTotal <= enhancedMaxUnits) {
+                    enhancedSelectedSubjects.set(subject.id.toString(), {
+                        subjectId: subject.id,
+                        section: 'A', // Default section
+                        units: units
+                    });
+                    enhancedTotalUnits = newTotal;
+                }
+            });
+        }
+        
+        // Group subjects by year level and semester
+        const groupedSubjects = {};
+        subjects.forEach(subject => {
             if (!subject || !subject.id || !subject.code) {
                 console.warn('Invalid subject skipped:', subject);
                 return;
             }
-
-            // Collect all available sections for this subject
-            if (subject.schedules && subject.schedules.length > 0) {
-                subject.schedules.forEach(schedule => {
-                    if (schedule.section) {
-                        availableSections.add(schedule.section);
-                    }
-                });
+            
+            const key = `${subject.year_level || ''} - ${subject.semester || ''}`;
+            if (!groupedSubjects[key]) {
+                groupedSubjects[key] = [];
             }
-
-            // Use the prerequisite information from server
-            const hasPrerequisites = subject.has_prerequisites;
-            const prerequisitesMet = subject.prerequisites_met;
-            const isFailedSubject = subject.is_failed_subject;
-            const previousGrade = subject.previous_grade;
+            groupedSubjects[key].push(subject);
+        });
+        
+        // Sort group keys: year level first, then semester
+        const yearOrder = { '1st Year': 1, '2nd Year': 2, '3rd Year': 3, '4th Year': 4 };
+        const semOrder = { '1st Sem': 1, '2nd Sem': 2, 'Summer': 3 };
+        
+        const sortedGroupKeys = Object.keys(groupedSubjects).sort((a, b) => {
+            const [yearA, semA] = a.split(' - ');
+            const [yearB, semB] = b.split(' - ');
             
-            // For failed subjects, they are always selectable (need to be retaken)
-            // For other subjects, check prerequisites
-            const isSelectable = isFailedSubject ? true : (enhancedIsRegular || (!hasPrerequisites || prerequisitesMet));
+            const yearDiff = (yearOrder[yearA] || 99) - (yearOrder[yearB] || 99);
+            if (yearDiff !== 0) return yearDiff;
             
-            // Check if this subject is already selected - FIX: Use Map correctly
-            const selectedData = enhancedSelectedSubjects.get(subject.id.toString());
-            const isSelected = !!selectedData;
+            return (semOrder[semA] || 99) - (semOrder[semB] || 99);
+        });
+        
+        // Build HTML for all tables
+        let containerHTML = '';
+        
+        sortedGroupKeys.forEach(groupKey => {
+            const groupSubjects = groupedSubjects[groupKey];
             
-            // Get available sections for this subject
-            const subjectSections = subject.schedules ? 
-                [...new Set(subject.schedules.map(s => s.section).filter(Boolean))] : 
-                ['A']; // Default section if none specified
+            // Add label above table
+            containerHTML += `
+                <div class="enhanced-subject-group">
+                    <h4 class="enhanced-subject-group-label">${groupKey}</h4>
+                    <div class="enhanced-subject-table-wrapper">
+                        <table class="enhanced-subjects-table">
+                            <thead>
+                                <tr>
+                                    <th class="enhanced-table-checkbox-header">
+                                        <input type="checkbox" 
+                                            id="enhancedSelectAll_${groupKey.replace(/\s+/g, '_')}" 
+                                            class="enhanced-select-all-checkbox"
+                                            onchange="enhancedToggleSelectAllGroup('${groupKey.replace(/\s+/g, '_')}', this.checked)">
+                                    </th>
+                                    <th>Subject Code</th>
+                                    <th>Subject Name</th>
+                                    <th>Units</th>
+                                    <th>Prerequisite</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
             
-            // Default to first available section
-            const defaultSection = subjectSections[0] || 'A';
-            const currentSection = selectedData ? selectedData.section : defaultSection;
-
-            subjectsHTML += `
-                <div class="enhanced-subject-card ${isSelected ? 'selected' : ''} ${!isSelectable ? 'disabled' : ''} ${isFailedSubject ? 'failed-subject' : ''}" data-id="${subject.id}">
-                    <div class="enhanced-subject-header">
-                        <div class="enhanced-subject-code">${subject.code}</div>
-                        <div class="enhanced-subject-meta">
-                            <span class="enhanced-subject-units">${subject.units || 0} units</span>
-                            <span class="enhanced-subject-level">${subject.year_level || ''} - ${subject.semester || ''}</span>
-                        </div>
-                    </div>
-                    <div class="enhanced-subject-name">${subject.name || 'No name'}</div>
-                    <div class="enhanced-subject-description">${subject.description || 'No description available'}</div>
-                    
-                    <!-- Section Selection -->
-                    <div class="enhanced-subject-section-selection">
-                        <label for="enhanced_subject_section_${subject.id}">Select Section:</label>
-                        <select id="enhanced_subject_section_${subject.id}" class="enhanced-section-select" 
-                                ${!isSelectable ? 'disabled' : ''} 
-                                onchange="enhancedChangeSection(${subject.id}, this.value)">
-                            ${subjectSections.map(section => `
-                                <option value="${section}" ${section === currentSection ? 'selected' : ''}>
-                                    Section ${section}
-                                </option>
-                            `).join('')}
-                        </select>
-                    </div>
-                    
-                    ${subject.schedules && subject.schedules.length > 0 ? `
-                        <div class="enhanced-subject-schedule">
-                            <div class="enhanced-schedule-header">
-                                <i class="fas fa-calendar-alt"></i>
-                                <strong>Available Schedules:</strong>
-                            </div>
-                            ${subject.schedules.map(schedule => `
-                                <div class="enhanced-schedule-item ${schedule.section === currentSection ? 'active-section' : ''}">
-                                    <span class="enhanced-schedule-badge">
-                                        <i class="fas fa-users"></i>
-                                        Section ${schedule.section || 'A'} - 
-                                        ${schedule.day} ${schedule.start_time} - ${schedule.end_time} (${schedule.room})
-                                    </span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : ''}
-                    
-                    ${isFailedSubject ? `
-                        <div class="enhanced-failed-subject-info">
-                            <i class="fas fa-redo-alt"></i>
-                            <strong>Needs Retaking:</strong> 
-                            Previous grade: ${previousGrade}
-                            <br><small>This subject must be retaken to meet program requirements</small>
-                        </div>
-                    ` : ''}
-                    
-                    ${!isFailedSubject && hasPrerequisites && !prerequisitesMet ? `
-                        <div class="enhanced-prerequisite-info failed">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <strong>Cannot enroll:</strong> 
-                            Prerequisites not met: ${subject.prerequisites.map(p => p.code).join(', ')}
-                            <br><small>You must pass these prerequisites with a grade of 3.0 or better</small>
-                        </div>
-                    ` : ''}
-                    
-                    ${!isFailedSubject && !enhancedIsRegular && hasPrerequisites && prerequisitesMet ? `
-                        <div class="enhanced-prerequisite-success">
-                            <i class="fas fa-check-circle"></i>
-                            <strong>Ready to enroll!</strong> 
-                            Prerequisites completed: ${subject.prerequisites.map(p => p.code).join(', ')}
-                        </div>
-                    ` : ''}
-                    
-                    ${!isFailedSubject && !hasPrerequisites ? `
-                        <div class="enhanced-prerequisite-success">
-                            <i class="fas fa-check-circle"></i>
-                            <strong>Ready to enroll!</strong> No prerequisites required
-                        </div>
-                    ` : ''}
-                    
-                    <div class="enhanced-subject-footer">
-                        <div class="enhanced-subject-checkbox">
+            // Add rows for each subject in this group
+            groupSubjects.forEach(subject => {
+                // Check if this subject is already selected
+                const selectedData = enhancedSelectedSubjects.get(subject.id.toString());
+                const isSelected = !!selectedData;
+                
+                // Determine if subject is selectable based on prerequisites
+                const hasPrerequisites = subject.has_prerequisites;
+                const prerequisitesMet = subject.prerequisites_met;
+                const isFailedSubject = subject.is_failed_subject;
+                
+                // Logic for irregular students
+                let isSelectable = false;
+                if (enhancedIsRegular) {
+                    // Regular student: can select any subject for their level and semester
+                    isSelectable = true;
+                } else {
+                    // Irregular student logic
+                    if (isFailedSubject) {
+                        // Failed subjects are always selectable
+                        isSelectable = true;
+                    } else if (!hasPrerequisites) {
+                        // Subjects without prerequisites are selectable
+                        isSelectable = true;
+                    } else {
+                        // Subjects with prerequisites: only selectable if prerequisites are met
+                        isSelectable = prerequisitesMet;
+                    }
+                }
+                
+                // Format prerequisites for display
+                let prerequisitesText = 'None';
+                if (subject.prerequisites && subject.prerequisites.length > 0) {
+                    prerequisitesText = subject.prerequisites.map(p => p.code).join(', ');
+                }
+                
+                containerHTML += `
+                    <tr class="enhanced-subject-row ${isSelected ? 'selected' : ''} ${!isSelectable ? 'disabled' : ''} ${isFailedSubject ? 'failed-subject' : ''}" data-id="${subject.id}">
+                        <td class="enhanced-subject-checkbox-cell">
                             <input type="checkbox" 
                                 id="enhanced_subject_${subject.id}" 
+                                class="enhanced-subject-checkbox"
                                 ${isSelected ? 'checked' : ''}
                                 ${!isSelectable ? 'disabled' : ''}
-                                onchange="enhancedToggleSubject(${subject.id}, ${subject.units || 0}, ${!isSelectable}, '${currentSection}')">
-                            <label for="enhanced_subject_${subject.id}" class="enhanced-checkbox-label">
-                                ${isSelectable ? (isFailedSubject ? 'Retake Subject' : 'Select for Enrollment') : 'Prerequisites Not Met'}
-                            </label>
-                        </div>
+                                onchange="enhancedToggleSubject(${subject.id}, ${subject.units || 0}, ${!isSelectable})">
+                        </td>
+                        <td class="enhanced-subject-code-cell">
+                            <span class="enhanced-subject-code">${subject.code}</span>
+                            ${isFailedSubject ? '<span class="enhanced-failed-badge">Failed</span>' : ''}
+                        </td>
+                        <td class="enhanced-subject-name-cell">
+                            <div class="enhanced-subject-name">${subject.name || 'No name'}</div>
+                            ${isFailedSubject ? `<div class="enhanced-failed-grade">Previous Grade: ${subject.previous_grade || 'N/A'}</div>` : ''}
+                            ${!isSelectable && hasPrerequisites && !prerequisitesMet ? `
+                                <div class="enhanced-prerequisite-warning">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    Prerequisites not met: ${prerequisitesText}
+                                </div>
+                            ` : ''}
+                        </td>
+                        <td class="enhanced-subject-units-cell">${subject.units || 0}</td>
+                        <td class="enhanced-subject-prereq-cell">${prerequisitesText}</td>
+                    </tr>
+                `;
+            });
+            
+            // Close table
+            containerHTML += `
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             `;
         });
         
-        subjectsGrid.innerHTML = subjectsHTML;
+        // Update container
+        const container = document.getElementById('enhancedSubjectsList');
+        if (container) {
+            container.innerHTML = containerHTML;
+        }
         
-        // Populate section filter dropdown
-        updateSectionFilter();
-        
-        console.log('Subjects rendered. Current selection count:', enhancedSelectedSubjects.size);
+        console.log('Subjects rendered in tables. Current selection count:', enhancedSelectedSubjects.size);
         console.log('Current total units:', enhancedTotalUnits);
+        
+        // Update UI
+        updateEnhancedSelectionInfo();
     }
+    
+    // Function to toggle select all for a specific group
+    window.enhancedToggleSelectAllGroup = function(groupKey, checked) {
+        const groupLabel = groupKey.replace(/_/g, ' ');
+        
+        // Find the group container by matching the label text
+        const allGroups = document.querySelectorAll('.enhanced-subject-group');
+        let groupContainer = null;
+        
+        allGroups.forEach(group => {
+            const label = group.querySelector('.enhanced-subject-group-label');
+            if (label && label.textContent.trim() === groupLabel) {
+                groupContainer = group;
+            }
+        });
+        
+        if (!groupContainer) {
+            console.warn('Group container not found for:', groupLabel);
+            return;
+        }
+        
+        const checkboxes = groupContainer.querySelectorAll('.enhanced-subject-checkbox:not(:disabled)');
+        checkboxes.forEach(checkbox => {
+            if (checkbox.checked !== checked) {
+                const row = checkbox.closest('.enhanced-subject-row');
+                const subjectId = row.getAttribute('data-id');
+                const subject = enhancedAllSubjects.find(s => s.id == subjectId);
+                
+                if (subject) {
+                    checkbox.checked = checked;
+                    const units = parseInt(subject.units || 0);
+                    
+                    if (checked) {
+                        const newTotal = enhancedTotalUnits + units;
+                        if (newTotal <= enhancedMaxUnits) {
+                            enhancedSelectedSubjects.set(subjectId.toString(), {
+                                subjectId: parseInt(subjectId),
+                                section: 'A',
+                                units: units
+                            });
+                            enhancedTotalUnits = newTotal;
+                            row.classList.add('selected');
+                        } else {
+                            checkbox.checked = false;
+                            showNotification(`Cannot exceed maximum of ${enhancedMaxUnits} units`, 'error');
+                        }
+                    } else {
+                        if (enhancedSelectedSubjects.has(subjectId.toString())) {
+                            const selectedData = enhancedSelectedSubjects.get(subjectId.toString());
+                            enhancedSelectedSubjects.delete(subjectId.toString());
+                            enhancedTotalUnits -= parseInt(selectedData.units);
+                        }
+                        row.classList.remove('selected');
+                    }
+                }
+            }
+        });
+        
+        updateEnhancedSelectionInfo();
+    };
 
     // Function to update section filter dropdown
     function updateSectionFilter() {
@@ -2970,8 +3049,9 @@ function initializeEnhancedEnrollmentModal() {
     };
 
     // FIXED: Enhanced toggle subject function with proper section handling
-    window.enhancedToggleSubject = function(subjectId, units, isDisabled, section = 'A') {
-        console.log(`Enhanced toggle subject called: ${subjectId}, units: ${units}, isDisabled: ${isDisabled}, section: ${section}`);
+    // Revised toggle subject function for table
+    window.enhancedToggleSubject = function(subjectId, units, isDisabled) {
+        console.log(`Enhanced toggle subject called: ${subjectId}, units: ${units}, isDisabled: ${isDisabled}`);
         
         if (isDisabled) {
             const checkbox = document.getElementById(`enhanced_subject_${subjectId}`);
@@ -2987,14 +3067,10 @@ function initializeEnhancedEnrollmentModal() {
             return;
         }
         
-        const subjectItem = checkbox.closest('.enhanced-subject-card');
+        const row = checkbox.closest('.enhanced-subject-row');
         const isNowChecked = checkbox.checked;
         
-        // Get the selected section from the dropdown
-        const sectionSelect = document.getElementById(`enhanced_subject_section_${subjectId}`);
-        const selectedSection = sectionSelect ? sectionSelect.value : section;
-        
-        console.log(`Enhanced subject ${subjectId} is now ${isNowChecked ? 'checked' : 'unchecked'}, section: ${selectedSection}, current totalUnits: ${enhancedTotalUnits}`);
+        console.log(`Enhanced subject ${subjectId} is now ${isNowChecked ? 'checked' : 'unchecked'}, current totalUnits: ${enhancedTotalUnits}`);
         
         if (isNowChecked) {
             // Checkbox was just CHECKED - ADD subject
@@ -3007,15 +3083,15 @@ function initializeEnhancedEnrollmentModal() {
                 return;
             }
             
-            // FIX: Store subject with section data in Map
+            // Store subject in Map
             enhancedSelectedSubjects.set(subjectId.toString(), {
                 subjectId: subjectId,
-                section: selectedSection,
+                section: 'A', // Default section for table view
                 units: parseInt(units)
             });
             enhancedTotalUnits = newTotal;
-            if (subjectItem) subjectItem.classList.add('selected');
-            console.log(`ENHANCED SELECTED subject ${subjectId}, section ${selectedSection}, added ${units} units. Total: ${enhancedTotalUnits}`);
+            if (row) row.classList.add('selected');
+            console.log(`ENHANCED SELECTED subject ${subjectId}, added ${units} units. Total: ${enhancedTotalUnits}`);
         } else {
             // Checkbox was just UNCHECKED - REMOVE subject
             if (enhancedSelectedSubjects.has(subjectId.toString())) {
@@ -3023,11 +3099,12 @@ function initializeEnhancedEnrollmentModal() {
                 enhancedTotalUnits -= parseInt(units);
                 console.log(`ENHANCED DESELECTED subject ${subjectId}, removed ${units} units. Total: ${enhancedTotalUnits}`);
             }
-            if (subjectItem) subjectItem.classList.remove('selected');
+            if (row) row.classList.remove('selected');
         }
         
         // Update the UI
         updateEnhancedSelectionInfo();
+        updateSelectAllCheckbox();
         
         console.log('Enhanced currently selected subjects:', Array.from(enhancedSelectedSubjects.entries()));
         console.log('Enhanced total units:', enhancedTotalUnits);
@@ -3130,40 +3207,36 @@ function initializeEnhancedEnrollmentModal() {
         }
     }
 
-    // FIXED: Select all visible subjects with proper section handling
+    // Revised selectAllVisible function for table
     function selectAllVisible() {
-        const visibleSubjectElements = subjectsGrid.querySelectorAll('.enhanced-subject-card:not(.disabled)');
+        const visibleCheckboxes = document.querySelectorAll('.enhanced-subject-checkbox:not(:disabled)');
         let selectedCount = 0;
         
-        visibleSubjectElements.forEach(card => {
-            const subjectId = card.getAttribute('data-id');
-            const checkbox = card.querySelector('input[type="checkbox"]');
-            const sectionSelect = card.querySelector('.enhanced-section-select');
-            const subject = enhancedAllSubjects.find(s => s.id == subjectId);
-            
-            if (subject && checkbox && !checkbox.checked) {
-                // Get the current section from dropdown
-                const currentSection = sectionSelect ? sectionSelect.value : 'A';
+        visibleCheckboxes.forEach(checkbox => {
+            if (!checkbox.checked) {
+                const row = checkbox.closest('.enhanced-subject-row');
+                const subjectId = row.getAttribute('data-id');
+                const subject = enhancedAllSubjects.find(s => s.id == subjectId);
                 
-                // Calculate new total units
-                const newTotal = enhancedTotalUnits + parseInt(subject.units || 0);
-                
-                // Check if we can add this subject without exceeding max units
-                if (newTotal <= enhancedMaxUnits) {
-                    checkbox.checked = true;
+                if (subject) {
+                    const units = parseInt(subject.units || 0);
+                    const newTotal = enhancedTotalUnits + units;
                     
-                    // Store in Map with section data
-                    enhancedSelectedSubjects.set(subjectId.toString(), {
-                        subjectId: parseInt(subjectId),
-                        section: currentSection,
-                        units: parseInt(subject.units || 0)
-                    });
-                    
-                    enhancedTotalUnits = newTotal;
-                    card.classList.add('selected');
-                    selectedCount++;
-                    
-                    console.log(`Select All: Added subject ${subjectId}, section ${currentSection}, units ${subject.units}`);
+                    // Check if we can add this subject without exceeding max units
+                    if (newTotal <= enhancedMaxUnits) {
+                        checkbox.checked = true;
+                        
+                        // Store in Map
+                        enhancedSelectedSubjects.set(subjectId.toString(), {
+                            subjectId: parseInt(subjectId),
+                            section: 'A', // Default section for table view
+                            units: units
+                        });
+                        
+                        enhancedTotalUnits = newTotal;
+                        row.classList.add('selected');
+                        selectedCount++;
+                    }
                 }
             }
         });
@@ -3174,18 +3247,21 @@ function initializeEnhancedEnrollmentModal() {
         } else {
             showNotification('No available subjects can be selected without exceeding unit limit', 'warning');
         }
+        
+        // Update select all checkbox state
+        updateSelectAllCheckbox();
     }
 
-    // FIXED: Deselect all visible subjects
+    // Revised deselectAllVisible function for table
     function deselectAllVisible() {
-        const visibleSubjectElements = subjectsGrid.querySelectorAll('.enhanced-subject-card');
+        const visibleCheckboxes = document.querySelectorAll('.enhanced-subject-checkbox:checked');
         
-        visibleSubjectElements.forEach(card => {
-            const subjectId = card.getAttribute('data-id');
-            const checkbox = card.querySelector('input[type="checkbox"]');
+        visibleCheckboxes.forEach(checkbox => {
+            const row = checkbox.closest('.enhanced-subject-row');
+            const subjectId = row.getAttribute('data-id');
             const subject = enhancedAllSubjects.find(s => s.id == subjectId);
             
-            if (subject && checkbox && checkbox.checked) {
+            if (subject) {
                 checkbox.checked = false;
                 
                 // Remove from Map if exists
@@ -3195,12 +3271,24 @@ function initializeEnhancedEnrollmentModal() {
                     enhancedTotalUnits -= parseInt(selectedData.units);
                 }
                 
-                card.classList.remove('selected');
+                row.classList.remove('selected');
             }
         });
         
         updateEnhancedSelectionInfo();
+        updateSelectAllCheckbox();
         console.log('Deselect All completed');
+    }
+
+    // Helper function to update select all checkbox
+    function updateSelectAllCheckbox() {
+        const selectAllCheckbox = document.getElementById('enhancedSelectAllCheckbox');
+        if (selectAllCheckbox) {
+            const allSelectable = Array.from(document.querySelectorAll('.enhanced-subject-checkbox:not(:disabled)'));
+            const allChecked = allSelectable.length > 0 && allSelectable.every(cb => cb.checked);
+            selectAllCheckbox.checked = allChecked;
+            selectAllCheckbox.indeterminate = !allChecked && allSelectable.some(cb => cb.checked);
+        }
     }
 
     // FIXED: Submit enrollment with proper section data
@@ -3287,6 +3375,8 @@ function initializeEnhancedEnrollmentModal() {
         });
     }
 
+
+
     function openModal() {
         if (modal) {
             modal.classList.add('active');
@@ -3343,7 +3433,7 @@ function initializeEnhancedEnrollmentModal() {
             emptyState.style.display = 'none';
         }
         if (subjectsGrid) {
-            subjectsGrid.style.display = 'grid';
+            subjectsGrid.style.display = 'block';
         }
     }
 

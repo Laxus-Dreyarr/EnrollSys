@@ -2292,9 +2292,9 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         </div>
                     </div>
 
-                    <!-- Subjects Grid -->
-                    <div class="enhanced-enrollment-subjects-grid" id="enhancedSubjectsList">
-                        <!-- Subjects will be populated here -->
+                    <!-- Subjects Table Container -->
+                    <div class="enhanced-enrollment-subjects-container" id="enhancedSubjectsList">
+                        <!-- Subjects will be populated here as tables grouped by year level and semester -->
                         <div class="enhanced-enrollment-loading-state">
                             <div class="enhanced-loading-spinner"></div>
                             <p>Loading available subjects...</p>

@@ -2345,25 +2345,12 @@ class StudentController extends Controller
             ]);
 
             
-            // In the getEnrollmentSubjects method, update the subject query to include sections:
-            if ($student->is_regular == 1) {
-                // Regular student logic
-                // $subjects = Subject::where('year_level', $yearLevel)
-                //     ->where('semester', $currentSemester)
-                //     ->where('is_active', 1)
-                //     ->with(['schedules' => function($query) {
-                //         $query->select('id', 'subject_id', 'Section', 'day', 'start_time', 'end_time', 'room');
-                //     }, 'prerequisites'])
-                //     ->get();
-                // $subjects = Subject::where('is_active', 1)
-                //     ->with(['schedules' => function($query) {
-                //         $query->select('id', 'subject_id', 'Section', 'day', 'start_time', 'end_time', 'room');
-                //     }, 'prerequisites'])
-                //     ->orderBy('year_level', 'asc')
-                //     ->get();
-                $subjects = $this->getAvailableSubjectsForIrregular($student, $yearLevel, $currentSemester, $passedSubjects, $allTakenSubjects, $failedSubjects);
+            // Get available subjects based on student type and enrollment semester
+            if ($student->is_regular == 1 && $yearLevel === '1st Year' && $currentSemester === '1st Sem') {
+                // Regular 1st Year 1st Sem: Only show 1st Year 1st Sem subjects
+                $subjects = $this->getAvailableSubjectsForRegularFirstYear($student, $yearLevel, $currentSemester, $passedSubjects, $allTakenSubjects, $failedSubjects);
             } else {
-                // Irregular student logic
+                // Irregular students or regular students beyond 1st Year 1st Sem
                 $subjects = $this->getAvailableSubjectsForIrregular($student, $yearLevel, $currentSemester, $passedSubjects, $allTakenSubjects, $failedSubjects);
             }
 
@@ -2445,63 +2432,6 @@ class StudentController extends Controller
         }
     }
 
-    // public function enrollSubjects(Request $request)
-    // {
-    //     try {
-    //         $user = Auth::guard('student')->user();
-    //         $student = $user->user_information->student;
-            
-    //         $validator = Validator::make($request->all(), [
-    //             'subjects' => 'required|array',
-    //             'subjects.*' => 'exists:subjects,id'
-    //         ]);
-            
-    //         if ($validator->fails()) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Invalid subjects selected'
-    //             ]);
-    //         }
-            
-    //         DB::beginTransaction();
-            
-    //         // Create enrollment request
-    //         $enrollmentRequest = new EnrollmentRequest();
-    //         $enrollmentRequest->student_id = $student->id;
-    //         $enrollmentRequest->status = 'Pending';
-    //         $enrollmentRequest->save();
-            
-    //         // Create enrollment records for each subject
-    //         foreach ($request->subjects as $subjectId) {
-    //             $enrollment = new Enrollment();
-    //             $enrollment->student_id = $student->id;
-    //             $enrollment->subject_id = $subjectId;
-    //             $enrollment->section_id = 1; // Default section, you might want to implement section selection
-    //             $enrollment->status = 'Enrolled';
-    //             $enrollment->save();
-    //         }
-            
-    //         // Update student status
-    //         $student->status = 'Pending';
-    //         $student->save();
-            
-    //         DB::commit();
-            
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Enrollment submitted successfully! Waiting for approval.'
-    //         ]);
-            
-    //     } catch (\Exception $e) {
-    //         DB::rollback();
-    //         Log::error('Enrollment error: ' . $e->getMessage());
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Enrollment failed. Please try again.'
-    //         ]);
-    //     }
-    // }
-
     public function enrollSubjects(Request $request)
     {
         try {
@@ -2574,7 +2504,6 @@ class StudentController extends Controller
             $enrollmentRequest->student_id = $student->id;
             $enrollmentRequest->status = 'Pending';
             $enrollmentRequest->request_date = now();
-            $enrollmentRequest->$enrollmentPeriod2->year_level;
             $enrollmentRequest->save();
             
             // Create enrollment records for each subject with selected section
@@ -2850,7 +2779,7 @@ class StudentController extends Controller
             $enrollmentRequest->student_id = $student->id;
             $enrollmentRequest->status = 'Pending';
             $enrollmentRequest->request_date = now();
-            $enrollmentRequest->year_level = $enrollment_year->year_level;
+            $enrollmentRequest->year_level = $student->year_level;
             $enrollmentRequest->save();
 
             // Create enrollment records for each subject
@@ -3486,6 +3415,50 @@ class StudentController extends Controller
         }
     }
 
+    // Get available subjects for regular 1st Year 1st Sem students
+    private function getAvailableSubjectsForRegularFirstYear($student, $yearLevel, $semester, $passedSubjects, $allTakenSubjects, $failedSubjects)
+    {
+        Log::info('Getting available subjects for regular 1st Year 1st Sem student', [
+            'student_id' => $student->id,
+            'current_year_level' => $yearLevel,
+            'current_semester' => $semester
+        ]);
+
+        try {
+            $curriculum_year = $student->curriculum;
+            $curriculum = DB::table('curriculum')
+                ->where('curriculum_year', $curriculum_year)
+                ->where('is_active', 1)
+                ->first();
+
+            if (!$curriculum) {
+                Log::error('No active curriculum found for student', ['student_id' => $student->id]);
+                return collect();
+            }
+
+            $curriculum_id = $curriculum->id;
+
+            // Get only 1st Year 1st Sem subjects
+            $allSubjects = Subject::where('is_active', 1)
+                ->where('year_level', '1st Year')
+                ->where('semester', '1st Sem')
+                ->where('curriculum_id', $curriculum_id)
+                ->whereNotIn('id', $passedSubjects) // Exclude passed subjects
+                ->with(['schedules', 'prerequisites'])
+                ->get();
+
+            Log::info('Total 1st Year 1st Sem subjects found for regular student', [
+                'count' => $allSubjects->count()
+            ]);
+
+            return $allSubjects;
+
+        } catch (\Exception $e) {
+            Log::error('Error in getAvailableSubjectsForRegularFirstYear: ' . $e->getMessage());
+            return collect();
+        }
+    }
+
     private function getAvailableSubjectsForIrregular($student, $yearLevel, $semester, $passedSubjects, $allTakenSubjects, $failedSubjects)
     {
         Log::info('Getting available subjects for irregular student', [
@@ -3498,19 +3471,16 @@ class StudentController extends Controller
         ]);
 
         try {
-            // For irregular students, get all subjects from 1st to 4th year for the current semester
-            // that the student hasn't already PASSED (allow failed subjects to be retaken)
-            // $allSubjects = Subject::where('is_active', 1)
-            //     ->where('semester', $semester)
-            //     ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year'])
-            //     ->whereNotIn('id', $passedSubjects) // Only exclude passed subjects, not failed ones
-            //     ->with(['schedules', 'prerequisites'])
-            //     ->get();
             $curriculum_year = $student->curriculum;
             $curriculum = DB::table('curriculum')
-                ->where('curriculum_year', $curriculum_year) // Use the selected curriculum
+                ->where('curriculum_year', $curriculum_year)
                 ->where('is_active', 1)
                 ->first();
+
+            if (!$curriculum) {
+                Log::error('No active curriculum found for student', ['student_id' => $student->id]);
+                return collect();
+            }
 
             $curriculum_id = $curriculum->id;
 
@@ -3520,26 +3490,97 @@ class StudentController extends Controller
 
             $currentSemester = $currentEnrollment->semester;
 
-            $allSubjects = Subject::where('is_active', 1)
-                ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year', ''])
+            $failingGrades = ['4.0', '5.0', 'INC', 'DRP'];
+            $passingGrades = ['1.0', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7', '1.8', '1.9', '2.0', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7', '2.8', '2.9', '3.0'];
+
+            // Get all student grades with subject information to check for failed subjects
+            $studentGradesWithSubjects = DB::table('enrolled_sub')
+                ->join('subjects', 'enrolled_sub.subject_id', '=', 'subjects.id')
+                ->where('enrolled_sub.student_id', $student->id)
+                ->whereNotNull('enrolled_sub.grade')
+                ->where('subjects.curriculum_id', $curriculum_id)
+                ->select('enrolled_sub.subject_id', 'enrolled_sub.grade', 'subjects.year_level', 'subjects.semester')
+                ->get();
+
+            // Check if student has any failed grades from 1st Year to 4th Year (1st Sem, 2nd Sem, Summer)
+            // This is needed for 4th Year 2nd Sem eligibility
+            $hasFailedGrades = $studentGradesWithSubjects
+                ->whereIn('grade', $failingGrades)
+                ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year'])
+                ->whereIn('semester', ['1st Sem', '2nd Sem', 'Summer'])
+                ->isNotEmpty();
+
+            // For Summer subjects: Check if student has passing grades from 1st Year to 3rd Year (1st Sem, 2nd Sem)
+            $summerEligible = true;
+            if ($currentSemester === 'Summer') {
+                // Get all subjects from 1st Year to 3rd Year (1st Sem, 2nd Sem)
+                $requiredSubjects = Subject::where('is_active', 1)
+                    ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year'])
+                    ->whereIn('semester', ['1st Sem', '2nd Sem'])
+                    ->where('curriculum_id', $curriculum_id)
+                    ->pluck('id')
+                    ->toArray();
+
+                // Get student's grades for required subjects
+                $studentSubjectGrades = DB::table('enrolled_sub')
+                    ->where('student_id', $student->id)
+                    ->whereIn('subject_id', $requiredSubjects)
+                    ->whereNotNull('grade')
+                    ->pluck('grade', 'subject_id')
+                    ->toArray();
+
+                // Check if student has passing grades for all required subjects
+                foreach ($requiredSubjects as $subjectId) {
+                    if (!isset($studentSubjectGrades[$subjectId]) || !in_array($studentSubjectGrades[$subjectId], $passingGrades)) {
+                        $summerEligible = false;
+                        break;
+                    }
+                }
+            }
+
+            // Build query for available subjects
+            $query = Subject::where('is_active', 1)
                 ->where('curriculum_id', $curriculum_id)
                 ->where('semester', $currentSemester)
-                ->whereNotIn('id', $passedSubjects) // Only exclude passed subjects, not failed ones
-                ->with(['schedules', 'prerequisites'])
-                ->get();
+                ->whereNotIn('id', $passedSubjects); // Exclude passed subjects
+
+            // For 4th Year 2nd Sem: Only show if no failed grades from 1st Year to 4th Year
+            if ($currentSemester === '2nd Sem') {
+                $query->where(function($q) use ($hasFailedGrades) {
+                    $q->where('year_level', '!=', '4th Year');
+                    if (!$hasFailedGrades) {
+                        $q->orWhere('year_level', '4th Year');
+                    }
+                });
+            } else {
+                $query->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year', '']);
+            }
+
+            // For Summer: Only show if student is eligible
+            if ($currentSemester === 'Summer' && !$summerEligible) {
+                return collect(); // No summer subjects if not eligible
+            }
+
+            $allSubjects = $query->with(['schedules', 'prerequisites'])->get();
 
             Log::info('Total subjects found for irregular student before prerequisite check', [
                 'count' => $allSubjects->count(),
-                'semester' => $semester
+                'semester' => $semester,
+                'has_failed_grades' => $hasFailedGrades,
+                'summer_eligible' => $summerEligible
             ]);
 
             // Filter subjects based on prerequisites met with PASSING grades
             // BUT include failed subjects regardless of prerequisites (they need to be retaken)
-            $availableSubjects = $allSubjects->filter(function($subject) use ($passedSubjects, $failedSubjects, $student) {
-                // If this is a failed subject that needs retaking, always include it
+            $availableSubjects = $allSubjects->filter(function($subject) use ($passedSubjects, $failedSubjects, $student, $currentSemester) {
+                // If this is a failed subject that needs retaking and it's the same enrollment semester, include it
                 if (in_array($subject->id, $failedSubjects)) {
-                    Log::info("Subject {$subject->code} ({$subject->id}) available - needs retaking (failed subject)");
-                    return true;
+                    // Check if the failed subject is for the current enrollment semester
+                    // (students can re-enroll failed subjects if same semester)
+                    if ($subject->semester === $currentSemester) {
+                        Log::info("Subject {$subject->code} ({$subject->id}) available - needs retaking (failed subject)");
+                        return true;
+                    }
                 }
                 
                 // If subject has no prerequisites, it's available
