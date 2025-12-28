@@ -184,9 +184,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         </h3>
                         <p class="stat-label" style="color: white;">
                             @if($enrollmentPeriod)
-                                <b style="color: red; text-shadow: 2px 0.1px black;">{{ $enrollmentPeriod->year_level ?? 'Summer' }} only</b> <br>
-                                Enrollment is until
-                                {{ \Carbon\Carbon::parse($enrollmentPeriod->start)->format('F j, Y') }} - {{ \Carbon\Carbon::parse($enrollmentPeriod->end)->format('F j, Y') }}
+                                <b style="color: white; border-radius: 5px; border: 1px solid; padding: 1px; background: green;">{{ $enrollmentPeriod->semester ?? 'Summer' }} only</b> <br>
                             @else
                                 No active enrollment period
                             @endif

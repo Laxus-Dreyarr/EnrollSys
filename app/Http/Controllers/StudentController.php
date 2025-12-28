@@ -1493,10 +1493,10 @@ class StudentController extends Controller
             $currentDate = now()->format('Y-m-d');
             
             // First: Find and deactivate any expired enrollment periods
-            DB::table('enrollment_date')
-                ->where('is_active', 1)
-                ->whereDate('end', '<', $currentDate)  // Past the end date
-                ->update(['is_active' => 0]);
+            // DB::table('enrollment_date')
+            //     ->where('is_active', 1)
+            //     ->whereDate('end', '<', $currentDate)  // Past the end date
+            //     ->update(['is_active' => 0]);
             
             // Also deactivate any not-yet-started periods if needed
             // DB::table('enrollment_date')
@@ -1507,8 +1507,8 @@ class StudentController extends Controller
             // Then: Check for current active enrollment period
             $enrollmentPeriod = DB::table('enrollment_date')
                 ->where('is_active', 1)
-                ->whereDate('start', '<=', $currentDate)
-                ->whereDate('end', '>=', $currentDate)
+                // ->whereDate('start', '<=', $currentDate)
+                // ->whereDate('end', '>=', $currentDate)
                 ->first();
 
             Log::info('Enrollment period check', [
@@ -2300,11 +2300,8 @@ class StudentController extends Controller
             // Get student's year level
             // $yearLevel = $student->year_level;
 
-            //Get the year level from enrollment_date table
-            $yearLevelRecord = DB::table('enrollment_date')
-                ->where('is_active', 1)
-                ->first();
-            $yearLevel = $yearLevelRecord->year_level;
+            //Get the year level from students table
+            $yearLevel = $student->year_level;
 
             $enrollment_date = DB::table('enrollment_date')
                 ->where('is_active', 1)
@@ -4907,62 +4904,46 @@ class StudentController extends Controller
         $subjectSearch = $request->get('subject_search');
         $gradeStatus = $request->get('grade_status', 'all');
 
-        // First, get the enrolled subjects
-        $query = DB::table('enrolled_sub')
-            ->select('enrolled_sub.*')
-            ->where('enrolled_sub.student_id', $student->id);
+        $query = DB::table('enrolled_sub as es')
+            ->select(
+                'es.*',
+                DB::raw('(
+                    SELECT GROUP_CONCAT(DISTINCT s.code ORDER BY s.code SEPARATOR ", ")
+                    FROM subjectprerequisites sp
+                    LEFT JOIN subjects s ON sp.prerequisite_id = s.id
+                    WHERE sp.subject_id = es.subject_id
+                ) as prerequisites')
+            )
+            ->where('es.student_id', $student->id);
 
         // Apply filters
         if ($yearLevel && $yearLevel !== 'all') {
-            $query->where('year_level', $yearLevel);
+            $query->where('es.year_level', $yearLevel);
         }
 
         if ($subjectSearch) {
             $query->where(function($q) use ($subjectSearch) {
-                $q->where('subject_code', 'like', "%{$subjectSearch}%")
-                ->orWhere('subject_name', 'like', "%{$subjectSearch}%");
+                $q->where('es.subject_code', 'like', "%{$subjectSearch}%")
+                ->orWhere('es.subject_name', 'like', "%{$subjectSearch}%");
             });
         }
 
         if ($gradeStatus === 'ungraded') {
-            $query->whereNull('grade')->orWhere('grade', '');
+            $query->whereNull('es.grade')->orWhere('es.grade', '');
         } elseif ($gradeStatus === 'graded') {
-            $query->whereNotNull('grade')->where('grade', '!=', '');
+            $query->whereNotNull('es.grade')->where('es.grade', '!=', '');
         }
 
-        $subjects = $query->orderBy('year_level')
-            ->orderBy('semester')
-            ->orderBy('subject_code')
+        $subjects = $query->orderBy('es.year_level')
+            ->orderBy('es.semester')
+            ->orderBy('es.subject_code')
             ->get();
 
-        // Now get prerequisites for each subject
-        $subjectIds = $subjects->pluck('subject_id')->toArray();
-        
-        if (!empty($subjectIds)) {
-            // Get prerequisites for all subjects
-            $prerequisites = DB::table('subjectprerequisites as sp')
-                ->select(
-                    'sp.subject_id',
-                    DB::raw('GROUP_CONCAT(DISTINCT s.code ORDER BY s.code SEPARATOR ", ") as prerequisite_codes')
-                )
-                ->leftJoin('subjects as s', 'sp.prerequisite_id', '=', 's.id')
-                ->whereIn('sp.subject_id', $subjectIds)
-                ->groupBy('sp.subject_id')
-                ->get()
-                ->keyBy('subject_id');
-            
-            // Add prerequisites to each subject
-            $subjects->transform(function ($subject) use ($prerequisites) {
-                $subject->prerequisites = $prerequisites[$subject->subject_id]->prerequisite_codes ?? 'None';
-                return $subject;
-            });
-        } else {
-            // If no subjects, set default empty prerequisites
-            $subjects->transform(function ($subject) {
-                $subject->prerequisites = 'None';
-                return $subject;
-            });
-        }
+        // Format prerequisites
+        $subjects->transform(function ($subject) {
+            $subject->prerequisites = $subject->prerequisites ? $subject->prerequisites : 'None';
+            return $subject;
+        });
 
         return response()->json($subjects->toArray());
     }
