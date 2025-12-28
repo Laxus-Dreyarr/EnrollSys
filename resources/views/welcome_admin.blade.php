@@ -55,12 +55,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#about">About</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#contact">Contact</a>
-                    </li>
-                    <li class="nav-item ms-lg-3">
-                        <button style="background-color: rgb(138, 30, 30); border-color: maroon" class="btn btn-primary btn-login" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
-                    </li>
                 </ul>
             </div>
         </div>
@@ -75,8 +69,7 @@
                     <h1 class="hero-title">Welcome to <span>EnrollSys</span></h1>
                     <p class="hero-subtitle">Your seamless gateway to academic enrollment and management</p>
                     <div class="hero-buttons">
-                        <button class="btn btn-primary btn-lg me-3" data-bs-toggle="modal" data-bs-target="#loginModal" style="background-color: maroon; border-color: maroon">Get Started</button>
-                        <button class="btn btn-outline-light btn-lg">Learn More</button>
+                        <button class="btn btn-primary btn-lg me-3" data-bs-toggle="modal" data-bs-target="#loginModal" style="background-color: maroon; border-color: maroon">Login</button>
                     </div>
                 </div>
                 <div class="col-lg-5 d-none d-lg-block">
@@ -203,65 +196,6 @@
         </div>
     </section>
 
-    <!-- Contact Section -->
-    <section id="contact" class="contact-section">
-        <div class="container">
-            <h2 class="section-title text-center">Contact Us</h2>
-            <p class="section-subtitle text-center">Have questions? Get in touch with our support team</p>
-            
-            <div class="row">
-                <div class="col-lg-6">
-                    <form class="contact-form">
-                        <div class="mb-3">
-                            <input type="text" class="form-control" placeholder="Your Name">
-                        </div>
-                        <div class="mb-3">
-                            <input type="email" class="form-control" placeholder="Your Email">
-                        </div>
-                        <div class="mb-3">
-                            <input type="text" class="form-control" placeholder="Subject">
-                        </div>
-                        <div class="mb-3">
-                            <textarea class="form-control" rows="5" placeholder="Your Message"></textarea>
-                        </div>
-                        <button style="background-color: maroon; border-color: rgb(146, 54, 54)" type="submit" class="btn btn-primary">Send Message</button>
-                    </form>
-                </div>
-                <div class="col-lg-6">
-                    <div class="contact-info">
-                        <div class="info-item">
-                            <div class="info-icon">
-                                <i class="fas fa-map-marker-alt"></i>
-                            </div>
-                            <div class="info-content">
-                                <h4>Location</h4>
-                                <p>Eastern Visayas State University, Ormoc City, Leyte</p>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-icon">
-                                <i class="fas fa-phone-alt"></i>
-                            </div>
-                            <div class="info-content">
-                                <h4>Phone</h4>
-                                <p>+63 946 493 0641</p>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-icon">
-                                <i class="fas fa-envelope"></i>
-                            </div>
-                            <div class="info-content">
-                                <h4>Email</h4>
-                                <p>enrollsys.evsu.edu.ph</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
@@ -271,43 +205,8 @@
                         <h4>EnrollSys</h4>
                         <p>The premier student enrollment system for Eastern Visayas State University, designed to make academic management simple and efficient.</p>
                         <div class="social-links">
-                            <a href="#"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                            <a href="#"><i class="fab fa-instagram"></i></a>
-                            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                            <a href="https://www.facebook.com/JPCSEVSUOCC"><i class="fab fa-facebook-f"></i></a>
                         </div>
-                    </div>
-                </div>
-                <div class="col-lg-2 col-md-6">
-                    <div class="footer-links">
-                        <h4>Quick Links</h4>
-                        <ul>
-                            <li><a href="#">Home</a></li>
-                            <li><a href="#features">Features</a></li>
-                            <li><a href="#about">About</a></li>
-                            <li><a href="#contact">Contact</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-lg-2 col-md-6">
-                    <div class="footer-links">
-                        <h4>Resources</h4>
-                        <ul>
-                            <li><a href="#">Help Center</a></li>
-                            <li><a href="#">FAQs</a></li>
-                            <li><a href="#">Privacy Policy</a></li>
-                            <li><a href="#">Terms of Service</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="footer-newsletter">
-                        <h4>Newsletter</h4>
-                        <p>Subscribe to our newsletter for the latest updates and announcements.</p>
-                        <form class="newsletter-form">
-                            <input type="email" placeholder="Your Email">
-                            <button type="submit"><i class="fas fa-paper-plane"></i></button>
-                        </form>
                     </div>
                 </div>
             </div>
