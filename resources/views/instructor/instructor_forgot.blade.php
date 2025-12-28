@@ -59,9 +59,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#contact">Contact</a>
                     </li>
-                    <li class="nav-item ms-lg-3">
-                        <button style="background-color: rgb(138, 30, 30); border-color: maroon" class="btn btn-primary btn-login" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>bs-target="#loginModal">Login</button>
-                    </li>
                     <li class="nav-item ms-lg-2">
                         <button style="border-color: maroon;" class="btn btn-outline-primary btn-register" data-bs-toggle="modal" data-bs-target="#registerModal">Register</button>
                     </li>
@@ -340,7 +337,6 @@
                             </label>
                             <div class="input-group-enhanced">
                                 <input type="email" class="form-control-enhanced" id="registerEmail" placeholder="input evsumail" required>
-                                <i class="form-icon fas fa-at"></i>
                                 <div id="RloginEmailError" class="text-danger mt-1 small"></div>
                             </div>
                         </div>
@@ -352,7 +348,6 @@
                             </label>
                             <div class="input-group-enhanced">
                                 <input type="password" class="form-control-enhanced" id="registerPassword" placeholder="Create a strong password" required>
-                                <i class="form-icon fas fa-key"></i>
                             </div>
                             
                             <div class="password-strength">
@@ -381,7 +376,6 @@
                             </label>
                             <div class="input-group-enhanced">
                                 <input type="password" class="form-control-enhanced" id="repeatPassword" placeholder="Repeat your password" required>
-                                <i class="form-icon fas fa-key"></i>
                                 <div class="invalid-feedback">Passwords do not match</div>
                             </div>
                         </div>
