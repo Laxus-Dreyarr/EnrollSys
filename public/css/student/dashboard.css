@@ -3956,7 +3956,7 @@ body.dark-mode .prerequisite-info {
     gap: 32px;
     align-content: flex-start;
     overflow-y: auto;
-    max-height: calc(90vh - 400px);
+    max-height: calc(120vh - 5px);
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 #f1f5f9;
 }
@@ -10001,6 +10001,13 @@ background: linear-gradient(135deg, #38a169, #2f855a);
         background: rgba(67, 97, 238, 0.05);
     }
 
+    #enhanced-search-input-wrapper {
+        display: none;
+    }
+
+    #enhancedMobileSearchToggle {
+        display: none;
+    }
 }
 
 @media (max-width: 480px) {

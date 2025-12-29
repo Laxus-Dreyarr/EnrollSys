@@ -2190,13 +2190,17 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         <i class="fas fa-times"></i>
                         Clear All
                     </button>
+                    <div id="enhanced-search-input-wrapper" class="enhanced-search-input-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="enhancedSubjectsSearch" placeholder="Search by code or name...">
+                    </div>
                     <div class="enhanced-search-toggle" id="enhancedMobileSearchToggle">
                         <i class="fas fa-search"></i>
                     </div>
                 </div>
 
                 <!-- Mobile Search Panel -->
-                <div class="enhanced-enrollment-mobile-search" id="enhancedMobileSearchPanel">
+                <div style="display: none;" class="enhanced-enrollment-mobile-search" id="enhancedMobileSearchPanel">
                     <div class="enhanced-mobile-search-bar">
                         <i class="fas fa-search"></i>
                         <input type="text" placeholder="Search subjects..." id="enhancedMobileSubjectsSearch">
@@ -2210,7 +2214,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                 <div class="enhanced-enrollment-main-content">
                     <!-- Desktop Filters -->
                     <div class="enhanced-enrollment-desktop-filters">
-                        <div class="enhanced-filter-group">
+                        <div style="display: none;" class="enhanced-filter-group">
                             <label>Filter by</label>
                             <select id="enhancedSubjectFilter" class="enhanced-filter-select">
                                 <option value="all">All Subjects</option>
@@ -2218,7 +2222,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 <option value="with-prerequisites">With Prerequisites</option>
                             </select>
                         </div>
-                        <div class="enhanced-filter-group">
+                        <div style="display: none;" class="enhanced-filter-group">
                             <label>Sort by</label>
                             <select id="enhancedSortFilter" class="enhanced-filter-select">
                                 <option value="code">Subject Code</option>
@@ -2233,7 +2237,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 Sections will be populated dynamically
                             </select>
                         </div> -->
-                        <div class="enhanced-filter-group enhanced-search-group">
+                        <div style="display: none;" class="enhanced-filter-group enhanced-search-group">
                             <label>Search</label>
                             <div class="enhanced-search-input-wrapper">
                                 <i class="fas fa-search"></i>
@@ -2246,19 +2250,23 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                     </div>
 
                     <!-- Mobile Filter Bar -->
-                    <div class="enhanced-enrollment-mobile-filter-bar">
-                        <button class="enhanced-mobile-filter-btn" id="enhancedMobileFilterToggle">
+                    <div style="display: none;" class="enhanced-enrollment-mobile-filter-bar">
+                        <button style="display: none;" class="enhanced-mobile-filter-btn" id="enhancedMobileFilterToggle">
                             <i class="fas fa-filter"></i>
                             Filters
                             <span class="enhanced-filter-count">0</span>
                         </button>
-                        <div class="enhanced-mobile-selection-info">
+                        <div style="display: none;" class="enhanced-mobile-selection-info">
                             <span id="enhancedSelectedCount">0 selected</span>
+                        </div>
+                        <div class="enhanced-search-input-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="enhancedSubjectsSearch" placeholder="Search by code or name...">
                         </div>
                     </div>
 
                     <!-- Mobile Filter Panel -->
-                    <div class="enhanced-enrollment-mobile-filters" id="enhancedMobileFilterPanel">
+                    <div style="display: none;" class="enhanced-enrollment-mobile-filters" id="enhancedMobileFilterPanel">
                         <div class="enhanced-mobile-filter-header">
                             <h4>Filters</h4>
                             <button class="enhanced-mobile-filter-close" id="enhancedMobileFilterClose">
