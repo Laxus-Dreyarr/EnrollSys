@@ -929,6 +929,21 @@ class StudentController extends Controller
             $date=date("Y-m-d h:i:sa", $today);
 
 
+            // Get current date for SY calculation
+            $currentYear = date('Y');
+            $currentMonth = date('n'); // 1-12
+            
+            // Calculate School Year and Semester
+            if ($currentMonth >= 7 && $currentMonth <= 12) {
+                // July to December: First Semester of current school year
+                $schoolYear = $currentYear . '-' . ($currentYear + 1);
+
+            } else {
+                // January to June: Second Semester of previous school year
+                $schoolYear = ($currentYear - 1) . '-' . $currentYear;
+            }
+
+
             //Save to Student!
             $student = new Student();
             $student->student_id = $userInfo->id;
@@ -937,6 +952,7 @@ class StudentController extends Controller
             $student->is_regular = 6;
             $student->status = 'Not Enrolled';
             $student->curriculum = $registrationData['curriculum'];
+            $student->sy = $schoolYear;
 
             
             
@@ -4985,6 +5001,63 @@ class StudentController extends Controller
         ]);
     }
 
+    // public function getEnrolledSubjectsForGrades(Request $request)
+    // {
+    //     if (!Auth::guard('student')->check()) {
+    //         return response()->json(['error' => 'Unauthorized'], 401);
+    //     }
+
+    //     $user = Auth::guard('student')->user();
+    //     $student = $user->user_information->student;
+
+    //     $yearLevel = $request->get('year_level');
+    //     $subjectSearch = $request->get('subject_search');
+    //     $gradeStatus = $request->get('grade_status', 'all');
+
+    //     $query = DB::table('enrolled_sub as es')
+    //         ->select(
+    //             'es.*',
+    //             DB::raw('(
+    //                 SELECT GROUP_CONCAT(DISTINCT s.code ORDER BY s.code SEPARATOR ", ")
+    //                 FROM subjectprerequisites sp
+    //                 LEFT JOIN subjects s ON sp.prerequisite_id = s.id
+    //                 WHERE sp.subject_id = es.subject_id
+    //             ) as prerequisites')
+    //         )
+    //         ->where('es.student_id', $student->id);
+
+    //     // Apply filters
+    //     if ($yearLevel && $yearLevel !== 'all') {
+    //         $query->where('es.year_level', $yearLevel);
+    //     }
+
+    //     if ($subjectSearch) {
+    //         $query->where(function($q) use ($subjectSearch) {
+    //             $q->where('es.subject_code', 'like', "%{$subjectSearch}%")
+    //             ->orWhere('es.subject_name', 'like', "%{$subjectSearch}%");
+    //         });
+    //     }
+
+    //     if ($gradeStatus === 'ungraded') {
+    //         $query->whereNull('es.grade')->orWhere('es.grade', '');
+    //     } elseif ($gradeStatus === 'graded') {
+    //         $query->whereNotNull('es.grade')->where('es.grade', '!=', '');
+    //     }
+
+    //     $subjects = $query->orderBy('es.year_level')
+    //         ->orderBy('es.semester')
+    //         ->orderBy('es.subject_code')
+    //         ->get();
+
+    //     // Format prerequisites
+    //     $subjects->transform(function ($subject) {
+    //         $subject->prerequisites = $subject->prerequisites ? $subject->prerequisites : 'None';
+    //         return $subject;
+    //     });
+
+    //     return response()->json($subjects->toArray());
+    // }
+
     public function getEnrolledSubjectsForGrades(Request $request)
     {
         if (!Auth::guard('student')->check()) {
@@ -5039,7 +5112,17 @@ class StudentController extends Controller
             return $subject;
         });
 
-        return response()->json($subjects->toArray());
+        // Check for active enrollment period
+        $activeEnrollmentPeriod = DB::table('enrollment_date')
+            ->where('is_active', 1)
+            ->first();
+
+        $isEnrollmentPeriodActive = !empty($activeEnrollmentPeriod);
+
+        return response()->json([
+            'subjects' => $subjects->toArray(),
+            'is_enrollment_period_active' => $isEnrollmentPeriodActive
+        ]);
     }
 
     public function getSubjectDetails2($subjectId)

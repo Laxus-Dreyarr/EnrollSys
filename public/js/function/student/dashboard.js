@@ -5549,6 +5549,44 @@ function loadInitialStudentData() {
 
 
 // Load subjects for grade input
+// function loadGradeSubjects() {
+//     const yearLevel = $('#year_level').val();
+//     const subjectSearch = $('#subject_search').val();
+//     const gradeStatus = $('#grade_status').val();
+
+//     // Show loading in main container
+//     $('#grades-container').html(`
+//         <div class="loading-state">
+//             <i class="fas fa-spinner fa-spin"></i>
+//             <p>Loading subjects...</p>
+//         </div>
+//     `);
+
+//     $.ajax({
+//         url: '/student/get-enrolled-subjects',
+//         type: 'GET',
+//         data: {
+//             year_level: yearLevel,
+//             subject_search: subjectSearch,
+//             grade_status: gradeStatus
+//         },
+//         success: function(response) {
+//             renderMainGradeSubjects(response);
+//             // Also update modal list
+//             renderModalSubjectsList(response);
+//         },
+//         error: function(xhr) {
+//             console.error('Error loading subjects:', xhr);
+//             $('#grades-container').html(`
+//                 <div class="error-state">
+//                     <i class="fas fa-exclamation-circle"></i>
+//                     <p>Failed to load subjects</p>
+//                 </div>
+//             `);
+//         }
+//     });
+// }
+
 function loadGradeSubjects() {
     const yearLevel = $('#year_level').val();
     const subjectSearch = $('#subject_search').val();
@@ -5588,9 +5626,149 @@ function loadGradeSubjects() {
 }
 
 // Render subjects in the MAIN VIEW
-function renderMainGradeSubjects(subjects) {
+// function renderMainGradeSubjects(subjects) {
+//     const container = $('#grades-container');
+//     container.empty();
+
+//     if (subjects.length === 0) {
+//         container.html(`
+//             <div class="empty-state">
+//                 <i class="fas fa-book-open"></i>
+//                 <p>No subjects found</p>
+//             </div>
+//         `);
+//         return;
+//     }
+
+//     // Group subjects by year level and semester
+//     const groupedSubjects = {};
+//     subjects.forEach(subject => {
+//         const yearLevel = subject.year_level || '';
+//         const semester = subject.semester || '';
+        
+//         // Create a special label for 3rd Year Summer
+//         let groupLabel = `${yearLevel} ${semester}`;
+//         if (yearLevel === '3rd Year' && semester === 'Summer') {
+//             groupLabel = 'Summer or Third Term';
+//         }
+        
+//         if (!groupedSubjects[groupLabel]) {
+//             groupedSubjects[groupLabel] = {
+//                 yearLevel: yearLevel,
+//                 semester: semester,
+//                 subjects: []
+//             };
+//         }
+//         groupedSubjects[groupLabel].subjects.push(subject);
+//     });
+
+//     let allTablesHTML = '';
+
+//     // Sort groups: 1st Year 1st Sem, 1st Year 2nd Sem, 2nd Year 1st Sem, etc.
+//     const groupKeys = Object.keys(groupedSubjects).sort((a, b) => {
+//         const yearOrder = { '1st Year': 1, '2nd Year': 2, '3rd Year': 3, '4th Year': 4, '5th Year': 5 };
+//         const semOrder = { '1st Sem': 1, '2nd Sem': 2, 'Summer': 3 };
+        
+//         const getYear = (label) => {
+//             if (label === 'Summer or Third Term') return '3rd Year';
+//             return Object.keys(yearOrder).find(year => label.includes(year)) || '';
+//         };
+        
+//         const getSemester = (label) => {
+//             if (label === 'Summer or Third Term') return 'Summer';
+//             return Object.keys(semOrder).find(sem => label.includes(sem)) || '';
+//         };
+        
+//         const yearA = getYear(a);
+//         const yearB = getYear(b);
+//         const semA = getSemester(a);
+//         const semB = getSemester(b);
+        
+//         if (yearOrder[yearA] !== yearOrder[yearB]) {
+//             return yearOrder[yearA] - yearOrder[yearB];
+//         }
+//         return (semOrder[semA] || 0) - (semOrder[semB] || 0);
+//     });
+
+//     allTablesHTML += `
+//             <div class="subject-group-header" style="text-align: center;"><br><br>
+//                 <h3>Prospectus</h3>
+//             </div>
+//         `;
+
+//     groupKeys.forEach(groupLabel => {
+//         const group = groupedSubjects[groupLabel];
+        
+//         // Create header for this group
+//         allTablesHTML += `
+//             <br>
+//             <div class="subject-group-header">
+//                 <h3 style="margin-left: 10px;">${groupLabel}</h3>
+//             </div>
+//         `;
+
+//         // Create table for this group
+//         let tableHTML = `
+//             <div class="table-responsive">
+//                 <table class="table table-bordered table-hover">
+//                     <thead class="thead-light">
+//                         <tr>
+//                             <th class="tbl_header" style="color:white;" scope="col">Subject Code</th>
+//                             <th class="tbl_header" style="color:white;" scope="col">Subject Name</th>
+//                             <th class="tbl_header" style="color:white;" scope="col">Units</th>
+//                             <th class="tbl_header" style="color:white;" scope="col">Prerequisite</th>
+//                             <th class="tbl_header" style="color:white;" scope="col">Grade</th>
+//                             <th class="tbl_header" style="color:white;" scope="col">Action</th>
+//                         </tr>
+//                     </thead>
+//                     <tbody>
+//         `;
+
+//         group.subjects.forEach(subject => {
+//             const gradeText = subject.grade ? subject.grade : 'Not Graded';
+//             const gradeClass = subject.grade ? 'grade-badge graded' : 'grade-badge ungraded';
+            
+//             // Get prerequisites for this subject (you'll need to fetch this from backend)
+//             const prerequisites = subject.prerequisites || subject.prerequisite_codes || 'None';
+            
+//             tableHTML += `
+//                 <tr>
+//                     <td class="tbl_data">${subject.subject_code || ''}</td>
+//                     <td class="tbl_data">${subject.subject_name || ''}</td>
+//                     <td class="tbl_data">${subject.units || '0'}</td>
+//                     <td class="tbl_data">${prerequisites}</td>
+//                     <td class="tbl_data">
+//                         <span class="${gradeClass}">${gradeText}</span>
+//                     </td>
+//                     <td class="tbl_data">
+//                         <button class="btn btn-primary btn-sm open-grade-modal" data-id="${subject.id}">
+//                             <i class="fas fa-pen"></i> Input Grade
+//                         </button>
+//                     </td>
+//                 </tr>
+//             `;
+//         });
+
+//         tableHTML += `
+//                     </tbody>
+//                 </table>
+//             </div>
+//             <div class="group-spacer"></div>
+//         `;
+
+//         allTablesHTML += tableHTML;
+//     });
+
+//     container.html(allTablesHTML);
+// }
+
+// Render subjects in the MAIN VIEW
+function renderMainGradeSubjects(response) {
     const container = $('#grades-container');
     container.empty();
+
+    const subjects = response.subjects;
+    const isEnrollmentPeriodActive = response.is_enrollment_period_active;
 
     if (subjects.length === 0) {
         container.html(`
@@ -5601,6 +5779,17 @@ function renderMainGradeSubjects(subjects) {
         `);
         return;
     }
+
+    // Show enrollment period status
+    // if (!isEnrollmentPeriodActive) {
+    //     container.html(`
+    //         <div class="alert alert-warning" role="alert">
+    //             <i class="fas fa-exclamation-triangle"></i>
+    //             <strong>Note:</strong> The grade input feature is currently disabled because there is no active enrollment period.
+    //             Please contact the administrator if you need to input grades.
+    //         </div>
+    //     `);
+    // }
 
     // Group subjects by year level and semester
     const groupedSubjects = {};
@@ -5625,6 +5814,22 @@ function renderMainGradeSubjects(subjects) {
     });
 
     let allTablesHTML = '';
+
+    // Show enrollment period status message at the top
+    // if (!isEnrollmentPeriodActive) {
+    //     allTablesHTML += `
+    //         <div class="alert alert-info" style="margin-bottom: 20px;">
+    //             <i class="fas fa-info-circle"></i>
+    //             <strong>Enrollment Period Status:</strong> Grade input is currently disabled. Buttons will be enabled when an enrollment period is active.
+    //         </div>
+    //     `;
+    // }
+
+    allTablesHTML += `
+            <div class="subject-group-header" style="text-align: center;"><br><br>
+                <h3>Prospectus</h3>
+            </div>
+        `;
 
     // Sort groups: 1st Year 1st Sem, 1st Year 2nd Sem, 2nd Year 1st Sem, etc.
     const groupKeys = Object.keys(groupedSubjects).sort((a, b) => {
@@ -5657,8 +5862,9 @@ function renderMainGradeSubjects(subjects) {
         
         // Create header for this group
         allTablesHTML += `
+            <br>
             <div class="subject-group-header">
-                <h3>${groupLabel}</h3>
+                <h3 style="margin-left: 10px;">${groupLabel}</h3>
             </div>
         `;
 
@@ -5683,8 +5889,16 @@ function renderMainGradeSubjects(subjects) {
             const gradeText = subject.grade ? subject.grade : 'Not Graded';
             const gradeClass = subject.grade ? 'grade-badge graded' : 'grade-badge ungraded';
             
-            // Get prerequisites for this subject (you'll need to fetch this from backend)
             const prerequisites = subject.prerequisites || subject.prerequisite_codes || 'None';
+            
+            // Determine button attributes based on enrollment period
+            const buttonHTML = isEnrollmentPeriodActive 
+                ? `<button class="btn btn-primary btn-sm open-grade-modal" data-id="${subject.id}">
+                       <i class="fas fa-pen"></i> Input Grade
+                   </button>`
+                : `<button class="btn btn-secondary btn-sm" disabled title="Grade input is disabled. No active enrollment period.">
+                       <i class="fas fa-ban"></i> Disabled
+                   </button>`;
             
             tableHTML += `
                 <tr>
@@ -5696,9 +5910,7 @@ function renderMainGradeSubjects(subjects) {
                         <span class="${gradeClass}">${gradeText}</span>
                     </td>
                     <td class="tbl_data">
-                        <button class="btn btn-primary btn-sm open-grade-modal" data-id="${subject.id}">
-                            <i class="fas fa-pen"></i> Input Grade
-                        </button>
+                        ${buttonHTML}
                     </td>
                 </tr>
             `;
@@ -5714,7 +5926,7 @@ function renderMainGradeSubjects(subjects) {
         allTablesHTML += tableHTML;
     });
 
-    container.html(allTablesHTML);
+    container.append(allTablesHTML);
 }
 
 // Render subjects in the MODAL LIST (left panel)

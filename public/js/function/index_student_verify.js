@@ -512,15 +512,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     verifyButton.disabled = false;
                     verificationCodeInput.disabled = false;
                     verifyButton.innerHTML = '<i class="fas fa-check me-2"></i>Verify';
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 2000);
+                    window.location.href = '/';
                 }else if (response == '9') {
                     insertsupabase();
                     showStatus('Registration Complete! Redirecting...', 'success');
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 3000);
+                    window.location.href = '/';
                 }
             },
             error: function() {
