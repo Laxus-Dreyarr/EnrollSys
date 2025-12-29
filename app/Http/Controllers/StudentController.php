@@ -1307,6 +1307,22 @@ class StudentController extends Controller
         
         $pageTitle = "SY: $schoolYear $semester";
 
+        // if (is_null($student->sy) || $student->sy === "") {
+        // // Insert/Update the school year since it's null or empty
+        //     DB::table('students')
+        //         ->where('id', $student->id)
+        //         ->update(['sy' => $schoolYear]);
+        // } else {
+        //     // Check if the existing value is different from current school year
+        //     if ($student->sy != $schoolYear) {
+        //         // Update to the new school year
+        //         DB::table('students')
+        //             ->where('id', $student->id)
+        //             ->update(['sy' => $schoolYear]);
+        //     }
+        //     // If it's the same, do nothing
+        // }
+
         // Get notifications
         $notifications = DB::table('notifications')
             ->where('user_id', $user->id)
@@ -1361,6 +1377,43 @@ class StudentController extends Controller
         // Check if there's an active enrollment period
         $enrollmentPeriod = $this->checkActiveEnrollmentPeriod();
         $isEnrollmentActive = $enrollmentPeriod && $enrollmentPeriod->is_active == 1;
+
+        // Feature: Increment year level for students with outdated school year
+        if ($isEnrollmentActive) {
+            // Use the $schoolYear calculated from current date
+            // $schoolYear is already defined above from your dashboard logic
+            
+            // Get all students whose 'sy' doesn't match current school year
+            // Exclude students with year_level '3rd Year' and 'NONE'
+            $studentsToUpdate = DB::table('students')
+                ->where('sy', '!=', $schoolYear)
+                ->whereNotIn('year_level', ['3rd Year', 'NONE', '4th Year'])
+                ->get();
+            
+            foreach ($studentsToUpdate as $student) {
+                // Define year level increments
+                $yearLevelMap = [
+                    '1st Year' => '2nd Year',
+                    '2nd Year' => '3rd Year',
+                    // '3rd Year' stops here - no further increment
+                ];
+                
+                if (isset($yearLevelMap[$student->year_level])) {
+                    // Update student's year level and school year
+                    DB::table('students')
+                        ->where('id', $student->id)
+                        ->update([
+                            'year_level' => $yearLevelMap[$student->year_level],
+                            'sy' => $schoolYear,
+                            'status' => 'Not Enrolled', // Reset status since it's new school year
+                            'enrolled' => 0 // Reset enrolled status
+                        ]);
+                    
+                    // Log the update
+                    // $this->logYearLevelIncrement($student->id, $student->year_level, $yearLevelMap[$student->year_level]);
+                }
+            }
+        }
         
         return view('student.dashboard.dashboard', compact(
             'user', 
