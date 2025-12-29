@@ -4424,10 +4424,20 @@ function loadAcademicFiles(yearLevel = 'all') {
         if (data.success && data.files && data.files.length > 0) {
             let filteredFiles = data.files;
             
-            if (yearLevel !== 'all' && yearLevel !== 'year1') {
-                // Filter by year level (remove 'year' prefix for comparison)
-                const targetYear = yearLevel.replace('year', '') + ' Year';
-                filteredFiles = data.files.filter(file => file.year_level === targetYear);
+            // Filter by year level if not 'all'
+            if (yearLevel !== 'all') {
+                // Convert yearLevel from 'year1', 'year2', 'year3', 'year4' to '1st Year', '2nd Year', '3rd Year', '4th Year'
+                const yearMap = {
+                    'year1': '1st Year',
+                    'year2': '2nd Year',
+                    'year3': '3rd Year',
+                    'year4': '4th Year'
+                };
+                
+                const targetYear = yearMap[yearLevel];
+                if (targetYear) {
+                    filteredFiles = data.files.filter(file => file.year_level === targetYear);
+                }
             }
             
             displayFiles(filteredFiles, container, 'academic');
@@ -4559,12 +4569,93 @@ function displayFiles(files, container, type = 'academic') {
         return;
     }
     
-    container.innerHTML = '';
+    // Create table structure with unique ID based on container
+    const tableId = container.id + '-table-body';
+    container.innerHTML = `
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;"><i class="fas fa-file"></i></th>
+                        <th>File Type</th>
+                        <th>Year Level</th>
+                        <th>Title</th>
+                        <th>Upload Date</th>
+                        <th style="width: 150px;" class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="${tableId}">
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    const tbody = container.querySelector(`#${tableId}`);
     
     files.forEach(file => {
-        const fileCard = createFileCard(file, type);
-        container.appendChild(fileCard);
+        const row = createFileTableRow(file, type);
+        tbody.appendChild(row);
     });
+}
+
+function createFileTableRow(file, type = 'academic') {
+    const tr = document.createElement('tr');
+    
+    // Determine file type icon and color
+    let fileIcon = 'file';
+    let fileIconClass = 'text-secondary';
+    
+    if (file.file_path) {
+        const ext = file.file_path.split('.').pop().toLowerCase();
+        if (ext === 'pdf') {
+            fileIcon = 'file-pdf';
+            fileIconClass = 'text-danger';
+        } else if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
+            fileIcon = 'file-image';
+            fileIconClass = 'text-info';
+        } else if (['doc', 'docx'].includes(ext)) {
+            fileIcon = 'file-word';
+            fileIconClass = 'text-primary';
+        }
+    }
+    
+    const uploadDate = new Date(file.upload_date || file.created_at);
+    const formattedDate = uploadDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+    
+    tr.innerHTML = `
+        <td class="text-center">
+            <i class="fas fa-${fileIcon} ${fileIconClass}" style="font-size: 1.5rem;"></i>
+        </td>
+        <td>
+            <span class="badge bg-primary">${file.type || 'Academic'}</span>
+        </td>
+        <td>
+            <span class="badge bg-secondary">${file.year_level || 'N/A'}</span>
+        </td>
+        <td>
+            <strong>${file.title || file.type || 'Academic File'}</strong>
+            ${file.description ? `<br><small class="text-muted">${file.description}</small>` : ''}
+        </td>
+        <td>
+            <i class="far fa-calendar me-1"></i>${formattedDate}
+        </td>
+        <td class="text-center">
+            <div class="btn-group btn-group-sm" role="group">
+                <a href="${file.file_path}" target="_blank" class="btn btn-outline-primary btn-sm" title="View">
+                    <i class="fas fa-eye"></i>
+                </a>
+                <a href="${file.file_path}" download class="btn btn-outline-success btn-sm" title="Download">
+                    <i class="fas fa-download"></i>
+                </a>
+            </div>
+        </td>
+    `;
+    
+    return tr;
 }
 
 
@@ -4582,34 +4673,126 @@ function displayPaymentFiles(payments, container) {
         return;
     }
     
-    container.innerHTML = '';
+    // Create table structure with unique ID based on container
+    const tableId = container.id + '-table-body';
+    container.innerHTML = `
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;"><i class="fas fa-receipt"></i></th>
+                        <th>Payment Type</th>
+                        <th>Year Level</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th style="width: 150px;" class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="${tableId}">
+                </tbody>
+            </table>
+        </div>
+    `;
     
-    // Separate organization fees from other payments
-    const organizationFees = payments.filter(p => p.type === 'Organization Fee');
-    const otherPayments = payments.filter(p => p.type !== 'Organization Fee');
+    const tbody = container.querySelector(`#${tableId}`);
     
-    // Add section header for organization fees if any
-    if (organizationFees.length > 0) {
-        const sectionHeader = document.createElement('h5');
-        
-        organizationFees.forEach(payment => {
-            const paymentCard = createOrganizationFeeCard(payment);
-            container.appendChild(paymentCard);
-        });
+    payments.forEach(payment => {
+        const row = createPaymentTableRow(payment);
+        tbody.appendChild(row);
+    });
+}
+
+function createPaymentTableRow(payment) {
+    const tr = document.createElement('tr');
+    
+    // Determine status and icon
+    let statusClass = 'warning';
+    let statusText = payment.status || 'Pending';
+    let statusBadgeClass = 'bg-warning';
+    let fileIcon = 'money-bill-wave';
+    let iconClass = 'text-success';
+    
+    // Map status to appropriate classes
+    if (payment.status === 'Completed' || payment.status === 'Paid' || payment.status === 'Approved') {
+        statusClass = 'success';
+        statusBadgeClass = 'bg-success';
+        fileIcon = 'check-circle';
+        iconClass = 'text-success';
+    } else if (payment.status === 'Failed' || payment.status === 'Rejected') {
+        statusClass = 'danger';
+        statusBadgeClass = 'bg-danger';
+        fileIcon = 'times-circle';
+        iconClass = 'text-danger';
+    } else if (payment.status === 'Pending') {
+        statusClass = 'warning';
+        statusBadgeClass = 'bg-warning';
+        fileIcon = 'clock';
+        iconClass = 'text-warning';
+    } else if (payment.red_flag) {
+        statusClass = 'danger';
+        statusBadgeClass = 'bg-danger';
+        fileIcon = 'exclamation-triangle';
+        iconClass = 'text-danger';
     }
     
-    // Add section header for other payments if any
-    if (otherPayments.length > 0) {
-        const sectionHeader = document.createElement('h5');
-        sectionHeader.className = 'section-header';
-        sectionHeader.innerHTML = '<i class="fas fa-university"></i> Other Payments';
-        container.appendChild(sectionHeader);
-        
-        otherPayments.forEach(payment => {
-            const paymentCard = createPaymentCard(payment); // Use existing for non-org fees
-            container.appendChild(paymentCard);
-        });
-    }
+    // Format the payment date
+    const paymentDate = new Date(payment.payment_date || payment.uploaded_date || new Date());
+    const formattedDate = paymentDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+    
+    // Format amount
+    const formattedAmount = payment.amount ? 
+        `₱${parseFloat(payment.amount).toFixed(2)}` : 
+        '₱0.00';
+    
+    // Red flag warning
+    const redFlagWarning = payment.red_flag ? 
+        `<br><small class="text-danger"><i class="fas fa-exclamation-circle"></i> ${payment.red_flag}</small>` : '';
+    
+    tr.innerHTML = `
+        <td class="text-center">
+            <i class="fas fa-${fileIcon} ${iconClass}" style="font-size: 1.5rem;"></i>
+        </td>
+        <td>
+            <strong>${payment.type || 'Payment'}</strong>
+            ${payment.id ? `<br><small class="text-muted">ID: #${payment.id}</small>` : ''}
+        </td>
+        <td>
+            <span class="badge bg-secondary">${payment.year_level || 'N/A'}</span>
+        </td>
+        <td>
+            <strong class="text-success">${formattedAmount}</strong>
+        </td>
+        <td>
+            <span class="badge ${statusBadgeClass}">${statusText}</span>
+            ${redFlagWarning}
+        </td>
+        <td>
+            <i class="far fa-calendar me-1"></i>${formattedDate}
+        </td>
+        <td class="text-center">
+            <div class="btn-group btn-group-sm" role="group">
+                ${payment.receipt_url ? `
+                    <a href="${payment.receipt_url}" target="_blank" class="btn btn-outline-primary btn-sm" title="View Receipt">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="${payment.receipt_url}" download class="btn btn-outline-success btn-sm" title="Download">
+                        <i class="fas fa-download"></i>
+                    </a>
+                ` : `
+                    <button class="btn btn-outline-secondary btn-sm" disabled title="No receipt available">
+                        <i class="fas fa-ban"></i>
+                    </button>
+                `}
+            </div>
+        </td>
+    `;
+    
+    return tr;
 }
 
 
@@ -4932,12 +5115,139 @@ function displayRequiredDocuments(documents, container) {
         return;
     }
     
-    container.innerHTML = '';
+    // Create table structure with unique ID based on container
+    const tableId = container.id + '-table-body';
+    container.innerHTML = `
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;"><i class="fas fa-file"></i></th>
+                        <th>Document Type</th>
+                        <th>Year Level</th>
+                        <th>Document Name</th>
+                        <th>Status</th>
+                        <th>Upload Date</th>
+                        <th style="width: 150px;" class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="${tableId}">
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    const tbody = container.querySelector(`#${tableId}`);
     
     documents.forEach(doc => {
-        const docCard = createRequiredDocumentCard(doc);
-        container.appendChild(docCard);
+        const row = createRequiredDocumentTableRow(doc);
+        tbody.appendChild(row);
     });
+}
+
+function createRequiredDocumentTableRow(doc) {
+    const tr = document.createElement('tr');
+    
+    // Determine file type icon and color based on document type
+    let fileIcon = 'file-alt';
+    let iconClass = 'text-secondary';
+    let badgeColor = 'bg-secondary';
+    
+    switch(doc.type) {
+        case 'FORM138A':
+        case 'FORM138B':
+            fileIcon = 'file-contract';
+            iconClass = 'text-primary';
+            badgeColor = 'bg-primary';
+            break;
+        case 'GOOD_MORAL':
+            fileIcon = 'file-contract';
+            iconClass = 'text-success';
+            badgeColor = 'bg-success';
+            break;
+        case 'PSA_NSO':
+            fileIcon = 'id-card';
+            iconClass = 'text-info';
+            badgeColor = 'bg-info';
+            break;
+        case 'ID_PICTURE':
+            fileIcon = 'file-image';
+            iconClass = 'text-warning';
+            badgeColor = 'bg-warning';
+            break;
+        case 'BIRTH_CERTIFICATE':
+            fileIcon = 'file-medical';
+            iconClass = 'text-danger';
+            badgeColor = 'bg-danger';
+            break;
+    }
+    
+    // Format the upload date
+    const uploadDate = new Date(doc.upload_date);
+    const formattedDate = uploadDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+    
+    // Create readable document type name
+    const docTypeName = doc.type_name || doc.type.split('_').join(' ').replace('ID', 'ID');
+    
+    // Status badge
+    let statusBadge = 'bg-secondary';
+    let statusText = 'Unknown';
+    if (doc.status) {
+        if (doc.status === 'Approved') {
+            statusBadge = 'bg-success';
+            statusText = 'Approved';
+        } else if (doc.status === 'Rejected') {
+            statusBadge = 'bg-danger';
+            statusText = 'Rejected';
+        } else {
+            statusBadge = 'bg-warning';
+            statusText = 'Pending';
+        }
+    }
+    
+    tr.innerHTML = `
+        <td class="text-center">
+            <i class="fas fa-${fileIcon} ${iconClass}" style="font-size: 1.5rem;"></i>
+        </td>
+        <td>
+            <span class="badge ${badgeColor}">${doc.type}</span>
+        </td>
+        <td>
+            <span class="badge bg-secondary">${doc.year_level || 'N/A'}</span>
+        </td>
+        <td>
+            <strong>${docTypeName}</strong>
+            ${doc.description ? `<br><small class="text-muted">${doc.description}</small>` : ''}
+        </td>
+        <td>
+            <span class="badge ${statusBadge}">${statusText}</span>
+        </td>
+        <td>
+            <i class="far fa-calendar me-1"></i>${formattedDate}
+        </td>
+        <td class="text-center">
+            <div class="btn-group btn-group-sm" role="group">
+                ${doc.file_path ? `
+                    <a href="${doc.file_path}" target="_blank" class="btn btn-outline-primary btn-sm" title="View">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="${doc.file_path}" download class="btn btn-outline-success btn-sm" title="Download">
+                        <i class="fas fa-download"></i>
+                    </a>
+                ` : `
+                    <button class="btn btn-outline-secondary btn-sm" disabled title="No file available">
+                        <i class="fas fa-ban"></i>
+                    </button>
+                `}
+            </div>
+        </td>
+    `;
+    
+    return tr;
 }
 
 function createRequiredDocumentCard(doc) { 

@@ -884,8 +884,8 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                     <div class="tab-pane fade show active" id="all" role="tabpanel">
                         <div class="schedule-container">
                             <h4 class="mb-4">All Academic Files</h4>
-                            <div id="all-files-container" class="files-grid">
-                                <!-- Files will be loaded here dynamically -->
+                            <div id="all-files-container">
+                                <!-- Files will be loaded here dynamically as table -->
                                 <div class="loading-state">
                                     <div class="spinner-border text-primary" role="status">
                                         <span class="visually-hidden">Loading...</span>
@@ -895,8 +895,8 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             </div>
                             
                             <h4 class="mb-4 mt-5">Payment Records</h4>
-                            <div id="payment-files-container" class="files-grid">
-                                <!-- Payment files will be loaded here dynamically -->
+                            <div id="payment-files-container">
+                                <!-- Payment files will be loaded here dynamically as table -->
                             </div>
 
                             <div class="mb-4">
@@ -906,8 +906,8 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             </div>
 
                             <h4 class="mb-4 mt-5">Required Documents</h4>
-                            <div id="required-documents-container" class="files-grid">
-                                <!-- Required documents will be loaded here dynamically -->
+                            <div id="required-documents-container">
+                                <!-- Required documents will be loaded here dynamically as table -->
                                 <div class="loading-state">
                                     <div class="spinner-border text-primary" role="status">
                                         <span class="visually-hidden">Loading...</span>
@@ -925,8 +925,8 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 <h4 class="mb-0">1st Year Files</h4>
                                 <span class="badge bg-primary">2025-2026</span>
                             </div>
-                            <div id="year1-files" class="files-grid">
-                                <!-- 1st Year files will be loaded here dynamically -->
+                            <div id="year1-files">
+                                <!-- 1st Year files will be loaded here dynamically as table -->
                             </div>
                         </div>
                     </div>
@@ -938,8 +938,8 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 <h4 class="mb-0">2nd Year Files</h4>
                                 <span class="badge bg-primary">2026-2027</span>
                             </div>
-                            <div id="year2-files" class="files-grid">
-                                <!-- 2nd Year files will be loaded here dynamically -->
+                            <div id="year2-files">
+                                <!-- 2nd Year files will be loaded here dynamically as table -->
                             </div>
                         </div>
                     </div>
@@ -951,8 +951,8 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 <h4 class="mb-0">3rd Year Files</h4>
                                 <span class="badge bg-primary">2027-2028</span>
                             </div>
-                            <div id="year3-files" class="files-grid">
-                                <!-- 3rd Year files will be loaded here dynamically -->
+                            <div id="year3-files">
+                                <!-- 3rd Year files will be loaded here dynamically as table -->
                             </div>
                         </div>
                     </div>
@@ -964,8 +964,8 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 <h4 class="mb-0">4th Year Files</h4>
                                 <span class="badge bg-primary">2028-2029</span>
                             </div>
-                            <div id="year4-files" class="files-grid">
-                                <!-- 4th Year files will be loaded here dynamically -->
+                            <div id="year4-files">
+                                <!-- 4th Year files will be loaded here dynamically as table -->
                             </div>
                         </div>
                     </div>
