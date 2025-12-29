@@ -2757,30 +2757,21 @@ function initializeEnhancedEnrollmentModal() {
 
         hideEnhancedEmptyState();
 
-        // Auto-select all subjects for regular students (those with complete passing grades for all semesters)
-        // This includes regular 1st year 1st sem students AND students who have complete passing grades
-        const shouldAutoSelect = (data.is_regular && data.year_level === '1st Year' && data.semester === '1st Sem') || 
-                                 (data.is_regular_student === true);
-        
-        // Clear previous selection before auto-selecting
-        if (shouldAutoSelect) {
+        // Auto-select all subjects for regular students (only their current year level and semester)
+        if (data.is_regular) {
             enhancedSelectedSubjects.clear();
             enhancedTotalUnits = 0;
             
-            // Auto-select all available subjects that are selectable
+            // Auto-select all subjects that match the student's current year level and semester
             subjects.forEach(subject => {
-                // Check if subject is selectable (not disabled)
-                const hasPrerequisites = subject.has_prerequisites;
-                const prerequisitesMet = subject.prerequisites_met;
-                const isFailedSubject = subject.is_failed_subject;
-                
-                // Determine if subject is selectable
-                let isSelectable = false;
-                if (enhancedIsRegular || data.is_regular_student) {
-                    // Regular student: can select any subject for their level and semester
-                    isSelectable = true;
-                } else {
-                    // Irregular student logic
+                // Only process subjects for the current year level and semester
+                if (subject.year_level === data.year_level && subject.semester === data.semester) {
+                    const hasPrerequisites = subject.has_prerequisites;
+                    const prerequisitesMet = subject.prerequisites_met;
+                    const isFailedSubject = subject.is_failed_subject;
+                    
+                    // For regular students, only select subjects without prerequisites or with met prerequisites
+                    let isSelectable = false;
                     if (isFailedSubject) {
                         isSelectable = true;
                     } else if (!hasPrerequisites) {
@@ -2788,22 +2779,25 @@ function initializeEnhancedEnrollmentModal() {
                     } else {
                         isSelectable = prerequisitesMet;
                     }
-                }
-                
-                if (isSelectable) {
-                    const units = parseInt(subject.units || 0);
-                    const newTotal = enhancedTotalUnits + units;
                     
-                    if (newTotal <= enhancedMaxUnits) {
-                        enhancedSelectedSubjects.set(subject.id.toString(), {
-                            subjectId: subject.id,
-                            section: 'A', // Default section
-                            units: units
-                        });
-                        enhancedTotalUnits = newTotal;
+                    if (isSelectable) {
+                        const units = parseInt(subject.units || 0);
+                        const newTotal = enhancedTotalUnits + units;
+                        
+                        if (newTotal <= enhancedMaxUnits) {
+                            enhancedSelectedSubjects.set(subject.id.toString(), {
+                                subjectId: subject.id,
+                                section: 'A', // Default section
+                                units: units
+                            });
+                            enhancedTotalUnits = newTotal;
+                        }
                     }
                 }
             });
+            
+            console.log('Auto-selected subjects for regular student:', enhancedSelectedSubjects.size);
+            console.log('Total auto-selected units:', enhancedTotalUnits);
         }
         
         // Group subjects by year level and semester
@@ -2814,11 +2808,24 @@ function initializeEnhancedEnrollmentModal() {
                 return;
             }
             
-            const key = `${subject.year_level || ''} - ${subject.semester || ''}`;
-            if (!groupedSubjects[key]) {
-                groupedSubjects[key] = [];
+            // Filter subjects for regular students - ONLY show current year level and semester
+            if (data.is_regular) {
+                // Only add subjects that match the student's current year level and semester
+                if (subject.year_level === data.year_level && subject.semester === data.semester) {
+                    const key = `${subject.year_level || ''} - ${subject.semester || ''}`;
+                    if (!groupedSubjects[key]) {
+                        groupedSubjects[key] = [];
+                    }
+                    groupedSubjects[key].push(subject);
+                }
+            } else {
+                // For irregular students, show all subjects as before
+                const key = `${subject.year_level || ''} - ${subject.semester || ''}`;
+                if (!groupedSubjects[key]) {
+                    groupedSubjects[key] = [];
+                }
+                groupedSubjects[key].push(subject);
             }
-            groupedSubjects[key].push(subject);
         });
         
         // Sort group keys: year level first, then semester
