@@ -1955,6 +1955,7 @@ document.head.appendChild(notificationStyles);
 
 // Enhanced Enrollment Modal Functionality
 function initializeEnhancedEnrollmentModal() {
+    
     const modal = document.getElementById('enhancedEnrollmentModal');
     const subjectsGrid = document.getElementById('enhancedSubjectsList');
     const searchInput = document.getElementById('enhancedSubjectsSearch');
@@ -2716,6 +2717,7 @@ function initializeEnhancedEnrollmentModal() {
 
     // Revised displayEnhancedSubjects function for table format grouped by year level and semester
     function displayEnhancedSubjects(data) {
+        
         console.log('Displaying enhanced subjects in table format with data:', data);
         
         if (!data || typeof data !== 'object') {

@@ -184,7 +184,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         </h3>
                         <p class="stat-label" style="color: white;">
                             @if($enrollmentPeriod)
-                                <b style="color: white; border-radius: 5px; border: 1px solid; padding: 1px; background: green;">{{ $enrollmentPeriod->semester ?? 'Summer' }} only</b> <br>
+                                <b style="color: white; border-radius: 5px; border: 1px solid; padding: 1px; background: green;">{{ $enrollmentPeriod->semester ?? 'Summer' }}</b> <br>
                             @else
                                 No active enrollment period
                             @endif

@@ -2401,6 +2401,187 @@ class StudentController extends Controller
                 return in_array($item->grade, $failingGrades);
             })->keys()->toArray();
 
+            // Check if student is 3rd year and eligible for promotion to 4th year
+            if ($yearLevel === '3rd Year') {
+                // Get the student's curriculum
+                $curriculumYear = $student->curriculum;
+                
+                // Get the curriculum ID from curriculum table
+                $curriculum = DB::table('curriculum')->where('curriculum_year', $curriculumYear)->first();
+                
+                if ($curriculum) {
+                    $curriculumId = $curriculum->id;
+                    
+                    // Get all subjects for this curriculum from 1st Year to 3rd Year Summer
+                    $requiredSubjects = DB::table('subjects')
+                        ->where('curriculum_id', $curriculumId)
+                        ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year'])
+                        ->whereIn('semester', ['1st Sem', '2nd Sem', 'Summer'])
+                        ->get(['id', 'code', 'name', 'year_level', 'semester']);
+                    
+                    // Get all grades for the student for these subjects
+                    $studentRequiredGrades = DB::table('enrolled_sub')
+                        ->where('student_id', $student->id)
+                        ->whereIn('subject_id', $requiredSubjects->pluck('id'))
+                        ->get(['subject_id', 'grade']);
+                    
+                    // Create a map of subject_id to grade
+                    $subjectGradeMap = $studentRequiredGrades->keyBy('subject_id')->map(function ($item) {
+                        return $item->grade;
+                    });
+                    
+                    // Check if all required subjects have been taken
+                    $allSubjectsTaken = true;
+                    $missingSubjects = [];
+                    
+                    foreach ($requiredSubjects as $requiredSubject) {
+                        if (!$subjectGradeMap->has($requiredSubject->id)) {
+                            $allSubjectsTaken = false;
+                            $missingSubjects[] = $requiredSubject->code . ' - ' . $requiredSubject->name;
+                        }
+                    }
+                    
+                    // Check if all taken subjects have passing grades
+                    $allSubjectsPassing = true;
+                    $failingRequiredSubjects = [];
+                    
+                    foreach ($subjectGradeMap as $subjectId => $grade) {
+                        if (!in_array($grade, $passingGrades)) {
+                            $allSubjectsPassing = false;
+                            $subject = $requiredSubjects->where('id', $subjectId)->first();
+                            if ($subject) {
+                                $failingRequiredSubjects[] = $subject->code . ' - ' . $subject->name . ' (Grade: ' . $grade . ')';
+                            }
+                        }
+                    }
+                    
+                    // Log the check for debugging
+                    Log::info('3rd Year promotion check', [
+                        'student_id' => $student->id,
+                        'all_subjects_taken' => $allSubjectsTaken,
+                        'all_subjects_passing' => $allSubjectsPassing,
+                        'missing_subjects_count' => count($missingSubjects),
+                        'failing_subjects_count' => count($failingRequiredSubjects),
+                        'missing_subjects' => $missingSubjects,
+                        'failing_subjects' => $failingRequiredSubjects
+                    ]);
+                    
+                    // If all required subjects are taken and all have passing grades, promote to 4th year
+                    if ($allSubjectsTaken && $allSubjectsPassing) {
+                        // Update the student's year level to 4th Year
+                        DB::table('students')
+                            ->where('id', $student->id)
+                            ->update(['year_level' => '4th Year']);
+                        
+                        // Also update the local student object for consistency in the current request
+                        $student->year_level = '4th Year';
+                        $yearLevel = '4th Year';
+                        
+                        Log::info('Student promoted to 4th Year', [
+                            'student_id' => $student->id,
+                            'previous_year_level' => '3rd Year',
+                            'new_year_level' => '4th Year'
+                        ]);
+                    }
+                }
+            }
+
+            // Check and update student's regular/irregular status
+if ($yearLevel && $enrollment_date) {
+    $currentActiveSemester = $enrollment_date->semester;
+    $curriculumYear = $student->curriculum;
+    
+    // Get the curriculum ID
+    $curriculum = DB::table('curriculum')->where('curriculum_year', $curriculumYear)->first();
+    
+    if ($curriculum) {
+        $curriculumId = $curriculum->id;
+        $isRegular = true;
+        
+        // Determine which semesters to check based on year level and active semester
+        $yearLevelsToCheck = [];
+        $semestersToCheck = [];
+        
+        if ($yearLevel === '3rd Year') {
+            if ($currentActiveSemester === '1st Sem') {
+                $yearLevelsToCheck = ['1st Year', '2nd Year'];
+                $semestersToCheck = ['1st Sem', '2nd Sem'];
+            } elseif ($currentActiveSemester === '2nd Sem') {
+                $yearLevelsToCheck = ['1st Year', '2nd Year', '3rd Year'];
+                $semestersToCheck = ['1st Sem', '2nd Sem']; // For 3rd Year, only check 1st Sem
+            } elseif ($currentActiveSemester === 'Summer') {
+                $yearLevelsToCheck = ['1st Year', '2nd Year', '3rd Year'];
+                $semestersToCheck = ['1st Sem', '2nd Sem']; // For 3rd Year, check both semesters
+            }
+        } elseif ($yearLevel === '4th Year') {
+            $yearLevelsToCheck = ['1st Year', '2nd Year', '3rd Year'];
+            $semestersToCheck = ['1st Sem', '2nd Sem', 'Summer'];
+        }
+        
+        // If we have requirements to check
+        if (!empty($yearLevelsToCheck)) {
+            // Get all subjects in the required year levels and semesters
+            $requiredSubjects = DB::table('subjects')
+                ->where('curriculum_id', $curriculumId)
+                ->whereIn('year_level', $yearLevelsToCheck);
+            
+            // Special handling for 3rd Year 2nd Sem enrollment (only check up to 3rd Year 1st Sem)
+            if ($yearLevel === '3rd Year' && $currentActiveSemester === '2nd Sem') {
+                $requiredSubjects = $requiredSubjects->where(function($query) use ($yearLevelsToCheck) {
+                    // For 1st and 2nd Year, check both semesters
+                    $query->where(function($q) {
+                        $q->whereIn('year_level', ['1st Year', '2nd Year'])
+                          ->whereIn('semester', ['1st Sem', '2nd Sem']);
+                    });
+                    // For 3rd Year, only check 1st Sem
+                    $query->orWhere(function($q) {
+                        $q->where('year_level', '3rd Year')
+                          ->where('semester', '1st Sem');
+                    });
+                });
+            } else {
+                // For other cases, check all specified semesters
+                $requiredSubjects = $requiredSubjects->whereIn('semester', $semestersToCheck);
+            }
+            
+            $requiredSubjects = $requiredSubjects->get(['id']);
+            
+            // Get student's grades for these required subjects
+            $studentRequiredGrades = DB::table('enrolled_sub')
+                ->where('student_id', $student->id)
+                ->whereIn('subject_id', $requiredSubjects->pluck('id'))
+                ->get(['subject_id', 'grade']);
+            
+            // Check if all required subjects are taken and have passing grades
+            $allRequiredPassing = true;
+            
+            foreach ($studentRequiredGrades as $gradeRecord) {
+                if (!in_array($gradeRecord->grade, $passingGrades)) {
+                    $allRequiredPassing = false;
+                    break;
+                }
+            }
+            
+            // Also check if all required subjects have been taken
+            $takenSubjectIds = $studentRequiredGrades->pluck('subject_id')->toArray();
+            $allRequiredTaken = count($takenSubjectIds) === count($requiredSubjects);
+            
+            // Determine regular status
+            $isRegular = ($allRequiredTaken && $allRequiredPassing);
+            $newRegularStatus = $isRegular ? 1 : 2;
+            
+            // Update if status changed
+            if ($student->is_regular != $newRegularStatus) {
+                DB::table('students')
+                    ->where('id', $student->id)
+                    ->update(['is_regular' => $newRegularStatus]);
+                
+                $student->is_regular = $newRegularStatus;
+            }
+        }
+    }
+}
+
             // Get all taken subjects (any grade) for exclusion (but we'll allow failed subjects to be retaken)
             $allTakenSubjects = $studentGrades->keys()->toArray();
 
