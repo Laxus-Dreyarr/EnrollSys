@@ -2757,26 +2757,51 @@ function initializeEnhancedEnrollmentModal() {
 
         hideEnhancedEmptyState();
 
-        // Auto-select all subjects for regular 1st year 1st sem students
-        const shouldAutoSelect = data.is_regular && data.year_level === '1st Year' && data.semester === '1st Sem';
+        // Auto-select all subjects for regular students (those with complete passing grades for all semesters)
+        // This includes regular 1st year 1st sem students AND students who have complete passing grades
+        const shouldAutoSelect = (data.is_regular && data.year_level === '1st Year' && data.semester === '1st Sem') || 
+                                 (data.is_regular_student === true);
         
         // Clear previous selection before auto-selecting
         if (shouldAutoSelect) {
             enhancedSelectedSubjects.clear();
             enhancedTotalUnits = 0;
             
-            // Auto-select all available subjects
+            // Auto-select all available subjects that are selectable
             subjects.forEach(subject => {
-                const units = parseInt(subject.units || 0);
-                const newTotal = enhancedTotalUnits + units;
+                // Check if subject is selectable (not disabled)
+                const hasPrerequisites = subject.has_prerequisites;
+                const prerequisitesMet = subject.prerequisites_met;
+                const isFailedSubject = subject.is_failed_subject;
                 
-                if (newTotal <= enhancedMaxUnits) {
-                    enhancedSelectedSubjects.set(subject.id.toString(), {
-                        subjectId: subject.id,
-                        section: 'A', // Default section
-                        units: units
-                    });
-                    enhancedTotalUnits = newTotal;
+                // Determine if subject is selectable
+                let isSelectable = false;
+                if (enhancedIsRegular || data.is_regular_student) {
+                    // Regular student: can select any subject for their level and semester
+                    isSelectable = true;
+                } else {
+                    // Irregular student logic
+                    if (isFailedSubject) {
+                        isSelectable = true;
+                    } else if (!hasPrerequisites) {
+                        isSelectable = true;
+                    } else {
+                        isSelectable = prerequisitesMet;
+                    }
+                }
+                
+                if (isSelectable) {
+                    const units = parseInt(subject.units || 0);
+                    const newTotal = enhancedTotalUnits + units;
+                    
+                    if (newTotal <= enhancedMaxUnits) {
+                        enhancedSelectedSubjects.set(subject.id.toString(), {
+                            subjectId: subject.id,
+                            section: 'A', // Default section
+                            units: units
+                        });
+                        enhancedTotalUnits = newTotal;
+                    }
                 }
             });
         }

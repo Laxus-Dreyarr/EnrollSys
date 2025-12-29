@@ -2414,17 +2414,33 @@ class StudentController extends Controller
             ]);
 
             
+            // Check if student is eligible for 4th year subjects
+            $isEligibleFor4thYear = $this->checkEligibilityFor4thYear($student->id, $passingGrades, $failingGrades);
+            
+            // Check if student is regular (has complete passing grades for all semesters from 1st Year to 3rd Year Summer)
+            $isRegularStudent = $this->checkIfRegularStudent($student->id, $passingGrades, $failingGrades);
+            
             // Get available subjects based on student type and enrollment semester
-            if ($student->is_regular == 1 && $yearLevel === '1st Year' && $currentSemester === '1st Sem') {
+            if ($isRegularStudent) {
+                // Regular student: Only show subjects for their current year level and semester
+                $subjects = $this->getAvailableSubjectsForRegularStudent($student, $yearLevel, $currentSemester, $passedSubjects, $allTakenSubjects, $failedSubjects, $isEligibleFor4thYear);
+            } elseif ($student->is_regular == 1 && $yearLevel === '1st Year' && $currentSemester === '1st Sem') {
                 // Regular 1st Year 1st Sem: Only show 1st Year 1st Sem subjects
                 $subjects = $this->getAvailableSubjectsForRegularFirstYear($student, $yearLevel, $currentSemester, $passedSubjects, $allTakenSubjects, $failedSubjects);
             } else {
-                // Irregular students or regular students beyond 1st Year 1st Sem
-                $subjects = $this->getAvailableSubjectsForIrregular($student, $yearLevel, $currentSemester, $passedSubjects, $allTakenSubjects, $failedSubjects);
+                // Irregular students
+                $subjects = $this->getAvailableSubjectsForIrregular($student, $yearLevel, $currentSemester, $passedSubjects, $allTakenSubjects, $failedSubjects, $isEligibleFor4thYear);
             }
 
             if($student->enrolled == '1') {
                 $subjects = $this->getAvailableSubjectsForFreshmen($student, $passedSubjects, $allTakenSubjects, $failedSubjects);
+            }
+            
+            // Filter out 4th year subjects if student is not eligible (for irregular students)
+            if (!$isEligibleFor4thYear && !$isRegularStudent) {
+                $subjects = $subjects->filter(function($subject) {
+                    return $subject->year_level !== '4th Year';
+                });
             }
             
             // Calculate total units for the semester
@@ -2485,6 +2501,8 @@ class StudentController extends Controller
                 'failed_subjects' => $failedSubjects,
                 'total_units' => $totalUnits,
                 'is_regular' => $student->is_regular == 1,
+                'is_regular_student' => $isRegularStudent, // Student with complete passing grades for all semesters
+                'is_eligible_for_4th_year' => $isEligibleFor4thYear,
                 'year_level' => $yearLevel,
                 'semester' => $currentSemester
             ];
@@ -3484,6 +3502,60 @@ class StudentController extends Controller
         }
     }
 
+    /**
+     * Get available subjects for regular students (those with complete passing grades)
+     * Only shows subjects for the student's current year level and semester
+     */
+    private function getAvailableSubjectsForRegularStudent($student, $yearLevel, $semester, $passedSubjects, $allTakenSubjects, $failedSubjects, $isEligibleFor4thYear)
+    {
+        Log::info('Getting available subjects for regular student', [
+            'student_id' => $student->id,
+            'current_year_level' => $yearLevel,
+            'current_semester' => $semester
+        ]);
+
+        try {
+            $curriculum_year = $student->curriculum;
+            $curriculum = DB::table('curriculum')
+                ->where('curriculum_year', $curriculum_year)
+                ->where('is_active', 1)
+                ->first();
+
+            if (!$curriculum) {
+                Log::error('No active curriculum found for student', ['student_id' => $student->id]);
+                return collect();
+            }
+
+            $curriculum_id = $curriculum->id;
+
+            // Build query for subjects matching student's year level and semester
+            $query = Subject::where('is_active', 1)
+                ->where('curriculum_id', $curriculum_id)
+                ->where('year_level', $yearLevel)
+                ->where('semester', $semester)
+                ->whereNotIn('id', $passedSubjects); // Exclude passed subjects
+
+            // For 4th year: Only include if student is eligible
+            if ($yearLevel === '4th Year' && !$isEligibleFor4thYear) {
+                return collect(); // No 4th year subjects if not eligible
+            }
+
+            $allSubjects = $query->with(['schedules', 'prerequisites'])->get();
+
+            Log::info('Total subjects found for regular student', [
+                'count' => $allSubjects->count(),
+                'year_level' => $yearLevel,
+                'semester' => $semester
+            ]);
+
+            return $allSubjects;
+
+        } catch (\Exception $e) {
+            Log::error('Error in getAvailableSubjectsForRegularStudent: ' . $e->getMessage());
+            return collect();
+        }
+    }
+
     // Get available subjects for regular 1st Year 1st Sem students
     private function getAvailableSubjectsForRegularFirstYear($student, $yearLevel, $semester, $passedSubjects, $allTakenSubjects, $failedSubjects)
     {
@@ -3528,7 +3600,7 @@ class StudentController extends Controller
         }
     }
 
-    private function getAvailableSubjectsForIrregular($student, $yearLevel, $semester, $passedSubjects, $allTakenSubjects, $failedSubjects)
+    private function getAvailableSubjectsForIrregular($student, $yearLevel, $semester, $passedSubjects, $allTakenSubjects, $failedSubjects, $isEligibleFor4thYear = false)
     {
         Log::info('Getting available subjects for irregular student', [
             'student_id' => $student->id,
@@ -3613,16 +3685,14 @@ class StudentController extends Controller
                 ->where('semester', $currentSemester)
                 ->whereNotIn('id', $passedSubjects); // Exclude passed subjects
 
-            // For 4th Year 2nd Sem: Only show if no failed grades from 1st Year to 4th Year
-            if ($currentSemester === '2nd Sem') {
-                $query->where(function($q) use ($hasFailedGrades) {
-                    $q->where('year_level', '!=', '4th Year');
-                    if (!$hasFailedGrades) {
-                        $q->orWhere('year_level', '4th Year');
-                    }
-                });
-            } else {
+            // Filter 4th year subjects based on eligibility
+            // 4th year subjects should only be shown if student has complete passing grades from 1st Year to 3rd Year Summer
+            if ($isEligibleFor4thYear) {
+                // Student is eligible, show all year levels including 4th Year
                 $query->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year', '']);
+            } else {
+                // Student is not eligible, exclude 4th Year subjects
+                $query->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '']);
             }
 
             // For Summer: Only show if student is eligible
@@ -3750,6 +3820,187 @@ class StudentController extends Controller
         } catch (\Exception $e) {
             Log::error('Error in getAvailableSubjectsForFreshmen: ' . $e->getMessage());
             return collect();
+        }
+    }
+
+    /**
+     * Check if student is eligible for 4th year subjects
+     * Student must have passing grades for all subjects from 1st Year to 3rd Year Summer
+     * No null, empty, or failed grades allowed
+     */
+    private function checkEligibilityFor4thYear($studentId, $passingGrades, $failingGrades)
+    {
+        try {
+            $curriculum_year = DB::table('students')
+                ->where('id', $studentId)
+                ->value('curriculum');
+            
+            if (!$curriculum_year) {
+                return false;
+            }
+            
+            $curriculum = DB::table('curriculum')
+                ->where('curriculum_year', $curriculum_year)
+                ->where('is_active', 1)
+                ->first();
+            
+            if (!$curriculum) {
+                return false;
+            }
+            
+            $curriculum_id = $curriculum->id;
+            
+            // Get all subjects from 1st Year to 3rd Year Summer
+            $requiredSubjects = DB::table('subjects')
+                ->where('curriculum_id', $curriculum_id)
+                ->where('is_active', 1)
+                ->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year'])
+                ->whereIn('semester', ['1st Sem', '2nd Sem', 'Summer'])
+                ->pluck('id')
+                ->toArray();
+            
+            if (empty($requiredSubjects)) {
+                return false;
+            }
+            
+            // Get student's grades for all required subjects
+            $studentGrades = DB::table('enrolled_sub')
+                ->where('student_id', $studentId)
+                ->whereIn('subject_id', $requiredSubjects)
+                ->get()
+                ->keyBy('subject_id');
+            
+            // Check if student has enrolled in all required subjects
+            if (count($studentGrades) < count($requiredSubjects)) {
+                return false;
+            }
+            
+            // Check each subject: must have a grade, and it must be a passing grade
+            foreach ($requiredSubjects as $subjectId) {
+                if (!isset($studentGrades[$subjectId])) {
+                    return false; // Subject not enrolled
+                }
+                
+                $grade = $studentGrades[$subjectId]->grade;
+                
+                // Check if grade is null or empty
+                if ($grade === null || $grade === '' || trim($grade) === '') {
+                    return false;
+                }
+                
+                // Check if grade is a failing grade
+                if (in_array($grade, $failingGrades)) {
+                    return false;
+                }
+                
+                // Check if grade is a passing grade
+                if (!in_array($grade, $passingGrades)) {
+                    return false; // Unknown grade format
+                }
+            }
+            
+            return true;
+            
+        } catch (\Exception $e) {
+            Log::error('Error in checkEligibilityFor4thYear: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Check if student is regular (has complete passing grades for all semesters from 1st Year to 3rd Year Summer)
+     * Grouped by semester to ensure every semester has complete grades with passing grades
+     */
+    private function checkIfRegularStudent($studentId, $passingGrades, $failingGrades)
+    {
+        try {
+            $curriculum_year = DB::table('students')
+                ->where('id', $studentId)
+                ->value('curriculum');
+            
+            if (!$curriculum_year) {
+                return false;
+            }
+            
+            $curriculum = DB::table('curriculum')
+                ->where('curriculum_year', $curriculum_year)
+                ->where('is_active', 1)
+                ->first();
+            
+            if (!$curriculum) {
+                return false;
+            }
+            
+            $curriculum_id = $curriculum->id;
+            
+            // Define all semesters from 1st Year to 3rd Year Summer
+            $semesters = [
+                ['year_level' => '1st Year', 'semester' => '1st Sem'],
+                ['year_level' => '1st Year', 'semester' => '2nd Sem'],
+                ['year_level' => '2nd Year', 'semester' => '1st Sem'],
+                ['year_level' => '2nd Year', 'semester' => '2nd Sem'],
+                ['year_level' => '3rd Year', 'semester' => '1st Sem'],
+                ['year_level' => '3rd Year', 'semester' => '2nd Sem'],
+                ['year_level' => '3rd Year', 'semester' => 'Summer'],
+            ];
+            
+            // Check each semester
+            foreach ($semesters as $semesterInfo) {
+                // Get all subjects for this semester
+                $semesterSubjects = DB::table('subjects')
+                    ->where('curriculum_id', $curriculum_id)
+                    ->where('is_active', 1)
+                    ->where('year_level', $semesterInfo['year_level'])
+                    ->where('semester', $semesterInfo['semester'])
+                    ->pluck('id')
+                    ->toArray();
+                
+                if (empty($semesterSubjects)) {
+                    continue; // Skip if no subjects for this semester
+                }
+                
+                // Get student's grades for this semester
+                $studentGrades = DB::table('enrolled_sub')
+                    ->where('student_id', $studentId)
+                    ->whereIn('subject_id', $semesterSubjects)
+                    ->get()
+                    ->keyBy('subject_id');
+                
+                // Check if student has enrolled in all subjects for this semester
+                if (count($studentGrades) < count($semesterSubjects)) {
+                    return false; // Not all subjects enrolled
+                }
+                
+                // Check each subject in this semester
+                foreach ($semesterSubjects as $subjectId) {
+                    if (!isset($studentGrades[$subjectId])) {
+                        return false; // Subject not enrolled
+                    }
+                    
+                    $grade = $studentGrades[$subjectId]->grade;
+                    
+                    // Check if grade is null or empty
+                    if ($grade === null || $grade === '' || trim($grade) === '') {
+                        return false;
+                    }
+                    
+                    // Check if grade is a failing grade
+                    if (in_array($grade, $failingGrades)) {
+                        return false;
+                    }
+                    
+                    // Check if grade is a passing grade
+                    if (!in_array($grade, $passingGrades)) {
+                        return false; // Unknown grade format
+                    }
+                }
+            }
+            
+            return true;
+            
+        } catch (\Exception $e) {
+            Log::error('Error in checkIfRegularStudent: ' . $e->getMessage());
+            return false;
         }
     }
 
