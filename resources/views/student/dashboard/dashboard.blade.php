@@ -1041,8 +1041,9 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         <div class="profile-avatar-section">
                             <div class="avatar-container" id="avatar-container">
                                 @if(!empty($user->profile) && $user->profile !== 'default.png')
-                                    <img style="width:100%; height: 100%;" src="{{ route('profile.image', ['userId' => $user->id]) }}" alt="Profile Picture" class="profile-avatar" id="profile-avatar"
-                                    data-upload-url="{{ route('student.upload.avatar') }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+                                    <img style="width:100%; height: 100%;" src="{{ route('profile.image', ['userId' => $user->id]) }}" alt="Profile Picture" id="profile-avatar"
+                                    data-upload-url="{{ route('student.upload.avatar') }}">
+                            </div>
                                 @else
                                     <div class="avatar-container">
                                         <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=none&color=fff" alt="User Avatar" class="profile-avatar" id="profile-avatar"
@@ -1065,7 +1066,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                         <span class="progress-text" id="progress-text">0%</span>
                                     </div>
                                 </div>
-                            </div>
+                            
                             
                             <!-- Hidden File Input -->
                             <input type="file" 
@@ -2388,7 +2389,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             </div>
                             <div class="enhanced-payment-title">
                                 <h3>Payment Receipt Upload</h3>
-                                <p>Upload your GCash payment receipt screenshot to complete enrollment</p>
+                                <p>Upload your GCash payment receipt screenshot to complete enrollment, or proceed to pay later</p>
                             </div>
                         </div>
 

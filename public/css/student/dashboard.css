@@ -8661,13 +8661,18 @@ body.dark-mode .subject-list-name {
 }
 
 .grade-badge.graded {
-    background: #d4edda;
-    color: #155724;
+    background: #2abd49;
+    color: white;
 }
 
 .grade-badge.ungraded {
     background: #fff3cd;
     color: #856404;
+}
+
+.grade-badge.failed {
+    background: #dc3545; /* Bootstrap's red color */
+    color: white; /* Better contrast */
 }
 
 .btn-sm {

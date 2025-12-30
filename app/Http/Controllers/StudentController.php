@@ -3099,14 +3099,33 @@ if ($yearLevel && $enrollment_date) {
 
             // NEW: Generate and save prospectus PDF
             $prospectusPath = $this->generateProspectusPDF($student->id);
+            
+            // Generate payment later notice PDF if no payment receipt was uploaded
+            $paymentNoticePath = null;
+            if (!$request->hasFile('payment_receipt')) {
+                $paymentNoticePath = $this->generatePaymentLaterNoticePDF($student->id);
+            }
 
             DB::commit();
 
-            return response()->json([
+            $responseMessage = 'Enrollment submitted successfully!';
+            if ($request->hasFile('payment_receipt')) {
+                $responseMessage .= ' Your enrollment and payment receipt are pending verification.';
+            } else {
+                $responseMessage .= ' A payment notice has been generated. Please complete your payment as soon as possible.';
+            }
+
+            $response = [
                 'success' => true,
-                'message' => 'Enrollment submitted successfully! Your enrollment and payment receipt are pending verification.',
+                'message' => $responseMessage,
                 'prospectus_url' => asset('storage/' . $prospectusPath)
-            ]);
+            ];
+            
+            if ($paymentNoticePath) {
+                $response['payment_notice_url'] = asset('storage/' . $paymentNoticePath);
+            }
+
+            return response()->json($response);
 
             // return response()->json([
             //     'success' => true,
@@ -3290,6 +3309,72 @@ if ($yearLevel && $enrollment_date) {
 
         } catch (\Exception $e) {
             Log::error('Prospectus generation error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    private function generatePaymentLaterNoticePDF($studentId)
+    {
+        try {
+            // Get student information - convert to array
+            $student = DB::table('students')
+                ->join('user_info', 'students.student_id', '=', 'user_info.id')
+                ->join('users', 'user_info.user_id', '=', 'users.id')
+                ->select('students.*', 'user_info.firstname', 'user_info.lastname', 'user_info.middlename', 'users.email2')
+                ->where('students.id', $studentId)
+                ->first();
+
+            if (!$student) {
+                throw new \Exception('Student not found');
+            }
+
+            // Convert student object to array
+            $student = (array) $student;
+
+            // Prepare data for PDF
+            $data = [
+                'student' => $student,
+                'dateGenerated' => now()->format('F d, Y h:i A')
+            ];
+
+            // Generate PDF
+            $pdf = PDF::loadView('student.payment_later_notice', $data);
+            
+            // Create directory if it doesn't exist
+            // $directory = storage_path('app/public/documents/payment_notices/');
+            // if (!file_exists($directory)) {
+            //     mkdir($directory, 0755, true);
+            // }
+
+            // Save PDF to storage
+            $fileName = 'payment_notice_' . $studentId . '_' . time() . '.pdf';
+            $filePath = 'documents/payment_receipts/' . $fileName;
+            
+            Storage::disk('public')->put($filePath, $pdf->output());
+
+            // Save to documents table
+            // DB::table('documents')->insert([
+            //     'student_id' => $studentId,
+            //     'type' => 'Payment Notice',
+            //     'file_path' => $filePath,
+            //     'upload_date' => now(),
+            //     'status' => 'Approved'
+            // ]);
+
+            DB::table('payments')->insert([
+                    'student_id' => $studentId,
+                    'type' => 'PAYMENT_RECEIPT',
+                    'file_path' => $filePath,
+                    'upload_date' => now()->format('Y-m-d H:i:s'),
+                    'status' => 'Pending',
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+
+            return $filePath;
+
+        } catch (\Exception $e) {
+            Log::error('Payment notice generation error: ' . $e->getMessage());
             throw $e;
         }
     }

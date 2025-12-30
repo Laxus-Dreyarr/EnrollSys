@@ -2170,7 +2170,7 @@ function initializeEnhancedEnrollmentModal() {
             backStepBtn.style.display = 'flex';
             nextStepBtn.style.display = 'flex';
             submitBtn.style.display = 'none';
-            nextStepBtn.disabled = !isPaymentReceiptUploaded;
+            nextStepBtn.disabled = false; // Allow proceeding without payment receipt
             updatePaymentUI();
         } else if (currentStep === 4) {
             mainContent.style.display = 'none';
@@ -2191,7 +2191,8 @@ function initializeEnhancedEnrollmentModal() {
         } else if (currentStep === 2 && isFheUploaded) {
             currentStep = 3; // Go to payment receipt upload step
             updateStepNavigation();
-        } else if (currentStep === 3 && isPaymentReceiptUploaded) {
+        } else if (currentStep === 3) {
+            // Allow proceeding even without payment receipt upload
             currentStep = 4; // Go to confirmation after payment receipt upload
             updateStepNavigation();
         }
@@ -2443,13 +2444,23 @@ function initializeEnhancedEnrollmentModal() {
         paymentFileInput.value = '';
         paymentVerification.style.display = 'none';
         paymentUploadArea.style.display = 'block';
-        nextStepBtn.disabled = true;
+        // Don't disable next button - allow proceeding without payment receipt
+        nextStepBtn.disabled = false;
     }
 
     function updatePaymentUI() {
         // Reset payment state when entering payment step
         if (!isPaymentReceiptUploaded) {
-            removePaymentFile();
+            // Reset UI but keep next button enabled
+            paymentReceiptFile = null;
+            paymentPreview.style.display = 'none';
+            paymentUploadProgress.style.display = 'none';
+            paymentDropZone.style.display = 'block';
+            paymentFileInput.value = '';
+            paymentVerification.style.display = 'none';
+            paymentUploadArea.style.display = 'block';
+            // Ensure next button is enabled (allow proceeding without payment receipt)
+            nextStepBtn.disabled = false;
         } else {
             showPaymentVerification();
         }
@@ -2477,13 +2488,20 @@ function initializeEnhancedEnrollmentModal() {
             confirmationFheFile.textContent = fheFile.name;
         }
 
-        // Update payment confirmation to show receipt
+        // Update payment confirmation to show receipt or will pay later
         const paymentStatusElement = document.querySelector('.enhanced-confirmation-payment-status');
         if (paymentStatusElement) {
-            paymentStatusElement.innerHTML = `
-                <i class="fas fa-file-invoice-dollar"></i>
-                <span>Payment receipt uploaded - Awaiting verification</span>
-            `;
+            if (isPaymentReceiptUploaded) {
+                paymentStatusElement.innerHTML = `
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Payment receipt uploaded - Awaiting verification</span>
+                `;
+            } else {
+                paymentStatusElement.innerHTML = `
+                    <i class="fas fa-clock"></i>
+                    <span>Payment will be made later</span>
+                `;
+            }
         }
     }
 
@@ -2491,11 +2509,6 @@ function initializeEnhancedEnrollmentModal() {
     function submitFinalEnrollment() {
         console.log('Final enrollment submission with receipt verification');
         
-        if (!isPaymentReceiptUploaded) {
-            showNotification('Please upload your payment receipt before submitting enrollment.', 'error');
-            return;
-        }
-
         const submitBtn = finalSubmitBtn;
         const originalText = submitBtn.innerHTML;
         
@@ -2515,7 +2528,10 @@ function initializeEnhancedEnrollmentModal() {
         // Append all data
         formData.append('subjects', JSON.stringify(subjectsArray));
         formData.append('fhe_file', fheFile);
-        formData.append('payment_receipt', paymentReceiptFile);
+        // Only append payment receipt if it was uploaded
+        if (isPaymentReceiptUploaded && paymentReceiptFile) {
+            formData.append('payment_receipt', paymentReceiptFile);
+        }
         formData.append('total_units', enhancedTotalUnits.toString());
         formData.append('is_payment_uploaded', isPaymentReceiptUploaded.toString());
         
@@ -2544,14 +2560,26 @@ function initializeEnhancedEnrollmentModal() {
                 // If prospectus URL is available, show download option
                 if (data.prospectus_url) {
                     setTimeout(() => {
+                        let downloadMessage = 'Your enrollment prospectus has been generated. <a href="' + data.prospectus_url + '" target="_blank" style="color: white; text-decoration: underline; font-weight: bold;">Click here to download</a>';
+                        
+                        // If payment notice URL is available, add it to the message
+                        if (data.payment_notice_url) {
+                            downloadMessage += '<br><br>Your payment notice has been generated. <a href="' + data.payment_notice_url + '" target="_blank" style="color: white; text-decoration: underline; font-weight: bold;">Click here to download payment notice</a>';
+                        }
+                        
                         showNotification(
-                            'Your enrollment prospectus has been generated. <a href="' + data.prospectus_url + '" target="_blank" style="color: white; text-decoration: underline; font-weight: bold;">Click here to download</a>',
+                            downloadMessage,
                             'success',
-                            5000 // Show for 5 seconds
+                            8000 // Show for 8 seconds to allow time to read both links
                         );
                         
                         // Optional: Auto-open in new tab
                         window.open(data.prospectus_url, '_blank');
+                        if (data.payment_notice_url) {
+                            setTimeout(() => {
+                                window.open(data.payment_notice_url, '_blank');
+                            }, 500);
+                        }
                     }, 1000);
                 }
 
@@ -6230,8 +6258,16 @@ function renderMainGradeSubjects(response) {
         `;
 
         group.subjects.forEach(subject => {
+
+            const failedGrades = ['4.0', '5.0', 'INC', 'DRP'];
+            const gradeStr = subject.grade ? subject.grade.toString() : '';
+            
             const gradeText = subject.grade ? subject.grade : 'Not Graded';
-            const gradeClass = subject.grade ? 'grade-badge graded' : 'grade-badge ungraded';
+            
+            // Use nested ternary for grade class
+            const gradeClass = subject.grade 
+                ? (failedGrades.includes(gradeStr) ? 'grade-badge failed' : 'grade-badge graded')
+                : 'grade-badge ungraded';
             
             const prerequisites = subject.prerequisites || subject.prerequisite_codes || 'None';
             
