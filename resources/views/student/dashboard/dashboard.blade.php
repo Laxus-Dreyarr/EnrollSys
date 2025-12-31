@@ -1636,7 +1636,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         </div>
                         <div class="progress-step" data-step="4">
                             <div class="step-number">4</div>
-                            <div class="step-label">ID Picture</div>
+                            <div class="step-label">Profile Picture</div>
                         </div>
                         <?php if($relationship_status == 'Married' && $sex == 'Female'): ?>
                         <div class="progress-step" data-step="5">
@@ -1684,7 +1684,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 </div>
                                 <div class="document-title">
                                     <h4>Form 138A (SF9)</h4>
-                                    <span class="document-subtitle">High School Report Card</span>
+                                    <!-- <span class="document-subtitle">High School Report Card</span> -->
                                 </div>
                                 <span class="document-status required">Required</span>
                             </div>
@@ -1701,12 +1701,12 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                     </label>
                                 </div>
                             </div>
-                            <div class="document-card-footer">
+                            <!-- <div class="document-card-footer">
                                 <div class="document-info">
                                     <i class="fas fa-info-circle"></i>
                                     <small>This is your high school report card. Ensure it shows all your grades and is properly signed.</small>
                                 </div>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
 
@@ -1718,7 +1718,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 <h4>Step 2: Upload Good Moral Certificate</h4>
                             </div>
                             <ul class="requirements-list">
-                                <li><i class="fas fa-check-circle"></i> Must be issued within the last 6 months</li>
+                                <!-- <li><i class="fas fa-check-circle"></i> Must be issued within the last 6 months</li> -->
                                 <li><i class="fas fa-check-circle"></i> Must have school seal and signature</li>
                                 <li><i class="fas fa-check-circle"></i> Accepted formats: PDF, JPG, PNG, DOCX</li>
                                 <li><i class="fas fa-check-circle"></i> Maximum file size: 5MB</li>
@@ -1811,11 +1811,11 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         <div class="documents-requirements">
                             <div class="requirements-header">
                                 <i class="fas fa-info-circle"></i>
-                                <h4>Step 4: Upload 2x2 ID Picture</h4>
+                                <h4>Step 4: Upload your Picture</h4>
                             </div>
                             <ul class="requirements-list">
                                 <li><i class="fas fa-check-circle"></i> Recent photo (taken within last 6 months)</li>
-                                <li><i class="fas fa-check-circle"></i> White background, formal attire</li>
+                                <!-- <li><i class="fas fa-check-circle"></i> White background, formal attire</li> -->
                                 <li><i class="fas fa-check-circle"></i> Accepted formats: JPG, JPEG, PNG only</li>
                                 <li><i class="fas fa-check-circle"></i> Maximum file size: 5MB</li>
                             </ul>
@@ -1827,8 +1827,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                     <i class="fas fa-user-circle"></i>
                                 </div>
                                 <div class="document-title">
-                                    <h4>2x2 ID Picture</h4>
-                                    <span class="document-subtitle">Recent Photo with White Background</span>
+                                    <h4>Profile Picture</h4>
                                 </div>
                                 <span class="document-status required">Required</span>
                             </div>
@@ -1848,7 +1847,8 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             <div class="document-card-footer">
                                 <div class="document-info">
                                     <i class="fas fa-info-circle"></i>
-                                    <small>Recent formal photo with white background for your student ID</small>
+                                    <!-- <small>Recent formal photo with white background for your student ID</small> -->
+                                     <small>Recent formal photo</small>
                                 </div>
                             </div>
                         </div>
@@ -1920,7 +1920,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                             <!-- Form 138A Review -->
                             <div class="review-document">
                                 <div class="review-document-icon">
-                                    <i class="fas fa-file-certificate"></i>
+                                    <i class="fa fa-address-book" aria-hidden="true"></i>
                                 </div>
                                 <div class="review-document-info">
                                     <h5>Form 138A (SF9)</h5>
@@ -1999,9 +1999,12 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         <div class="review-confirmation">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="confirmationCheckbox">
-                                <label class="form-check-label" for="confirmationCheckbox">
+                                <!-- <label class="form-check-label" for="confirmationCheckbox">
                                     I confirm that all uploaded documents are clear, readable, and authentic. I understand that submitting false documents may result in my application being rejected.
-                                </label>
+                                </label> -->
+                                <small>
+                                    I confirm that all uploaded documents are clear, readable, and authentic.
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -2020,7 +2023,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 Next <i class="fas fa-arrow-right"></i>
                             </button>
                             <button id="submitBtn_intro" type="submit" class="btn-primary btn-submit" style="display: none;">
-                                <i class="fas fa-paper-plane"></i> Submit All Documents
+                                <i class="fas fa-paper-plane"></i> Submit
                             </button>
                         </div>
                     </div>
@@ -2033,7 +2036,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                         </div>
                         <ul class="notes-list">
                             <li>You must complete all required steps before submission</li>
-                            <li>Documents will be verified by the Admin within 3-5 working days</li>
+                            <!-- <li>Documents will be verified by the Admin within 3-5 working days</li> -->
                             <li>Ensure all uploaded files are clear and legible</li>
                             <li>You can go back to previous steps to make changes</li>
                         </ul>

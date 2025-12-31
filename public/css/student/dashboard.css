@@ -4528,6 +4528,25 @@ body.dark-mode .prerequisite-info {
     .enhanced-subject-name-cell {
         min-width: 200px;
     }
+
+    .form-check {
+        display: flex;
+        align-items: start;
+        gap: 1px;
+    }
+    
+    .form-check-input {
+        width: 50px;
+        height: 50px;
+        border-radius: 1px;
+        border: 1px solid #cbd5e1;
+        cursor: pointer;
+    }
+
+    .form-check-label {
+        font-size: 12px;
+    }
+
 }
 
 /* Dark Mode Support for Tables */
@@ -10013,6 +10032,31 @@ background: linear-gradient(135deg, #38a169, #2f855a);
     #enhancedMobileSearchToggle {
         display: none;
     }
+
+
+    .review-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+    }
+
+    .review-title h4 {
+        margin: 0 0 8px 0;
+        color: #1e293b;
+        font-size: 1rem;
+    }
+
+    .review-title p {
+        font-size: 0.80rem;
+    }
+
+    
 }
 
 @media (max-width: 480px) {

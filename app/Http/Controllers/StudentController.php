@@ -4746,11 +4746,11 @@ if ($yearLevel && $enrollment_date) {
             $documents = $requiredDocuments->map(function ($doc) {
                 // Map document type to human-readable name
                 $typeNames = [
-                    'FORM138A' => 'Form 138A (High School Card)',
+                    'FORM138A' => 'Form 138A',
                     'FORM138B' => 'Form 138B (Photocopy)',
                     'GOOD_MORAL' => 'Good Moral Certificate',
                     'PSA_NSO' => 'PSA/NSO Birth Certificate',
-                    'ID_PICTURE' => '2x2 ID Picture',
+                    'ID_PICTURE' => 'Profile Picture',
                     'BIRTH_CERTIFICATE' => 'Birth Certificate'
                 ];
 
@@ -5419,12 +5419,11 @@ if ($yearLevel && $enrollment_date) {
         $user = Auth::guard('student')->user();
         $student = $user->user_information->student;
 
-        // Check if the student already has a document of the same type for the same year level
-        $existingDocument = DB::table('important_documents')
+        // Check if the student already has a document of the same type (regardless of year level)
+        $existingDocuments = DB::table('important_documents')
             ->where('student_id', $student->id)
-            ->where('year_level', $request->year_level)
             ->where('type', $request->document_type)
-            ->first();
+            ->get();
 
         // Handle file upload
         if ($request->hasFile('document_file')) {
@@ -5435,13 +5434,17 @@ if ($yearLevel && $enrollment_date) {
             // Store the file in the public/documents/requirements directory
             $filePath = $file->storeAs('documents/requirements', $fileName, 'public');
 
-            // If there's an existing document, delete the old file and record
-            // if ($existingDocument) {
-            //     // Delete the old file from storage
-            //     Storage::disk('public')->delete($existingDocument->file_path);
-            //     // Delete the old record
-            //     DB::table('important_documents')->where('id', $existingDocument->id)->delete();
-            // }
+            // If there are existing documents of the same type, delete all old files and records
+            if ($existingDocuments->count() > 0) {
+                foreach ($existingDocuments as $existingDocument) {
+                    // Delete the old file from storage
+                    if (Storage::disk('public')->exists($existingDocument->file_path)) {
+                        Storage::disk('public')->delete($existingDocument->file_path);
+                    }
+                    // Delete the old record
+                    DB::table('important_documents')->where('id', $existingDocument->id)->delete();
+                }
+            }
 
             // Insert the new document record
             DB::table('important_documents')->insert([
