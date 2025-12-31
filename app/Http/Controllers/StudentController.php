@@ -2389,7 +2389,7 @@ class StudentController extends Controller
             
             // Define passing grades (1.0 to 3.0 are passing)
             $passingGrades = ['1.0', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7', '1.8', '1.9', '2.0', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7', '2.8', '2.9', '3.0'];
-            $failingGrades = ['4.0', '5.0', 'INC', 'DRP'];
+            $failingGrades = ['4.0', '5.0', 'INC', 'DRP', '', NULL];
             
             // Get subjects with passing grades
             $passedSubjects = $studentGrades->filter(function ($item) use ($passingGrades) {
@@ -2487,100 +2487,139 @@ class StudentController extends Controller
             }
 
             // Check and update student's regular/irregular status
-if ($yearLevel && $enrollment_date) {
-    $currentActiveSemester = $enrollment_date->semester;
-    $curriculumYear = $student->curriculum;
-    
-    // Get the curriculum ID
-    $curriculum = DB::table('curriculum')->where('curriculum_year', $curriculumYear)->first();
-    
-    if ($curriculum) {
-        $curriculumId = $curriculum->id;
-        $isRegular = true;
-        
-        // Determine which semesters to check based on year level and active semester
-        $yearLevelsToCheck = [];
-        $semestersToCheck = [];
-        
-        if ($yearLevel === '3rd Year') {
-            if ($currentActiveSemester === '1st Sem') {
-                $yearLevelsToCheck = ['1st Year', '2nd Year'];
-                $semestersToCheck = ['1st Sem', '2nd Sem'];
-            } elseif ($currentActiveSemester === '2nd Sem') {
-                $yearLevelsToCheck = ['1st Year', '2nd Year', '3rd Year'];
-                $semestersToCheck = ['1st Sem', '2nd Sem']; // For 3rd Year, only check 1st Sem
-            } elseif ($currentActiveSemester === 'Summer') {
-                $yearLevelsToCheck = ['1st Year', '2nd Year', '3rd Year'];
-                $semestersToCheck = ['1st Sem', '2nd Sem']; // For 3rd Year, check both semesters
-            }
-        } elseif ($yearLevel === '4th Year') {
-            $yearLevelsToCheck = ['1st Year', '2nd Year', '3rd Year'];
-            $semestersToCheck = ['1st Sem', '2nd Sem', 'Summer'];
-        }
-        
-        // If we have requirements to check
-        if (!empty($yearLevelsToCheck)) {
-            // Get all subjects in the required year levels and semesters
-            $requiredSubjects = DB::table('subjects')
-                ->where('curriculum_id', $curriculumId)
-                ->whereIn('year_level', $yearLevelsToCheck);
-            
-            // Special handling for 3rd Year 2nd Sem enrollment (only check up to 3rd Year 1st Sem)
-            if ($yearLevel === '3rd Year' && $currentActiveSemester === '2nd Sem') {
-                $requiredSubjects = $requiredSubjects->where(function($query) use ($yearLevelsToCheck) {
-                    // For 1st and 2nd Year, check both semesters
-                    $query->where(function($q) {
-                        $q->whereIn('year_level', ['1st Year', '2nd Year'])
-                          ->whereIn('semester', ['1st Sem', '2nd Sem']);
-                    });
-                    // For 3rd Year, only check 1st Sem
-                    $query->orWhere(function($q) {
-                        $q->where('year_level', '3rd Year')
-                          ->where('semester', '1st Sem');
-                    });
-                });
-            } else {
-                // For other cases, check all specified semesters
-                $requiredSubjects = $requiredSubjects->whereIn('semester', $semestersToCheck);
-            }
-            
-            $requiredSubjects = $requiredSubjects->get(['id']);
-            
-            // Get student's grades for these required subjects
-            $studentRequiredGrades = DB::table('enrolled_sub')
-                ->where('student_id', $student->id)
-                ->whereIn('subject_id', $requiredSubjects->pluck('id'))
-                ->get(['subject_id', 'grade']);
-            
-            // Check if all required subjects are taken and have passing grades
-            $allRequiredPassing = true;
-            
-            foreach ($studentRequiredGrades as $gradeRecord) {
-                if (!in_array($gradeRecord->grade, $passingGrades)) {
-                    $allRequiredPassing = false;
-                    break;
+            if ($yearLevel && $enrollment_date) {
+                $currentActiveSemester = $enrollment_date->semester;
+                $curriculumYear = $student->curriculum;
+                
+                // Get the curriculum ID
+                $curriculum = DB::table('curriculum')->where('curriculum_year', $curriculumYear)->first();
+                
+                if ($curriculum) {
+                    $curriculumId = $curriculum->id;
+                    
+                    // Determine which subjects need to be checked based on year level and active semester
+                    $requiredSubjectsQuery = DB::table('subjects')
+                        ->where('curriculum_id', $curriculumId)
+                        ->where('is_active', 1);
+                    
+                    // Build the query based on year level and semester
+                    if ($yearLevel === '2nd Year') {
+                        if ($currentActiveSemester === '1st Sem') {
+                            // 2nd Year 1st Sem: Check complete passing grades from 1st Year 1st sem and 2nd sem
+                            $requiredSubjectsQuery = $requiredSubjectsQuery->where(function($query) {
+                                $query->where('year_level', '1st Year')
+                                    ->whereIn('semester', ['1st Sem', '2nd Sem']);
+                            });
+                        } elseif ($currentActiveSemester === '2nd Sem') {
+                            // 2nd Year 2nd Sem: Check complete passing grades from 1st Year up to 2nd Year 1st Sem
+                            $requiredSubjectsQuery = $requiredSubjectsQuery->where(function($query) {
+                                // For 1st Year, check both semesters
+                                $query->where(function($q) {
+                                    $q->where('year_level', '1st Year')
+                                      ->whereIn('semester', ['1st Sem', '2nd Sem']);
+                                })
+                                // For 2nd Year, only check 1st Sem
+                                ->orWhere(function($q) {
+                                    $q->where('year_level', '2nd Year')
+                                      ->where('semester', '1st Sem');
+                                });
+                            });
+                        }
+                    } elseif ($yearLevel === '3rd Year') {
+                        if ($currentActiveSemester === '1st Sem') {
+                            // 3rd Year 1st Sem: Check complete passing grades from 1st Year up to 2nd Year 2nd Sem
+                            $requiredSubjectsQuery = $requiredSubjectsQuery->where(function($query) {
+                                $query->whereIn('year_level', ['1st Year', '2nd Year'])
+                                    ->whereIn('semester', ['1st Sem', '2nd Sem']);
+                            });
+                        } elseif ($currentActiveSemester === '2nd Sem') {
+                            // 3rd Year 2nd Sem: Check complete passing grades from 1st Year up to 3rd Year 1st Sem
+                            $requiredSubjectsQuery = $requiredSubjectsQuery->where(function($query) {
+                                // For 1st and 2nd Year, check both semesters
+                                $query->where(function($q) {
+                                    $q->whereIn('year_level', ['1st Year', '2nd Year'])
+                                      ->whereIn('semester', ['1st Sem', '2nd Sem']);
+                                })
+                                // For 3rd Year, only check 1st Sem
+                                ->orWhere(function($q) {
+                                    $q->where('year_level', '3rd Year')
+                                      ->where('semester', '1st Sem');
+                                });
+                            });
+                        } elseif ($currentActiveSemester === 'Summer') {
+                            // 3rd Year Summer: Check complete passing grades from 1st Year up to 3rd Year 2nd Sem
+                            $requiredSubjectsQuery = $requiredSubjectsQuery->where(function($query) {
+                                // For 1st, 2nd, and 3rd Year, check both semesters
+                                $query->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year'])
+                                    ->whereIn('semester', ['1st Sem', '2nd Sem']);
+                            });
+                        }
+                    } elseif ($yearLevel === '4th Year') {
+                        // 4th Year: Check complete passing grades from 1st Year up to 3rd Year Summer
+                        $requiredSubjectsQuery = $requiredSubjectsQuery->where(function($query) {
+                            // For 1st, 2nd, and 3rd Year, check all semesters including Summer
+                            $query->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year'])
+                                ->whereIn('semester', ['1st Sem', '2nd Sem', 'Summer']);
+                        });
+                    }
+                    
+                    $requiredSubjects = $requiredSubjectsQuery->get(['id']);
+                    
+                    // If we have requirements to check
+                    if ($requiredSubjects->isNotEmpty()) {
+                        $requiredSubjectIds = $requiredSubjects->pluck('id')->toArray();
+                        
+                        // Get all student's grades for required subjects (ordered by date to get latest)
+                        $studentAllGrades = DB::table('enrolled_sub')
+                            ->where('student_id', $student->id)
+                            ->whereIn('subject_id', $requiredSubjectIds)
+                            ->whereNotNull('grade')
+                            ->orderBy('subject_id')
+                            ->orderBy('date_enrolled', 'desc')
+                            ->get(['subject_id', 'grade', 'date_enrolled']);
+                        
+                        // Get the latest grade for each subject
+                        $studentLatestGrades = [];
+                        foreach ($studentAllGrades as $gradeRecord) {
+                            if (!isset($studentLatestGrades[$gradeRecord->subject_id])) {
+                                $studentLatestGrades[$gradeRecord->subject_id] = $gradeRecord->grade;
+                            }
+                        }
+                        
+                        // Check if all required subjects are taken and have passing grades
+                        $allRequiredPassing = true;
+                        $takenSubjectIds = array_keys($studentLatestGrades);
+                        
+                        // Check if all required subjects have been taken
+                        $allRequiredTaken = count($takenSubjectIds) === count($requiredSubjectIds);
+                        
+                        // Check if all taken subjects have passing grades
+                        if ($allRequiredTaken) {
+                            foreach ($studentLatestGrades as $subjectId => $grade) {
+                                if (!in_array($grade, $passingGrades)) {
+                                    $allRequiredPassing = false;
+                                    break;
+                                }
+                            }
+                        } else {
+                            $allRequiredPassing = false;
+                        }
+                        
+                        // Determine regular status (1 = regular, 2 = irregular)
+                        $isRegular = ($allRequiredTaken && $allRequiredPassing);
+                        $newRegularStatus = $isRegular ? 1 : 2;
+                        
+                        // Update if status changed
+                        if ($student->is_regular != $newRegularStatus) {
+                            DB::table('students')
+                                ->where('id', $student->id)
+                                ->update(['is_regular' => $newRegularStatus]);
+                            
+                            $student->is_regular = $newRegularStatus;
+                        }
+                    }
                 }
             }
-            
-            // Also check if all required subjects have been taken
-            $takenSubjectIds = $studentRequiredGrades->pluck('subject_id')->toArray();
-            $allRequiredTaken = count($takenSubjectIds) === count($requiredSubjects);
-            
-            // Determine regular status
-            $isRegular = ($allRequiredTaken && $allRequiredPassing);
-            $newRegularStatus = $isRegular ? 1 : 2;
-            
-            // Update if status changed
-            if ($student->is_regular != $newRegularStatus) {
-                DB::table('students')
-                    ->where('id', $student->id)
-                    ->update(['is_regular' => $newRegularStatus]);
-                
-                $student->is_regular = $newRegularStatus;
-            }
-        }
-    }
-}
 
             // Get all taken subjects (any grade) for exclusion (but we'll allow failed subjects to be retaken)
             $allTakenSubjects = $studentGrades->keys()->toArray();

@@ -69,7 +69,7 @@ if (isset($averageGrade) && $averageGrade > 0) {
             
             <div class="user-profile">
                 @if(!empty($user->profile) && $user->profile !== 'default.png')
-                    <img src="{{ route('profile.image', ['userId' => $user->id]) }}" alt="Profile Picture" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+                    <img src="{{ route('profile.image', ['userId' => $user->id]) }}" alt="Profile Picture" style="width: 80px; height: 80px; border-radius: 50%; object-fit: contain;">
                 @else
                     <div class="avatar-container">
                         <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=none&color=fff" alt="User Avatar" class="user-avatar">
@@ -1057,29 +1057,43 @@ if (isset($averageGrade) && $averageGrade > 0) {
                         <div class="profile-avatar-section">
                             <div class="avatar-container" id="avatar-container">
                                 @if(!empty($user->profile) && $user->profile !== 'default.png')
-                                    <img style="width:100%; height: 100%;" src="{{ route('profile.image', ['userId' => $user->id]) }}" alt="Profile Picture" id="profile-avatar"
+                                    <img style="width:100%; height: 100%; object-fit: contain;" src="{{ route('profile.image', ['userId' => $user->id]) }}" alt="Profile Picture" id="profile-avatar"
                                     data-upload-url="{{ route('student.upload.avatar') }}">
-                            </div>
                                 @else
-                                    <div class="avatar-container">
-                                        <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=none&color=fff" alt="User Avatar" class="profile-avatar" id="profile-avatar"
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=none&color=fff" alt="User Avatar" class="profile-avatar" id="profile-avatar"
                                     data-upload-url="{{ route('student.upload.avatar') }}" class="user-avatar">
-                                        <div class="status-indicator"></div>
-                                    </div>
-
                                     <div class="avatar-overlay" id="avatar-overlay">
                                         <i class="fas fa-camera"></i>
                                     </div>
                                 @endif
+                            </div>
                             
                                 <!-- Loading Animation -->
-                                <div class="upload-loading" id="upload-loading">
-                                    <div class="loading-spinner"></div>
-                                    <div class="loading-progress">
-                                        <div class="progress-bar">
-                                            <div class="progress-fill" id="progress-fill"></div>
+                                <div style="display: none;" class="upload-loading" id="upload-loading">
+                                    <div class="upload-loading-content">
+                                        <div class="professional-spinner">
+                                            <div class="spinner-ring"></div>
+                                            <div class="spinner-ring"></div>
+                                            <div class="spinner-ring"></div>
+                                            <div class="spinner-center">
+                                                <i class="fas fa-cloud-upload-alt"></i>
+                                            </div>
                                         </div>
-                                        <span class="progress-text" id="progress-text">0%</span>
+                                        <div class="upload-status">
+                                            <h4 class="upload-status-title" id="upload-status-title">Preparing upload...</h4>
+                                            <p class="upload-status-subtitle" id="upload-status-subtitle">Please wait while we process your image</p>
+                                        </div>
+                                        <div class="professional-progress-container">
+                                            <div class="professional-progress-bar">
+                                                <div class="professional-progress-fill" id="progress-fill">
+                                                    <div class="progress-shine"></div>
+                                                </div>
+                                            </div>
+                                            <div class="progress-info">
+                                                <span class="progress-percentage" id="progress-text">0%</span>
+                                                <span class="progress-speed" id="progress-speed"></span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             
@@ -1106,21 +1120,6 @@ if (isset($averageGrade) && $averageGrade > 0) {
                             <div class="profile-badge">
                                 <i class="fas fa-graduation-cap"></i>
                                 Active Student
-                            </div>
-                            
-                            <div class="profile-stats">
-                                <div class="profile-stat">
-                                    <span class="stat-number">3</span>
-                                    <span class="stat-label">Courses</span>
-                                </div>
-                                <div class="profile-stat">
-                                    <span class="stat-number">10</span>
-                                    <span class="stat-label">Total Units</span>
-                                </div>
-                                <div class="profile-stat">
-                                    <span class="stat-number">1st Year</span>
-                                    <span class="stat-label">Year Level</span>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -1229,7 +1228,7 @@ if (isset($averageGrade) && $averageGrade > 0) {
                                 </div>
                                 <div class="info-content">
                                     <span class="info-label">Department</span>
-                                    <span class="info-value">Information Technology</span>
+                                    <span class="info-value">Computer Studies Department</span>
                                 </div>
                             </div>
                             
