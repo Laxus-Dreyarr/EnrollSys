@@ -1415,6 +1415,25 @@ class StudentController extends Controller
                 ];
                 
                 if (isset($yearLevelMap[$student->year_level])) {
+                    // Special check for 1st Year students: must have at least 1 passing grade in 1st Sem 1st Year subjects
+                    if ($student->year_level === '1st Year') {
+                        // Define passing grades (1.0 to 3.0 are passing)
+                        $passingGrades = ['1.0', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7', '1.8', '1.9', '2.0', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7', '2.8', '2.9', '3.0'];
+                        
+                        // Check if student has at least 1 passing grade in 1st Sem of 1st Year subjects
+                        $hasPassingGrade = DB::table('enrolled_sub')
+                            ->where('student_id', $student->id)
+                            ->where('year_level', '1st Year')
+                            ->where('semester', '1st Sem')
+                            ->whereIn('grade', $passingGrades)
+                            ->exists();
+                        
+                        // Only promote if student has at least 1 passing grade
+                        if (!$hasPassingGrade) {
+                            continue; // Skip promotion for this student
+                        }
+                    }
+                    
                     // Update student's year level and school year
                     DB::table('students')
                         ->where('id', $student->id)
@@ -2491,20 +2510,33 @@ class StudentController extends Controller
                 $currentActiveSemester = $enrollment_date->semester;
                 $curriculumYear = $student->curriculum;
                 
-                // Get the curriculum ID
-                $curriculum = DB::table('curriculum')->where('curriculum_year', $curriculumYear)->first();
-                
-                if ($curriculum) {
-                    $curriculumId = $curriculum->id;
+                // Special case: 1st Year students in 1st Sem are automatically considered regular
+                if ($yearLevel === '1st Year' && $currentActiveSemester === '1st Sem') {
+                    $newRegularStatus = 1; // Regular
                     
-                    // Determine which subjects need to be checked based on year level and active semester
-                    $requiredSubjectsQuery = DB::table('subjects')
-                        ->where('curriculum_id', $curriculumId)
-                        ->where('is_active', 1);
+                    // Update if status changed
+                    if ($student->is_regular != $newRegularStatus) {
+                        DB::table('students')
+                            ->where('id', $student->id)
+                            ->update(['is_regular' => $newRegularStatus]);
+                        
+                        $student->is_regular = $newRegularStatus;
+                    }
+                } else {
+                    // Get the curriculum ID
+                    $curriculum = DB::table('curriculum')->where('curriculum_year', $curriculumYear)->first();
                     
-                    // Build the query based on year level and semester
-                    if ($yearLevel === '2nd Year') {
-                        if ($currentActiveSemester === '1st Sem') {
+                    if ($curriculum) {
+                        $curriculumId = $curriculum->id;
+                        
+                        // Determine which subjects need to be checked based on year level and active semester
+                        $requiredSubjectsQuery = DB::table('subjects')
+                            ->where('curriculum_id', $curriculumId)
+                            ->where('is_active', 1);
+                        
+                        // Build the query based on year level and semester
+                        if ($yearLevel === '2nd Year') {
+                            if ($currentActiveSemester === '1st Sem') {
                             // 2nd Year 1st Sem: Check complete passing grades from 1st Year 1st sem and 2nd sem
                             $requiredSubjectsQuery = $requiredSubjectsQuery->where(function($query) {
                                 $query->where('year_level', '1st Year')
@@ -2524,8 +2556,8 @@ class StudentController extends Controller
                                       ->where('semester', '1st Sem');
                                 });
                             });
-                        }
-                    } elseif ($yearLevel === '3rd Year') {
+                            }
+                        } elseif ($yearLevel === '3rd Year') {
                         if ($currentActiveSemester === '1st Sem') {
                             // 3rd Year 1st Sem: Check complete passing grades from 1st Year up to 2nd Year 2nd Sem
                             $requiredSubjectsQuery = $requiredSubjectsQuery->where(function($query) {
@@ -2617,6 +2649,7 @@ class StudentController extends Controller
                             
                             $student->is_regular = $newRegularStatus;
                         }
+                    }
                     }
                 }
             }
