@@ -14,6 +14,22 @@ $show_student_form = (strtolower($student_id) === 'none');
 $show_prereg_form = $isEnrollmentActive;
 $show_student_form3 = $curriculum === null || $curriculum === '';
 $show_student_form4 = $is_regular === 6 || $is_regular === '6';
+
+// Convert is_regular to display text
+$studentType = 'Not Set';
+if ($is_regular == 1) {
+    $studentType = 'Regular';
+} elseif ($is_regular == 2) {
+    $studentType = 'Irregular';
+} elseif ($is_regular == 3) {
+    $studentType = 'Transferee';
+}
+
+// Format average grade
+$averageGradeDisplay = 'N/A';
+if (isset($averageGrade) && $averageGrade > 0) {
+    $averageGradeDisplay = number_format($averageGrade, 2);
+}
 ?>
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -1223,7 +1239,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 </div>
                                 <div class="info-content">
                                     <span class="info-label">Student Type</span>
-                                    <span class="info-value">Irregular</span>
+                                    <span class="info-value">{{ $studentType }}</span>
                                 </div>
                             </div>
                             
@@ -1233,7 +1249,7 @@ $show_student_form4 = $is_regular === 6 || $is_regular === '6';
                                 </div>
                                 <div class="info-content">
                                     <span class="info-label">Average Grade</span>
-                                    <span class="info-value">2.50</span>
+                                    <span class="info-value">{{ $averageGradeDisplay }}</span>
                                 </div>
                             </div>
                         </div>

@@ -4840,6 +4840,17 @@ if ($yearLevel && $enrollment_date) {
                 ], 401);
             }
 
+            // Check if student exists
+            if (!$user->user_information || !$user->user_information->student) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Student record not found.'
+                ], 404);
+            }
+
+            $student = $user->user_information->student;
+            $yearLevel = $student->year_level ?? '1st Year';
+
             // Validate the uploaded file
             $request->validate([
                 'avatar' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB
@@ -4849,39 +4860,73 @@ if ($yearLevel && $enrollment_date) {
             if ($request->hasFile('avatar')) {
                 $file = $request->file('avatar');
                 
-                // Generate unique filename
-                $filename = $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                // Generate filename as id_picture with extension
+                $extension = $file->getClientOriginalExtension();
+                $filename = "id_picture.{$extension}";
                 
-                // Define the storage path
-                $storagePath = 'profile/student/' . $filename;
+                // Delete old ID picture from important_documents table and requirements folder
+                $oldDocuments = DB::table('important_documents')
+                    ->where('student_id', $student->id)
+                    ->whereIn('type', ['D_PICTURE', 'ID_PICTURE'])
+                    ->get();
                 
-                // Delete old profile picture if not default
-                if ($user->profile && $user->profile !== 'default.png' && $user->profile !== 'default.jpg') {
-                    // Check if old image exists in storage and delete it
-                    $oldImagePath = 'profile/student/' . $user->profile;
-                    if (Storage::disk('public')->exists($oldImagePath)) {
-                        Storage::disk('public')->delete($oldImagePath);
+                foreach ($oldDocuments as $oldDoc) {
+                    // Delete the old file from requirements folder
+                    if (Storage::disk('public')->exists($oldDoc->file_path)) {
+                        Storage::disk('public')->delete($oldDoc->file_path);
                     }
                     
-                    // Also delete from public_path if it exists (for old files)
-                    $oldPublicPath = public_path('profile/' . $user->profile);
+                    // Also check if file exists in public path (for old files)
+                    $oldPublicPath = public_path('storage/' . $oldDoc->file_path);
                     if (file_exists($oldPublicPath)) {
                         @unlink($oldPublicPath);
                     }
+                    
+                    // Delete the record from important_documents table
+                    DB::table('important_documents')->where('id', $oldDoc->id)->delete();
                 }
                 
-                // Store the file in storage/app/public/profile/student directory
-                $file->storeAs('profile/student', $filename, 'public');
+                // Also delete old id_picture file if it exists in requirements folder
+                $oldIdPicturePath = 'documents/requirements/id_picture.' . $extension;
+                if (Storage::disk('public')->exists($oldIdPicturePath)) {
+                    Storage::disk('public')->delete($oldIdPicturePath);
+                }
                 
-                // Update user's profile in database - store the filename only
+                // Check for other extensions too
+                $commonExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                foreach ($commonExtensions as $ext) {
+                    $oldPath = 'documents/requirements/id_picture.' . $ext;
+                    if (Storage::disk('public')->exists($oldPath)) {
+                        Storage::disk('public')->delete($oldPath);
+                    }
+                }
+                
+                // Store the file in documents/requirements folder
+                $filePath = $file->storeAs('documents/requirements', $filename, 'public');
+                
+                if (!$filePath) {
+                    throw new \Exception('Failed to store the file');
+                }
+                
+                // Insert new record in important_documents table with type 'ID_PICTURE'
+                DB::table('important_documents')->insert([
+                    'student_id' => $student->id,
+                    'year_level' => $yearLevel,
+                    'type' => 'ID_PICTURE',
+                    'file_path' => $filePath,
+                    'upload_date' => now()
+                ]);
+                
+                // Update user's profile in database - store the full path including documents/requirements/
+                $profilePath = 'documents/requirements/' . $filename;
                 DB::table('users')
                     ->where('id', $user->id)
                     ->update([
-                        'profile' => $filename
+                        'profile' => $profilePath
                     ]);
                 
                 // Generate the URL using Storage facade
-                $profile_url = Storage::url('profile/student/' . $filename) . '?v=' . time();
+                $profile_url = Storage::url($filePath) . '?v=' . time();
                 
                 return response()->json([
                     'success' => true,
