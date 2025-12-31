@@ -805,8 +805,6 @@ function initializeProfilePictureUpload() {
     const progressFill = document.getElementById('progress-fill');
     const progressText = document.getElementById('progress-text');
     const uploadStatusTitle = document.getElementById('upload-status-title');
-    const uploadStatusSubtitle = document.getElementById('upload-status-subtitle');
-    const progressSpeed = document.getElementById('progress-speed');
     
     if (!avatarContainer) return;
     
@@ -911,29 +909,17 @@ function initializeProfilePictureUpload() {
             progressFill.style.width = progress + '%';
             progressText.textContent = progress + '%';
             
-            // Calculate upload speed
-            const elapsed = (Date.now() - startTime) / 1000;
-            const speed = progress / elapsed;
-            if (progressSpeed) {
-                progressSpeed.textContent = speed > 0 ? `${Math.round(speed)}%/s` : '';
-            }
-            
-            // Update status messages for different parts of upload
-            if (progress < 25) {
-                if (uploadStatusTitle) uploadStatusTitle.textContent = 'Preparing upload...';
-                if (uploadStatusSubtitle) uploadStatusSubtitle.textContent = 'Validating image file';
-            } else if (progress < 50) {
-                if (uploadStatusTitle) uploadStatusTitle.textContent = 'Processing image...';
-                if (uploadStatusSubtitle) uploadStatusSubtitle.textContent = 'Optimizing file size';
-            } else if (progress < 75) {
-                if (uploadStatusTitle) uploadStatusTitle.textContent = 'Uploading to server...';
-                if (uploadStatusSubtitle) uploadStatusSubtitle.textContent = 'Transferring data';
-            } else if (progress < 95) {
-                if (uploadStatusTitle) uploadStatusTitle.textContent = 'Saving to database...';
-                if (uploadStatusSubtitle) uploadStatusSubtitle.textContent = 'Finalizing upload';
-            } else {
-                if (uploadStatusTitle) uploadStatusTitle.textContent = 'Almost done...';
-                if (uploadStatusSubtitle) uploadStatusSubtitle.textContent = 'Completing process';
+            // Update status messages
+            if (uploadStatusTitle) {
+                if (progress < 30) {
+                    uploadStatusTitle.textContent = 'Preparing...';
+                } else if (progress < 60) {
+                    uploadStatusTitle.textContent = 'Uploading...';
+                } else if (progress < 90) {
+                    uploadStatusTitle.textContent = 'Processing...';
+                } else {
+                    uploadStatusTitle.textContent = 'Finishing...';
+                }
             }
             
             // Complete upload
@@ -949,13 +935,11 @@ function initializeProfilePictureUpload() {
         // Show success animation for client-side processing
         successCheckmark.classList.add('active');
         progressText.textContent = 'Processing complete!';
-        
-        // Hide success animation and start actual upload after delay
-        setTimeout(() => {
-            successCheckmark.classList.remove('active');
+        successCheckmark.classList.remove('active');
             // Start actual server upload
             uploadToServer(file);
-        }, 500);
+            
+
     }
     
     // Actual server upload function
@@ -983,34 +967,17 @@ function initializeProfilePictureUpload() {
                 progressFill.style.width = percentComplete + '%';
                 progressText.textContent = Math.round(percentComplete) + '%';
                 
-                // Calculate upload speed
-                const elapsed = (Date.now() - uploadStartTime) / 1000;
-                const currentSpeed = (e.loaded - lastLoaded) / 1024; // KB/s
-                lastLoaded = e.loaded;
-                
-                if (progressSpeed) {
-                    if (elapsed > 0.5) { // Only show after 0.5s to avoid initial spike
-                        const speedKBps = Math.round(currentSpeed);
-                        progressSpeed.textContent = speedKBps > 0 ? `${speedKBps} KB/s` : '';
-                    }
-                }
-                
                 // Update status messages
-                if (percentComplete < 25) {
-                    if (uploadStatusTitle) uploadStatusTitle.textContent = 'Preparing upload...';
-                    if (uploadStatusSubtitle) uploadStatusSubtitle.textContent = 'Validating image file';
-                } else if (percentComplete < 50) {
-                    if (uploadStatusTitle) uploadStatusTitle.textContent = 'Processing image...';
-                    if (uploadStatusSubtitle) uploadStatusSubtitle.textContent = 'Optimizing file size';
-                } else if (percentComplete < 75) {
-                    if (uploadStatusTitle) uploadStatusTitle.textContent = 'Uploading to server...';
-                    if (uploadStatusSubtitle) uploadStatusSubtitle.textContent = 'Transferring data';
-                } else if (percentComplete < 95) {
-                    if (uploadStatusTitle) uploadStatusTitle.textContent = 'Saving to database...';
-                    if (uploadStatusSubtitle) uploadStatusSubtitle.textContent = 'Finalizing upload';
-                } else {
-                    if (uploadStatusTitle) uploadStatusTitle.textContent = 'Almost done...';
-                    if (uploadStatusSubtitle) uploadStatusSubtitle.textContent = 'Completing process';
+                if (uploadStatusTitle) {
+                    if (percentComplete < 30) {
+                        uploadStatusTitle.textContent = 'Preparing...';
+                    } else if (percentComplete < 60) {
+                        uploadStatusTitle.textContent = 'Uploading...';
+                    } else if (percentComplete < 90) {
+                        uploadStatusTitle.textContent = 'Processing...';
+                    } else {
+                        uploadStatusTitle.textContent = 'Finishing...';
+                    }
                 }
             }
         });
@@ -1034,14 +1001,13 @@ function initializeProfilePictureUpload() {
                     // Update progress to complete
                     progressFill.style.width = '100%';
                     progressText.textContent = '100%';
-                    if (progressSpeed) progressSpeed.textContent = '';
                     
                     // Update status to success
-                    if (uploadStatusTitle) uploadStatusTitle.textContent = 'Upload Complete!';
-                    if (uploadStatusSubtitle) uploadStatusSubtitle.textContent = 'Your profile picture has been updated';
+                    if (uploadStatusTitle) uploadStatusTitle.textContent = 'Complete!';
                     
                     // Show success checkmark
                     successCheckmark.classList.add('active');
+                    window.location.reload();
                     
                     // After success, hide loading and reset
                     setTimeout(() => {
@@ -1050,8 +1016,7 @@ function initializeProfilePictureUpload() {
                         avatarContainer.classList.remove('uploading');
                         
                         // Reset status messages
-                        if (uploadStatusTitle) uploadStatusTitle.textContent = 'Preparing upload...';
-                        if (uploadStatusSubtitle) uploadStatusSubtitle.textContent = 'Please wait while we process your image';
+                        if (uploadStatusTitle) uploadStatusTitle.textContent = 'Uploading...';
                         
                         // Re-enable button
                         changePhotoBtn.disabled = false;

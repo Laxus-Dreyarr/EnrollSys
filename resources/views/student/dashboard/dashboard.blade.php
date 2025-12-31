@@ -69,7 +69,7 @@ if (isset($averageGrade) && $averageGrade > 0) {
             
             <div class="user-profile">
                 @if(!empty($user->profile) && $user->profile !== 'default.png')
-                    <img src="{{ route('profile.image', ['userId' => $user->id]) }}" alt="Profile Picture" style="width: 80px; height: 80px; border-radius: 50%; object-fit: contain;">
+                    <img src="{{ route('profile.image', ['userId' => $user->id]) }}" alt="Profile Picture" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
                 @else
                     <div class="avatar-container">
                         <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=none&color=fff" alt="User Avatar" class="user-avatar">
@@ -1057,7 +1057,7 @@ if (isset($averageGrade) && $averageGrade > 0) {
                         <div class="profile-avatar-section">
                             <div class="avatar-container" id="avatar-container">
                                 @if(!empty($user->profile) && $user->profile !== 'default.png')
-                                    <img style="width:100%; height: 100%; object-fit: contain;" src="{{ route('profile.image', ['userId' => $user->id]) }}" alt="Profile Picture" id="profile-avatar"
+                                    <img style="width:100%; height: 100%; object-fit: cover;" src="{{ route('profile.image', ['userId' => $user->id]) }}" alt="Profile Picture" id="profile-avatar"
                                     data-upload-url="{{ route('student.upload.avatar') }}">
                                 @else
                                     <img src="https://ui-avatars.com/api/?name={{ urlencode(($firstname ?? '') . ' ' . ($lastname ?? '')) }}&background=none&color=fff" alt="User Avatar" class="profile-avatar" id="profile-avatar"
@@ -1069,30 +1069,17 @@ if (isset($averageGrade) && $averageGrade > 0) {
                             </div>
                             
                                 <!-- Loading Animation -->
-                                <div style="display: none;" class="upload-loading" id="upload-loading">
+                                <div class="upload-loading" id="upload-loading">
                                     <div class="upload-loading-content">
-                                        <div class="professional-spinner">
-                                            <div class="spinner-ring"></div>
-                                            <div class="spinner-ring"></div>
-                                            <div class="spinner-ring"></div>
-                                            <div class="spinner-center">
-                                                <i class="fas fa-cloud-upload-alt"></i>
-                                            </div>
+                                        <div class="loading-spinner">
+                                            <div class="spinner-circle"></div>
                                         </div>
                                         <div class="upload-status">
-                                            <h4 class="upload-status-title" id="upload-status-title">Preparing upload...</h4>
-                                            <p class="upload-status-subtitle" id="upload-status-subtitle">Please wait while we process your image</p>
+                                            <span class="upload-status-text" id="upload-status-title">Uploading...</span>
+                                            <span class="upload-percentage" id="progress-text">0%</span>
                                         </div>
-                                        <div class="professional-progress-container">
-                                            <div class="professional-progress-bar">
-                                                <div class="professional-progress-fill" id="progress-fill">
-                                                    <div class="progress-shine"></div>
-                                                </div>
-                                            </div>
-                                            <div class="progress-info">
-                                                <span class="progress-percentage" id="progress-text">0%</span>
-                                                <span class="progress-speed" id="progress-speed"></span>
-                                            </div>
+                                        <div class="upload-progress-bar">
+                                            <div class="upload-progress-fill" id="progress-fill"></div>
                                         </div>
                                     </div>
                                 </div>

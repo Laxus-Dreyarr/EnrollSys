@@ -1196,11 +1196,13 @@ body.dark-mode .user-profile {
 /* Professional Upload Loading Animation */
 .upload-loading {
     position: absolute;
+    height: 100%;
+    width: 100%;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%);
+    background: none;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     display: none;
@@ -1209,7 +1211,7 @@ body.dark-mode .user-profile {
     justify-content: center;
     color: white;
     z-index: 10;
-    border-radius: 50%;
+    border-radius: 100%;
     animation: fadeInOverlay 0.3s ease-out;
 }
 
@@ -1222,17 +1224,17 @@ body.dark-mode .user-profile {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 90%;
-    max-width: 320px;
-    gap: 24px;
+    width: 50%;
+    max-width: 150px;
+    gap: 20px;
     animation: slideUpFade 0.4s ease-out;
 }
 
 /* Professional Spinner */
 .professional-spinner {
     position: relative;
-    width: 80px;
-    height: 80px;
+    width: 50px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1438,6 +1440,224 @@ body.dark-mode .user-profile {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* Responsive Upload Loading Animation */
+@media (max-width: 768px) {
+    .upload-loading-content {
+        max-width: 160px;
+        gap: 18px;
+    }
+
+    .professional-spinner {
+        width: 70px;
+        height: 70px;
+    }
+
+    .spinner-ring:nth-child(1) {
+        width: 70px;
+        height: 70px;
+        border-width: 2.5px;
+    }
+
+    .spinner-ring:nth-child(2) {
+        width: 52px;
+        height: 52px;
+        border-width: 2.5px;
+    }
+
+    .spinner-ring:nth-child(3) {
+        width: 35px;
+        height: 35px;
+        border-width: 2.5px;
+    }
+
+    .spinner-center {
+        width: 28px;
+        height: 28px;
+    }
+
+    .spinner-center i {
+        font-size: 12px;
+    }
+
+    .upload-status-title {
+        font-size: 1rem;
+    }
+
+    .upload-status-subtitle {
+        font-size: 0.8rem;
+    }
+
+    .professional-progress-bar {
+        height: 7px;
+    }
+
+    .progress-percentage {
+        font-size: 0.85rem;
+    }
+
+    .progress-speed {
+        font-size: 0.7rem;
+    }
+
+    .upload-success {
+        width: 45px;
+        height: 45px;
+    }
+
+    .upload-success i {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .upload-loading-content {
+        max-width: 140px;
+        gap: 16px;
+        width: 80%;
+    }
+
+    .professional-spinner {
+        width: 60px;
+        height: 60px;
+    }
+
+    .spinner-ring:nth-child(1) {
+        width: 60px;
+        height: 60px;
+        border-width: 2px;
+    }
+
+    .spinner-ring:nth-child(2) {
+        width: 45px;
+        height: 45px;
+        border-width: 2px;
+    }
+
+    .spinner-ring:nth-child(3) {
+        width: 30px;
+        height: 30px;
+        border-width: 2px;
+    }
+
+    .spinner-center {
+        width: 24px;
+        height: 24px;
+    }
+
+    .spinner-center i {
+        font-size: 11px;
+    }
+
+    .upload-status-title {
+        font-size: 0.95rem;
+        margin-bottom: 5px;
+    }
+
+    .upload-status-subtitle {
+        font-size: 0.75rem;
+    }
+
+    .professional-progress-container {
+        gap: 8px;
+    }
+
+    .professional-progress-bar {
+        height: 6px;
+    }
+
+    .progress-percentage {
+        font-size: 0.8rem;
+    }
+
+    .progress-speed {
+        font-size: 0.65rem;
+    }
+
+    .upload-success {
+        width: 40px;
+        height: 40px;
+    }
+
+    .upload-success i {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .upload-loading-content {
+        max-width: 120px;
+        gap: 14px;
+        width: 75%;
+    }
+
+    .professional-spinner {
+        width: 50px;
+        height: 50px;
+    }
+
+    .spinner-ring:nth-child(1) {
+        width: 50px;
+        height: 50px;
+        border-width: 2px;
+    }
+
+    .spinner-ring:nth-child(2) {
+        width: 38px;
+        height: 38px;
+        border-width: 2px;
+    }
+
+    .spinner-ring:nth-child(3) {
+        width: 26px;
+        height: 26px;
+        border-width: 2px;
+    }
+
+    .spinner-center {
+        width: 20px;
+        height: 20px;
+    }
+
+    .spinner-center i {
+        font-size: 10px;
+    }
+
+    .upload-status-title {
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+        letter-spacing: 0.2px;
+    }
+
+    .upload-status-subtitle {
+        font-size: 0.7rem;
+    }
+
+    .professional-progress-container {
+        gap: 6px;
+    }
+
+    .professional-progress-bar {
+        height: 5px;
+    }
+
+    .progress-percentage {
+        font-size: 0.75rem;
+    }
+
+    .progress-speed {
+        font-size: 0.6rem;
+    }
+
+    .upload-success {
+        width: 35px;
+        height: 35px;
+    }
+
+    .upload-success i {
+        font-size: 1rem;
     }
 }
 
