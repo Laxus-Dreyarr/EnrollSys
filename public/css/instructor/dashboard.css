@@ -913,6 +913,18 @@ body.dark-mode .color-option {
     transition: var(--transition);
 }
 
+.header2 {
+    background-color: none;
+    display: flex;
+    margin-top: 20px;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px 0;
+    padding: 10px 24px;
+    text-align: center;
+}
+
 .page-title {
     font-weight: 700;
     color: #1e293b;
@@ -4729,6 +4741,59 @@ body.dark-mode .no-files {
     background: var(--card-dark);
     border-color: var(--border-dark);
     color: var(--text-muted-dark);
+}
+
+/* Delete All button styling */
+#delete-all-notifications {
+    float: right;
+    margin-top: -70px;
+    margin-right: 10px;
+    padding: 6px 12px;
+    background: #ef4444;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: none; /* Hidden by default */
+}
+
+#delete-all-notifications:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+#delete-all-notifications:active {
+    transform: translateY(0);
+}
+
+#delete-all-notifications:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+#delete-all-notifications i {
+    margin-right: 5px;
+}
+
+/* For dark mode support */
+body.dark-mode #delete-all-notifications {
+    background: #ef4444;
+    color: white;
+}
+
+body.dark-mode #delete-all-notifications:hover {
+    background: #dc2626;
+}
+
+/* Make sure the notifications section title stays aligned */
+.section-title {
+    display: inline-block;
+    margin-right: 10px;
 }
 
 /* Responsive Design */

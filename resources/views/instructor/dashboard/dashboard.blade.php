@@ -125,7 +125,7 @@ $profile_picture = $user->profile;
             <div class="header">
                 <h1 class="page-title">Instructor Dashboard</h1>
 
-                <div class="search-container">
+                <!-- <div class="search-container">
                     <div class="search-bar">
                         <i class="fas fa-search search-icon"></i>
                         <input type="text" id="header-search-input" class="search-input" placeholder="Search students...">
@@ -133,7 +133,7 @@ $profile_picture = $user->profile;
                             <i style="color: white;" class="fas fa-search"></i>
                         </button>
                     </div>
-                </div>
+                </div> -->
 
                 <!-- Search Bar -->
                 <!-- <div class="search-container">
@@ -157,6 +157,11 @@ $profile_picture = $user->profile;
                 </div>
             </div>
             
+
+            <div class="header2">
+                <h1 class="page-title">{{ $pageTitle }}</h1>
+            </div>
+
             <!-- Dashboard Section -->
             <div id="dashboard-section" class="content-section active">
                 <!-- Stats Overview -->
@@ -251,6 +256,11 @@ $profile_picture = $user->profile;
                 
                 <!-- Notifications -->
                 <h2 class="section-title">Notifications</h2>
+                <br>
+                <button onclick="deleteAllNotifications()" class="btn-danger btn-sm" id="delete-all-notifications" style="float: right; margin-top: -40px; display: none;">
+                    <i class="fa fa-trash"></i> Delete All
+                </button>
+
                 <div class="schedule-container">
                     @forelse($notifications as $notification)
                         <div class="schedule-day">

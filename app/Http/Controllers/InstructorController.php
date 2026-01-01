@@ -351,7 +351,25 @@ class InstructorController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('instructor.dashboard.dashboard', compact('user', 'enrollmentPeriod', 'notifications'));
+
+        // Get current date for SY and SEM calculation
+        $currentYear = date('Y');
+        $currentMonth = date('n'); // 1-12
+        
+        // Calculate School Year and Semester
+        if ($currentMonth >= 7 && $currentMonth <= 12) {
+            // July to December: First Semester of current school year
+            $schoolYear = $currentYear . '-' . ($currentYear + 1);
+            $semester = 'SEM 1';
+        } else {
+            // January to June: Second Semester of previous school year
+            $schoolYear = ($currentYear - 1) . '-' . $currentYear;
+            $semester = 'SEM 2';
+        }
+        
+        $pageTitle = "SY: $schoolYear $semester";
+
+        return view('instructor.dashboard.dashboard', compact('user', 'enrollmentPeriod', 'notifications', 'pageTitle'));
         
     }
 
@@ -366,6 +384,19 @@ class InstructorController extends Controller
         return response()->json([
             'success' => (bool)$delete,
             'message' => $delete ? 'Notification deleted successfully' : 'Failed to delete notification'
+        ]);
+    }
+
+    public function deleteAllNotifications(Request $request)
+    {
+        // Get the authenticated instructor's ID
+        
+        // Delete all notifications for this instructor
+        $deleted = DB::table('notifications_instructor')->delete();
+        
+        return response()->json([
+            'success' => (bool)$deleted,
+            'message' => $deleted ? 'All notifications deleted successfully' : 'Failed to delete notifications',
         ]);
     }
 

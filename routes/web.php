@@ -251,6 +251,9 @@ Route::middleware(['instructor.auth'])->group(function () {
 
     Route::post('/instructor/delete-notification', [InstructorController::class, 'deleteNotification']);
 
+    Route::post('/instructor/delete-all-notifications', [InstructorController::class, 'deleteAllNotifications']);
+    
+
     Route::post('/instructor/mark-notification-read-count', [InstructorController::class, 'countNotificationAsRead'])->name('instructor.mark-notification-read-count');
 
     Route::post('/instructor/update-profile', [InstructorController::class, 'updateProfile'])->name('instructor.update-profile');

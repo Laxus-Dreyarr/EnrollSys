@@ -2323,6 +2323,95 @@ function pending_request() {
     });
 }
 
+function deleteAllNotifications() {
+        if (!confirm('Are you sure you want to delete all notifications? This action cannot be undone.')) {
+            return;
+        }
+        
+        const deleteAllBtn = document.getElementById('delete-all-notifications');
+        const originalContent = deleteAllBtn.innerHTML;
+        
+        // Show loading state
+        deleteAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        deleteAllBtn.disabled = true;
+        
+        console.log('Sending delete all notifications request...');
+        
+        fetch('/instructor/delete-all-notifications', {
+            method: 'POST',
+                headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({}) 
+            })
+        .then(response => {
+            console.log('Response status:', response.status, response.statusText);
+            
+            if (response.status === 404) {
+                throw new Error('Route not found. Please check if the route is defined.');
+            }
+            if (response.status === 401) {
+                throw new Error('You are not authenticated. Please log in again.');
+            }
+            if (response.status === 500) {
+                throw new Error('Server error. Please try again later.');
+            }
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            
+            if (data.success) {
+                // Remove all notification elements
+                const container = document.querySelector('.schedule-container');
+                
+                // Remove all children of the container
+                while (container.firstChild) {
+                    container.removeChild(container.firstChild);
+                }
+
+                // reload the page after deleting all notifications
+                window.location.reload();
+                
+                // Show the empty state
+                container.innerHTML = `
+                    <div class="schedule-day">
+                        <h4 class="day-header">No Notifications</h4>
+                        <div class="schedule-item">
+                            <div class="schedule-details">
+                                <div class="schedule-course">No notifications at this time</div>
+                                <div class="schedule-location">You'll see important updates here</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Update the notification count in the header
+                updateNotificationCount();
+                
+                // Hide the delete all button
+                toggleDeleteAllButton();
+                
+                showNotification(data.message, 'success');
+            } else {
+                showNotification(data.message || 'Failed to delete notifications', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            showNotification('Error deleting notifications: ' + error.message, 'error');
+        })
+        .finally(() => {
+            // Reset button state
+            deleteAllBtn.innerHTML = originalContent;
+            deleteAllBtn.disabled = false;
+        });
+    }
 
 // Instructor Dashboard JavaScript
 document.addEventListener('DOMContentLoaded', function() {
@@ -2334,6 +2423,7 @@ document.addEventListener('DOMContentLoaded', function() {
     count_students();
     pending_request();
     updateNotificationCount();
+    toggleDeleteAllButton();
     initializeProfilePictureUpload();
     handleImageErrors();
 
@@ -2360,7 +2450,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Function to delete notification with confirmation
+    // Function to delete single notification
     function deleteNotification(notificationId, button) {
         if (!confirm('Are you sure you want to delete this notification?')) {
             return;
@@ -2385,9 +2475,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     setTimeout(() => {
                         notificationItem.remove();
-                        updateNotificationCount();
                         
-                        // Show empty state if needed
+                        // Check if we need to show empty state
                         const container = document.querySelector('.schedule-container');
                         const remainingNotifications = container.querySelectorAll('.schedule-day');
                         
@@ -2404,12 +2493,59 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             `;
                         }
+                        
+                        // Update notification count
+                        updateNotificationCount();
+                        
+                        // Update Delete All button visibility
+                        toggleDeleteAllButton();
+                        
                     }, 300);
                 }
             }
         })
         .catch(error => console.error('Error:', error));
     }
+
+    // Helper function to check if container has real notifications (not empty state)
+    function hasRealNotifications() {
+        const container = document.querySelector('.schedule-container');
+        if (!container) return false;
+        
+        // Get all notification day elements
+        const notificationDays = container.querySelectorAll('.schedule-day');
+        
+        // If no elements, no notifications
+        if (notificationDays.length === 0) return false;
+        
+        // Check if the only element is the "No Notifications" empty state
+        if (notificationDays.length === 1) {
+            const header = notificationDays[0].querySelector('.day-header');
+            if (header && (header.textContent.includes('No Notifications') || 
+                        header.textContent.trim() === 'No Notifications')) {
+                return false; // This is the empty state
+            }
+        }
+        
+        // If we have elements that aren't the empty state, we have real notifications
+        return true;
+    }
+
+    // Function to toggle Delete All button visibility
+    function toggleDeleteAllButton() {
+        const deleteAllBtn = document.getElementById('delete-all-notifications');
+        if (!deleteAllBtn) return;
+        
+        if (hasRealNotifications()) {
+            deleteAllBtn.style.display = 'block';
+        } else {
+            deleteAllBtn.style.display = 'none';
+        }
+    }
+
+    // Function to delete all notifications
+    // Function to delete all notifications
+    
     
     
     // Function to update notification count in header
