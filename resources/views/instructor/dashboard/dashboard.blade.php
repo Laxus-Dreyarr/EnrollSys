@@ -627,6 +627,7 @@ $profile_picture = $user->profile;
                                     'ui.firstname',
                                     'ui.lastname',
                                     'ui.middlename',
+                                    'ui.address',
                                     'scy.total_year',
                                     'u.email2 as email',
                                     DB::raw('AVG(CASE 
@@ -635,7 +636,7 @@ $profile_picture = $user->profile;
                                     END) as average_grade')
                                 )
                                 ->groupBy('s.id', 's.id_no', 's.year_level', 's.is_regular', 's.curriculum', 
-                                        's.status', 'ui.firstname', 'ui.lastname', 'ui.middlename', 'scy.total_year', 'u.email2')
+                                        's.status', 'ui.firstname', 'ui.lastname', 'ui.middlename', 'ui.address', 'scy.total_year', 'u.email2')
                                 ->get();
                             
                             foreach ($students as $student):
@@ -697,7 +698,8 @@ $profile_picture = $user->profile;
                                     'enrollment_status' => $student->enrollment_status,
                                     'email' => $student->email,
                                     'average_grade' => $averageGrade,
-                                    'status' => $status
+                                    'status' => $status,
+                                    'address' => $student->address
                                 ]); ?>'>
                                 <td><?php echo $student->id_no; ?></td>
                                 <td><?php echo $fullName; ?></td>

@@ -2375,6 +2375,7 @@ function deleteAllNotifications() {
                     container.removeChild(container.firstChild);
                 }
 
+
                 // reload the page after deleting all notifications
                 window.location.reload();
                 
@@ -2743,6 +2744,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="info-item">
                             <strong>Overall Average:</strong>
                             <span>${studentData.average_grade}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Address:</strong>
+                            <span>${studentData.address}</span>
                         </div>
                     </div>
                 </div>
