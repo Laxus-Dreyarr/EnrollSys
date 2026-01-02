@@ -452,6 +452,9 @@ Route::middleware(['student.auth'])->group(function () {
     Route::post('/student/update-grade', [StudentController::class, 'updateGrade']);
     Route::get('/student/enrolled-subjects-list', [StudentController::class, 'getStudentEnrolledSubjects']);
 
+    // downloadable prospectus pdf
+    Route::get('/student/download-prospectus', [StudentController::class, 'downloadProspectus'])->name('student.downloadProspectus');
+
     Route::post('/student/logout', [StudentController::class, 'logout'])->name('student.logout');
 });
 

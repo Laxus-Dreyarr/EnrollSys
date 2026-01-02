@@ -497,6 +497,12 @@ if (isset($averageGrade) && $averageGrade > 0) {
                     </div>
                 </div>
 
+                <div class="text-right mb-3">
+                    <a href="{{ route('student.downloadProspectus') }}" class="btn btn-success" target="_blank">
+                        <i class="fas fa-download"></i> Download Prospectus (PDF)
+                    </a>
+                </div>
+
                 <div class="subjects-list-container">
                     <div class="subjects-table-container" id="grades-container">
                         <!-- Subjects will be loaded here -->

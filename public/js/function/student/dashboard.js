@@ -6171,17 +6171,6 @@ function renderMainGradeSubjects(response) {
         return;
     }
 
-    // Show enrollment period status
-    // if (!isEnrollmentPeriodActive) {
-    //     container.html(`
-    //         <div class="alert alert-warning" role="alert">
-    //             <i class="fas fa-exclamation-triangle"></i>
-    //             <strong>Note:</strong> The grade input feature is currently disabled because there is no active enrollment period.
-    //             Please contact the administrator if you need to input grades.
-    //         </div>
-    //     `);
-    // }
-
     // Group subjects by year level and semester
     const groupedSubjects = {};
     subjects.forEach(subject => {
@@ -6205,16 +6194,6 @@ function renderMainGradeSubjects(response) {
     });
 
     let allTablesHTML = '';
-
-    // Show enrollment period status message at the top
-    // if (!isEnrollmentPeriodActive) {
-    //     allTablesHTML += `
-    //         <div class="alert alert-info" style="margin-bottom: 20px;">
-    //             <i class="fas fa-info-circle"></i>
-    //             <strong>Enrollment Period Status:</strong> Grade input is currently disabled. Buttons will be enabled when an enrollment period is active.
-    //         </div>
-    //     `;
-    // }
 
     allTablesHTML += `
             <div class="subject-group-header" style="text-align: center;"><br><br>
@@ -6251,6 +6230,9 @@ function renderMainGradeSubjects(response) {
     groupKeys.forEach(groupLabel => {
         const group = groupedSubjects[groupLabel];
         
+        // Calculate total units for this group
+        let totalUnits = 0;
+        
         // Create header for this group
         allTablesHTML += `
             <br>
@@ -6277,6 +6259,9 @@ function renderMainGradeSubjects(response) {
         `;
 
         group.subjects.forEach(subject => {
+            // Add to total units
+            const units = parseFloat(subject.units) || 0;
+            totalUnits += units;
 
             const failedGrades = ['4.0', '5.0', 'INC', 'DRP'];
             const gradeStr = subject.grade ? subject.grade.toString() : '';
@@ -6315,11 +6300,19 @@ function renderMainGradeSubjects(response) {
             `;
         });
 
+        // Add total units row
         tableHTML += `
-                    </tbody>
-                </table>
-            </div>
-            <div class="group-spacer"></div>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" style="text-align: right; font-weight: bold;">Total Units:</td>
+                        <td style="font-weight: bold;">${totalUnits}</td>
+                        <td colspan="3"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="group-spacer"></div>
         `;
 
         allTablesHTML += tableHTML;

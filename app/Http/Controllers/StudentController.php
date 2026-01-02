@@ -5703,6 +5703,154 @@ class StudentController extends Controller
     //     return response()->json($subjects->toArray());
     // }
 
+    // Downloadable Prospectus of Student in the Input Grades Section
+    public function downloadProspectus()
+    {
+        if (!Auth::guard('student')->check()) {
+            abort(401);
+        }
+
+        $user = Auth::guard('student')->user();
+        $student = $user->user_information->student;
+        $userInfo = $user->user_information;
+
+        // Get student address
+        $address = DB::table('address')
+            ->where('user_id', $user->id)
+            ->first();
+
+        // Get enrolled subjects with prerequisites
+        $subjects = DB::table('enrolled_sub as es')
+            ->select(
+                'es.*',
+                DB::raw('(
+                    SELECT GROUP_CONCAT(DISTINCT s.code ORDER BY s.code SEPARATOR ", ")
+                    FROM subjectprerequisites sp
+                    LEFT JOIN subjects s ON sp.prerequisite_id = s.id
+                    WHERE sp.subject_id = es.subject_id
+                ) as prerequisites')
+            )
+            ->where('es.student_id', $student->id)
+            ->orderBy('es.year_level')
+            ->orderBy('es.semester')
+            ->orderBy('es.subject_code')
+            ->get();
+
+        // Format prerequisites
+        $subjects->transform(function ($subject) {
+            $subject->prerequisites = $subject->prerequisites ? $subject->prerequisites : 'None';
+            return $subject;
+        });
+
+        // Group subjects by year level and semester
+        $groupedSubjects = $this->groupSubjectsForPDF($subjects);
+
+        // Prepare data for PDF
+        $data = [
+            'student' => [
+                'full_name' => $userInfo->firstname . ' ' . $userInfo->lastname,
+                'address' => $address ? 
+                    ($address->street_no . ', ' . $address->brgy . ', ' . $address->municipality . ', ' . $address->province . ', ' . $address->region . ' ' . $address->zipcode) : '',
+                'email' => $user->email2,
+                'phone' => $userInfo->phone_number ?? 'N/A',
+                'student_id' => $student->id_no,
+                'year_level' => $student->year_level,
+                'curriculum' => $student->curriculum,
+                'status' => $student->status,
+            ],
+            'groupedSubjects' => $groupedSubjects,
+            'total_units' => $this->calculateTotalUnits($subjects),
+            'generated_date' => now()->format('F d, Y'),
+        ];
+
+        $pdf = PDF::loadView('student.prospectus_pdf', $data);
+        
+        // Generate filename
+        $filename = 'Prospectus_' . str_replace(' ', '_', $userInfo->lastname) . '_' . $student->id_no . '_' . now()->format('Ymd') . '.pdf';
+        
+        return $pdf->download($filename);
+    }
+
+    private function groupSubjectsForPDF($subjects)
+    {
+        $groupedSubjects = [];
+        
+        foreach ($subjects as $subject) {
+            $yearLevel = $subject->year_level ?? '';
+            $semester = $subject->semester ?? '';
+            
+            // Create a special label for 3rd Year Summer
+            $groupLabel = $yearLevel . ' ' . $semester;
+            if ($yearLevel === '3rd Year' && $semester === 'Summer') {
+                $groupLabel = 'Summer or Third Term';
+            }
+            
+            if (!isset($groupedSubjects[$groupLabel])) {
+                $groupedSubjects[$groupLabel] = [
+                    'yearLevel' => $yearLevel,
+                    'semester' => $semester,
+                    'subjects' => [],
+                    'totalUnits' => 0
+                ];
+            }
+            
+            // Add subject to group
+            $groupedSubjects[$groupLabel]['subjects'][] = $subject;
+            
+            // Calculate total units for this group
+            $units = floatval($subject->units) ?? 0;
+            $groupedSubjects[$groupLabel]['totalUnits'] += $units;
+        }
+        
+        // Sort groups
+        uksort($groupedSubjects, function($a, $b) {
+            $yearOrder = ['1st Year' => 1, '2nd Year' => 2, '3rd Year' => 3, '4th Year' => 4, '5th Year' => 5];
+            $semOrder = ['1st Sem' => 1, '2nd Sem' => 2, 'Summer' => 3];
+            
+            $getYear = function($label) use ($yearOrder) {
+                if ($label === 'Summer or Third Term') return '3rd Year';
+                foreach (array_keys($yearOrder) as $year) {
+                    if (strpos($label, $year) !== false) {
+                        return $year;
+                    }
+                }
+                return '';
+            };
+            
+            $getSemester = function($label) use ($semOrder) {
+                if ($label === 'Summer or Third Term') return 'Summer';
+                foreach (array_keys($semOrder) as $sem) {
+                    if (strpos($label, $sem) !== false) {
+                        return $sem;
+                    }
+                }
+                return '';
+            };
+            
+            $yearA = $getYear($a);
+            $yearB = $getYear($b);
+            $semA = $getSemester($a);
+            $semB = $getSemester($b);
+            
+            if ($yearOrder[$yearA] !== $yearOrder[$yearB]) {
+                return $yearOrder[$yearA] - $yearOrder[$yearB];
+            }
+            return ($semOrder[$semA] ?? 0) - ($semOrder[$semB] ?? 0);
+        });
+        
+        return $groupedSubjects;
+    }
+
+    private function calculateTotalUnits($subjects)
+    {
+        $total = 0;
+        foreach ($subjects as $subject) {
+            $total += floatval($subject->units) ?? 0;
+        }
+        return $total;
+    }
+    // END
+
     public function getEnrolledSubjectsForGrades(Request $request)
     {
         if (!Auth::guard('student')->check()) {
