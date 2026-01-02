@@ -4901,6 +4901,7 @@ class StudentController extends Controller
 
     public function uploadAvatar(Request $request)
     {
+        
         try {
             // Check if user is authenticated
             $user = Auth::guard('student')->user();
