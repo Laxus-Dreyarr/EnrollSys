@@ -229,14 +229,32 @@ function createRequestItem(request) {
     item.dataset.requestId = request.request_id;
     item.dataset.studentId = request.student_id;
     
-    const avatarUrl = request.profile;
     
     const studentType = request.is_regular === 1 ? 'Irregular' : 'Regular';
     const subjectsCount = request.enrolled_subjects_count || 0;
+
+
+    // Helper function to determine avatar HTML
+    function getAvatarHtml(request) {
+        if (request.profile && request.profile !== 'default.png') {
+            return `<img src="/profile2-image/${request.id}" alt="Student Avatar" class="request-avatar" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">`;
+        } else {
+            const firstName = request.firstname || '';
+            const lastName = request.lastname || '';
+            const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName + ' ' + lastName)}&background=none&color=fff`;
+            
+            return `
+                <div class="avatar-container">
+                    <img src="${avatarUrl}" alt="User Avatar" class="user-avatar">
+                    <div class="status-indicator"></div>
+                </div>
+            `;
+        }
+    }
     
     item.innerHTML = `
         <div class="request-item-header">
-            <img src="${avatarUrl}" alt="Student Avatar" class="request-avatar">
+            ${getAvatarHtml(request)}
             <div class="request-student-info">
                 <h4 class="student-name">${request.firstname} ${request.middlename || ''} ${request.lastname}</h4>
                 <p class="student-id">ID: ${request.id_no}</p>
@@ -483,10 +501,28 @@ function loadRequestDetails(request) {
     if (!request.fhe_document && !request.payment_receipt) {
         documentsHTML = '<div class="no-documents">No documents submitted</div>';
     }
+
+    // Helper function to determine avatar HTML
+    function getAvatarHtml2(request) {
+        if (request.profile && request.profile !== 'default.png') {
+            return `<img src="/profile2-image/${request.id}" alt="Student Avatar" class="request-avatar" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">`;
+        } else {
+            const firstName = request.firstname || '';
+            const lastName = request.lastname || '';
+            const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName + ' ' + lastName)}&background=none&color=fff`;
+            
+            return `
+                <div class="avatar-container">
+                    <img src="${avatarUrl}" alt="User Avatar" class="user-avatar">
+                    <div class="status-indicator"></div>
+                </div>
+            `;
+        }
+    }
     
     requestDetails.innerHTML = `
         <div class="request-details-header">
-            <img src="${avatarUrl}" alt="Student Avatar" class="details-avatar">
+            ${getAvatarHtml2(request)}
             <div class="details-student-info">
                 <h3>${request.firstname} ${request.middlename || ''} ${request.lastname}</h3>
                 <p class="student-id">ID: ${request.id_no}</p>
