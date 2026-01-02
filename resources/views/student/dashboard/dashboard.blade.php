@@ -83,7 +83,7 @@ if (isset($averageGrade) && $averageGrade > 0) {
 
             
             <div class="sidebar-menu">
-                <a class="menu-item active" data-section="dashboard">
+                <a class="menu-item active" data-section="dashboard" onclick="refresh()">
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>

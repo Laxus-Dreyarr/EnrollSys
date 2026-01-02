@@ -2535,7 +2535,16 @@ class StudentController extends Controller
                             ->where('is_active', 1);
                         
                         // Build the query based on year level and semester
-                        if ($yearLevel === '2nd Year') {
+                        if ($yearLevel === '1st Year') {
+                            if ($currentActiveSemester === '2nd Sem') {
+                                // 1st Year 2nd Sem: Check complete passing grades from 1st Year 1st sem
+                                $requiredSubjectsQuery = $requiredSubjectsQuery->where(function($query) {
+                                    $query->where('year_level', '1st Year')
+                                        ->where('semester', '1st Sem');
+                                });
+                            }
+                            // For 1st Year 1st Sem, no prerequisite checking needed (new students)
+                        } elseif ($yearLevel === '2nd Year') {
                             if ($currentActiveSemester === '1st Sem') {
                             // 2nd Year 1st Sem: Check complete passing grades from 1st Year 1st sem and 2nd sem
                             $requiredSubjectsQuery = $requiredSubjectsQuery->where(function($query) {

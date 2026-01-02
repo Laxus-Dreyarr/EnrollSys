@@ -2496,7 +2496,6 @@ function initializeEnhancedEnrollmentModal() {
                     <div class="enhanced-confirmation-subject">
                         <span class="enhanced-confirmation-subject-code">${subject.code}</span>
                         <span class="enhanced-confirmation-subject-name">${subject.name}</span>
-                        <span class="enhanced-confirmation-subject-section">Section ${data.section}</span>
                     </div>
                 `;
             }
@@ -6604,6 +6603,10 @@ function showError(element, message) {
 //         setTimeout(() => notification.remove(), 300);
 //     }, 3000);
 // }
+
+function refresh() {
+    window.location.reload();
+}
 
 document.addEventListener('DOMContentLoaded', function() {
 
