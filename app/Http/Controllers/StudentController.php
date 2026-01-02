@@ -3241,8 +3241,23 @@ class StudentController extends Controller
             // Convert student object to array
             $student = (array) $student;
 
+            // Get student address
+            $address = DB::table('address')
+                ->join('user_info', 'address.user_id', '=', 'user_info.user_id')
+                ->where('user_info.id', $student['student_id'])
+                ->first();
+
             // Get all enrolled subjects with grades
-            $enrolledSubjects = DB::table('enrolled_sub')
+            $enrolledSubjects = DB::table('enrolled_sub as es')
+                ->select(
+                    'es.*',
+                    DB::raw('(
+                        SELECT GROUP_CONCAT(DISTINCT s.code ORDER BY s.code SEPARATOR ", ")
+                        FROM subjectprerequisites sp
+                        LEFT JOIN subjects s ON sp.prerequisite_id = s.id
+                        WHERE sp.subject_id = es.subject_id
+                    ) as prerequisites')
+                )
                 ->where('student_id', $studentId)
                 ->orderBy('year_level')
                 ->orderBy('semester')
@@ -3252,7 +3267,10 @@ class StudentController extends Controller
             // Convert enrolled subjects to array format
             $enrolledSubjectsArray = [];
             foreach ($enrolledSubjects as $subject) {
-                $enrolledSubjectsArray[] = (array) $subject;
+                $subjectArray = (array) $subject;
+                // Format prerequisites
+                $subjectArray['prerequisites'] = $subjectArray['prerequisites'] ? $subjectArray['prerequisites'] : 'None';
+                $enrolledSubjectsArray[] = $subjectArray;
             }
 
             // Get enrollment period info
@@ -3265,25 +3283,7 @@ class StudentController extends Controller
                 $enrollmentPeriod = (array) $enrollmentPeriod;
             }
 
-            // Get prerequisites for all subjects
-            $prerequisites = DB::table('subjectprerequisites')
-                ->join('subjects as s1', 'subjectprerequisites.subject_id', '=', 's1.id')
-                ->join('subjects as s2', 'subjectprerequisites.prerequisite_id', '=', 's2.id')
-                ->select('subjectprerequisites.subject_id', 's2.code as prereq_code')
-                ->get();
-
-            // Group prerequisites by subject_id
-            $prerequisitesBySubject = [];
-            foreach ($prerequisites as $prereq) {
-                $prereq = (array) $prereq;
-                $subjectId = $prereq['subject_id'];
-                if (!isset($prerequisitesBySubject[$subjectId])) {
-                    $prerequisitesBySubject[$subjectId] = [];
-                }
-                $prerequisitesBySubject[$subjectId][] = $prereq['prereq_code'];
-            }
-
-            // Organize subjects by year level and semester
+            // Organize subjects by year level and semester with proper grouping
             $organizedSubjects = [];
             $yearLevelOrder = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'];
             $semesterOrder = ['1st Sem', '2nd Sem', 'Summer'];
@@ -3295,27 +3295,24 @@ class StudentController extends Controller
                     });
                     
                     if (count($semesterSubjects) > 0) {
-                        // Re-index the array and add prerequisites
+                        // Re-index the array
                         $semesterSubjects = array_values($semesterSubjects);
                         
-                        // Get subject IDs to find prerequisites
-                        $subjectIds = array_column($semesterSubjects, 'subject_id');
-                        
-                        foreach ($semesterSubjects as &$subject) {
-                            $subjectId = $subject['subject_id'];
-                            if (isset($prerequisitesBySubject[$subjectId]) && !empty($prerequisitesBySubject[$subjectId])) {
-                                $subject['prerequisites'] = implode(', ', $prerequisitesBySubject[$subjectId]);
-                            } else {
-                                $subject['prerequisites'] = 'None';
-                            }
+                        // Calculate total units for this group
+                        $totalUnits = 0;
+                        foreach ($semesterSubjects as $subject) {
+                            $totalUnits += floatval($subject['units'] ?? 0);
                         }
                         
-                        $organizedSubjects[$year][$semester] = $semesterSubjects;
+                        $organizedSubjects[$year][$semester] = [
+                            'subjects' => $semesterSubjects,
+                            'totalUnits' => $totalUnits
+                        ];
                     }
                 }
             }
 
-            // Calculate totals
+            // Calculate overall totals
             $totalUnits = array_sum(array_column($enrolledSubjectsArray, 'units'));
             $totalSubjects = count($enrolledSubjectsArray);
             $subjectsWithGrades = 0;
@@ -3325,7 +3322,7 @@ class StudentController extends Controller
                 }
             }
 
-            // ✅ Format curriculum year to academic year range
+            // Format curriculum year to academic year range
             $curriculumYear = $student['curriculum'] ?? 'Not Set';
             $academicYearRange = 'Not Set';
             
@@ -3337,7 +3334,7 @@ class StudentController extends Controller
                 $academicYearRange = $curriculumYear;
             }
 
-            // ✅ Format the header academic year from enrollment period
+            // Format the header academic year from enrollment period
             $enrollmentAcademicYear = $enrollmentPeriod['academic_year'] ?? '2025-2026';
             
             // If enrollment period has just a single year, format it to range
@@ -3347,19 +3344,47 @@ class StudentController extends Controller
                 $enrollmentAcademicYear = $startYear . '-' . $endYear;
             }
 
-            // Prepare data for PDF
+            // Format student name with middle name if available
+            $studentName = $student['firstname'] . ' ' . 
+                        ($student['middlename'] ? $student['middlename'] . ' ' : '') . 
+                        $student['lastname'];
+
+            // Format address
+            $formattedAddress = '';
+            if ($address) {
+                $address = (array)$address;
+                $formattedAddress = implode(', ', array_filter([
+                    $address['street_no'],
+                    $address['brgy'],
+                    $address['municipality'],
+                    $address['province'],
+                    $address['region'] . ' ' . $address['zipcode']
+                ]));
+            }
+
+            // Prepare data for PDF with new design
             $data = [
-                'student' => $student,
+                'student' => [
+                    'full_name' => $studentName,
+                    'address' => $formattedAddress,
+                    'email' => $student['email2'],
+                    'student_id' => $student['id_no'],
+                    'year_level' => $student['year_level'],
+                    'curriculum' => $student['curriculum'],
+                    'status' => $student['status'],
+                    'phone' => $student['phone_number'] ?? 'N/A',
+                ],
                 'organizedSubjects' => $organizedSubjects,
-                'curriculumYear' => $academicYearRange, // ✅ Now formatted as "2018-2019"
+                'curriculumYear' => $academicYearRange,
                 'enrollmentPeriod' => $enrollmentPeriod,
-                'enrollmentAcademicYear' => $enrollmentAcademicYear, // ✅ New formatted academic year for display
+                'enrollmentAcademicYear' => $enrollmentAcademicYear,
                 'totalUnits' => $totalUnits,
                 'totalSubjects' => $totalSubjects,
                 'subjectsWithGrades' => $subjectsWithGrades,
                 'dateGenerated' => now()->format('F d, Y h:i A'),
                 'yearLevelOrder' => $yearLevelOrder,
-                'semesterOrder' => $semesterOrder
+                'semesterOrder' => $semesterOrder,
+                'generated_date' => now()->format('F d, Y')
             ];
 
             // Generate PDF
@@ -3372,7 +3397,7 @@ class StudentController extends Controller
             }
 
             // Save PDF to storage
-            $fileName = 'prospectus_' . $studentId . '_' . time() . '.pdf';
+            $fileName = 'prospectus_' . $student['id_no'] . '_' . time() . '.pdf';
             $filePath = 'documents/prospectus/' . $fileName;
             
             Storage::disk('public')->put($filePath, $pdf->output());

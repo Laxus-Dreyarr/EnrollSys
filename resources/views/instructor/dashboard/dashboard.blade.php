@@ -68,7 +68,7 @@ $profile_picture = $user->profile;
             </div>
 
             <div class="sidebar-menu">
-                <a class="menu-item active" data-section="dashboard">
+                <a class="menu-item active" data-section="dashboard" onclick="refresh()">
                     <div class="menu-icon">
                         <i class="fas fa-chart-pie"></i>
                     </div>

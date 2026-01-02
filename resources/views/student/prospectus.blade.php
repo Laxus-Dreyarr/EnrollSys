@@ -1,583 +1,436 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enrollment Prospectus - {{ $student['id_no'] ?? '' }}</title>
+    <meta charset="utf-8">
+    <title>Student Prospectus - {{ $student['full_name'] }}</title>
     <style>
-        /* Base Styles */
-        @page {
-            margin: 20mm 15mm;
-            size: A4;
-        }
-        
         body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            color: #333;
-            font-size: 10pt;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
             line-height: 1.4;
-            justify-content: center;
-            align-items: center;
-            align-content: center;
+            margin: 0;
+            padding: 20px;
         }
         
-        /* Container */
-        .container {
-            width: 100%;
-            max-width: 100%; /* A4 width */
-            margin: 0 auto;
-            /* padding: mm; */
-            box-sizing: border-box;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        /* Header */
         .header {
             text-align: center;
-            margin-bottom: 8mm;
-            border-bottom: 2pt solid #1f2937;
-            padding-bottom: 5mm;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
         }
         
-        .university-name {
-            font-size: 14pt;
-            font-weight: 700;
-            color: #1f2937;
+        .header h1 {
+            color: #2c3e50;
             margin: 0;
-            text-transform: uppercase;
+            font-size: 24px;
         }
         
-        .university-address {
-            font-size: 9pt;
-            color: #666;
-            margin: 2pt 0;
+        .header h2 {
+            color: #34495e;
+            margin: 5px 0;
+            font-size: 18px;
         }
         
-        .document-title {
-            font-size: 16pt;
-            font-weight: 700;
-            color: #222;
-            margin: 5mm 0 3mm 0;
+        .header h3 {
+            color: #7f8c8d;
+            margin: 5px 0;
+            font-size: 14px;
         }
         
-        .document-subtitle {
-            font-size: 11pt;
-            color: #555;
-            margin: 2pt 0;
+        .student-info {
+            margin-bottom: 30px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
         }
         
-        /* Student Information Grid */
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 4mm;
-            margin-bottom: 8mm;
-            padding: 5mm;
-            background: #f8f9fa;
-            border: 1pt solid #e0e0e0;
-            border-radius: 3pt;
+        .student-info table {
+            width: 100%;
+            border-collapse: collapse;
         }
         
-        .info-item {
-            margin-bottom: 2mm;
+        .student-info td {
+            padding: 5px;
+            vertical-align: top;
         }
         
         .info-label {
-            font-weight: 600;
-            color: #555;
-            display: inline-block;
-            width: 45mm;
+            font-weight: bold;
+            width: 120px;
         }
         
-        .info-value {
-            color: #222;
+        .academic-info {
+            background-color: #e9f7fe;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #b8daff;
         }
         
-        /* Table Styling */
-        .semester-section {
-            margin-top: 8mm;
-            page-break-inside: avoid;
-        }
-        
-        .semester-title {
-            font-size: 12pt;
-            font-weight: 700;
-            background: #581a1aff;
-            color: white;
-            padding: 3mm 4mm;
-            border-radius: 2pt 2pt 0 0;
-            margin: 0;
-        }
-        
-        .semester-units {
-            float: right;
-            font-weight: normal;
-            font-size: 10pt;
-            color: #d1d5db;
-        }
-        
-        table {
+        .academic-info table {
             width: 100%;
             border-collapse: collapse;
-            margin: 0;
-            table-layout: fixed;
         }
         
-        th {
-            background: #6b0a0aff;
+        .academic-info td {
+            padding: 5px;
+        }
+        
+        .subject-group {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        
+        .group-header {
+            background-color: #3498db;
             color: white;
-            font-weight: 600;
+            padding: 8px 15px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .group-title {
+            font-size: 14px;
+        }
+        
+        .group-units {
+            font-size: 12px;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        
+        .subject-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 11px;
+        }
+        
+        .subject-table th {
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            padding: 8px;
             text-align: left;
-            padding: 2.5mm;
-            border: 1pt solid #4b5563;
-            font-size: 9pt;
-            vertical-align: middle;
+            border: 1px solid #bdc3c7;
+            font-weight: bold;
         }
         
-        td {
-            padding: 2mm;
-            border: 0.5pt solid #e5e7eb;
-            font-size: 9pt;
+        .subject-table td {
+            padding: 8px;
+            border: 1px solid #bdc3c7;
             vertical-align: top;
-            word-wrap: break-word;
-            hyphens: auto;
         }
         
-        tr:nth-child(even) {
-            background-color: #f9fafb;
-        }
-        
-        /* Column Widths */
-        .col-code {
-            width: 20mm;
-        }
-        
-        .col-title {
-            width: auto;
-        }
-        
-        .col-units {
-            width: 15mm;
-            text-align: center;
-        }
-        
-        .col-grade {
-            width: 20mm;
-            text-align: center;
-        }
-        
-        .col-prereq {
-            width: 30mm;
-        }
-        
-        /* Grade Styling */
-        .grade {
+        .grade-badge {
             display: inline-block;
-            padding: 1mm 2mm;
-            border-radius: 2pt;
-            font-weight: 600;
-            min-width: 8mm;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
             text-align: center;
+            min-width: 50px;
         }
         
-        .grade-pending {
-            background: #f3f4f6;
-            color: #6b7280;
+        .grade-badge.graded {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
         
-        .grade-passed {
-            background: #d1fae5;
-            color: #065f46;
+        .grade-badge.failed {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
         
-        .grade-failed {
-            background: #fee2e2;
-            color: #991b1b;
+        .grade-badge.ungraded {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
         }
         
-        .grade-inc {
-            background: #fed7aa;
-            color: #9a3412;
+        .grade-badge.passed {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
         }
         
-        /* Summary Section */
-        .summary {
-            margin-top: 10mm;
-            padding: 5mm;
-            background: #e3f2fd;
-            border: 1pt solid #bbdefb;
-            border-radius: 3pt;
-            page-break-inside: avoid;
+        .total-section {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
         }
         
-        .summary-grid {
+        .total-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 4mm;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
         }
         
-        .summary-item {
-            text-align: center;
-            padding: 2mm;
-        }
-        
-        .summary-value {
-            font-size: 16pt;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 1mm;
-        }
-        
-        .summary-label {
-            font-size: 9pt;
-            color: #4b5563;
-        }
-        
-        /* Signature Section */
-        .signature-section {
-            margin-top: 15mm;
-            page-break-inside: avoid;
-        }
-        
-        .signature-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10mm;
-            margin-top: 8mm;
-        }
-        
-        .signature-box {
+        .total-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
             text-align: center;
         }
         
-        .signature-line {
-            width: 80mm;
-            height: 0;
-            border-top: 1pt solid #000;
-            margin: 15mm auto 2mm;
+        .total-card .number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 5px;
         }
         
-        .signature-name {
-            font-size: 10pt;
-            font-weight: 600;
-            margin-top: 1mm;
+        .total-card .label {
+            font-size: 12px;
+            color: #7f8c8d;
         }
         
-        .signature-role {
-            font-size: 9pt;
-            color: #666;
+        .overall-total {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 20px;
         }
         
-        /* Footer */
         .footer {
-            margin-top: 15mm;
-            padding-top: 3mm;
-            border-top: 0.5pt solid #e0e0e0;
-            font-size: 8pt;
-            color: #666;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 10px;
+            color: #7f8c8d;
             text-align: center;
         }
         
-        .page-number {
-            position: running(footer);
+        .logo {
             text-align: center;
-            font-size: 8pt;
-            color: #666;
+            margin-bottom: 10px;
         }
         
-        /* Page Break Control */
-        .page-break {
-            page-break-before: always;
+        .logo-img {
+            max-width: 100px;
+            height: auto;
         }
         
-        .keep-together {
-            page-break-inside: avoid;
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 100px;
+            color: rgba(0, 0, 0, 0.1);
+            z-index: -1;
+            font-weight: bold;
+            pointer-events: none;
         }
         
-        /* No Data */
-        .no-data {
-            text-align: center;
-            padding: 10mm;
-            background: #f9fafb;
-            border: 1pt dashed #d1d5db;
-            border-radius: 3pt;
-            margin: 5mm 0;
+        .prerequisites-cell {
+            max-width: 150px;
+            word-wrap: break-word;
         }
         
-        .no-data h3 {
-            color: #6b7280;
-            margin-bottom: 2mm;
+        @page {
+            margin: 20px;
         }
         
-        /* Print Optimizations */
         @media print {
-            body {
-                font-size: 9.5pt;
+            .no-print {
+                display: none;
             }
-            
-            .container {
-                padding: 0;
-            }
-            
-            .page-break {
-                page-break-before: always;
-            }
-            
-            table {
-                page-break-inside: auto;
-            }
-            
-            tr {
-                page-break-inside: avoid;
-                page-break-after: auto;
-            }
-            
-            /* Force full width for print */
-            table, th, td {
-                border-color: #000 !important;
-            }
-            
-            /* Remove background colors for better printing */
-            .grade {
-                border: 0.5pt solid #ccc !important;
-            }
-        }
-        
-        /* Utility Classes */
-        .text-center {
-            text-align: center;
-        }
-        
-        .text-right {
-            text-align: right;
-        }
-        
-        .bold {
-            font-weight: 700;
-        }
-        
-        .italic {
-            font-style: italic;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1 class="university-name">EASTERN VISAYAS STATE UNIVERSITY</h1>
-            <p class="university-address">Republic of the Philippines</p>
-            <p class="university-address">Office of the University Registrar</p>
-            
-            <h2 class="document-title">ENROLLMENT PROSPECTUS</h2>
-            <p class="document-subtitle">Bachelor of Science in Information Technology</p>
-            <p class="document-subtitle">Curriculum: {{ $curriculumYear }}</p>
+    <!-- Watermark -->
+    <div class="watermark">EVSU</div>
+    
+    <!-- Logo Section -->
+    <div class="logo">
+        <!-- You can add your university logo here -->
+        <div style="font-size: 16px; font-weight: bold; color: #2c3e50;">
+            EASTERN VISAYAS STATE UNIVERSITY
         </div>
-
-        <!-- Student Information -->
-        <div class="info-grid keep-together">
-            <div class="info-item">
-                <span class="info-label">Student Name:</span>
-                <span class="info-value">{{ $student['firstname'] ?? '' }} {{ $student['middlename'] ?? '' }} {{ $student['lastname'] ?? '' }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Student ID:</span>
-                <span class="info-value">{{ $student['id_no'] ?? '' }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Year Level:</span>
-                <span class="info-value">{{ $student['year_level'] ?? '' }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Enrollment Status:</span>
-                <span class="info-value">{{ $student['status'] ?? '' }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Academic Year:</span>
-                <span class="info-value">{{ $enrollmentAcademicYear ?? '2025-2026' }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Semester:</span>
-                <span class="info-value">{{ $enrollmentPeriod['semester'] ?? '1st Semester' }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Date Generated:</span>
-                <span class="info-value">{{ $dateGenerated }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Curriculum:</span>
-                <span class="info-value">{{ $curriculumYear }}</span>
-            </div>
-        </div>
-
-        <!-- Academic Record -->
-        <h3 class="document-subtitle" style="margin-bottom: 5mm; font-weight: 600;">ACADEMIC RECORD</h3>
-
-        @php
-            $pageCount = 0;
-            $subjectCount = 0;
-            $maxSubjectsPerPage = 20; // Adjust based on your content
-        @endphp
-
-        @foreach($yearLevelOrder as $yearLevel)
-            @if(isset($organizedSubjects[$yearLevel]))
-                @foreach($semesterOrder as $semester)
-                    @if(isset($organizedSubjects[$yearLevel][$semester]) && count($organizedSubjects[$yearLevel][$semester]) > 0)
-                        @php
-                            $semesterSubjects = $organizedSubjects[$yearLevel][$semester];
-                            $semesterUnits = array_sum(array_column($semesterSubjects, 'units'));
-                            
-                            // Check if we need a page break
-                            if($subjectCount > $maxSubjectsPerPage) {
-                                echo '<div class="page-break"></div>';
-                                $subjectCount = 0;
-                            }
-                            
-                            $subjectCount += count($semesterSubjects);
-                        @endphp
-                        
-                        <div class="semester-section">
-                            <div class="semester-title">
-                                {{ $yearLevel }} – {{ $semester }}
-                                <span class="semester-units">{{ $semesterUnits }} units</span>
-                            </div>
-                            
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th class="col-code">Course Code</th>
-                                        <th class="col-title">Descriptive Title</th>
-                                        <th class="col-units">Units</th>
-                                        <th class="col-grade">Grade</th>
-                                        <th class="col-prereq">Prerequisite(s)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($semesterSubjects as $subject)
-                                        @php
-                                            $gradeDisplay = $subject['grade'] ?? '';
-                                            $gradeClass = 'grade-pending';
-                                            
-                                            if ($subject['grade']) {
-                                                $gradeNum = floatval($subject['grade']);
-                                                if ($subject['grade'] === 'INC' || $subject['grade'] === '4.00') {
-                                                    $gradeClass = 'grade-inc';
-                                                } elseif ($subject['grade'] === '5.00' || $gradeNum > 3.00) {
-                                                    $gradeClass = 'grade-failed';
-                                                } elseif ($gradeNum <= 3.00 && $gradeNum >= 1.00) {
-                                                    $gradeClass = 'grade-passed';
-                                                }
-                                            }
-                                        @endphp
-                                        
-                                        <tr>
-                                            <td class="col-code">{{ $subject['subject_code'] ?? '' }}</td>
-                                            <td class="col-title">{{ $subject['subject_name'] ?? '' }}</td>
-                                            <td class="col-units text-center">{{ $subject['units'] ?? '' }}</td>
-                                            <td class="col-grade">
-                                                <span class="grade {{ $gradeClass }}">
-                                                    {{ $gradeDisplay ?: '-' }}
-                                                </span>
-                                            </td>
-                                            <td class="col-prereq">{{ $subject['prerequisites'] ?? 'None' }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
-                @endforeach
-            @endif
-        @endforeach
-
-        @if($totalSubjects == 0)
-            <div class="no-data">
-                <h3>No Enrolled Subjects</h3>
-                <p>This student has not enrolled in any subjects for the current academic year.</p>
-            </div>
-        @endif
-
-        <!-- Summary -->
-        <div class="summary keep-together">
-            <div style="margin-bottom: 3mm; font-weight: 600; color: #1f2937;">ENROLLMENT SUMMARY</div>
-            <div class="summary-grid">
-                <div class="summary-item">
-                    <div class="summary-value">{{ $totalUnits }}</div>
-                    <div class="summary-label">Total Units</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-value">{{ $totalSubjects }}</div>
-                    <div class="summary-label">Total Subjects</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-value">{{ $subjectsWithGrades }}</div>
-                    <div class="summary-label">Grades Posted</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-value">
-                        @php
-                            $semesterCount = 0;
-                            foreach($organizedSubjects as $yearSubjects) {
-                                $semesterCount += count($yearSubjects);
-                            }
-                            echo $semesterCount;
-                        @endphp
-                    </div>
-                    <div class="summary-label">Active Semesters</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Signatures -->
-        <div class="signature-section keep-together">
-            <div class="signature-grid">
-                <div class="signature-box">
-                    <div class="signature-line"></div>
-                    <div class="signature-name">UNIVERSITY REGISTRAR</div>
-                    <div class="signature-role">Authorized Signature</div>
-                    <div style="margin-top: 3mm; font-size: 9pt;">
-                        Date: __________________
-                    </div>
-                </div>
-                <div class="signature-box">
-                    <div class="signature-line"></div>
-                    <div class="signature-name">STUDENT</div>
-                    <div class="signature-role">Signature Over Printed Name</div>
-                    <div style="margin-top: 3mm; font-size: 9pt;">
-                        Date: __________________
-                    </div>
-                </div>
-            </div>
-            
-            <div style="margin-top: 10mm; padding: 3mm; background: #f3f4f6; border-radius: 2pt; font-size: 9pt;">
-                <strong>Remarks:</strong> This prospectus is generated by the EVSU Enrollment System and serves as an official record of enrollment. All grades are subject to verification by the Registrar's Office.
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="footer">
-            <div class="page-number">Page <span class="pagenum"></span></div>
-            <p>Generated by EVSU Enrollment System</p>
-            <p>This document is valid only with the official stamp of the Registrar's Office</p>
-            <p>Date Generated: {{ $dateGenerated }}</p>
+        <div style="font-size: 12px; color: #7f8c8d;">
+            EnrollSys - Official Prospectus
         </div>
     </div>
-
-    <script>
-        // Add page numbers for PDF
-        document.addEventListener('DOMContentLoaded', function() {
-            var pages = document.getElementsByClassName('container');
-            for (var i = 0; i < pages.length; i++) {
-                var pageNum = i + 1;
-                var pagenumElements = pages[i].getElementsByClassName('pagenum');
-                for (var j = 0; j < pagenumElements.length; j++) {
-                    pagenumElements[j].textContent = pageNum;
-                }
-            }
-        });
-    </script>
+    
+    <div class="header">
+        <h1>ACADEMIC PROSPECTUS</h1>
+        <h2>Student Academic Record</h2>
+        <h3>Academic Year: {{ $enrollmentAcademicYear }}</h3>
+    </div>
+    
+    <!-- Student Information -->
+    <div class="student-info">
+        <table>
+            <tr>
+                <td class="info-label">Student Name:</td>
+                <td style="font-weight: bold;">{{ $student['full_name'] }}</td>
+                <td class="info-label">Student ID:</td>
+                <td>{{ $student['student_id'] }}</td>
+            </tr>
+            <tr>
+                <td class="info-label">Address:</td>
+                <td colspan="3">{{ $student['address'] }}</td>
+            </tr>
+            <tr>
+                <td class="info-label">Email:</td>
+                <td>{{ $student['email'] }}</td>
+                <td class="info-label">Phone:</td>
+                <td>{{ $student['phone'] }}</td>
+            </tr>
+            <tr>
+                <td class="info-label">Year Level:</td>
+                <td>{{ $student['year_level'] }}</td>
+                <td class="info-label">Curriculum:</td>
+                <td>{{ $student['curriculum'] }}</td>
+            </tr>
+            <tr>
+                <td class="info-label">Enrollment Status:</td>
+                <td>{{ $student['status'] }}</td>
+                <td class="info-label">Generated Date:</td>
+                <td>{{ $generated_date }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <!-- Academic Information -->
+    <div class="academic-info">
+        <table>
+            <tr>
+                <td style="font-weight: bold; width: 150px;">Curriculum Year:</td>
+                <td>{{ $curriculumYear }}</td>
+                <td style="font-weight: bold; width: 150px;">Academic Year:</td>
+                <td>{{ $enrollmentAcademicYear }}</td>
+            </tr>
+            @if($enrollmentPeriod && isset($enrollmentPeriod['semester']))
+            <tr>
+                <td style="font-weight: bold;">Semester:</td>
+                <td colspan="3">{{ $enrollmentPeriod['semester'] }}</td>
+            </tr>
+            @endif
+        </table>
+    </div>
+    
+    <!-- Subjects by Year Level and Semester -->
+    @foreach($yearLevelOrder as $year)
+        @if(isset($organizedSubjects[$year]))
+            @foreach($semesterOrder as $semester)
+                @if(isset($organizedSubjects[$year][$semester]))
+                    @php
+                        $groupData = $organizedSubjects[$year][$semester];
+                        $groupLabel = $year . ' ' . $semester;
+                        if ($year === '3rd Year' && $semester === 'Summer') {
+                            $groupLabel = 'Summer or Third Term';
+                        }
+                    @endphp
+                    
+                    <div class="subject-group">
+                        <div class="group-header">
+                            <div class="group-title">{{ $groupLabel }}</div>
+                            <div class="group-units">Total Units: {{ $groupData['totalUnits'] }}</div>
+                        </div>
+                        
+                        <table class="subject-table">
+                            <thead>
+                                <tr>
+                                    <th>Subject Code</th>
+                                    <th>Subject Name</th>
+                                    <th>Units</th>
+                                    <th>Prerequisites</th>
+                                    <th>Grade</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($groupData['subjects'] as $subject)
+                                    @php
+                                        $failedGrades = ['4.0', '5.0', 'INC', 'DRP'];
+                                        $gradeStr = $subject['grade'] ? (string)$subject['grade'] : '';
+                                        $hasGrade = !empty($subject['grade']);
+                                        
+                                        if ($hasGrade) {
+                                            if (in_array($gradeStr, $failedGrades)) {
+                                                $gradeClass = 'failed';
+                                                $status = 'Failed';
+                                            } else {
+                                                $gradeClass = 'passed';
+                                                $status = 'Passed';
+                                            }
+                                        } else {
+                                            $gradeClass = 'ungraded';
+                                            $status = 'Pending';
+                                        }
+                                        
+                                        $gradeText = $subject['grade'] ?? 'N/A';
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $subject['subject_code'] }}</td>
+                                        <td>{{ $subject['subject_name'] }}</td>
+                                        <td style="text-align: center;">{{ $subject['units'] }}</td>
+                                        <td class="prerequisites-cell">{{ $subject['prerequisites'] }}</td>
+                                        <td style="text-align: center;">
+                                            <span class="grade-badge {{ $gradeClass }}">{{ $gradeText }}</span>
+                                        </td>
+                                        <td style="text-align: center;">{{ $status }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            @endforeach
+        @endif
+    @endforeach
+    
+    <!-- Summary Section -->
+    <div class="total-section">
+        <div class="total-grid">
+            <div class="total-card">
+                <div class="number">{{ $totalSubjects }}</div>
+                <div class="label">Total Subjects</div>
+            </div>
+            <div class="total-card">
+                <div class="number">{{ $totalUnits }}</div>
+                <div class="label">Total Units</div>
+            </div>
+            <div class="total-card">
+                <div class="number">{{ $subjectsWithGrades }}</div>
+                <div class="label">Graded Subjects</div>
+            </div>
+            <div class="total-card">
+                <div class="number">{{ $totalSubjects - $subjectsWithGrades }}</div>
+                <div class="label">Pending Grades</div>
+            </div>
+        </div>
+        
+        <div class="overall-total">
+            Cumulative Total Units: {{ $totalUnits }}
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <p>EASTERN VISAYAS STATE UNIVERSITY - Enrollment System</p>
+        <p>This is an official system-generated document. No signature required.</p>
+        <p>Generated on: {{ $dateGenerated }}</p>
+        <p style="font-size: 9px; margin-top: 10px;">
+            For any discrepancies, please contact the Administrator within 5 working days.
+        </p>
+    </div>
 </body>
 </html>

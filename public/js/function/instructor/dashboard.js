@@ -2450,6 +2450,11 @@ function deleteAllNotifications() {
         });
     }
 
+
+function refresh() {
+    window.location.reload();
+}
+
 // Instructor Dashboard JavaScript
 document.addEventListener('DOMContentLoaded', function() {
 
