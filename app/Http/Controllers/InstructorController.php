@@ -1183,20 +1183,32 @@ class InstructorController extends Controller
     public function getStudentSubjectsHistory($studentId)
     {
         try {
-            // Get all enrolled subjects for the student
+            // Get all enrolled subjects for the student with prerequisites
             $subjects = DB::table('enrolled_sub')
-                ->where('student_id', $studentId)
-                ->orderBy('year_level', 'asc')
-                ->orderBy('semester', 'asc')
+                ->leftJoin('subjectprerequisites', 'enrolled_sub.subject_id', '=', 'subjectprerequisites.subject_id')
+                ->leftJoin('subjects as prereq', 'subjectprerequisites.prerequisite_id', '=', 'prereq.id')
+                ->where('enrolled_sub.student_id', $studentId)
                 ->select(
-                    'subject_code',
-                    'subject_name',
-                    'units',
-                    'year_level',
-                    'semester',
-                    'grade',
-                    'date_enrolled'
+                    'enrolled_sub.subject_code',
+                    'enrolled_sub.subject_name',
+                    'enrolled_sub.units',
+                    'enrolled_sub.year_level',
+                    'enrolled_sub.semester',
+                    'enrolled_sub.grade',
+                    'enrolled_sub.date_enrolled',
+                    DB::raw('GROUP_CONCAT(DISTINCT prereq.code ORDER BY prereq.code SEPARATOR ", ") as prerequisites')
                 )
+                ->groupBy(
+                    'enrolled_sub.subject_code',
+                    'enrolled_sub.subject_name', 
+                    'enrolled_sub.units',
+                    'enrolled_sub.year_level',
+                    'enrolled_sub.semester',
+                    'enrolled_sub.grade',
+                    'enrolled_sub.date_enrolled'
+                )
+                ->orderBy('enrolled_sub.year_level', 'asc')
+                ->orderBy('enrolled_sub.semester', 'asc')
                 ->get();
 
             return response()->json([

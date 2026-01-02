@@ -2822,6 +2822,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Create HTML for each semester
             for (const [semester, semesterSubjects] of Object.entries(groupedSubjects)) {
+                // 
                 academicHistoryHTML += `
                     <div class="semester-section">
                         <h5 id="students_info2">${semester}</h5>
@@ -2832,6 +2833,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <th id="students_info3">Subject Code</th>
                                         <th id="students_info3">Subject Name</th>
                                         <th id="students_info3">Units</th>
+                                        <th id="students_info3">Pre-requisite</th>
                                         <th id="students_info3">Grade</th>
                                     </tr>
                                 </thead>
@@ -2841,6 +2843,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <td>${subject.subject_code}</td>
                                             <td>${subject.subject_name}</td>
                                             <td>${subject.units}</td>
+                                            <td style="font-size: 12px; color: #555;">
+                                                ${subject.prerequisites || '—'}
+                                            </td>
                                             <td>
                                                 <span id="grade-badge ${
                                                     subject.grade === 'INC' || subject.grade === 'DRP' || subject.grade === '' || subject.grade == '4.0' || subject.grade == '5.0' ? 
@@ -2866,6 +2871,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 `;
+                // 
             }
             contentDiv.innerHTML = academicHistoryHTML;
         } else {
