@@ -4901,7 +4901,6 @@ class StudentController extends Controller
 
     public function uploadAvatar(Request $request)
     {
-        
         try {
             // Check if user is authenticated
             $user = Auth::guard('student')->user();
@@ -4933,9 +4932,11 @@ class StudentController extends Controller
             if ($request->hasFile('avatar')) {
                 $file = $request->file('avatar');
                 
-                // Generate filename as id_picture with extension
+                // Generate filename with timestamp and random number like: id_picture_112_1767344467_2503
                 $extension = $file->getClientOriginalExtension();
-                $filename = "id_picture.{$extension}";
+                $timestamp = time();
+                $randomNumber = rand(1000, 9999);
+                $filename = "id_picture_{$student->id}_{$timestamp}_{$randomNumber}.{$extension}";
                 
                 // Delete old ID picture from important_documents table and requirements folder
                 $oldDocuments = DB::table('important_documents')
@@ -4959,18 +4960,16 @@ class StudentController extends Controller
                     DB::table('important_documents')->where('id', $oldDoc->id)->delete();
                 }
                 
-                // Also delete old id_picture file if it exists in requirements folder
-                $oldIdPicturePath = 'documents/requirements/id_picture.' . $extension;
-                if (Storage::disk('public')->exists($oldIdPicturePath)) {
-                    Storage::disk('public')->delete($oldIdPicturePath);
-                }
+                // Also delete any old id_picture files if they exist in requirements folder
+                // This pattern matches: id_picture_*.jpg, id_picture_*.png, etc.
+                $pattern = 'id_picture_' . $student->id . '_*';
+                $files = Storage::disk('public')->files('documents/requirements');
                 
-                // Check for other extensions too
-                $commonExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-                foreach ($commonExtensions as $ext) {
-                    $oldPath = 'documents/requirements/id_picture.' . $ext;
-                    if (Storage::disk('public')->exists($oldPath)) {
-                        Storage::disk('public')->delete($oldPath);
+                foreach ($files as $filePath) {
+                    $fileName = basename($filePath);
+                    // Check if file starts with id_picture_{student_id}_
+                    if (str_starts_with($fileName, "id_picture_{$student->id}_")) {
+                        Storage::disk('public')->delete($filePath);
                     }
                 }
                 
@@ -4990,16 +4989,15 @@ class StudentController extends Controller
                     'upload_date' => now()
                 ]);
                 
-                // Update user's profile in database - store the full path including documents/requirements/
-                $profilePath = 'documents/requirements/' . $filename;
+                // Update user's profile in database
                 DB::table('users')
                     ->where('id', $user->id)
                     ->update([
-                        'profile' => $profilePath
+                        'profile' => $filePath  // Use the same file path
                     ]);
                 
-                // Generate the URL using Storage facade
-                $profile_url = Storage::url($filePath) . '?v=' . time();
+                // Generate the URL using Storage facade with cache busting
+                $profile_url = Storage::url($filePath) . '?v=' . $timestamp;
                 
                 return response()->json([
                     'success' => true,
