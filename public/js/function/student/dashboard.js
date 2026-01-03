@@ -4520,10 +4520,40 @@ function loadAcademicFiles(yearLevel = 'all') {
     });
 }
 
-
-function loadPaymentFiles() {
-    const container = document.getElementById('payment-files-container');
-    if (!container) return;
+function loadPaymentFiles(yearLevel = null) {
+    let container;
+    
+    if (yearLevel) {
+        // For specific year tabs, we need to find or create a payment container
+        const yearTab = document.getElementById(yearLevel);
+        if (!yearTab) return;
+        
+        // Try to find existing payment container in this year tab
+        let paymentContainer = yearTab.querySelector('.year-payment-container');
+        
+        if (!paymentContainer) {
+            // Create payment section in the year tab
+            const scheduleContainer = yearTab.querySelector('.schedule-container');
+            if (!scheduleContainer) return;
+            
+            // Create heading
+            const paymentHeading = document.createElement('h4');
+            paymentHeading.className = 'mb-4 mt-5';
+            paymentHeading.textContent = 'Payment Records';
+            scheduleContainer.appendChild(paymentHeading);
+            
+            // Create container
+            paymentContainer = document.createElement('div');
+            paymentContainer.className = 'year-payment-container';
+            scheduleContainer.appendChild(paymentContainer);
+        }
+        
+        container = paymentContainer;
+    } else {
+        // For "All Files" tab
+        container = document.getElementById('payment-files-container');
+        if (!container) return;
+    }
     
     container.innerHTML = `
         <div class="loading-state">
@@ -4534,8 +4564,24 @@ function loadPaymentFiles() {
         </div>
     `;
     
+    // Build URL with year level filter if provided
+    let url = '/student/files/payments';
+    if (yearLevel) {
+        // Convert yearLevel from 'year1', 'year2', 'year3', 'year4' to '1st Year', '2nd Year', '3rd Year', '4th Year'
+        const yearMap = {
+            'year1': '1st Year',
+            'year2': '2nd Year', 
+            'year3': '3rd Year',
+            'year4': '4th Year'
+        };
+        const yearLabel = yearMap[yearLevel];
+        if (yearLabel) {
+            url += `?year_level=${encodeURIComponent(yearLabel)}`;
+        }
+    }
+    
     // Fetch payment files from server
-    fetch('/student/files/payments', {
+    fetch(url, {
         method: 'GET',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -4554,7 +4600,7 @@ function loadPaymentFiles() {
                         <i class="fas fa-receipt"></i>
                     </div>
                     <h4>No payment records found</h4>
-                    <p>You don't have any payment records yet.</p>
+                    <p>You don't have any payment records ${yearLevel ? 'for this year' : 'yet'}.</p>
                 </div>
             `;
         }
@@ -4578,7 +4624,8 @@ function loadFilesForYear(yearId) {
         loadAllFiles();
     } else {
         loadAcademicFiles(yearId);
-        // Note: Required documents are usually shown for all years
+        // Load payment files for this specific year
+        loadPaymentFiles(yearId);
     }
 }
 
@@ -4604,6 +4651,7 @@ function filterFilesByYear(yearLevel) {
         if (container) {
             container.style.display = 'grid';
             loadAcademicFiles(yearId);
+            loadPaymentFiles(yearId);
         }
     }
 }
@@ -4630,10 +4678,7 @@ function displayFiles(files, container, type = 'academic') {
                 <thead class="table-light">
                     <tr>
                         <th style="width: 50px;"><i class="fas fa-file"></i></th>
-                        <th>File Type</th>
-                        <th>Year Level</th>
                         <th>Title</th>
-                        <th>Upload Date</th>
                         <th style="width: 150px;" class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -4654,21 +4699,21 @@ function displayFiles(files, container, type = 'academic') {
 function createFileTableRow(file, type = 'academic') {
     const tr = document.createElement('tr');
     
-    // Determine file type icon and color
+    // Determine file type icon and color - CHANGED TO USE ORANGE COLOR
     let fileIcon = 'file';
-    let fileIconClass = 'text-secondary';
+    let fileIconClass = 'file-icon-color'; // Changed from 'text-secondary'
     
     if (file.file_path) {
         const ext = file.file_path.split('.').pop().toLowerCase();
         if (ext === 'pdf') {
             fileIcon = 'file-pdf';
-            fileIconClass = 'text-danger';
+            fileIconClass = 'file-icon-color'; // Changed from 'text-danger'
         } else if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
             fileIcon = 'file-image';
-            fileIconClass = 'text-info';
+            fileIconClass = 'file-icon-color'; // Changed from 'text-info'
         } else if (['doc', 'docx'].includes(ext)) {
             fileIcon = 'file-word';
-            fileIconClass = 'text-primary';
+            fileIconClass = 'file-icon-color'; // Changed from 'text-primary'
         }
     }
     
@@ -4684,17 +4729,8 @@ function createFileTableRow(file, type = 'academic') {
             <i class="fas fa-${fileIcon} ${fileIconClass}" style="font-size: 1.5rem;"></i>
         </td>
         <td>
-            <span class="badge bg-primary">${file.type || 'Academic'}</span>
-        </td>
-        <td>
-            <span class="badge bg-secondary">${file.year_level || 'N/A'}</span>
-        </td>
-        <td>
             <strong>${file.title || file.type || 'Academic File'}</strong>
-            ${file.description ? `<br><small class="text-muted">${file.description}</small>` : ''}
-        </td>
-        <td>
-            <i class="far fa-calendar me-1"></i>${formattedDate}
+            ${file.description ? `<br><small class="text-muted">${formattedDate}</small>` : ''}
         </td>
         <td class="text-center">
             <div class="btn-group btn-group-sm" role="group">
@@ -4734,11 +4770,7 @@ function displayPaymentFiles(payments, container) {
                 <thead class="table-light">
                     <tr>
                         <th style="width: 50px;"><i class="fas fa-receipt"></i></th>
-                        <th>Payment Type</th>
-                        <th>Year Level</th>
                         <th>Amount</th>
-                        <th>Status</th>
-                        <th>Date</th>
                         <th style="width: 150px;" class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -4766,29 +4798,6 @@ function createPaymentTableRow(payment) {
     let fileIcon = 'money-bill-wave';
     let iconClass = 'text-success';
     
-    // Map status to appropriate classes
-    if (payment.status === 'Completed' || payment.status === 'Paid' || payment.status === 'Approved') {
-        statusClass = 'success';
-        statusBadgeClass = 'bg-success';
-        fileIcon = 'check-circle';
-        iconClass = 'text-success';
-    } else if (payment.status === 'Failed' || payment.status === 'Rejected') {
-        statusClass = 'danger';
-        statusBadgeClass = 'bg-danger';
-        fileIcon = 'times-circle';
-        iconClass = 'text-danger';
-    } else if (payment.status === 'Pending') {
-        statusClass = 'warning';
-        statusBadgeClass = 'bg-warning';
-        fileIcon = 'clock';
-        iconClass = 'text-warning';
-    } else if (payment.red_flag) {
-        statusClass = 'danger';
-        statusBadgeClass = 'bg-danger';
-        fileIcon = 'exclamation-triangle';
-        iconClass = 'text-danger';
-    }
-    
     // Format the payment date
     const paymentDate = new Date(payment.payment_date || payment.uploaded_date || new Date());
     const formattedDate = paymentDate.toLocaleDateString('en-US', {
@@ -4808,24 +4817,11 @@ function createPaymentTableRow(payment) {
     
     tr.innerHTML = `
         <td class="text-center">
-            <i class="fas fa-${fileIcon} ${iconClass}" style="font-size: 1.5rem;"></i>
-        </td>
-        <td>
-            <strong>${payment.type || 'Payment'}</strong>
-            ${payment.id ? `<br><small class="text-muted">ID: #${payment.id}</small>` : ''}
-        </td>
-        <td>
-            <span class="badge bg-secondary">${payment.year_level || 'N/A'}</span>
+            <i class="fas fa-${fileIcon} file-icon-color" style="font-size: 1.5rem;"></i>
         </td>
         <td>
             <strong class="text-success">${formattedAmount}</strong>
-        </td>
-        <td>
-            <span class="badge ${statusBadgeClass}">${statusText}</span>
-            ${redFlagWarning}
-        </td>
-        <td>
-            <i class="far fa-calendar me-1"></i>${formattedDate}
+            ${payment.id ? `<br><small class="text-muted">${formattedDate}</small>` : ''}
         </td>
         <td class="text-center">
             <div class="btn-group btn-group-sm" role="group">
@@ -5176,11 +5172,7 @@ function displayRequiredDocuments(documents, container) {
                 <thead class="table-light">
                     <tr>
                         <th style="width: 50px;"><i class="fas fa-file"></i></th>
-                        <th>Document Type</th>
-                        <th>Year Level</th>
                         <th>Document Name</th>
-                        <th>Status</th>
-                        <th>Upload Date</th>
                         <th style="width: 150px;" class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -5210,27 +5202,27 @@ function createRequiredDocumentTableRow(doc) {
         case 'FORM138A':
         case 'FORM138B':
             fileIcon = 'file-contract';
-            iconClass = 'text-primary';
+            iconClass = 'file-icon-color';
             badgeColor = 'bg-primary';
             break;
         case 'GOOD_MORAL':
             fileIcon = 'file-contract';
-            iconClass = 'text-success';
+            iconClass = 'file-icon-color';
             badgeColor = 'bg-success';
             break;
         case 'PSA_NSO':
             fileIcon = 'id-card';
-            iconClass = 'text-info';
+            iconClass = 'file-icon-color';
             badgeColor = 'bg-info';
             break;
         case 'ID_PICTURE':
             fileIcon = 'file-image';
-            iconClass = 'text-warning';
+            iconClass = 'file-icon-color';
             badgeColor = 'bg-warning';
             break;
         case 'BIRTH_CERTIFICATE':
             fileIcon = 'file-medical';
-            iconClass = 'text-danger';
+            iconClass = 'file-icon-color';
             badgeColor = 'bg-danger';
             break;
     }
@@ -5264,23 +5256,11 @@ function createRequiredDocumentTableRow(doc) {
     
     tr.innerHTML = `
         <td class="text-center">
-            <i class="fas fa-${fileIcon} ${iconClass}" style="font-size: 1.5rem;"></i>
-        </td>
-        <td>
-            <span class="badge ${badgeColor}">${doc.type}</span>
-        </td>
-        <td>
-            <span class="badge bg-secondary">${doc.year_level || 'N/A'}</span>
+            <i class="fas fa-${fileIcon} file-icon-color" style="font-size: 1.5rem;"></i>
         </td>
         <td>
             <strong>${docTypeName}</strong>
-            ${doc.description ? `<br><small class="text-muted">${doc.description}</small>` : ''}
-        </td>
-        <td>
-            <span class="badge ${statusBadge}">${statusText}</span>
-        </td>
-        <td>
-            <i class="far fa-calendar me-1"></i>${formattedDate}
+            ${doc.description ? `<br><small class="text-muted">${formattedDate}</small>` : ''}
         </td>
         <td class="text-center">
             <div class="btn-group btn-group-sm" role="group">

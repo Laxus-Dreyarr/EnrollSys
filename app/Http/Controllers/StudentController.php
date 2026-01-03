@@ -4914,7 +4914,7 @@ class StudentController extends Controller
         ]);
     }
 
-    public function getPaymentFiles()
+    public function getPaymentFiles(Request $request)
     {
         if (!Auth::guard('student')->check()) {
             return response()->json(['success' => false, 'message' => 'Unauthorized']);
@@ -4923,25 +4923,30 @@ class StudentController extends Controller
         $user = Auth::guard('student')->user();
         $student = $user->user_information->student;
 
-        // Get payment files from organizationfees and payments tables
-        $organizationPayments = DB::table('organizationfees')
-            ->where('student_id', $student->id)
+        // Get year level filter from request
+        $yearLevel = $request->query('year_level');
+
+        // Get organization fees
+        $organizationPaymentsQuery = DB::table('organizationfees')
+            ->where('student_id', $student->id);
+
+        // Apply year level filter if provided
+        if ($yearLevel) {
+            $organizationPaymentsQuery->where('year_level', $yearLevel);
+        }
+
+        $organizationPayments = $organizationPaymentsQuery
             ->orderBy('uploaded_date', 'desc')
             ->get();
 
-        $enrollmentPayments = DB::table('payments')
-            ->where('student_id', $student->id)
-            ->orderBy('upload_date', 'desc')
-            ->get();
-
-        // Combine and format payments
+        // Format organization fees
         $payments = collect();
         
-        // Add organization fees
         foreach ($organizationPayments as $payment) {
             $payments->push([
                 'id' => $payment->id,
                 'type' => 'Organization Fee',
+                'year_level' => $payment->year_level,
                 'amount' => $payment->amount,
                 'status' => $payment->status,
                 'receipt_url' => $payment->receipt_url ? asset($payment->receipt_url) : null,
@@ -4949,19 +4954,6 @@ class StudentController extends Controller
                 'red_flag' => $payment->red_flag_reason
             ]);
         }
-
-        // Add enrollment payments
-        // foreach ($enrollmentPayments as $payment) {
-        //     $payments->push([
-        //         'id' => $payment->id,
-        //         'type' => 'Enrollment Payment',
-        //         'amount' => 0, // You might need to adjust this
-        //         'status' => $payment->status,
-        //         'receipt_url' => $payment->file_path ? asset($payment->file_path) : null,
-        //         'payment_date' => $payment->upload_date,
-        //         'red_flag' => null
-        //     ]);
-        // }
 
         return response()->json([
             'success' => true,
@@ -5056,7 +5048,7 @@ class StudentController extends Controller
                     'FORM138B' => 'Form 138B (Photocopy)',
                     'GOOD_MORAL' => 'Good Moral Certificate',
                     'PSA_NSO' => 'PSA/NSO Birth Certificate',
-                    'ID_PICTURE' => 'Profile Picture',
+                    'ID_PICTURE' => 'Picture',
                     'BIRTH_CERTIFICATE' => 'Birth Certificate'
                 ];
 

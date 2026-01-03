@@ -321,6 +321,11 @@ body.dark-mode .user-profile {
     transform: translateY(-2px);
 } */
 
+
+.file-icon-color {
+    color: var(--primary-color) !important; /* Your orange color */
+}
+
 .search-icon {
     color: #64748b;
     margin-right: 12px;
