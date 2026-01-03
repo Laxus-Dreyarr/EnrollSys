@@ -2465,6 +2465,69 @@ class StudentController extends Controller
                 return in_array($item->grade, $failingGrades);
             })->keys()->toArray();
 
+             // =============================================
+            // NEW FEATURE: Check if 4th Year student has failed 4th Year 1st Sem subjects
+            // This prevents them from taking 4th Year 2nd Sem subjects if they haven't passed 4th Year 1st Sem
+            // =============================================
+            $hasFailed4thYear1stSem = false;
+            if ($yearLevel === '4th Year' && $currentSemester === '2nd Sem') {
+                // Get the student's curriculum
+                $curriculumYear = $student->curriculum;
+                $curriculum = DB::table('curriculum')->where('curriculum_year', $curriculumYear)->first();
+                
+                if ($curriculum) {
+                    $curriculumId = $curriculum->id;
+                    
+                    // Get all 4th Year 1st Sem subjects for this curriculum
+                    $fourthYear1stSemSubjects = DB::table('subjects')
+                        ->where('curriculum_id', $curriculumId)
+                        ->where('year_level', '4th Year')
+                        ->where('semester', '1st Sem')
+                        ->where('is_active', 1)
+                        ->pluck('id')
+                        ->toArray();
+                    
+                    if (!empty($fourthYear1stSemSubjects)) {
+                        // Get student's grades for 4th Year 1st Sem subjects
+                        $student4thYear1stSemGrades = DB::table('enrolled_sub')
+                            ->where('student_id', $student->id)
+                            ->whereIn('subject_id', $fourthYear1stSemSubjects)
+                            ->get(['subject_id', 'grade']);
+                        
+                        // Check if any 4th Year 1st Sem subject has a failing grade
+                        foreach ($student4thYear1stSemGrades as $gradeRecord) {
+                            if (in_array($gradeRecord->grade, $failingGrades)) {
+                                $hasFailed4thYear1stSem = true;
+                                Log::info('Student has failed 4th Year 1st Sem subjects', [
+                                    'student_id' => $student->id,
+                                    'failed_subject_id' => $gradeRecord->subject_id,
+                                    'grade' => $gradeRecord->grade
+                                ]);
+                                break;
+                            }
+                        }
+                        
+                        // Also check if any 4th Year 1st Sem subject hasn't been taken yet
+                        $taken4thYear1stSemSubjects = $student4thYear1stSemGrades->pluck('subject_id')->toArray();
+                        $missingSubjects = array_diff($fourthYear1stSemSubjects, $taken4thYear1stSemSubjects);
+                        
+                        if (!empty($missingSubjects)) {
+                            $hasFailed4thYear1stSem = true; // Consider missing as "not passed"
+                            Log::info('Student is missing 4th Year 1st Sem subjects', [
+                                'student_id' => $student->id,
+                                'missing_subject_count' => count($missingSubjects)
+                            ]);
+                        }
+                    }
+                }
+                
+                Log::info('4th Year 2nd Sem eligibility check', [
+                    'student_id' => $student->id,
+                    'has_failed_4th_year_1st_sem' => $hasFailed4thYear1stSem,
+                    'current_semester' => $currentSemester
+                ]);
+            }
+
             // Check if student is 3rd year and eligible for promotion to 4th year
             if ($yearLevel === '3rd Year') {
                 // Get the student's curriculum
@@ -2641,12 +2704,39 @@ class StudentController extends Controller
                             });
                         }
                     } elseif ($yearLevel === '4th Year') {
-                        // 4th Year: Check complete passing grades from 1st Year up to 3rd Year Summer
-                        $requiredSubjectsQuery = $requiredSubjectsQuery->where(function($query) {
-                            // For 1st, 2nd, and 3rd Year, check all semesters including Summer
-                            $query->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year'])
-                                ->whereIn('semester', ['1st Sem', '2nd Sem', 'Summer']);
-                        });
+                        if ($currentActiveSemester === '1st Sem') {
+                            // 4th Year 1st Sem: Check complete passing grades from 1st Year up to 3rd Year Summer
+                            $requiredSubjectsQuery = $requiredSubjectsQuery->where(function($query) {
+                                // For 1st, 2nd, and 3rd Year, check all semesters including Summer
+                                $query->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year'])
+                                    ->whereIn('semester', ['1st Sem', '2nd Sem', 'Summer']);
+                            });
+                        } elseif ($currentActiveSemester === '2nd Sem') {
+                            // 4th Year 2nd Sem: Check complete passing grades from 1st Year up to 4th Year 1st Sem
+                            $requiredSubjectsQuery = $requiredSubjectsQuery->where(function($query) {
+                                // For 1st Year, check 1st and 2nd Sem
+                                $query->where(function($q) {
+                                    $q->where('year_level', '1st Year')
+                                    ->whereIn('semester', ['1st Sem', '2nd Sem']);
+                                })
+                                // For 2nd Year, check 1st and 2nd Sem
+                                ->orWhere(function($q) {
+                                    $q->where('year_level', '2nd Year')
+                                    ->whereIn('semester', ['1st Sem', '2nd Sem']);
+                                })
+                                // For 3rd Year, check 1st Sem, 2nd Sem, and Summer
+                                ->orWhere(function($q) {
+                                    $q->where('year_level', '3rd Year')
+                                    ->whereIn('semester', ['1st Sem', '2nd Sem', 'Summer']);
+                                })
+                                // For 4th Year, check 1st Sem only
+                                ->orWhere(function($q) {
+                                    $q->where('year_level', '4th Year')
+                                    ->where('semester', '1st Sem');
+                                });
+                            });
+                        }
+
                     }
                     
                     $requiredSubjects = $requiredSubjectsQuery->get(['id']);
@@ -2741,6 +2831,20 @@ class StudentController extends Controller
 
             if($student->enrolled == '1') {
                 $subjects = $this->getAvailableSubjectsForFreshmen($student, $passedSubjects, $allTakenSubjects, $failedSubjects);
+            }
+
+            // =============================================
+            // NEW FEATURE: Filter out 4th Year 2nd Sem subjects if student has failed 4th Year 1st Sem
+            // =============================================
+            if ($hasFailed4thYear1stSem) {
+                $subjects = $subjects->filter(function($subject) {
+                    // Remove all 4th Year 2nd Sem subjects
+                    return !($subject->year_level === '4th Year' && $subject->semester === '2nd Sem');
+                });
+                
+                Log::info('Filtered out 4th Year 2nd Sem subjects due to failed 4th Year 1st Sem subjects', [
+                    'filtered_count' => $subjects->count()
+                ]);
             }
             
             // Filter out 4th year subjects if student is not eligible (for irregular students)
@@ -4096,11 +4200,62 @@ class StudentController extends Controller
                 }
             }
 
+             // =============================================
+            // NEW: Check for failed 4th Year 1st Sem subjects
+            // =============================================
+            $hasFailed4thYear1stSem = false;
+            if ($yearLevel === '4th Year' && $currentSemester === '2nd Sem') {
+                $fourthYear1stSemSubjects = DB::table('subjects')
+                    ->where('curriculum_id', $curriculum_id)
+                    ->where('year_level', '4th Year')
+                    ->where('semester', '1st Sem')
+                    ->where('is_active', 1)
+                    ->pluck('id')
+                    ->toArray();
+                
+                if (!empty($fourthYear1stSemSubjects)) {
+                    $student4thYear1stSemGrades = DB::table('enrolled_sub')
+                        ->where('student_id', $student->id)
+                        ->whereIn('subject_id', $fourthYear1stSemSubjects)
+                        ->get(['subject_id', 'grade']);
+                    
+                    foreach ($student4thYear1stSemGrades as $gradeRecord) {
+                        if (in_array($gradeRecord->grade, $failingGrades)) {
+                            $hasFailed4thYear1stSem = true;
+                            break;
+                        }
+                    }
+                    
+                    $taken4thYear1stSemSubjects = $student4thYear1stSemGrades->pluck('subject_id')->toArray();
+                    $missingSubjects = array_diff($fourthYear1stSemSubjects, $taken4thYear1stSemSubjects);
+                    
+                    if (!empty($missingSubjects)) {
+                        $hasFailed4thYear1stSem = true;
+                    }
+                }
+            }
+            // =============================================
+
             // Build query for available subjects
             $query = Subject::where('is_active', 1)
                 ->where('curriculum_id', $curriculum_id)
                 ->where('semester', $currentSemester)
                 ->whereNotIn('id', $passedSubjects); // Exclude passed subjects
+
+            if ($hasFailed4thYear1stSem) {
+                // Exclude 4th Year 2nd Sem subjects
+                $query->where(function($q) {
+                    $q->where('year_level', '!=', '4th Year')
+                    ->orWhere('semester', '!=', '2nd Sem');
+                });
+            } elseif ($isEligibleFor4thYear) {
+                // Student is eligible, show all year levels including 4th Year
+                $query->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '4th Year', '']);
+            } else {
+                // Student is not eligible, exclude 4th Year subjects
+                $query->whereIn('year_level', ['1st Year', '2nd Year', '3rd Year', '']);
+            }
+            // 
 
             // Filter 4th year subjects based on eligibility
             // 4th year subjects should only be shown if student has complete passing grades from 1st Year to 3rd Year Summer
