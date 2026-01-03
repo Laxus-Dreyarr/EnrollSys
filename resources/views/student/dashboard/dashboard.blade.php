@@ -1437,51 +1437,55 @@ if (isset($averageGrade) && $averageGrade > 0) {
 
     <!-- Student Information Modal -->
     
-    @if($isEnrollmentActive === 1 && $en === 0)
-        <div id="studentInfoModal2" class="modal-overlay <?php echo $show_prereg_form ? 'active' : ''; ?>">
+    @if($firstname == NULL)
+        <div id="studentInfoModal2" class="modal-overlay {{ $firstname == NULL ? 'active' : '' }}">
             <div class="modal-container">
                 <div class="modal-header">
-                    <h3 style="color: white;">Enrollment Pre-Registration Form</h3>
+                    <h3 style="color: white;">Complete your information</h3>
                 </div>
                 
                 <form id="studentInfoForm2" class="modal-form">
-                    @csrf                   
-                    <!-- <div class="form-group">
+                    @csrf  
+                    <div class="form-group">
+                        <label for="first_name" class="form-label">
+                            <i class="fas fa-user"></i>
+                            First Name
+                        </label>
+                        <input type="text" name="fname" id="fname" class="form-control" required><br>
+                        <label for="last_name" class="form-label">
+                            <i class="fas fa-user"></i>
+                            Last Name
+                        </label>
+                        <input type="text" name="lname" id="lname" class="form-control" required><br>
+                        <label for="middle_name" class="form-label">
+                            <i class="fas fa-user"></i>
+                            Middle Name
+                        </label>
+                        <input type="text" name="mname" id="mname" class="form-control">
+                    </div>
+
+                    <div class="form-group">
                         <label for="year_level" class="form-label">
                             <i class="fas fa-graduation-cap"></i>
-                            Year Level
+                            <?php echo ($isEnrollmentActive == 1 && $sem == 'SEM 1') ? 'Are you an incoming' : 'Current Year Level'; ?>
                         </label>
-                        <select id="year_level" name="year_level" class="form-control" required>
+                        <select id="year_level2" name="year_level2" class="form-control" required>
                             <option value="">Select Year Level</option>
                             <option value="1st Year">1st Year</option>
                             <option value="2nd Year">2nd Year</option>
                             <option value="3rd Year">3rd Year</option>
                             <option value="4th Year">4th Year</option>
-                            <option value="5th Year">5th Year</option>
                         </select>
                         <div class="form-error" id="year_level_error"></div>
-                    </div> -->
-                    
-                    <div class="form-group">
-                        <label for="student_type" class="form-label">
-                            <i class="fas fa-user-tag"></i>
-                            Student Type
-                        </label>
-                        <select id="student_type" name="student_type" class="form-control" required>
-                            <option value="">Select Student Type</option>
-                            <option value="Regular">Regular</option>
-                            <option value="Irregular">Irregular</option>
-                
-                        </select>
-                        <div class="form-error" id="student_type_error"></div>
                     </div>
+                
                     
                     <div class="form-actions">
                         <button type="submit" class="btn-primary2 btn-full">
                             <i class="fas fa-save"></i>
                             Save Information
                         </button>
-                    </div>
+                    </div><br>
                 </form>
                 
                 <div class="modal-footer">
@@ -1609,7 +1613,7 @@ if (isset($averageGrade) && $averageGrade > 0) {
         </div>
 
         <!-- Student Documents Upload Modal - Step by Step -->
-        <div id="studentDocumentsModal" class="modal-overlay <?php echo $show_student_form4 ? 'active' : ''; ?>">
+        <div id="studentDocumentsModal" class="modal-overlay <?php echo ($show_student_form4 && $firstname !== NULL) ? 'active' : ''; ?>">
             <div class="modal-container documents-upload-modal">
                 <!-- Modal Header -->
                 <div class="modal-header documents-header">

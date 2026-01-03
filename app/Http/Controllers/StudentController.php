@@ -894,34 +894,47 @@ class StudentController extends Controller
                 return $x;
             }
 
-            // Create user info
-            // $userInfo = new UserInfo();
-            // $userInfo->user_id = $studentId;
-            // $userInfo->firstname = ucfirst(strtolower($registrationData['givenName']));
-            // $userInfo->lastname = ucfirst(strtolower($registrationData['lastName']));
-            // $userInfo->middlename = $registrationData['middleName'] ? ucfirst(strtolower($registrationData['middleName'])) : null;
-            // $userInfo->birthdate = null;
-            // $userInfo->age = null;
-            // $userInfo->address = null;
-
-            $userInfo = new UserInfo();
-            $userInfo->user_id = $studentId;
-            $userInfo->firstname = ucfirst(strtolower($find->firstname));
-            $userInfo->lastname = ucfirst(strtolower($find->lastname));
-            $userInfo->middlename = $find->middlename 
-                ? ucfirst(strtolower($find->middlename)) 
-                : null;
-            $userInfo->phone_number = $find->contact_number ? $find->contact_number : null;
-            $userInfo->birthdate = $registrationData['birthDate'];
-            $userInfo->age = $registrationData['age'];
-            $userInfo->sex = $registrationData['sex'];
-            $userInfo->address = ''.$registrationData['houseStreet'].', '.$registrationData['barangay'] .', '.$registrationData['municipality'] .', '.$registrationData['province'];
-            $userInfo->relationship_status = $registrationData['relationship_status'];
+            if (!$find) {
+                // 
+                $userInfo = new UserInfo();
+                $userInfo->user_id = $studentId;
+                $userInfo->firstname = NULL;
+                $userInfo->lastname = NULL;
+                $userInfo->middlename = NULL;
+                $userInfo->phone_number = NULL;
+                $userInfo->birthdate = $registrationData['birthDate'];
+                $userInfo->age = $registrationData['age'];
+                $userInfo->sex = $registrationData['sex'];
+                $userInfo->address = ''.$registrationData['houseStreet'].', '.$registrationData['barangay'] .', '.$registrationData['municipality'] .', '.$registrationData['province'];
+                $userInfo->relationship_status = $registrationData['relationship_status'];
 
             if (!$userInfo->save()) {
                 $x = '7';
                 return $x;
             }
+                // 
+            } else {
+                $userInfo = new UserInfo();
+                $userInfo->user_id = $studentId;
+                $userInfo->firstname = ucfirst(strtolower($find->firstname)) ? ucfirst(strtolower($find->firstname)) : null;
+                $userInfo->lastname = ucfirst(strtolower($find->lastname)) ? ucfirst(strtolower($find->lastname)): NULL;
+                $userInfo->middlename = $find->middlename 
+                    ? ucfirst(strtolower($find->middlename)) 
+                    : null;
+                $userInfo->phone_number = $find->contact_number ? $find->contact_number : null;
+                $userInfo->birthdate = $registrationData['birthDate'];
+                $userInfo->age = $registrationData['age'];
+                $userInfo->sex = $registrationData['sex'];
+                $userInfo->address = ''.$registrationData['houseStreet'].', '.$registrationData['barangay'] .', '.$registrationData['municipality'] .', '.$registrationData['province'];
+                $userInfo->relationship_status = $registrationData['relationship_status'];
+
+                if (!$userInfo->save()) {
+                    $x = '7';
+                    return $x;
+                }
+            }
+
+            
 
             date_default_timezone_set('Asia/Manila');
             $todays_date=date("Y-m-d h:i:sa");
@@ -1323,6 +1336,8 @@ class StudentController extends Controller
         
         $pageTitle = "SY: $schoolYear $semester";
 
+        $sem = $semester;
+
         // if (is_null($student->sy) || $student->sy === "") {
         // // Insert/Update the school year since it's null or empty
         //     DB::table('students')
@@ -1461,7 +1476,8 @@ class StudentController extends Controller
             'unreadCount', 
             'student', 
             'userInfo',
-            'pageTitle'
+            'pageTitle',
+            'sem'
         ));
     }
 
@@ -1836,40 +1852,53 @@ class StudentController extends Controller
         try {
             // Validate the registration data first
             $validator = Validator::make($request->all(), [
-                // 'year_level' => [
-                //     'required'
-                // ],
-                'student_type' => [
+                'year_level2' => [
                     'required'
                 ],
+                'fname' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    'regex:/^[a-zA-Z\s\-\.\']+$/' // Only letters, spaces, hyphens, dots, and apostrophes
+                ],
+                'lname' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    'regex:/^[a-zA-Z\s\-\.\']+$/'
+                ],
+                'mname' => [
+                    'nullable', // Optional field
+                    'string',
+                    'max:255',
+                    'regex:/^[a-zA-Z\s\-\.\']*$/' // Same regex but allows empty string
+                ]
             ], [
-                // 'year_level.required' => 'Please select your year level.',
-                'student_type.required' => 'Please select your student type.',
+                'year_level2.required' => 'Please select your year level.',
+                'fname.required' => 'First name is required.',
+                'fname.string' => 'First name must be a valid text.',
+                'fname.max' => 'First name must not exceed 255 characters.',
+                'fname.regex' => 'First name contains invalid characters.',
+                'lname.required' => 'Last name is required.',
+                'lname.string' => 'Last name must be a valid text.',
+                'lname.max' => 'Last name must not exceed 255 characters.',
+                'lname.regex' => 'Last name contains invalid characters.',
+                'mname.string' => 'Middle name must be a valid text.',
+                'mname.max' => 'Middle name must not exceed 255 characters.',
+                'mname.regex' => 'Middle name contains invalid characters.',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $validator->errors()->first()
-                ]);
+                    'message' => 'Please fix the errors in the form.',
+                    'errors' => $validator->errors()->toArray() // Return all errors for each field
+                ], 422); // HTTP 422 Unprocessable Entity
             }
 
             DB::beginTransaction();
 
-            $get_year_level = DB::table('enrollment_date')
-                ->where('is_active', 1)
-                ->first();
-            
-            $year_level = $get_year_level->year_level;
-
             try {
-                $studentType = match($request->student_type) {
-                    'Regular' => '1',
-                    'Irregular' => '2',
-                    // 'Transferee' => '0',
-                    // 'Not Set' => '5',
-                    default => $request->student_type
-                };
 
                 // Get the current authenticated user
                 $user = Auth::guard('student')->user();
@@ -1888,20 +1917,36 @@ class StudentController extends Controller
                     ]);
                 }
 
+                $yearLevelMap = [
+                    '1st Year' => '1',
+                    '2nd Year' => '2', 
+                    '3rd Year' => '3',
+                    '4th Year' => '4'
+                ];
+
+                $enrolledValue = $yearLevelMap[$request->year_level2] ?? null;
+
                 // Update using the user_info id as student_id - USE THE SELECTED CURRICULUM
                  $student = Student::where('student_id', $userInfo->id)->first();
                 Log::info('Student record: ' . ($student ? 'Found' : 'Not found'));
                 $save = Student::where('student_id', $userInfo->id)
                     ->update([
-                        'year_level' => $year_level,
+                        'year_level' => $request->year_level2,
                         'status' => 'Not Enrolled',
-                        'is_regular' => $studentType,
-                        'enrolled' => '5'
+                        'is_regular' => '2',
+                        'enrolled' => $enrolledValue
                     ]);
                 Log::error('Student complete_info2 update error: ');
+
+                $save2 = UserInfo::where('user_id', $user->id)
+                            ->update([
+                                'firstname' => $request->fname,
+                                'lastname' => $request->lname,
+                                'middlename' => $request->mname
+                            ]);
                 
 
-                if(!$save) {
+                if($save === false || $save2 === false) {
                     DB::rollback();
                     return response()->json([
                         'success' => false,

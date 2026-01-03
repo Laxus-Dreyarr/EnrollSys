@@ -1544,9 +1544,15 @@ function initializeStudentInfoModal2() {
         // Get form data
         const formData = new FormData();
         formData.append('action', 'complete_student_info2');
-        formData.append('year_level', document.getElementById('year_level').value);
-        formData.append('student_type', document.getElementById('student_type').value);
+        formData.append('fname', document.getElementById('fname').value);
+        formData.append('lname', document.getElementById('lname').value);
+        formData.append('mname', document.getElementById('mname').value);
+        formData.append('year_level2', document.getElementById('year_level2').value);
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        for (let pair of formData.entries()) {
+    console.log(pair[0] + ': ' + pair[1]);
+}
 
         // Send request
         fetch('/exe/student', {

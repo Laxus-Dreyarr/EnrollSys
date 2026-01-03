@@ -15,7 +15,7 @@ class Student extends Authenticatable
     public $timestamps = false;
     
     protected $fillable = [
-        'student_id', 'id_no', 'year_level', 'status', 'is_regular', 'curriculum', 'sy'
+        'student_id', 'id_no', 'year_level', 'status', 'curriculum', 'is_regular', 'enrolled', 'sy'
     ];
 
     protected $hidden = [
