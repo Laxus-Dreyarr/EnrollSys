@@ -244,10 +244,10 @@ function createRequestItem(request) {
             const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName + ' ' + lastName)}&background=none&color=fff`;
             
             return `
-                <div class="avatar-container">
+                
                     <img src="${avatarUrl}" alt="User Avatar" class="user-avatar">
                     <div class="status-indicator"></div>
-                </div>
+                
             `;
         }
     }
@@ -505,17 +505,14 @@ function loadRequestDetails(request) {
     // Helper function to determine avatar HTML
     function getAvatarHtml2(request) {
         if (request.profile && request.profile !== 'default.png') {
-            return `<img src="/profile2-image/${request.id}" alt="Student Avatar" class="request-avatar" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">`;
+            return `<img src="/profile2-image/${request.id}" alt="Student Avatar" class="request-avatar" style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover;">`;
         } else {
             const firstName = request.firstname || '';
             const lastName = request.lastname || '';
             const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName + ' ' + lastName)}&background=none&color=fff`;
             
             return `
-                <div class="avatar-container">
-                    <img src="${avatarUrl}" alt="User Avatar" class="user-avatar">
-                    <div class="status-indicator"></div>
-                </div>
+                    <img src="${avatarUrl}" alt="User Avatar" class="user-avatar" style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover;">
             `;
         }
     }

@@ -4769,7 +4769,13 @@ body.dark-mode .prerequisite-info {
 }
 
 .enhanced-table-checkbox-header {
-    width: 50px;
+    position: relative;
+    display: flex; /* Add this */
+    flex-direction: row;
+    align-items: center; /* Optional: vertically align items */
+    justify-content: center; /* Optional: horizontally align items */
+    gap: 8px; /* Optional: space between elements */
+    width: 80px;
     text-align: center;
 }
 

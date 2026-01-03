@@ -1455,14 +1455,14 @@ class StudentController extends Controller
                         ->update([
                             'year_level' => $yearLevelMap[$student->year_level],
                             'sy' => $schoolYear,
-                            'status' => 'Not Enrolled', // Reset status since it's new school year
-                            'enrolled' => 0 // Reset enrolled status
+                            'status' => 'Not Enrolled'
                         ]);
                     
                     // Log the update
                     // $this->logYearLevelIncrement($student->id, $student->year_level, $yearLevelMap[$student->year_level]);
                 }
             }
+
         }
         
         return view('student.dashboard.dashboard', compact(
@@ -1934,7 +1934,7 @@ class StudentController extends Controller
                         'year_level' => $request->year_level2,
                         'status' => 'Not Enrolled',
                         'is_regular' => '2',
-                        'enrolled' => $enrolledValue
+                        'enrolled' => 0
                     ]);
                 Log::error('Student complete_info2 update error: ');
 

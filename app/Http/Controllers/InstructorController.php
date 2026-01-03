@@ -1063,15 +1063,15 @@ class InstructorController extends Controller
                     $paymentReceipt->status = $paymentReceipt->status ?: 'Pending';
                 }
 
-                if ($profile) {
-                    $profile = asset('profile/' . $profile->profile);
-                }
+                // if ($profile) {
+                //     $profile = asset('profile/' . $profile->profile);
+                // }
 
                 // Attach documents to the request object
                 $request->fhe_document = $fheDocument;
                 $request->prospectus = $prospectus;
                 $request->payment_receipt = $paymentReceipt;
-                $request->profile = $profile;
+                $request->profile = $profile->profile;
                 
                 // Get prerequisites for each subject and check if student has passed them
                 foreach ($subjects as $subject) {

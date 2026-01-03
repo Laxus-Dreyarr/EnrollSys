@@ -1451,17 +1451,17 @@ if (isset($averageGrade) && $averageGrade > 0) {
                             <i class="fas fa-user"></i>
                             First Name
                         </label>
-                        <input type="text" name="fname" id="fname" class="form-control" required><br>
+                        <input type="text" name="fname" id="fname" class="form-control" placeholder="input your firstname..." required><br>
                         <label for="last_name" class="form-label">
                             <i class="fas fa-user"></i>
                             Last Name
                         </label>
-                        <input type="text" name="lname" id="lname" class="form-control" required><br>
+                        <input type="text" name="lname" id="lname" class="form-control" placeholder="input your lastname..." required><br>
                         <label for="middle_name" class="form-label">
                             <i class="fas fa-user"></i>
-                            Middle Name
+                            Middle Name (Optional)
                         </label>
-                        <input type="text" name="mname" id="mname" class="form-control">
+                        <input type="text" name="mname" id="mname" class="form-control" placeholder="input your middlename...">
                     </div>
 
                     <div class="form-group">

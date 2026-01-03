@@ -1611,9 +1611,9 @@ function initializeStudentInfoModal2() {
         })
         .finally(() => {
             // Reset button
-            submitBtn.innerHTML = originalText;
-            submitBtn.classList.remove('loading');
-            submitBtn.disabled = false;
+            // submitBtn.innerHTML = originalText;
+            // submitBtn.classList.remove('loading');
+            // submitBtn.disabled = false;
         });
     }
 
@@ -1645,11 +1645,8 @@ function initializeStudentInfoModal2() {
                 clearInterval(interval);
             }
         }, 30);
-        
-        // Refresh page after success
-        setTimeout(() => {
-            window.location.reload();
-        }, 3000);
+
+        window.location.reload();
     }
 }
 
@@ -2916,6 +2913,7 @@ function initializeEnhancedEnrollmentModal() {
                                             id="enhancedSelectAll_${groupKey.replace(/\s+/g, '_')}" 
                                             class="enhanced-select-all-checkbox"
                                             onchange="enhancedToggleSelectAllGroup('${groupKey.replace(/\s+/g, '_')}', this.checked)">
+                                            All
                                     </th>
                                     <th>Subject Code</th>
                                     <th>Subject Name</th>
