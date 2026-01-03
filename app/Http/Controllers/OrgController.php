@@ -654,6 +654,7 @@ class OrgController extends Controller
 
     public function dashboard()
     {
+        
         if (!Auth::guard('org')->check()) {
             return redirect('/org')->with('error', 'Please login first.');
         }
