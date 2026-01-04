@@ -900,7 +900,7 @@ function loadFileList() {
         </div>
         <div class="file-info">
             <div class="file-name">List of All Enrolled Students.pdf</div>
-            <div class="file-meta">Grouped by Year Level and Semester • PDF • Generated on demand</div>
+            <div class="file-meta"></div>
         </div>
         <div class="file-actions">
             <button class="btn btn-sm btn-outline-primary" id="downloadEnrolledStudents" onclick="generateEnrolledStudentsPDF()">
@@ -916,21 +916,21 @@ function loadFileList() {
     
     // Add other static files (if any)
     const staticFiles = [
-        {
-            icon: 'fa-file-pdf',
-            name: 'Academic Calendar 2023-2024.pdf',
-            meta: '2.4 MB • PDF • Uploaded: 2023-11-10'
-        },
-        {
-            icon: 'fa-file-excel',
-            name: 'Student List.xlsx',
-            meta: '1.8 MB • Excel • Uploaded: 2023-11-08'
-        },
-        {
-            icon: 'fa-file-word',
-            name: 'Enrollment Guidelines.docx',
-            meta: '850 KB • Word • Uploaded: 2023-11-05'
-        }
+        // {
+        //     icon: 'fa-file-pdf',
+        //     name: 'Academic Calendar 2023-2024.pdf',
+        //     meta: '2.4 MB • PDF • Uploaded: 2023-11-10'
+        // },
+        // {
+        //     icon: 'fa-file-excel',
+        //     name: 'Student List.xlsx',
+        //     meta: '1.8 MB • Excel • Uploaded: 2023-11-08'
+        // },
+        // {
+        //     icon: 'fa-file-word',
+        //     name: 'Enrollment Guidelines.docx',
+        //     meta: '850 KB • Word • Uploaded: 2023-11-05'
+        // }
     ];
     
     staticFiles.forEach(file => {

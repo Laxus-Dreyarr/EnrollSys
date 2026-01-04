@@ -2856,77 +2856,68 @@ class AdminController extends Controller
     // File Manager Section
     public function downloadEnrolledStudents()
     {
-        // Get current date for SY and SEM calculation
-        $currentYear = date('Y');
-        $currentMonth = date('n'); // 1-12
-        
-        // Calculate School Year and Semester
-        if ($currentMonth >= 7 && $currentMonth <= 12) {
-            // July to December: First Semester of current school year
-            $schoolYear = $currentYear . '-' . ($currentYear + 1);
-            $semester = 'SEM 1';
-        } else {
-            // January to June: Second Semester of previous school year
-            $schoolYear = ($currentYear - 1) . '-' . $currentYear;
-            $semester = 'SEM 2';
-        }
-        
-        $pageTitle = "SY: $schoolYear $semester";
+        // Get current active enrollment period
+        $activeEnrollment = DB::table('enrollment_date')
+            ->where('is_active', 1)
+            ->first();
 
-        $sem = $semester;
-        
-        // Get all officially enrolled students with their details
-        $students = DB::table('students as s')
+        if (!$activeEnrollment) {
+            return back()->with('error', 'No active enrollment period found.');
+        }
+
+        // Get all students with approved enrollment requests
+        $students = DB::table('enrollmentrequests as er')
+            ->join('students as s', 'er.student_id', '=', 's.id')
             ->join('user_info as ui', 's.student_id', '=', 'ui.id')
-            ->join('users as u', 'u.id', '=', 'ui.user_id')
-            ->leftJoin('enrolled_sub as es', function($join) {
-                $join->on('s.id', '=', 'es.student_id')
-                    ->where('es.date_enrolled', '=', function($query) {
-                        $query->select(DB::raw('MAX(date_enrolled)'))
-                            ->from('enrolled_sub')
-                            ->whereColumn('student_id', 's.id');
-                    });
+            ->join('users as u', 'ui.user_id', '=', 'u.id')
+            ->leftJoin('enrollments as e', function($join) use ($activeEnrollment) {
+                $join->on('s.id', '=', 'e.student_id')
+                    ->where('e.enrollment_date', '>=', date('Y-m-d', strtotime($activeEnrollment->created_at ?? 'now')));
             })
-            ->where('s.status', 'Officially Enrolled')
+            ->leftJoin('subjects as sub', 'e.subject_id', '=', 'sub.id')
+            ->where('er.status', 'Approved')
+            ->where('er.processed_date', '>=', date('Y-m-d', strtotime($activeEnrollment->created_at ?? 'now')))
             ->select(
                 's.id as student_id',
                 's.id_no',
-                's.year_level',
-                's.curriculum',
+                'er.year_level',
                 'ui.firstname',
                 'ui.lastname',
                 'ui.middlename',
-                'es.semester',
-                'u.email2 as email',
-                'es.date_enrolled'
+                DB::raw('COUNT(DISTINCT e.id) as total_subjects'),
+                DB::raw('COALESCE(SUM(sub.units), 0) as total_units')
             )
-            ->orderBy('s.year_level')
-            ->orderBy('es.semester')
+            ->groupBy('s.id', 's.id_no', 'er.year_level', 'ui.firstname', 'ui.lastname', 'ui.middlename')
+            ->orderByRaw("
+                CASE er.year_level 
+                    WHEN '1st Year' THEN 1
+                    WHEN '2nd Year' THEN 2
+                    WHEN '3rd Year' THEN 3
+                    WHEN '4th Year' THEN 4
+                    ELSE 5
+                END
+            ")
             ->orderBy('ui.lastname')
+            ->orderBy('ui.firstname')
             ->get();
 
-        // Group students by year level and semester
+        // Group students by year level only
         $groupedStudents = [];
         foreach ($students as $student) {
             $yearLevel = $student->year_level ?? 'Unknown';
-            $semester = $student->semester ?? 'Unknown';
             
             if (!isset($groupedStudents[$yearLevel])) {
                 $groupedStudents[$yearLevel] = [];
             }
             
-            if (!isset($groupedStudents[$yearLevel][$semester])) {
-                $groupedStudents[$yearLevel][$semester] = [];
-            }
-            
-            $groupedStudents[$yearLevel][$semester][] = $student;
+            $groupedStudents[$yearLevel][] = $student;
         }
 
         // Generate PDF with custom options
         $pdf = PDF::loadView('admin.pdf.enrolled-students', [
             'groupedStudents' => $groupedStudents,
             'generatedDate' => now()->format('F d, Y h:i A'),
-            'academicYear' => $sem
+            'academicYear' => $activeEnrollment->academic_year ?? date('Y') . '-' . (date('Y') + 1)
         ]);
 
         // Set PDF options for better formatting
