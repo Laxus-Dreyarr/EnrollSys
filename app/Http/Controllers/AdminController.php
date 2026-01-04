@@ -2145,6 +2145,293 @@ class AdminController extends Controller
     //         ], 500);
     //     }
     // }
+
+    // Get CSV data as JSON for AJAX
+    public function getCSVDataJson()
+    {
+        try {
+            $csvData = DB::table('csv')
+                ->select(
+                    'id',
+                    'application_number',
+                    'preferred_program',
+                    'lastname',
+                    'firstname',
+                    'middlename',
+                    'email',
+                    'contact_number'
+                )
+                ->orderBy('id', 'desc')
+                ->limit(50)
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'csvData' => $csvData
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load CSV data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Get single CSV row for editing
+    public function getCSVRow($id)
+    {
+        try {
+            $csv = DB::table('csv')->find($id);
+            
+            if (!$csv) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Record not found'
+                ], 404);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'csv' => $csv
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load record: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Update CSV row
+    public function updateCSVRow(Request $request, $id)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'application_number' => 'nullable|string|max:255',
+                'preferred_program' => 'nullable|string|max:255',
+                'lastname' => 'nullable|string|max:255',
+                'firstname' => 'nullable|string|max:255',
+                'middlename' => 'nullable|string|max:255',
+                'email' => 'nullable|email|max:255',
+                'contact_number' => 'nullable|string|max:20'
+            ]);
+            
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            
+            $updated = DB::table('csv')
+                ->where('id', $id)
+                ->update($request->only([
+                    'application_number',
+                    'preferred_program',
+                    'lastname',
+                    'firstname',
+                    'middlename',
+                    'email',
+                    'contact_number'
+                ]));
+            
+            if ($updated) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Record updated successfully'
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Record not found or no changes made'
+            ], 404);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Update failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Delete CSV row
+    public function deleteCSVRow($id)
+    {
+        try {
+            $deleted = DB::table('csv')->where('id', $id)->delete();
+            
+            if ($deleted) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Record deleted successfully'
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Record not found'
+            ], 404);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Delete failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function downloadCSVData()
+    {
+        try {
+            // Get all data from the csv table
+            $csvData = DB::table('csv')
+                ->orderBy('id', 'asc')
+                ->get();
+            
+            // If no data found
+            if ($csvData->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No CSV data found to download'
+                ], 404);
+            }
+            
+            // Generate CSV content
+            $output = '';
+            
+            // Add BOM for UTF-8 compatibility
+            $output .= "\xEF\xBB\xBF";
+            
+            // Add headers
+            $headers = [
+                'ID',
+                'Student Number',
+                'Application Number',
+                'Preferred Program',
+                'Last Name',
+                'First Name',
+                'Middle Name',
+                'Email',
+                'Contact Number'
+            ];
+            
+            $output .= implode(',', $headers) . "\n";
+            
+            // Add data rows
+            foreach ($csvData as $row) {
+                $rowData = [
+                    $row->id ?? '',
+                    $row->student_number ?? '',
+                    $row->application_number ?? '',
+                    $row->preferred_program ?? '',
+                    $row->lastname ?? '',
+                    $row->firstname ?? '',
+                    $row->middlename ?? '',
+                    $row->email ?? '',
+                    $row->contact_number ?? ''
+                ];
+                
+                // Escape fields for CSV (wrap in quotes if contains commas, quotes, or newlines)
+                foreach ($rowData as &$field) {
+                    if (preg_match('/[,"\n]/', $field)) {
+                        $field = '"' . str_replace('"', '""', $field) . '"';
+                    }
+                }
+                
+                $output .= implode(',', $rowData) . "\n";
+            }
+            
+            // Generate filename with timestamp
+            $filename = 'csv_data_export_' . date('Y-m-d_H-i-s') . '.csv';
+            
+            // Return the CSV as a download
+            return response($output, 200, [
+                'Content-Type' => 'text/csv; charset=utf-8',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Pragma' => 'no-cache',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires' => '0'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate CSV: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function downloadCSVDataStream()
+    {
+        try {
+            $filename = 'csv_data_export_' . date('Y-m-d_H-i-s') . '.csv';
+            
+            $headers = [
+                'Content-Type' => 'text/csv; charset=utf-8',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Pragma' => 'no-cache',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires' => '0'
+            ];
+            
+            $callback = function() {
+                // Open output stream
+                $file = fopen('php://output', 'w');
+                
+                // Add BOM for UTF-8
+                fwrite($file, "\xEF\xBB\xBF");
+                
+                // Write headers
+                fputcsv($file, [
+                    'ID',
+                    'Student Number',
+                    'Application Number',
+                    'Preferred Program',
+                    'Last Name',
+                    'First Name',
+                    'Middle Name',
+                    'Email',
+                    'Contact Number'
+                ]);
+                
+                // Stream data in chunks to avoid memory issues
+                DB::table('csv')
+                    ->orderBy('id', 'asc')
+                    ->chunk(1000, function($rows) use ($file) {
+                        foreach ($rows as $row) {
+                            fputcsv($file, [
+                                $row->id ?? '',
+                                $row->student_number ?? '',
+                                $row->application_number ?? '',
+                                $row->preferred_program ?? '',
+                                $row->lastname ?? '',
+                                $row->firstname ?? '',
+                                $row->middlename ?? '',
+                                $row->email ?? '',
+                                $row->contact_number ?? ''
+                            ]);
+                        }
+                    });
+                
+                fclose($file);
+            };
+            
+            return response()->stream($callback, 200, $headers);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate CSV: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // END
     
     public function uploadCSV(Request $request)
     {

@@ -14,8 +14,14 @@ class OrganizationFee extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'org_id', 'student_id', 'amount', 'payment_date', 'status', 
-        'receipt_url', 'red_flag', 'red_flag_reason'
+        'org_id',
+        'student_id',
+        'year_level',
+        'amount',
+        'status',
+        'receipt_url',
+        'notes',
+        'uploaded_date'
     ];
 
     public function organization()

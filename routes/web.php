@@ -207,6 +207,17 @@ Route::middleware(['admin.auth'])->group(function () {
     Route::get('/admin/upload-details/{id}', [AdminController::class, 'getUploadDetails']);
     Route::get('/admin/download-csv/{id}', [AdminController::class, 'downloadCSV']);
 
+    // 
+    // CSV data routes
+Route::get('/admin/csv-data-json', [AdminController::class, 'getCSVDataJson']);
+Route::get('/admin/csv-data/{id}/edit', [AdminController::class, 'getCSVRow']);
+Route::put('/admin/csv-data/{id}', [AdminController::class, 'updateCSVRow']);
+Route::delete('/admin/csv-data/{id}', [AdminController::class, 'deleteCSVRow']);
+
+Route::get('/admin/download-csv-data', [AdminController::class, 'downloadCSVData']);
+// OR if using the streaming method:
+Route::get('/admin/download-csv-data', [AdminController::class, 'downloadCSVDataStream']);
+
     Route::post('/admin/resetEnrollment', [AdminController::class, 'resetEnrollment']);
 });
 

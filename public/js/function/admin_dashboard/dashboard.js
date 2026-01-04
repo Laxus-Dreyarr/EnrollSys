@@ -445,65 +445,185 @@ function hideResult() {
     resultMessage.classList.add('d-none');
 }
 
-// Load recent uploads
+// Load CSV data from the csv table
 async function loadRecentUploads() {
     if (!recentUploadsTable) return;
     
     try {
-        const response = await fetch('/admin/recent-csv-uploads');
+        const response = await fetch('/admin/csv-data-json');
         const data = await response.json();
         
-        if (data.success && data.uploads.length > 0) {
+        if (data.success && data.csvData.length > 0) {
             let html = '';
-            data.uploads.forEach(upload => {
-                const statusClass = upload.status === 'success' ? 'success' : 
-                                 upload.status === 'partial' ? 'warning' : 'danger';
-                
+            data.csvData.forEach(row => {
                 html += `
-                        <tr>
-                            <td style="white-space: nowrap;">
-                                <i class="fas fa-file-csv text-primary me-2"></i>
-                                ${upload.file_name}
-                            </td>
-                            <td style="white-space: nowrap;">${upload.date}</td>
-                            <td style="white-space: nowrap;">${upload.records}/${upload.total}</td>
-                            <td style="white-space: nowrap;">
-                                <span class="badge bg-${statusClass}">${upload.status}</span>
-                            </td>
-                            <td id="button-container">
-                                <a href="/admin/download-csv/${upload.id}" class="btn btn-sm btn-outline-primary" 
-                                onclick="event.stopPropagation(); return true;">
-                                    <i class="fas fa-download"></i>
-                                </a>
-                                <button class="btn btn-sm btn-outline-info" onclick="showUploadDetails(${upload.id})">
-                                    <i class="fas fa-info-circle"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteUpload(${upload.id})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        `;
+                    <tr>
+                        <td>${row.application_number || 'N/A'}</td>
+                        <td>${row.preferred_program || 'N/A'}</td>
+                        <td>${row.lastname || 'N/A'}</td>
+                        <td>${row.firstname || 'N/A'}</td>
+                        <td>${row.middlename || 'N/A'}</td>
+                        <td>${row.email || 'N/A'}</td>
+                        <td>${row.contact_number || 'N/A'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info" onclick="editCSVRow(${row.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteCSVRow(${row.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
             });
             recentUploadsTable.innerHTML = html;
         } else {
             recentUploadsTable.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center py-4 text-muted">
-                        No recent uploads found
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        No CSV data found
                     </td>
                 </tr>
             `;
         }
     } catch (error) {
-        console.error('Error loading recent uploads:', error);
+        console.error('Error loading CSV data:', error);
         recentUploadsTable.innerHTML = `
             <tr>
-                <td colspan="5" class="text-center py-4 text-danger">
-                    Failed to load recent uploads
+                <td colspan="8" class="text-center py-4 text-danger">
+                    Failed to load CSV data
                 </td>
             </tr>
         `;
+    }
+}
+
+// Edit CSV row
+async function editCSVRow(id) {
+    try {
+        const response = await fetch(`/admin/csv-data/${id}/edit`);
+        const data = await response.json();
+        
+        if (data.success) {
+            // Populate a modal or form with the data
+            // Example using a simple prompt (you should use a modal in production)
+            let newEmail = prompt('Edit email:', data.csv.email);
+            if (newEmail !== null) {
+                await updateCSVRow(id, { email: newEmail });
+            }
+        } else {
+            alert('Error loading row: ' + data.message);
+        }
+    } catch (error) {
+        alert('Error editing row');
+    }
+}
+
+// Update CSV row
+async function updateCSVRow(id, data) {
+    try {
+        const response = await fetch(`/admin/csv-data/${id}`, {
+            method: 'PUT',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Row updated successfully');
+            loadRecentUploads(); // Refresh table
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        alert('Error updating row');
+    }
+}
+
+// Delete CSV row
+async function deleteCSVRow(id) {
+    if (!confirm('Are you sure you want to delete this record?')) return;
+    
+    try {
+        const response = await fetch(`/admin/csv-data/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Record deleted successfully');
+            loadRecentUploads(); // Refresh table
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        alert('Error deleting record');
+    }
+}
+
+// Download CSV data from the csv table
+async function downloadCSVData() {
+    const downloadBtn = document.getElementById('downloadCsvBtn');
+    const originalText = downloadBtn.innerHTML;
+    
+    // Show loading state
+    downloadBtn.disabled = true;
+    downloadBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Preparing...';
+    
+    try {
+        const response = await fetch('/admin/download-csv-data');
+        
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        
+        // Get the blob from response
+        const blob = await response.blob();
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        
+        // Get filename from Content-Disposition header or use default
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = 'csv_data_export.csv';
+        
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+            if (filenameMatch && filenameMatch[1]) {
+                filename = filenameMatch[1];
+            }
+        }
+        
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Clean up
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        // Show success message
+        showResult('CSV data downloaded successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Download error:', error);
+        showResult('Failed to download CSV data: ' + error.message, 'danger');
+    } finally {
+        // Reset button
+        downloadBtn.disabled = false;
+        downloadBtn.innerHTML = originalText;
     }
 }
 
@@ -612,6 +732,11 @@ async function deleteUpload(id) {
             e.preventDefault();
             resetFile();
         });
+    }
+
+    const downloadBtn = document.getElementById('downloadCsvBtn');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', downloadCSVData);
     }
     
     // Load recent uploads on page load

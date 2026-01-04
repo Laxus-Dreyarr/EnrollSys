@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="bingbot" content="noarchive">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5"> -->
     <meta name="application-title" content="EnrollSys">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#101126">
     <meta name="msapplication-navbutton-color" content="#101126">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>EnrollSys - Student Enrollment System</title>
-    <link rel="website icon" href="{{ asset('img/logo.png') }}">
+    <title>enrollsys evsu</title>
+    <link rel="website icon" href="{{ asset('img/evsu-logo.png') }}">
     <!-- Bootstrap CSS -->
     <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> -->
      <link href="{{ asset('style/bootstrap.css') }}" rel="stylesheet">
@@ -57,15 +58,12 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#about">About</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#contact">Contact</a>
-                    </li>
-                    <li class="nav-item ms-lg-3">
+                    <!-- <li class="nav-item ms-lg-3">
                         <button style="background-color: rgb(138, 30, 30); border-color: maroon" class="btn btn-primary btn-login" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
                     </li>
                     <li class="nav-item ms-lg-2">
                         <button style="border-color: maroon;" class="btn btn-outline-primary btn-register" data-bs-toggle="modal" data-bs-target="#registerModal">Register</button>
-                    </li>
+                    </li> -->
                 </ul>
             </div>
         </div>
@@ -80,8 +78,8 @@
                     <h1 class="hero-title">Welcome to <span>EnrollSys</span></h1>
                     <p class="hero-subtitle">Your seamless gateway to academic enrollment and management</p>
                     <div class="hero-buttons">
-                        <button class="btn btn-primary btn-lg me-3" data-bs-toggle="modal" data-bs-target="#registerModal" style="background-color: maroon; border-color: maroon">Get Started</button>
-                        <button class="btn btn-outline-light btn-lg">Learn More</button>
+                        <button id="_register" class="btn btn-primary btn-lg me-3" data-bs-toggle="modal" data-bs-target="#registerModal" style="background-color: maroon; border-color: maroon">Register</button>
+                        <button id="_login" data-bs-toggle="modal" data-bs-target="#loginModal" class="btn btn-outline-light btn-lg">Login</button>
                     </div>
                 </div>
                 <div class="col-lg-5 d-none d-lg-block">
@@ -166,7 +164,7 @@
                     <p>Our platform offers a seamless, intuitive experience for students to manage their academic journey from enrollment to graduation.</p>
                     <ul class="about-features">
                         <li><i class="fas fa-check-circle"></i> Easy course registration</li>
-                        <li><i class="fas fa-check-circle"></i> Real-time schedule management</li>
+                        <li><i class="fas fa-check-circle"></i> Real-time status tracking</li>
                         <li><i class="fas fa-check-circle"></i> Academic progress tracking</li>
                         <li><i class="fas fa-check-circle"></i> Secure document submission</li>
                     </ul>
@@ -208,65 +206,6 @@
         </div>
     </section>
 
-    <!-- Contact Section -->
-    <section id="contact" class="contact-section">
-        <div class="container">
-            <h2 class="section-title text-center">Contact Us</h2>
-            <p class="section-subtitle text-center">Have questions? Get in touch with our support team</p>
-            
-            <div class="row">
-                <div class="col-lg-6">
-                    <form class="contact-form">
-                        <div class="mb-3">
-                            <input type="text" class="form-control" placeholder="Your Name">
-                        </div>
-                        <div class="mb-3">
-                            <input type="email" class="form-control" placeholder="Your Email">
-                        </div>
-                        <div class="mb-3">
-                            <input type="text" class="form-control" placeholder="Subject">
-                        </div>
-                        <div class="mb-3">
-                            <textarea class="form-control" rows="5" placeholder="Your Message"></textarea>
-                        </div>
-                        <button style="background-color: maroon; border-color: rgb(146, 54, 54)" type="submit" class="btn btn-primary">Send Message</button>
-                    </form>
-                </div>
-                <div class="col-lg-6">
-                    <div class="contact-info">
-                        <div class="info-item">
-                            <div class="info-icon">
-                                <i class="fas fa-map-marker-alt"></i>
-                            </div>
-                            <div class="info-content">
-                                <h4>Location</h4>
-                                <p>Eastern Visayas State University, Ormoc City, Leyte</p>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-icon">
-                                <i class="fas fa-phone-alt"></i>
-                            </div>
-                            <div class="info-content">
-                                <h4>Phone</h4>
-                                <p>+63 946 493 0641</p>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-icon">
-                                <i class="fas fa-envelope"></i>
-                            </div>
-                            <div class="info-content">
-                                <h4>Email</h4>
-                                <p>enrollsys.evsu.edu.ph</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
@@ -276,43 +215,8 @@
                         <h4>EnrollSys</h4>
                         <p>The premier student enrollment system for Eastern Visayas State University, designed to make academic management simple and efficient.</p>
                         <div class="social-links">
-                            <a href="#"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                            <a href="#"><i class="fab fa-instagram"></i></a>
-                            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                            <a href="https://www.facebook.com/JPCSEVSUOCC"><i class="fab fa-facebook-f"></i></a>
                         </div>
-                    </div>
-                </div>
-                <div class="col-lg-2 col-md-6">
-                    <div class="footer-links">
-                        <h4>Quick Links</h4>
-                        <ul>
-                            <li><a href="#">Home</a></li>
-                            <li><a href="#features">Features</a></li>
-                            <li><a href="#about">About</a></li>
-                            <li><a href="#contact">Contact</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-lg-2 col-md-6">
-                    <div class="footer-links">
-                        <h4>Resources</h4>
-                        <ul>
-                            <li><a href="#">Help Center</a></li>
-                            <li><a href="#">FAQs</a></li>
-                            <li><a href="#">Privacy Policy</a></li>
-                            <li><a href="#">Terms of Service</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="footer-newsletter">
-                        <h4>Newsletter</h4>
-                        <p>Subscribe to our newsletter for the latest updates and announcements.</p>
-                        <form class="newsletter-form">
-                            <input type="email" placeholder="Your Email">
-                            <button type="submit"><i class="fas fa-paper-plane"></i></button>
-                        </form>
                     </div>
                 </div>
             </div>
@@ -322,6 +226,7 @@
         </div>
     </footer>
 
+    
     <!-- Enhanced Login Modal -->
     <div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
         <div id="des_md" class="modal-dialog modal-dialog-centered">
@@ -329,9 +234,11 @@
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="fas fa-sign-in-alt"></i>
-                        Organization Login
+                        Instructor Login
                     </h5>
-                    <button type="button" class="btn-close btn-close-enhanced" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">
+                        <i id="_fa-times-circle" class='fas fa-times-circle' data-bs-dismiss="modal"></i>
+                    </h5>
                 </div>
                 <div class="modal-body">
                     <form id="loginForm">
@@ -342,7 +249,6 @@
                             </label>
                             <div class="input-group-enhanced">
                                 <input type="email" class="form-control-enhanced" id="email" placeholder="username@evsu.edu.ph" required>
-                                <i class="form-icon fas fa-at"></i>
                             </div>
                             <div id="loginEmailError" class="text-danger mt-1 small"></div>
                         </div>
@@ -354,7 +260,6 @@
                             </label>
                             <div class="input-group-enhanced">
                                 <input type="password" class="form-control-enhanced" id="password" placeholder="Enter your password" required>
-                                <i class="form-icon fas fa-key"></i>
                             </div>
                             <div id="loginPasswordError" class="text-danger mt-1 small" style="display: none;"></div>
                         </div>
@@ -375,7 +280,7 @@
                     </form>
                     
                     <div class="text-center mt-3">
-                        <a href="/org_forgot" class="text-muted" style="font-size: 0.9rem;">
+                        <a href="/instructor_forgot2" class="text-muted" style="font-size: 0.9rem;">
                             <i class="fas fa-question-circle"></i>
                             Forgot your password?
                         </a>
@@ -400,9 +305,11 @@
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="fas fa-user-plus"></i>
-                        Organization Registration
+                        Instructor Registration
                     </h5>
-                    <button type="button" class="btn-close btn-close-enhanced" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">
+                        <i id="_fa-times-circle" class='fas fa-times-circle' data-bs-dismiss="modal"></i>
+                    </h5>
                 </div>
                 <div class="modal-body">
                     <form id="registerForm">
@@ -441,7 +348,6 @@
                             </label>
                             <div class="input-group-enhanced">
                                 <input type="text" class="form-control-enhanced" id="registerEmail" placeholder="input passkey" required>
-                                <i class="fa-solid fa-key"></i>
                                 <div id="RloginEmailError" class="text-danger mt-1 small"></div>
                             </div>
                             <!-- <div class="invalid-feedback">Please enter a valid EVSUmail address (@evsu.edu.ph)</div> -->
@@ -454,7 +360,6 @@
                             </label>
                             <div class="input-group-enhanced">
                                 <input type="password" class="form-control-enhanced" id="registerPassword" placeholder="Create a strong password" required>
-                                <i class="form-icon fas fa-key"></i>
                             </div>
                             
                             <div class="password-strength">
@@ -483,7 +388,6 @@
                             </label>
                             <div class="input-group-enhanced">
                                 <input type="password" class="form-control-enhanced" id="repeatPassword" placeholder="Repeat your password" required>
-                                <i class="form-icon fas fa-key"></i>
                                 <div id="key" class="invalid-feedback">Passwords do not match</div>
                             </div>
                         </div>
@@ -578,7 +482,6 @@
             </div>
         </div>
     </div>
-
 
 
 

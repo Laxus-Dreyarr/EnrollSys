@@ -302,12 +302,21 @@ $profile_picture = $user->profile;
                             <div class="card-body">
                                 <div class="table-responsive">
                                     <table class="table table-hover">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="mb-0">CSV Data from Database</h6>
+                                            <button id="downloadCsvBtn" class="btn btn-success btn-sm">
+                                                <i class="fas fa-download me-1"></i> Download CSV Data
+                                            </button>
+                                        </div>
                                         <thead>
                                             <tr>
-                                                <th>File Name</th>
-                                                <th>Date</th>
-                                                <th>Records</th>
-                                                <th>Status</th>
+                                                <th>Application Number</th>
+                                                <th>Preferred Program</th>
+                                                <th>Last Name</th>
+                                                <th>First Name</th>
+                                                <th>Middle Name</th>
+                                                <th>Email</th>
+                                                <th>Contact Number</th>
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
