@@ -230,7 +230,7 @@ function createRequestItem(request) {
     item.dataset.studentId = request.student_id;
     
     
-    const studentType = request.is_regular === 1 ? 'Irregular' : 'Regular';
+    const studentType = request.is_regular === '1' ? 'Regular' : 'Irregular';
     const subjectsCount = request.enrolled_subjects_count || 0;
 
 
@@ -251,7 +251,14 @@ function createRequestItem(request) {
             `;
         }
     }
-    
+
+    let regularityText;
+    if (request.is_regular == '1') {
+        regularityText = 'Regular';
+    } else {
+        regularityText = 'Irregular';
+    }
+
     item.innerHTML = `
         <div class="request-item-header">
             ${getAvatarHtml(request)}
@@ -269,7 +276,7 @@ function createRequestItem(request) {
                 </span>
                 <span class="meta-item">
                     <i class="fas fa-book"></i>
-                    ${request.is_regular === 1 ? 'Regular' : 'Irregular'}
+                    ${regularityText}
                 </span>
                 <span class="meta-item">
                     <i class="fas fa-graduation-cap"></i>
@@ -304,7 +311,7 @@ function loadRequestDetails(request) {
     if (!requestDetails) return;
     
     const avatarUrl = request.profile;
-    const studentType = request.is_regular === 1 ? 'Regular' : 'Irrigular';
+    const studentType = request.is_regular === '1' ? 'Regular' : 'Irrigular';
     
     let subjectsHTML = '';
     if (request.subjects && request.subjects.length > 0) {

@@ -906,9 +906,6 @@ function loadFileList() {
             <button class="btn btn-sm btn-outline-primary" id="downloadEnrolledStudents" onclick="generateEnrolledStudentsPDF()">
                 <i class="fas fa-download"></i>
             </button>
-            <button class="btn btn-sm btn-outline-secondary ms-1" onclick="previewEnrolledStudents()">
-                <i class="fas fa-eye"></i>
-            </button>
         </div>
     `;
     
