@@ -921,6 +921,7 @@ async function deleteUpload(id) {
 
         loadCurriculums();
 
+        // Event handler for curriculum selection
         $(document).on('click', '.curriculum-item', function(e) {
             e.preventDefault();
             const curriculumId = $(this).data('id');
@@ -1619,9 +1620,14 @@ async function deleteUpload(id) {
                 
                 response.curriculums.forEach(function(curriculum) {
                     const isActive = curriculum.is_active ? ' <span class="badge bg-success">Active</span>' : '';
+                    // Format curriculum year as "YYYY-YYYY+1"
+                    const startYear = parseInt(curriculum.curriculum_year);
+                    const endYear = startYear + 1;
+                    const formattedCurriculum = `${startYear}-${endYear}`;
+                    
                     curriculumList.append(`
                         <li><a class="dropdown-item curriculum-item" href="#" data-id="${curriculum.id}" data-year="${curriculum.curriculum_year}">
-                            ${curriculum.curriculum_year}${isActive}
+                            ${formattedCurriculum}${isActive}
                         </a></li>
                     `);
                 });
@@ -1642,16 +1648,17 @@ async function deleteUpload(id) {
     // Function to select a curriculum
     function selectCurriculum(curriculumId, curriculumYear) {
         selectedCurriculum = curriculumId;
-        $('#selectedCurriculum').text(curriculumYear);
         
-        // Update the create subject form
-        $('#curr').val(curriculumId);
+        // Format curriculum year as "YYYY-YYYY+1"
+        const startYear = parseInt(curriculumYear);
+        const endYear = startYear + 1;
+        const formattedCurriculum = `${startYear}-${endYear}`;
         
-        // Reload subjects for the selected curriculum
+        // Update dropdown button text
+        $('#selectedCurriculum').text(formattedCurriculum);
+        
+        // Load subjects for this curriculum
         loadSubjects();
-
-        // Reload prerequisites for the selected curriculum
-        loadPrerequisiteOptions();
     }
 
     // Function to create new curriculum
@@ -1754,9 +1761,11 @@ async function deleteUpload(id) {
                         // Special case for 3rd Year Summer
                         let semesterDisplay = semester;
                         if (yearLevel === '3rd Year' && semester === 'Summer') {
-                            semesterDisplay = 'Summer or Third Term';
+                            groupHeader = 'Summer or Third Term';
+                        } else {
+                            groupHeader = `${yearLevel} - ${semesterDisplay}`;
                         }
-                        groupHeader = `${yearLevel} - ${semesterDisplay}`;
+                        
                     }
                     
                     // Calculate total units for this group

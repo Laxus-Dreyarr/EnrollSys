@@ -460,7 +460,7 @@ $profile_picture = $user->profile;
                                 </div>
                             </div>
                             <div class="card-body">
-                                <div class="table-responsive" id="subjectsContainer">
+                                <div id="subjectsContainer">
                                     <!-- Subject groups will be loaded here via JavaScript -->
                                 </div>
                             </div>
