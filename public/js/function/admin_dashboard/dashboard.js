@@ -445,6 +445,9 @@ function hideResult() {
     resultMessage.classList.add('d-none');
 }
 
+// Add this global variable at the top of your script
+let csvEditModal = null;
+
 // Load CSV data from the csv table
 async function loadRecentUploads() {
     if (!recentUploadsTable) return;
@@ -501,23 +504,122 @@ async function loadRecentUploads() {
 // Edit CSV row
 async function editCSVRow(id) {
     try {
+        // Show loading state on the button
+        const editBtn = event.currentTarget;
+        const originalHTML = editBtn.innerHTML;
+        editBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        editBtn.disabled = true;
+        
+        // Fetch the CSV row data
         const response = await fetch(`/admin/csv-data/${id}/edit`);
         const data = await response.json();
         
+        // Restore button
+        editBtn.innerHTML = originalHTML;
+        editBtn.disabled = false;
+        
         if (data.success) {
-            // Populate a modal or form with the data
-            // Example using a simple prompt (you should use a modal in production)
-            let newEmail = prompt('Edit email:', data.csv.email);
-            if (newEmail !== null) {
-                await updateCSVRow(id, { email: newEmail });
+            // Populate the modal with data
+            document.getElementById('editId').value = data.csv.id;
+            document.getElementById('editApplicationNumber').value = data.csv.application_number || '';
+            document.getElementById('editPreferredProgram').value = data.csv.preferred_program || '';
+            document.getElementById('editLastName').value = data.csv.lastname || '';
+            document.getElementById('editFirstName').value = data.csv.firstname || '';
+            document.getElementById('editMiddleName').value = data.csv.middlename || '';
+            document.getElementById('editEmail').value = data.csv.email || '';
+            document.getElementById('editContactNumber').value = data.csv.contact_number || '';
+            
+            // Show the modal
+            const modalElement = document.getElementById('editCSVModal');
+            if (!csvEditModal) {
+                csvEditModal = new bootstrap.Modal(modalElement);
             }
+            csvEditModal.show();
         } else {
             alert('Error loading row: ' + data.message);
         }
     } catch (error) {
-        alert('Error editing row');
+        console.error('Error:', error);
+        alert('Error editing row: ' + error.message);
+        
+        // Restore button in case of error
+        const editBtn = event.currentTarget;
+        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+        editBtn.disabled = false;
     }
 }
+
+async function saveCSVEdit() {
+    const id = document.getElementById('editId').value;
+    const saveBtn = document.getElementById('saveCSVBtn');
+    const originalText = saveBtn.innerHTML;
+    
+    // Show loading state
+    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+    saveBtn.disabled = true;
+    
+    // Prepare form data
+    const formData = {
+        application_number: document.getElementById('editApplicationNumber').value,
+        preferred_program: document.getElementById('editPreferredProgram').value,
+        lastname: document.getElementById('editLastName').value,
+        firstname: document.getElementById('editFirstName').value,
+        middlename: document.getElementById('editMiddleName').value,
+        email: document.getElementById('editEmail').value,
+        contact_number: document.getElementById('editContactNumber').value
+    };
+    
+    try {
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        
+        const response = await fetch(`/admin/csv-data/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken || ''
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        // Restore button
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+        
+        if (result.success) {
+            // Show success message
+            showToast('success', 'Success', 'Row updated successfully');
+            
+            // Close modal
+            if (csvEditModal) {
+                csvEditModal.hide();
+            }
+            
+            // Refresh table
+            loadRecentUploads();
+        } else {
+            // Show validation errors
+            if (result.errors) {
+                let errorMessages = '';
+                for (const field in result.errors) {
+                    errorMessages += `${field}: ${result.errors[field].join(', ')}\n`;
+                }
+                alert('Validation errors:\n' + errorMessages);
+            } else {
+                alert('Error: ' + (result.message || 'Failed to update row'));
+            }
+        }
+    } catch (error) {
+        // Restore button
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+        alert('Error updating row: ' + error.message);
+    }
+}
+
 
 // Update CSV row
 async function updateCSVRow(id, data) {
@@ -542,6 +644,49 @@ async function updateCSVRow(id, data) {
     } catch (error) {
         alert('Error updating row');
     }
+}
+
+
+// Helper function to show toast notifications
+function showToast(type, title, message) {
+    // Check if toast container exists, create if not
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '11';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast element
+    const toastId = 'toast-' + Date.now();
+    const toastHTML = `
+        <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">${title}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+    
+    // Show toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: 3000
+    });
+    toast.show();
+    
+    // Remove toast after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function () {
+        this.remove();
+    });
 }
 
 // Delete CSV row
@@ -756,6 +901,11 @@ async function deleteUpload(id) {
     const downloadBtn = document.getElementById('downloadCsvBtn');
     if (downloadBtn) {
         downloadBtn.addEventListener('click', downloadCSVData);
+    }
+
+    const modalElement = document.getElementById('editCSVModal');
+    if (modalElement) {
+        csvEditModal = new bootstrap.Modal(modalElement);
     }
     
     // Load recent uploads on page load

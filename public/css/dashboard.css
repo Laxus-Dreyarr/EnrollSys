@@ -1268,6 +1268,20 @@
     gap: 10px;
 }
 
+.toast {
+    min-width: 300px;
+    max-width: 350px;
+}
+
+.toast-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.toast-body {
+    background-color: white;
+}
+
         /* Responsive */
         @media (max-width: 1200px) {
             .sidebar {

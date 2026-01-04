@@ -336,6 +336,71 @@ $profile_picture = $user->profile;
                             </div>
                         </div>
                     </div>
+                    <!-- Move this outside the table, preferably at the end of the tab-content -->
+                    <div class="modal fade" id="editCSVModal" tabindex="-1" aria-labelledby="editCSVModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editCSVModalLabel">Edit CSV Record</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="editCSVForm">
+                                        <input type="hidden" id="editId">
+                                                        
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="editApplicationNumber" class="form-label">Application Number</label>
+                                                    <input type="text" class="form-control" id="editApplicationNumber">
+                                                </div>
+                                                            
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="editPreferredProgram" class="form-label">Preferred Program</label>
+                                                    <input type="text" class="form-control" id="editPreferredProgram">
+                                                </div>
+                                            </div>
+                                                        
+                                            <div class="row">
+                                                <div class="col-md-4 mb-3">
+                                                    <label for="editLastName" class="form-label">Last Name</label>
+                                                    <input type="text" class="form-control" id="editLastName" required>
+                                                </div>
+                                                            
+                                                <div class="col-md-4 mb-3">
+                                                    <label for="editFirstName" class="form-label">First Name</label>
+                                                    <input type="text" class="form-control" id="editFirstName" required>
+                                                </div>
+                                                            
+                                                <div class="col-md-4 mb-3">
+                                                    <label for="editMiddleName" class="form-label">Middle Name</label>
+                                                    <input type="text" class="form-control" id="editMiddleName">
+                                                </div>
+                                            </div>
+                                                        
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="editEmail" class="form-label">Email Address</label>
+                                                    <input type="email" class="form-control" id="editEmail" required>
+                                                <div class="form-text">Enter a valid email address</div>
+                                            </div>
+                                                            
+                                            <div class="col-md-6 mb-3">
+                                                <label for="editContactNumber" class="form-label">Contact Number</label>
+                                                <input type="text" class="form-control" id="editContactNumber">
+                                                <div class="form-text">Format: 09171234567</div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="button" class="btn btn-primary" id="saveCSVBtn" onclick="saveCSVEdit()">
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- CSV Template Modal -->
                     <div class="modal fade" id="csvTemplateModal" tabindex="-1">
@@ -687,9 +752,9 @@ $profile_picture = $user->profile;
                                 <label for="units" class="form-label">Units <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="units" name="units" min="1" max="5" required>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div style="display: none;" class="col-md-3 mb-3">
                                 <label for="maxStudents" class="form-label">Max Students <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="maxStudents" name="maxStudents" min="1" required>
+                                <input type="number" class="form-control" id="maxStudents" name="maxStudents" min="1" value="50" required>
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="yearLevel" class="form-label">Year Level <span class="text-danger">*</span></label>
@@ -716,7 +781,7 @@ $profile_picture = $user->profile;
                             <div class="col-12">
                                 <label class="form-label">Subject Type <span class="text-danger">*</span></label>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" id="lectureCheck" name="subjectType[]" value="Lecture">
+                                    <input class="form-check-input" type="checkbox" id="lectureCheck" name="subjectType[]" value="Lecture" autoselect>
                                     <label class="form-check-label" for="lectureCheck">Lecture</label>
                                 </div>
                                 <div class="form-check form-check-inline">

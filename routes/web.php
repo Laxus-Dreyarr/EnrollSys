@@ -211,6 +211,7 @@ Route::middleware(['admin.auth'])->group(function () {
     // CSV data routes
 Route::get('/admin/csv-data-json', [AdminController::class, 'getCSVDataJson']);
 Route::get('/admin/csv-data/{id}/edit', [AdminController::class, 'getCSVRow']);
+Route::get('/admin/csv-data/{id}/edit', [AdminController::class, 'getCSVRow']);
 Route::put('/admin/csv-data/{id}', [AdminController::class, 'updateCSVRow']);
 Route::delete('/admin/csv-data/{id}', [AdminController::class, 'deleteCSVRow']);
 
