@@ -22,6 +22,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/admin/download-enrolled-students', [AdminController::class, 'downloadEnrolledStudents'])->name('admin.enrolled-students.download');
+
 // File serving routes for documents
 Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {
         // Define allowed folders for security

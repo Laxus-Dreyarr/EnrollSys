@@ -32,6 +32,8 @@ use Illuminate\Support\Facades\DB;
 use Jenssegers\Agent\Agent;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 
 //NOTE: This Controller can detect schedule conflicts when creating/updating subjects.
@@ -2851,5 +2853,69 @@ class AdminController extends Controller
         }
     }
 
+    // File Manager Section
+    public function downloadEnrolledStudents()
+    {
+        // Get all officially enrolled students with their details
+        $students = DB::table('students as s')
+            ->join('user_info as ui', 's.student_id', '=', 'ui.id')
+            ->join('users as u', 'u.id', '=', 'ui.user_id')
+            ->leftJoin('enrolled_sub as es', function($join) {
+                $join->on('s.id', '=', 'es.student_id')
+                    ->where('es.date_enrolled', '=', function($query) {
+                        $query->select(DB::raw('MAX(date_enrolled)'))
+                            ->from('enrolled_sub')
+                            ->whereColumn('student_id', 's.id');
+                    });
+            })
+            ->where('s.status', 'Officially Enrolled')
+            ->select(
+                's.id as student_id',
+                's.id_no',
+                's.year_level',
+                's.curriculum',
+                'ui.firstname',
+                'ui.lastname',
+                'ui.middlename',
+                'es.semester',
+                'u.email2 as email',
+                'es.date_enrolled'
+            )
+            ->orderBy('s.year_level')
+            ->orderBy('es.semester')
+            ->orderBy('ui.lastname')
+            ->get();
+
+        // Group students by year level and semester
+        $groupedStudents = [];
+        foreach ($students as $student) {
+            $yearLevel = $student->year_level ?? 'Unknown';
+            $semester = $student->semester ?? 'Unknown';
+            
+            if (!isset($groupedStudents[$yearLevel])) {
+                $groupedStudents[$yearLevel] = [];
+            }
+            
+            if (!isset($groupedStudents[$yearLevel][$semester])) {
+                $groupedStudents[$yearLevel][$semester] = [];
+            }
+            
+            $groupedStudents[$yearLevel][$semester][] = $student;
+        }
+
+        // Generate PDF with custom options
+        $pdf = PDF::loadView('admin.pdf.enrolled-students', [
+            'groupedStudents' => $groupedStudents,
+            'generatedDate' => now()->format('F d, Y h:i A'),
+            'academicYear' => date('Y') . '-' . (date('Y') + 1)
+        ]);
+
+        // Set PDF options for better formatting
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->setOption('isHtml5ParserEnabled', true);
+        $pdf->setOption('isRemoteEnabled', true);
+
+        return $pdf->download('enrolled-students-list-' . date('Y-m-d') . '.pdf');
+    }
     
 }

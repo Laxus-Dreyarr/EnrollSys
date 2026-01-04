@@ -657,45 +657,7 @@ $profile_picture = $user->profile;
                             </div>
                             <div class="card-body">
                                 <div class="file-list" id="fileList">
-                                    <div class="file-item">
-                                        <div class="file-icon">
-                                            <i class="fas fa-file-pdf"></i>
-                                        </div>
-                                        <div class="file-info">
-                                            <div class="file-name">Academic Calendar 2023-2024.pdf</div>
-                                            <div class="file-meta">2.4 MB • PDF • Uploaded: 2023-11-10</div>
-                                        </div>
-                                        <div class="file-actions">
-                                            <button class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i></button>
-                                            <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></button>
-                                        </div>
-                                    </div>
-                                    <div class="file-item">
-                                        <div class="file-icon">
-                                            <i class="fas fa-file-excel"></i>
-                                        </div>
-                                        <div class="file-info">
-                                            <div class="file-name">Student List.xlsx</div>
-                                            <div class="file-meta">1.8 MB • Excel • Uploaded: 2023-11-08</div>
-                                        </div>
-                                        <div class="file-actions">
-                                            <button class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i></button>
-                                            <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></button>
-                                        </div>
-                                    </div>
-                                    <div class="file-item">
-                                        <div class="file-icon">
-                                            <i class="fas fa-file-word"></i>
-                                        </div>
-                                        <div class="file-info">
-                                            <div class="file-name">Enrollment Guidelines.docx</div>
-                                            <div class="file-meta">850 KB • Word • Uploaded: 2023-11-05</div>
-                                        </div>
-                                        <div class="file-actions">
-                                            <button class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i></button>
-                                            <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></button>
-                                        </div>
-                                    </div>
+                                    <!-- Dynamic file items will be loaded here -->
                                 </div>
                             </div>
                         </div>

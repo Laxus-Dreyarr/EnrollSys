@@ -853,6 +853,129 @@ async function deleteUpload(id) {
     }
 }
 
+// Fule Manager Section
+/**
+ * Generate and download PDF of enrolled students
+ */
+function generateEnrolledStudentsPDF() {
+    // Show loading
+    const downloadBtn = document.getElementById('downloadEnrolledStudents');
+    const originalHTML = downloadBtn.innerHTML;
+    downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating...';
+    downloadBtn.disabled = true;
+
+    // Create a hidden iframe to trigger download
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = '/admin/download-enrolled-students?' + new Date().getTime(); // Add timestamp to prevent caching
+    document.body.appendChild(iframe);
+
+    // Set timeout to re-enable button (in case download takes time)
+    setTimeout(() => {
+        downloadBtn.innerHTML = originalHTML;
+        downloadBtn.disabled = false;
+        
+        // Remove iframe after download
+        setTimeout(() => {
+            if (iframe.parentNode) {
+                iframe.parentNode.removeChild(iframe);
+            }
+        }, 5000);
+    }, 3000);
+}
+
+// Function to load file list (call this when page loads)
+function loadFileList() {
+    const fileList = document.getElementById('fileList');
+    
+    // Clear existing content
+    fileList.innerHTML = '';
+    
+    // Add the enrolled students file item
+    const enrolledStudentsItem = document.createElement('div');
+    enrolledStudentsItem.className = 'file-item';
+    enrolledStudentsItem.innerHTML = `
+        <div class="file-icon">
+            <i class="fas fa-file-pdf text-danger"></i>
+        </div>
+        <div class="file-info">
+            <div class="file-name">List of All Enrolled Students.pdf</div>
+            <div class="file-meta">Grouped by Year Level and Semester • PDF • Generated on demand</div>
+        </div>
+        <div class="file-actions">
+            <button class="btn btn-sm btn-outline-primary" id="downloadEnrolledStudents" onclick="generateEnrolledStudentsPDF()">
+                <i class="fas fa-download"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary ms-1" onclick="previewEnrolledStudents()">
+                <i class="fas fa-eye"></i>
+            </button>
+        </div>
+    `;
+    
+    fileList.appendChild(enrolledStudentsItem);
+    
+    // Add other static files (if any)
+    const staticFiles = [
+        {
+            icon: 'fa-file-pdf',
+            name: 'Academic Calendar 2023-2024.pdf',
+            meta: '2.4 MB • PDF • Uploaded: 2023-11-10'
+        },
+        {
+            icon: 'fa-file-excel',
+            name: 'Student List.xlsx',
+            meta: '1.8 MB • Excel • Uploaded: 2023-11-08'
+        },
+        {
+            icon: 'fa-file-word',
+            name: 'Enrollment Guidelines.docx',
+            meta: '850 KB • Word • Uploaded: 2023-11-05'
+        }
+    ];
+    
+    staticFiles.forEach(file => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        fileItem.innerHTML = `
+            <div class="file-icon">
+                <i class="fas ${file.icon}"></i>
+            </div>
+            <div class="file-info">
+                <div class="file-name">${file.name}</div>
+                <div class="file-meta">${file.meta}</div>
+            </div>
+            <div class="file-actions">
+                <button class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i></button>
+                <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+        fileList.appendChild(fileItem);
+    });
+}
+
+// Add search functionality
+function setupFileSearch() {
+    const searchInput = document.getElementById('fileSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const fileItems = document.querySelectorAll('.file-item');
+            
+            fileItems.forEach(item => {
+                const fileName = item.querySelector('.file-name').textContent.toLowerCase();
+                const fileMeta = item.querySelector('.file-meta').textContent.toLowerCase();
+                
+                if (fileName.includes(searchTerm) || fileMeta.includes(searchTerm)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    }
+}
+
+
 
     document.addEventListener('DOMContentLoaded', function() {        
         
@@ -910,6 +1033,10 @@ async function deleteUpload(id) {
     
     // Load recent uploads on page load
     loadRecentUploads();
+
+    // File Manager Section
+    loadFileList();
+    setupFileSearch();
 
 
         // fetchNotificationCount();
