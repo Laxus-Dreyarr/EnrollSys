@@ -2310,7 +2310,6 @@ class AdminController extends Controller
             // Add headers
             $headers = [
                 'ID',
-                'Student Number',
                 'Application Number',
                 'Preferred Program',
                 'Last Name',
@@ -2326,7 +2325,6 @@ class AdminController extends Controller
             foreach ($csvData as $row) {
                 $rowData = [
                     $row->id ?? '',
-                    $row->student_number ?? '',
                     $row->application_number ?? '',
                     $row->preferred_program ?? '',
                     $row->lastname ?? '',
@@ -2388,8 +2386,6 @@ class AdminController extends Controller
                 
                 // Write headers
                 fputcsv($file, [
-                    'ID',
-                    'Student Number',
                     'Application Number',
                     'Preferred Program',
                     'Last Name',
@@ -2405,8 +2401,6 @@ class AdminController extends Controller
                     ->chunk(1000, function($rows) use ($file) {
                         foreach ($rows as $row) {
                             fputcsv($file, [
-                                $row->id ?? '',
-                                $row->student_number ?? '',
                                 $row->application_number ?? '',
                                 $row->preferred_program ?? '',
                                 $row->lastname ?? '',
@@ -2487,21 +2481,19 @@ class AdminController extends Controller
                     try {
                         // Prepare data
                         $data = [
-                            'student_number' => $row[0] ?? null,
-                            'application_number' => $row[1] ?? null,
-                            'preferred_program' => $row[2] ?? null,
-                            'lastname' => $row[3] ?? null,
-                            'firstname' => $row[4] ?? null,
-                            'middlename' => $row[5] ?? null,
-                            'email' => $row[6] ?? null,
-                            'contact_number' => $row[7] ?? null,
+                            'application_number' => $row[0] ?? null,
+                            'preferred_program' => $row[1] ?? null,
+                            'lastname' => $row[2] ?? null,
+                            'firstname' => $row[3] ?? null,
+                            'middlename' => $row[4] ?? null,
+                            'email' => $row[5] ?? null,
+                            'contact_number' => $row[6] ?? null,
                         ];
                         
                         // Check if record exists by any of the unique fields
                         $existingRecord = DB::table('csv')
                             ->where(function($query) use ($data) {
-                                $query->where('student_number', $data['student_number'])
-                                      ->orWhere('application_number', $data['application_number'])
+                                $query->Where('application_number', $data['application_number'])
                                       ->orWhere('email', $data['email'])
                                       ->orWhere('contact_number', $data['contact_number']);
                             })

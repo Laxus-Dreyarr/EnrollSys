@@ -234,7 +234,7 @@
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="fas fa-sign-in-alt"></i>
-                        Instructor Login
+                        Org Login
                     </h5>
                     <h5 class="modal-title">
                         <i id="_fa-times-circle" class='fas fa-times-circle' data-bs-dismiss="modal"></i>
@@ -280,7 +280,7 @@
                     </form>
                     
                     <div class="text-center mt-3">
-                        <a href="/instructor_forgot2" class="text-muted" style="font-size: 0.9rem;">
+                        <a href="/org_forgot" class="text-muted" style="font-size: 0.9rem;">
                             <i class="fas fa-question-circle"></i>
                             Forgot your password?
                         </a>
@@ -305,7 +305,7 @@
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="fas fa-user-plus"></i>
-                        Instructor Registration
+                        Org Registration
                     </h5>
                     <h5 class="modal-title">
                         <i id="_fa-times-circle" class='fas fa-times-circle' data-bs-dismiss="modal"></i>

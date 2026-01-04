@@ -571,6 +571,7 @@ async function deleteCSVRow(id) {
 }
 
 // Download CSV data from the csv table
+// Download CSV data from the csv table
 async function downloadCSVData() {
     const downloadBtn = document.getElementById('downloadCsvBtn');
     const originalText = downloadBtn.innerHTML;
@@ -595,16 +596,34 @@ async function downloadCSVData() {
         a.style.display = 'none';
         a.href = url;
         
-        // Get filename from Content-Disposition header or use default
+        // Get filename from Content-Disposition header
         const contentDisposition = response.headers.get('Content-Disposition');
         let filename = 'csv_data_export.csv';
         
         if (contentDisposition) {
-            const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+            // Better regex to extract filename
+            const filenameMatch = contentDisposition.match(/filename\*?=["']?(?:UTF-8'')?([^"';]+)["']?/i);
+            
             if (filenameMatch && filenameMatch[1]) {
-                filename = filenameMatch[1];
+                filename = filenameMatch[1].trim();
+                
+                // URL decode if needed (for encoded filenames)
+                try {
+                    filename = decodeURIComponent(filename);
+                } catch (e) {
+                    // If decode fails, keep original
+                }
             }
         }
+        
+        // Ensure the filename ends with .csv (not .csv_)
+        if (filename.endsWith('.csv_')) {
+            filename = filename.slice(0, -1); // Remove trailing underscore
+        } else if (!filename.endsWith('.csv')) {
+            filename += '.csv';
+        }
+        
+        console.log('Downloading file:', filename); // Debug log
         
         a.download = filename;
         document.body.appendChild(a);
