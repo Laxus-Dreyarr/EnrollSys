@@ -2856,6 +2856,25 @@ class AdminController extends Controller
     // File Manager Section
     public function downloadEnrolledStudents()
     {
+        // Get current date for SY and SEM calculation
+        $currentYear = date('Y');
+        $currentMonth = date('n'); // 1-12
+        
+        // Calculate School Year and Semester
+        if ($currentMonth >= 7 && $currentMonth <= 12) {
+            // July to December: First Semester of current school year
+            $schoolYear = $currentYear . '-' . ($currentYear + 1);
+            $semester = 'SEM 1';
+        } else {
+            // January to June: Second Semester of previous school year
+            $schoolYear = ($currentYear - 1) . '-' . $currentYear;
+            $semester = 'SEM 2';
+        }
+        
+        $pageTitle = "SY: $schoolYear $semester";
+
+        $sem = $semester;
+        
         // Get all officially enrolled students with their details
         $students = DB::table('students as s')
             ->join('user_info as ui', 's.student_id', '=', 'ui.id')
@@ -2907,7 +2926,7 @@ class AdminController extends Controller
         $pdf = PDF::loadView('admin.pdf.enrolled-students', [
             'groupedStudents' => $groupedStudents,
             'generatedDate' => now()->format('F d, Y h:i A'),
-            'academicYear' => date('Y') . '-' . (date('Y') + 1)
+            'academicYear' => $sem
         ]);
 
         // Set PDF options for better formatting
