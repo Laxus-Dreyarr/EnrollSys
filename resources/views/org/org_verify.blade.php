@@ -455,18 +455,19 @@ $password = $registerData['password'];
                     </div>
                     
                     <div class="verification-code-inputs mb-4">
-                        <div class="d-flex justify-content-between mb-3">
-                            <input type="text" class="form-control verification-digit" maxlength="1" data-index="1" placeholder="_">
-                            <input type="text" class="form-control verification-digit" maxlength="1" data-index="2" placeholder="_">
-                            <input type="text" class="form-control verification-digit" maxlength="1" data-index="3" placeholder="_">
-                            <input type="text" class="form-control verification-digit" maxlength="1" data-index="4" placeholder="_">
-                            <input type="text" class="form-control verification-digit" maxlength="1" data-index="5" placeholder="_">
-                            <input type="text" class="form-control verification-digit" maxlength="1" data-index="6" placeholder="_">
+                        <div class="mb-3 text-center">
+                            <!-- Single input field for OTP -->
+                            <input type="text" 
+                                class="form-control verification-code-single" 
+                                id="verificationCodeInput" 
+                                maxlength="6" 
+                                placeholder="Enter 6-digit code"
+                                style="font-size: 1.5rem; letter-spacing: 10px; text-align: center; padding: 15px;">
+                            <div class="text-center mt-2">
+                                <small class="text-muted">Enter the 6-digit code sent to your email</small>
+                            </div>
                         </div>
-                        <input type="hidden" id="verificationCode" name="verificationCode">
-                        <div class="text-center">
-                            <small class="text-muted">Enter the 6-digit code sent to your email</small>
-                        </div>
+                        <!-- Hidden input for the actual OTP value -->
                         <input type="hidden" id="code" value="{{ $otp }}">
                         <input type="hidden" id="resetEmail" value="{{ $email ?? '' }}">
                     </div>
@@ -479,7 +480,7 @@ $password = $registerData['password'];
                     <button type="button" class="btn btn-secondary" id="redirectButton">
                         <i class="fas fa-sign-in-alt me-2"></i>Go to Login
                     </button>
-                    <button onclick="f5()" type="button" class="btn btn-success" id="verifyButton">
+                    <button type="button" class="btn btn-success" id="verifyButton">
                         <i class="fas fa-check me-2"></i>Verify
                     </button>
                 </div>

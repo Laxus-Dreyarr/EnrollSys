@@ -79,7 +79,7 @@ $profile_picture = $user->profile;
                     
                     <!-- User Profile - centered -->
                     <div class="user-profile me-2">
-                        <div class="user-avatar">
+                        <div class="user-avatar" style="background-color: white;">
                             @php
                                 // Get the admin user from Auth
                                 $admin = Auth::guard('admin')->user();
@@ -320,7 +320,7 @@ $profile_picture = $user->profile;
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
-                                        <tbody id="recentUploads">
+                                        <tbody id="recentUploads" style="white-space: nowrap;">
                                             <!-- Will be populated by AJAX -->
                                             <tr>
                                                 <td colspan="5" class="text-center py-4">
@@ -460,22 +460,8 @@ $profile_picture = $user->profile;
                                 </div>
                             </div>
                             <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover" id="subjectsTable">
-                                        <thead>
-                                            <tr>
-                                                <th>Code</th>
-                                                <th>Subject Name</th>
-                                                <th>Units</th>
-                                                <th>Year/Semester</th>
-                                                <th>Curriculum</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="subjectsTableBody">
-                                            <!-- Subjects will be loaded here via JavaScript -->
-                                        </tbody>
-                                    </table>
+                                <div class="table-responsive" id="subjectsContainer">
+                                    <!-- Subject groups will be loaded here via JavaScript -->
                                 </div>
                             </div>
                         </div>

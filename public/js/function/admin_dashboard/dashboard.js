@@ -468,7 +468,7 @@ async function loadRecentUploads() {
                         <td>${row.middlename || 'N/A'}</td>
                         <td>${row.email || 'N/A'}</td>
                         <td>${row.contact_number || 'N/A'}</td>
-                        <td>
+                        <td style="display: flex; white-space: nowrap; gap: 2px;">
                             <button class="btn btn-sm btn-outline-info" onclick="editCSVRow(${row.id})">
                                 <i class="fas fa-edit"></i>
                             </button>
@@ -1710,49 +1710,124 @@ async function deleteUpload(id) {
             data.curriculum_id = selectedCurriculum;
         }
         
-        console.log('Loading subjects with curriculum_id:', selectedCurriculum); // Debug log
-        console.log('Sending request with data:', data); // Debug
+        console.log('Loading subjects with curriculum_id:', selectedCurriculum);
+        console.log('Sending request with data:', data);
         
         $.post('/admin/ajax/get-stats', data, function(response) {
             if (response.success) {
-                const tbody = $('#subjectsTableBody');
-                tbody.empty();
+                const container = $('#subjectsContainer');
+                container.empty();
                 
                 if (response.subjects.length === 0) {
-                    tbody.append('<tr><td colspan="6" class="text-center">No subjects found for selected curriculum</td></tr>');
+                    container.append('<p class="text-center">No subjects found for selected curriculum</p>');
                     return;
                 }
                 
+                // Group subjects by year level and semester
+                const groupedSubjects = {};
+                
                 response.subjects.forEach(function(subject) {
-                    const row = `
-                        <tr>
-                            <td>${subject.code}</td>
-                            <td>${subject.name}</td>
-                            <td>${subject.units}</td>
-                            <td>${subject.year_level === '' ? subject.semester : `${subject.year_level} / ${subject.semester}`}</td>
-                            <td>${subject.curriculum_year ? (subject.year_level === '' ? subject.curriculum_year : `${subject.curriculum_year}-${parseInt(subject.curriculum_year) + 1}`) : 'N/A'}</td>
-                            <td id="_student_btn" class="d-inline-flex">
-                                <button id="_view" class="btn btn-sm btn-outline-info m-1" onclick="viewSubject(${subject.id})">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-primary m-1" onclick="editSubject(${subject.id})">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger m-1" onclick="deleteSubject(${subject.id})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                    tbody.append(row);
+                    const key = `${subject.year_level || 'No Year'}-${subject.semester}`;
+                    if (!groupedSubjects[key]) {
+                        groupedSubjects[key] = [];
+                    }
+                    groupedSubjects[key].push(subject);
                 });
+                
+                // Sort groups by year level and semester
+                const sortedGroups = Object.keys(groupedSubjects).sort((a, b) => {
+                    const [yearA, semA] = a.split('-');
+                    const [yearB, semB] = b.split('-');
+                    
+                    // Define sorting order for years
+                    const yearOrder = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year', 'No Year'];
+                    const semesterOrder = ['1st Sem', '2nd Sem', 'Summer'];
+                    
+                    const yearCompare = yearOrder.indexOf(yearA) - yearOrder.indexOf(yearB);
+                    if (yearCompare !== 0) return yearCompare;
+                    
+                    return semesterOrder.indexOf(semA) - semesterOrder.indexOf(semB);
+                });
+                
+                // Create a table for each group
+                sortedGroups.forEach(function(groupKey) {
+                    const subjects = groupedSubjects[groupKey];
+                    const [yearLevel, semester] = groupKey.split('-');
+                    
+                    // Format group header
+                    let groupHeader = '';
+                    if (yearLevel === 'No Year') {
+                        groupHeader = semester;
+                    } else {
+                        // Special case for 3rd Year Summer
+                        let semesterDisplay = semester;
+                        if (yearLevel === '3rd Year' && semester === 'Summer') {
+                            groupHeader = 'Summer or Third Term';
+                        }else{
+                            groupHeader = `${yearLevel} - ${semesterDisplay}`;
+                        }
+                    }
+                    
+                    // Calculate total units for this group
+                    let totalUnits = 0;
+                    subjects.forEach(subject => {
+                        totalUnits += parseInt(subject.units) || 0;
+                    });
+                    
+                    // Create table for this group with separate header and footer
+                    const tableHTML = `
+                        <div class="subject-group mb-5">
+                            <h5>${groupHeader}</h5>
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Subject Name</th>
+                                        <th>Units</th>
+                                        <th>Curriculum</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${subjects.map(subject => {
+                                        return `
+                                            <tr>
+                                                <td>${subject.code}</td>
+                                                <td>${subject.name}</td>
+                                                <td>${subject.units}</td>
+                                                <td>${subject.curriculum_year ? (subject.year_level === '' ? subject.curriculum_year : `${subject.curriculum_year}-${parseInt(subject.curriculum_year) + 1}`) : 'N/A'}</td>
+                                                <td class="text-end">
+                                                    <button id="_view" class="btn btn-sm btn-outline-info m-1" onclick="viewSubject(${subject.id})">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-primary m-1" onclick="editSubject(${subject.id})">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger m-1" onclick="deleteSubject(${subject.id})">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                            <div class="total-units mt-2">
+                                <strong>Total units: ${totalUnits}</strong>
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.append(tableHTML);
+                });
+                
             } else {
                 console.error('Server returned error:', response.message);
-                $('#subjectsTableBody').html('<tr><td colspan="6" class="text-center text-danger">Error loading subjects</td></tr>');
+                $('#subjectsContainer').html('<p class="text-center text-danger">Error loading subjects</p>');
             }
         }, 'json').fail(function(xhr, status, error) {
             console.error('AJAX Error:', error);
-            $('#subjectsTableBody').html('<tr><td colspan="6" class="text-center text-danger">Failed to load subjects</td></tr>');
+            $('#subjectsContainer').html('<p class="text-center text-danger">Failed to load subjects</p>');
         });
     }
 
