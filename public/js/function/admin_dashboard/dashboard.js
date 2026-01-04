@@ -1241,14 +1241,6 @@ async function deleteUpload(id) {
             });
         });
         
-        // Search functionality
-        // Subjects search
-        $('#subjectSearch').on('keyup', function() {
-            const value = $(this).val().toLowerCase();
-            $('#subjectsTable tbody tr').filter(function() {
-                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-            });
-        });
         
         // Students search
         $('#auditSearch').on('keyup', function() {
@@ -1762,10 +1754,9 @@ async function deleteUpload(id) {
                         // Special case for 3rd Year Summer
                         let semesterDisplay = semester;
                         if (yearLevel === '3rd Year' && semester === 'Summer') {
-                            groupHeader = 'Summer or Third Term';
-                        }else{
-                            groupHeader = `${yearLevel} - ${semesterDisplay}`;
+                            semesterDisplay = 'Summer or Third Term';
                         }
+                        groupHeader = `${yearLevel} - ${semesterDisplay}`;
                     }
                     
                     // Calculate total units for this group
@@ -1784,22 +1775,27 @@ async function deleteUpload(id) {
                                         <th>Code</th>
                                         <th>Subject Name</th>
                                         <th>Units</th>
-                                        <th>Curriculum</th>
+                                        <th>Prerequisite</th>
                                         <th class="text-end">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${subjects.map(subject => {
+                                        // Format prerequisites
+                                        let prerequisites = 'None';
+                                        if (subject.prerequisites && subject.prerequisites.length > 0) {
+                                            // Assuming prerequisites is an array of objects with 'code' property
+                                            const prereqCodes = subject.prerequisites.map(prereq => prereq.code);
+                                            prerequisites = prereqCodes.join(', ');
+                                        }
+                                        
                                         return `
                                             <tr>
                                                 <td>${subject.code}</td>
                                                 <td>${subject.name}</td>
                                                 <td>${subject.units}</td>
-                                                <td>${subject.curriculum_year ? (subject.year_level === '' ? subject.curriculum_year : `${subject.curriculum_year}-${parseInt(subject.curriculum_year) + 1}`) : 'N/A'}</td>
+                                                <td>${prerequisites}</td>
                                                 <td class="text-end">
-                                                    <button id="_view" class="btn btn-sm btn-outline-info m-1" onclick="viewSubject(${subject.id})">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
                                                     <button class="btn btn-sm btn-outline-primary m-1" onclick="editSubject(${subject.id})">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
@@ -1830,6 +1826,82 @@ async function deleteUpload(id) {
             $('#subjectsContainer').html('<p class="text-center text-danger">Failed to load subjects</p>');
         });
     }
+
+    // Search functionality
+    $('#subjectSearch').on('keyup', function() {
+        const searchValue = $(this).val().toLowerCase().trim();
+        
+        // Show all if search is empty
+        if (!searchValue) {
+            $('.subject-group').show();
+            $('.subject-group table tbody tr').show();
+            // Restore original total units
+            $('.total-units').each(function() {
+                const originalTotal = $(this).data('original-total') || $(this).text();
+                $(this).html(`<strong>Total units: ${originalTotal}</strong>`);
+            });
+            return;
+        }
+        
+        // Process each subject group
+        $('.subject-group').each(function() {
+            const $group = $(this);
+            const $table = $group.find('table');
+            const $rows = $table.find('tbody tr');
+            let matchCount = 0;
+            let filteredUnits = 0;
+            
+            // Store original total units if not already stored
+            const $totalUnitsDiv = $group.find('.total-units');
+            if (!$totalUnitsDiv.data('original-total')) {
+                const originalText = $totalUnitsDiv.text();
+                const match = originalText.match(/Total units:\s*(\d+)/);
+                if (match) {
+                    $totalUnitsDiv.data('original-total', match[1]);
+                }
+            }
+            
+            // Search through rows
+            $rows.each(function() {
+                const $row = $(this);
+                const rowText = $row.text().toLowerCase();
+                
+                if (rowText.indexOf(searchValue) > -1) {
+                    $row.show();
+                    matchCount++;
+                    
+                    // Calculate units for filtered results
+                    const unitsCell = $row.find('td').eq(2); // Units is the 3rd column (index 2)
+                    const units = parseInt(unitsCell.text()) || 0;
+                    filteredUnits += units;
+                } else {
+                    $row.hide();
+                }
+            });
+            
+            // Show/hide group based on matches
+            if (matchCount > 0) {
+                $group.show();
+                
+                // Update total units for filtered results
+                if (filteredUnits > 0) {
+                    $totalUnitsDiv.html(`
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Filtered units: ${filteredUnits}</strong>
+                                <small class="text-muted"> (${matchCount} subject${matchCount !== 1 ? 's' : ''})</small>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <small class="text-muted">Original: ${$totalUnitsDiv.data('original-total') || 'N/A'} units</small>
+                            </div>
+                        </div>
+                    `);
+                }
+            } else {
+                $group.hide();
+            }
+        });
+    });
 
     // The load subjects for the top dashboard
     function loadSubjects2() {
