@@ -2613,7 +2613,7 @@ class AdminController extends Controller
             // Update immediately for tracking
             $student->update([
                 'email_sent' => true,
-                'email_sent_at' => date('Y-m-d H:i:s'),
+                
             ]);
         }
         
@@ -2630,24 +2630,7 @@ class AdminController extends Controller
     /**
      * Send test email to specific student
      */
-    public function sendTestEmail($id)
-    {
-        $student = Csv::findOrFail($id);
-        
-        try {
-            // Send email immediately (not queued)
-            Mail::to($student->email)
-                ->send(new QualificationEmail($student));
-            
-            return redirect()->back()->with('success', 
-                "Test email sent to {$student->email} successfully!"
-            );
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 
-                "Failed to send email: " . $e->getMessage()
-            );
-        }
-    }
+    
 
     /**
      * Mark multiple students as qualified

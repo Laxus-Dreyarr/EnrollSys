@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Log;
 use Jenssegers\Agent\Agent;
 use Illuminate\Support\Facades\Http;
 
+use App\Models\Csv;
+use App\Mail\QualifiedForEnrollment;
+
 
 // Public routes
 Route::get('/', function () {
@@ -402,6 +405,21 @@ Route::get('/clear_r', function () {
     Cache::forget('studentForgot_' . $email);
 
     return redirect('/');
+});
+
+
+// In web.php (remove after testing)
+Route::get('/test-send-emails', function() {
+    $csvRecords = \App\Models\Csv::where('email_sent', 0)->get();
+    
+    foreach ($csvRecords as $csv) {
+        Mail::to($csv->email)->send(
+            new \App\Mail\QualifiedForEnrollment($csv)
+        );
+        $csv->update(['email_sent' => 1]);
+    }
+    
+    return "Sent " . $csvRecords->count() . " emails";
 });
 
 Route::middleware(['student.auth'])->group(function () {

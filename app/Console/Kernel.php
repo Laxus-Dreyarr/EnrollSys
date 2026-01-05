@@ -8,32 +8,36 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 class Kernel extends ConsoleKernel
 {
     /**
-     * Define the application's command schedule.
+     * The Artisan commands provided by your application.
+     *
+     * @var array
      */
-    // protected function schedule(Schedule $schedule)
-    // {
-    //     // Clean up expired passkeys daily at 3:00 AM
-    //     $schedule->command('passkeys:cleanup')->dailyAt('22:37');
-        
-    //     // Alternatively, you can run it every hour:
-    //     // $schedule->command('passkeys:cleanup')->hourly();
-    // }
+    protected $commands = [
+        // Add your command here
+        \App\Console\Commands\SendQualifiedEmails::class,
+    ];
 
+    /**
+     * Define the application's command schedule.
+     *
+     * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
+     * @return void
+     */
     protected function schedule(Schedule $schedule)
     {
-        // Send qualification emails - run every 6 hours
-        $schedule->command('emails:send-qualified --batch=100')
-                ->everySixHours()
-                ->between('8:00', '20:00'); // Only during business hours
+        // Schedule the command to run daily at 8:00 AM
+        $schedule->command('emails:send-qualified')->dailyAt('08:00');
     }
 
     /**
      * Register the commands for the application.
+     *
+     * @return void
      */
-    // protected function commands()
-    // {
-    //     $this->load(__DIR__.'/Commands');
+    protected function commands()
+    {
+        $this->load(__DIR__.'/Commands');
 
-    //     require base_path('routes/console.php');
-    // }
+        require base_path('routes/console.php');
+    }
 }

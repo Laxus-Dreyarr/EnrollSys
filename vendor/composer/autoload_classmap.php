@@ -6,6 +6,7 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'App\\Console\\Commands\\SendQualifiedEmails' => $baseDir . '/app/Console/Commands/SendQualifiedEmails.php',
     'App\\Console\\Kernel' => $baseDir . '/app/Console/Kernel.php',
     'App\\Exceptions\\Handler' => $baseDir . '/app/Exceptions/Handler.php',
     'App\\Helpers\\PSGC' => $baseDir . '/app/Helpers/PSGC.php',
@@ -31,13 +32,16 @@ return array(
     'App\\Http\\Middleware\\TrustProxies' => $baseDir . '/app/Http/Middleware/TrustProxies.php',
     'App\\Http\\Middleware\\VerifyApiKey' => $baseDir . '/app/Http/Middleware/VerifyApiKey.php',
     'App\\Http\\Middleware\\VerifyCsrfToken' => $baseDir . '/app/Http/Middleware/VerifyCsrfToken.php',
+    'App\\Jobs\\SendQualificationEmails' => $baseDir . '/app/Jobs/SendQualificationEmails.php',
     'App\\Mail\\PassKeyCreate' => $baseDir . '/app/Mail/PassKeyCreate.php',
     'App\\Mail\\PasswordResetOtp' => $baseDir . '/app/Mail/PasswordResetOtp.php',
+    'App\\Mail\\QualifiedForEnrollment' => $baseDir . '/app/Mail/QualifiedForEnrollment.php',
     'App\\Mail\\RegistrationVerification' => $baseDir . '/app/Mail/RegistrationVerification.php',
     'App\\Mail\\SendQuestion' => $baseDir . '/app/Mail/SendQuestion.php',
     'App\\Models\\Admin' => $baseDir . '/app/Models/Admin.php',
     'App\\Models\\AdminInfo' => $baseDir . '/app/Models/AdminInfo.php',
     'App\\Models\\AuditLog' => $baseDir . '/app/Models/AuditLog.php',
+    'App\\Models\\Csv' => $baseDir . '/app/Models/Csv.php',
     'App\\Models\\Document' => $baseDir . '/app/Models/Document.php',
     'App\\Models\\EnrolledSub' => $baseDir . '/app/Models/EnrolledSub.php',
     'App\\Models\\Enrollment' => $baseDir . '/app/Models/Enrollment.php',

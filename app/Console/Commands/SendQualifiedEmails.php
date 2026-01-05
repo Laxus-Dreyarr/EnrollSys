@@ -19,11 +19,10 @@ class SendQualifiedEmails extends Command
         $isTest = $this->option('test');
         
         // Get qualified students who haven't received emails yet
-        $query = Csv::where('status', 'qualified')
-                    ->where(function($q) {
-                        $q->where('email_sent', 0)
-                          ->orWhereNull('email_sent');
-                    });
+        $query = Csv::where(function($q) {
+            $q->where('email_sent', 0)
+              ->orWhereNull('email_sent');
+        });
         
         if ($isTest) {
             // Send test email to first student only
@@ -50,7 +49,8 @@ class SendQualifiedEmails extends Command
         $jobs = [];
         $sentCount = 0;
         
-        $query->chunk($batchSize, function ($students) use (&$jobs, &$sentCount) {
+        // Pass $total to the closure using the 'use' keyword
+        $query->chunk($batchSize, function ($students) use (&$jobs, &$sentCount, $total) {
             foreach ($students as $student) {
                 $jobs[] = new SendQualificationEmails($student);
                 $sentCount++;

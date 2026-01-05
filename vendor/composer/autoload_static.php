@@ -570,6 +570,7 @@ class ComposerStaticInitc61ff82cbf0142a401a48a8161e1595a
     );
 
     public static $classMap = array (
+        'App\\Console\\Commands\\SendQualifiedEmails' => __DIR__ . '/../..' . '/app/Console/Commands/SendQualifiedEmails.php',
         'App\\Console\\Kernel' => __DIR__ . '/../..' . '/app/Console/Kernel.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
         'App\\Helpers\\PSGC' => __DIR__ . '/../..' . '/app/Helpers/PSGC.php',
@@ -595,13 +596,16 @@ class ComposerStaticInitc61ff82cbf0142a401a48a8161e1595a
         'App\\Http\\Middleware\\TrustProxies' => __DIR__ . '/../..' . '/app/Http/Middleware/TrustProxies.php',
         'App\\Http\\Middleware\\VerifyApiKey' => __DIR__ . '/../..' . '/app/Http/Middleware/VerifyApiKey.php',
         'App\\Http\\Middleware\\VerifyCsrfToken' => __DIR__ . '/../..' . '/app/Http/Middleware/VerifyCsrfToken.php',
+        'App\\Jobs\\SendQualificationEmails' => __DIR__ . '/../..' . '/app/Jobs/SendQualificationEmails.php',
         'App\\Mail\\PassKeyCreate' => __DIR__ . '/../..' . '/app/Mail/PassKeyCreate.php',
         'App\\Mail\\PasswordResetOtp' => __DIR__ . '/../..' . '/app/Mail/PasswordResetOtp.php',
+        'App\\Mail\\QualifiedForEnrollment' => __DIR__ . '/../..' . '/app/Mail/QualifiedForEnrollment.php',
         'App\\Mail\\RegistrationVerification' => __DIR__ . '/../..' . '/app/Mail/RegistrationVerification.php',
         'App\\Mail\\SendQuestion' => __DIR__ . '/../..' . '/app/Mail/SendQuestion.php',
         'App\\Models\\Admin' => __DIR__ . '/../..' . '/app/Models/Admin.php',
         'App\\Models\\AdminInfo' => __DIR__ . '/../..' . '/app/Models/AdminInfo.php',
         'App\\Models\\AuditLog' => __DIR__ . '/../..' . '/app/Models/AuditLog.php',
+        'App\\Models\\Csv' => __DIR__ . '/../..' . '/app/Models/Csv.php',
         'App\\Models\\Document' => __DIR__ . '/../..' . '/app/Models/Document.php',
         'App\\Models\\EnrolledSub' => __DIR__ . '/../..' . '/app/Models/EnrolledSub.php',
         'App\\Models\\Enrollment' => __DIR__ . '/../..' . '/app/Models/Enrollment.php',
