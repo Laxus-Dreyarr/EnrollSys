@@ -33,6 +33,10 @@ use Jenssegers\Agent\Agent;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Csv;
+use App\Jobs\SendQualificationEmails;
+use App\Mail\QualificationEmail;
+use Illuminate\Support\Facades\Bus;
 
 
 
@@ -2490,6 +2494,9 @@ class AdminController extends Controller
                             'middlename' => $row[4] ?? null,
                             'email' => $row[5] ?? null,
                             'contact_number' => $row[6] ?? null,
+                            'status' => 'pending', // Default status
+                            'email_sent' => false,
+                            'is_qualified' => false,
                         ];
                         
                         // Check if record exists by any of the unique fields
@@ -2558,6 +2565,199 @@ class AdminController extends Controller
                 'message' => 'Upload failed: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+        /**
+     * Show email sending page
+     */
+    public function showSendEmails()
+    {
+        // Get qualified students who haven't been notified
+        $students = Csv::qualified()->notNotified()->get();
+        $totalStudents = $students->count();
+        
+        // Get email stats
+        $stats = [
+            'total_qualified' => Csv::qualified()->count(),
+            'total_notified' => Csv::where('email_sent', true)->count(),
+            'total_pending' => Csv::where('status', 'pending')->count(),
+            'total_enrolled' => Csv::where('status', 'enrolled')->count(),
+        ];
+        
+        return view('admin.send-emails', compact('students', 'totalStudents', 'stats'));
+    }
+
+    /**
+     * Send qualification emails to all qualified students
+     */
+    public function sendQualificationEmails(Request $request)
+    {
+        $batchSize = $request->input('batch_size', 100);
+        
+        // Get qualified students who haven't been notified
+        $students = Csv::qualified()->notNotified()->get();
+        $totalCount = $students->count();
+        
+        if ($totalCount === 0) {
+            return redirect()->back()->with('error', 'No qualified students to notify!');
+        }
+        
+        // Process in batches
+        $jobs = [];
+        $sentCount = 0;
+        
+        foreach ($students as $student) {
+            $jobs[] = new SendQualificationEmails($student);
+            $sentCount++;
+            
+            // Update immediately for tracking
+            $student->update([
+                'email_sent' => true,
+                'email_sent_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+        
+        // Dispatch batch
+        $batch = Bus::batch($jobs)
+            ->name('Qualification Emails - ' . date('Y-m-d H:i:s'))
+            ->dispatch();
+        
+        return redirect()->back()->with('success', 
+            "Queued {$sentCount} emails for sending. Batch ID: {$batch->id}"
+        );
+    }
+
+    /**
+     * Send test email to specific student
+     */
+    public function sendTestEmail($id)
+    {
+        $student = Csv::findOrFail($id);
+        
+        try {
+            // Send email immediately (not queued)
+            Mail::to($student->email)
+                ->send(new QualificationEmail($student));
+            
+            return redirect()->back()->with('success', 
+                "Test email sent to {$student->email} successfully!"
+            );
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 
+                "Failed to send email: " . $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * Mark multiple students as qualified
+     */
+    public function markAsQualified(Request $request)
+    {
+        $studentIds = $request->input('student_ids', []);
+        
+        if (empty($studentIds)) {
+            return redirect()->back()->with('error', 'No students selected!');
+        }
+        
+        $updated = Csv::whereIn('id', $studentIds)
+                    ->update([
+                        'status' => 'qualified',
+                        'is_qualified' => true,
+                    ]);
+        
+        return redirect()->back()->with('success', 
+            "Marked {$updated} students as qualified!"
+        );
+    }
+
+    /**
+     * Update student qualification status
+     */
+    public function updateStudentStatus(Request $request, $id)
+    {
+        $validatedData = $request->validate([
+            'status' => 'required|in:pending,qualified,disqualified,enrolled',
+        ]);
+        
+        $student = Csv::findOrFail($id);
+        $oldStatus = $student->status;
+        
+        $student->update([
+            'status' => $validatedData['status'],
+            'is_qualified' => ($validatedData['status'] === 'qualified'),
+        ]);
+        
+        // If marking as enrolled, set enrollment date
+        if ($validatedData['status'] === 'enrolled') {
+            $student->update([
+                'enrollment_date' => date('Y-m-d H:i:s'),
+            ]);
+        }
+        
+        return redirect()->back()->with('success', 
+            "Updated {$student->full_name} from {$oldStatus} to {$validatedData['status']}!"
+        );
+    }
+
+    /**
+     * Show email sending statistics
+     */
+    public function emailStats()
+    {
+        $stats = [
+            'total_students' => Csv::count(),
+            'qualified_students' => Csv::qualified()->count(),
+            'emails_sent' => Csv::where('email_sent', true)->count(),
+            'emails_pending' => Csv::qualified()->notNotified()->count(),
+            'enrolled_students' => Csv::where('status', 'enrolled')->count(),
+        ];
+        
+        // Get recent emails sent (last 7 days)
+        $recentEmails = Csv::where('email_sent', true)
+                        ->whereNotNull('email_sent_at')
+                        ->orderByRaw("STR_TO_DATE(email_sent_at, '%Y-%m-%d %H:%i:%s') DESC")
+                        ->limit(50)
+                        ->get();
+        
+        // Get email delivery rate (assuming enrolled = received)
+        if ($stats['emails_sent'] > 0) {
+            $stats['enrollment_rate'] = round(($stats['enrolled_students'] / $stats['emails_sent']) * 100, 2);
+        } else {
+            $stats['enrollment_rate'] = 0;
+        }
+        
+        return view('admin.email-stats', compact('stats', 'recentEmails'));
+    }
+
+
+    public function resendEmail($id)
+    {
+        $student = Csv::findOrFail($id);
+        
+        // Check if email was sent recently (within 1 hour)
+        if ($student->email_sent_at) {
+            $lastSent = strtotime($student->email_sent_at);
+            $now = time();
+            
+            if (($now - $lastSent) < 3600) {
+                return redirect()->back()->with('warning', 
+                    "Email was sent less than an hour ago. Please wait before resending."
+                );
+            }
+        }
+        
+        // Queue the email
+        SendQualificationEmails::dispatch($student);
+        
+        // Update sent time
+        $student->update([
+            'email_sent_at' => date('Y-m-d H:i:s'),
+        ]);
+        
+        return redirect()->back()->with('success', 
+            "Email re-sent to {$student->email}!"
+        );
     }
 
 

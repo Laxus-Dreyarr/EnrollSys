@@ -19,6 +19,14 @@ class Kernel extends ConsoleKernel
     //     // $schedule->command('passkeys:cleanup')->hourly();
     // }
 
+    protected function schedule(Schedule $schedule)
+    {
+        // Send qualification emails - run every 6 hours
+        $schedule->command('emails:send-qualified --batch=100')
+                ->everySixHours()
+                ->between('8:00', '20:00'); // Only during business hours
+    }
+
     /**
      * Register the commands for the application.
      */
