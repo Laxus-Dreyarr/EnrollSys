@@ -5591,7 +5591,7 @@ class StudentController extends Controller
                     ->where('id', $student->id)
                     ->update([
                         'is_regular' => 1,
-                        'enrolled' => 1,
+                        'enrolled' => 0,
                     ]);
             }
             
