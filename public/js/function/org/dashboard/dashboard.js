@@ -706,7 +706,6 @@ $(document).on('click', '.approve-payment', function(e) {
                     </td>
                     <td>${payment.paymentId}</td>
                     <td><strong>₱${payment.amount.toLocaleString()}</strong></td>
-                    <td>${payment.method}</td>
                     <td>${statusBadge}</td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary">

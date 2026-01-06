@@ -511,9 +511,8 @@
                                 <th>Student</th>
                                 <th>Payment ID</th>
                                 <th>Amount</th>
-                                <th>Method</th>
                                 <th>Status</th>
-                                <th>Receipt</th>
+                                <th>View</th>
                             </tr>
                         </thead>
                         <tbody id="payments-list">

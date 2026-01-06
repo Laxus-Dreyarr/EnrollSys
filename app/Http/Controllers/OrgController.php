@@ -789,28 +789,6 @@ class OrgController extends Controller
                     'updated_at' => now()->format('Y-m-d H:i:s')
                 ]);
             
-            // Create record in organizationfees table
-            DB::table('organizationfees')->insert([
-                'org_id' => $orgsInfo->id,
-                'student_id' => $student->id,
-                'year_level' => $student->year_level,
-                'amount' => $payment->amount,
-                'status' => 'Approved',
-                'receipt_url' => $payment->file_path,
-                'uploaded_date' => now()->format('Y-m-d H:i:s'),
-                'red_flag_reason' => null
-            ]);
-            
-            // Add audit log
-            // DB::table('auditlogs')->insert([
-            //     'user_id' => $student->student_id,
-            //     'action' => 'Payment approved by organization',
-            //     'details' => 'Payment ID: ' . $request->payment_id . ' - Amount: ₱' . $payment->amount,
-            //     'ip_address' => request()->ip(),
-            //     'date' => now()->format('Y-m-d H:i:s'),
-            //     'access_by' => $org->org_id
-            // ]);
-            
             DB::commit();
             
             return response()->json([
