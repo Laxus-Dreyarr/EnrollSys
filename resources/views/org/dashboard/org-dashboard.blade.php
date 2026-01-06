@@ -81,13 +81,13 @@
                 <div class="top-bar-actions">
                     <div class="dropdown">
                         <button class="btn btn-outline-primary dropdown-toggle d-flex align-items-center justify-content-between w-100" type="button" id="yearDropdown" data-bs-toggle="dropdown">
-                            <span><i class="fas fa-calendar-alt me-2"></i> 2023-2024</span>
+                            <span><i class="fas fa-calendar-alt me-2"></i> {{$sy}}</span>
                         </button>
-                        <ul class="dropdown-menu" aria-labelledby="yearDropdown">
+                        <!-- <ul class="dropdown-menu" aria-labelledby="yearDropdown">
                             <li><a class="dropdown-item" href="#">2023-2024</a></li>
                             <li><a class="dropdown-item" href="#">2022-2023</a></li>
                             <li><a class="dropdown-item" href="#">2021-2022</a></li>
-                        </ul>
+                        </ul> -->
                     </div>
                     
                     <button class="btn btn-primary d-flex align-items-center justify-content-center">
@@ -146,7 +146,7 @@
                 <div class="stat-card fade-in">
                     <div class="stat-header">
                         <div>
-                            <div class="stat-value" id="total-students">48</div>
+                            <div class="stat-value" id="total-students">Not Done</div>
                             <div class="stat-label">Total Students</div>
                         </div>
                         <div class="stat-icon students">
@@ -234,11 +234,11 @@
                                                                 data-student-id="{{ $payment->student_id }}">
                                                             <i class="fas fa-check"></i> Approve
                                                         </button>
-                                                        <button class="btn btn-sm btn-danger reject-payment" 
+                                                        <!-- <button class="btn btn-sm btn-danger reject-payment" 
                                                                 data-payment-id="{{ $payment->id }}"
                                                                 data-student-id="{{ $payment->student_id }}">
                                                             <i class="fas fa-times"></i> Reject
-                                                        </button>
+                                                        </button> -->
                                                         @if(!empty($payment->file_path))
                                                             <a href="{{ asset($payment->file_path) }}" 
                                                             target="_blank"
@@ -493,13 +493,16 @@
                 <div class="card-header">
                     <h3 class="card-title">Recent Payments</h3>
                     <div class="d-flex flex-column flex-sm-row gap-2 w-100">
-                        <select class="form-select">
-                            <option>All Status</option>
-                            <option>Paid</option>
-                            <option>Pending</option>
-                            <option>Overdue</option>
+                        <select id="status-filter" class="form-select">
+                            <option value="">All Status</option>
+                            <option value="Approved">Paid</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Overdue">Overdue</option>
                         </select>
-                        <input type="month" class="form-control">
+                        <input type="month" id="month-filter" class="form-control">
+                        <button id="clear-filters" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
                     </div>
                 </div>
                 
@@ -523,9 +526,10 @@
                 
                 <div class="card-footer">
                     <div class="total-amount">
-                        Total: <span id="payments-total">₱32,400</span>
+                        Total: <span id="payments-total">₱0.00</span>
+                        <small id="filtered-count" class="text-muted ms-2">(0 payments)</small>
                     </div>
-                    <button class="btn btn-outline-primary d-flex align-items-center justify-content-center">
+                    <button id="export-btn" class="btn btn-outline-primary d-flex align-items-center justify-content-center">
                         <i class="fas fa-download me-2"></i> Export
                     </button>
                 </div>
@@ -767,25 +771,25 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Organization Name</label>
-                                        <input type="text" class="form-control" value="EduManage University">
+                                        <input type="text" class="form-control" value="Junior Philippine Computer Society">
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Academic Year</label>
-                                        <input type="text" class="form-control" value="2023-2024">
+                                        <input type="text" class="form-control" value="{{$sy}}">
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Organization Address</label>
-                                    <textarea class="form-control" rows="3">123 University Ave, Manila, Philippines</textarea>
+                                    <textarea class="form-control" rows="3">EVSU Ormoc Campus</textarea>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Contact Email</label>
-                                        <input type="email" class="form-control" value="info@edumanage.edu">
+                                        <input type="email" class="form-control" value="carljames.dualo@evsu.edu.ph">
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Contact Phone</label>
-                                        <input type="text" class="form-control" value="(02) 8123-4567">
+                                        <input type="text" class="form-control" value="(+63) 9464930641">
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -803,20 +807,20 @@
                                         <label class="form-label">Base Organization Fee</label>
                                         <div class="input-group">
                                             <span class="input-group-text">₱</span>
-                                            <input type="number" class="form-control" value="500">
+                                            <input type="number" class="form-control" value="125">
                                         </div>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Late Payment Fee</label>
                                         <div class="input-group">
                                             <span class="input-group-text">₱</span>
-                                            <input type="number" class="form-control" value="100">
+                                            <input type="number" class="form-control" value="125">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Payment Deadline</label>
-                                    <input type="date" class="form-control" value="2023-11-30">
+                                    <input type="date" class="form-control" value="2026-01-20">
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Allowed Payment Methods</label>
@@ -1029,7 +1033,7 @@
                             <div class="col-md-6">
                                 <div class="mb-4">
                                     <h5><i class="fas fa-envelope me-2"></i> Email Support</h5>
-                                    <p class="text-muted">support@edumanage.edu</p>
+                                    <p class="text-muted">support@enrollsys.edu</p>
                                     <p>Response time: Within 24 hours</p>
                                 </div>
                             </div>

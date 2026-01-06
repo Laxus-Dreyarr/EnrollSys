@@ -657,6 +657,27 @@ class OrgController extends Controller
     public function dashboard()
     {
         $org = Auth::guard('org')->user();
+
+        // Get current date for SY and SEM calculation
+        $currentYear = date('Y');
+        $currentMonth = date('n'); // 1-12
+        
+        // Calculate School Year and Semester
+        if ($currentMonth >= 7 && $currentMonth <= 12) {
+            // July to December: First Semester of current school year
+            $schoolYear = $currentYear . '-' . ($currentYear + 1);
+            $semester = 'SEM 1';
+        } else {
+            // January to June: Second Semester of previous school year
+            $schoolYear = ($currentYear - 1) . '-' . $currentYear;
+            $semester = 'SEM 2';
+        }
+        
+        $pageTitle = "SY: $schoolYear $semester";
+
+        $sem = $semester;
+
+        $sy = $schoolYear;
         
         // Get all PENDING payments from the payments table with student info
         $payments = DB::table('payments')
@@ -727,7 +748,8 @@ class OrgController extends Controller
         }
         
         return view('org.dashboard.org-dashboard', [
-            'yearLevelData' => $yearLevelData
+            'yearLevelData' => $yearLevelData,
+            'sy' => $sy
         ]);
     }
 
@@ -1533,68 +1555,117 @@ class OrgController extends Controller
 
     public function acceptFee(Request $request)
     {
+        $orgId = '4';
+
+        Log::info('Accept fee request received', [
+            'payment_id' => $request->input('payment_id'),
+            'org_id' => session('org_id'),
+            'request_data' => $request->all()
+        ]);
+        
+        $paymentId = $request->input('payment_id');
+        
+        if (!$paymentId) {
+            Log::warning('Payment ID missing in accept fee request');
+            return response()->json([
+                'success' => false,
+                'error' => 'Payment ID is required.'
+            ], 400);
+        }
+        
         try {
-            $feeId = $request->input('fee_id');
-            $table = $request->input('table'); // This will be 'organizationfees'
-            $orgId = 4; // Hardcoded organization ID
+            // First, get the logged-in organizatio
             
-            if ($table === 'organizationfees') {
-                // Get the organization fee record
-                $orgFee = DB::table('organizationfees')
-                    ->where('id', $feeId)
-                    ->first();
+            
+            
+            // Check if payment exists and belongs to this organization
+            $payment = DB::table('organizationfees')
+                ->where('id', $paymentId)
+                ->first();
+
+            $payment2 = DB::table('payments')
+                ->where('id', $paymentId)
+                ->first();
+
+            if($payment2) {
+                $updated_it = DB::table('payments')
+                ->where('id', $paymentId)
+                ->update([
+                    'status' => 'Approved',
+                ]);
+            }
                 
-                if ($orgFee) {
-                    // Update organizationfees table
-                    DB::table('organizationfees')
-                        ->where('id', $feeId)
-                        ->update([
-                            'status' => 'Approved',
-                            'updated_at' => date('Y-m-d H:i:s')
-                        ]);
-                    
-                    // Also update payments table if a corresponding payment exists
-                    DB::table('payments')
-                        ->where('student_id', $orgFee->student_id)
-                        ->where('type', 'PAYMENT_RECEIPT')
-                        ->where('status', 'Pending')
-                        ->update([
-                            'status' => 'Approved',
-                            'updated_at' => date('Y-m-d H:i:s')
-                        ]);
-                    
-                    // Create an audit log entry
-                    DB::table('auditlogs')->insert([
-                        'user_id' => $orgFee->student_id,
-                        'action' => 'Organization fee approved',
-                        'details' => 'Fee ID: ' . $feeId . ' - Amount: ' . $orgFee->amount,
-                        'ip_address' => $request->ip(),
-                        'date' => date('Y-m-d H:i:s'),
-                        'access_by' => auth()->check() ? auth()->id() : 0
-                    ]);
-                    
-                    return response()->json([
-                        'success' => true,
-                        'message' => 'Fee approved successfully in both tables'
-                    ]);
-                } else {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Fee record not found'
-                    ]);
-                }
-            } else {
+            if (!$payment) {
+                Log::warning('Payment not found or unauthorized', [
+                    'payment_id' => $paymentId,
+                    'available_org_ids' => DB::table('organizationfees')->pluck('org_id')->toArray()
+                ]);
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid table specified'
+                    'error' => 'Payment not found or you are not authorized to approve it.'
+                ], 404);
+            }
+            
+            // Check if payment is already approved
+            if ($payment->status === 'Approved') {
+                Log::info('Payment already approved', ['payment_id' => $paymentId]);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Payment was already approved.'
                 ]);
             }
             
+            // Update the payment status
+            $updated = DB::table('organizationfees')
+                ->where('id', $paymentId)
+                ->update([
+                    'status' => 'Approved',
+                ]);
+            
+            if ($updated) {
+                Log::info('Payment approved successfully', [
+                    'payment_id' => $paymentId,
+                    'student_id' => $payment->student_id
+                ]);
+                
+                // Send notification to student (optional)
+                $studentId = $payment->student_id;
+                // if ($studentId) {
+                //     // Find user_id from students table
+                //     $student = DB::table('students')->where('id', $studentId)->first();
+                //     if ($student) {
+                //         DB::table('notifications')->insert([
+                //             'user_id' => $student->student_id,
+                //             'title' => 'Payment Approved',
+                //             'message' => 'Your payment has been approved by the organization.',
+                //             'is_read' => 0,
+                //             'created_at' => now()
+                //         ]);
+                //     }
+                // }
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Payment approved successfully.'
+                ]);
+            } else {
+                Log::error('Failed to update payment status', ['payment_id' => $paymentId]);
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Failed to update payment status. Please try again.'
+                ], 500);
+            }
+            
         } catch (\Exception $e) {
+            Log::error('Error in acceptFee: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'payment_id' => $paymentId
+            ]);
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Error approving fee: ' . $e->getMessage()
-            ]);
+                'error' => 'Database error: ' . $e->getMessage()
+            ], 500);
         }
     }
 

@@ -2414,11 +2414,11 @@ if (isset($averageGrade) && $averageGrade > 0) {
                                 <div class="enhanced-payment-items">
                                     <div class="enhanced-payment-item">
                                         <span>Organizational Fee</span>
-                                        <span>₱150.00</span>
+                                        <span>₱125.00</span>
                                     </div>
                                     <div class="enhanced-payment-item total">
                                         <span>Total Amount</span>
-                                        <span>₱150.00</span>
+                                        <span>₱125.00</span>
                                     </div>
                                 </div>
                             </div>
@@ -2431,7 +2431,7 @@ if (isset($averageGrade) && $averageGrade > 0) {
                                     <div class="enhanced-step-number">1</div>
                                     <div class="enhanced-step-content">
                                         <strong>Pay via GCash</strong>
-                                        <p>Send ₱150.00 to GCash Number: <strong>0912-345-6789</strong></p>
+                                        <p>Send ₱150.00 to GCash Number: <strong style="background: green; color: white; padding: 10px; border-radius: 5px">09464930641</strong></p>
                                     </div>
                                 </div>
                                 <div class="enhanced-payment-step">

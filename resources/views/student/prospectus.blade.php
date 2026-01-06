@@ -296,8 +296,6 @@
             <tr>
                 <td class="info-label">Year Level:</td>
                 <td>{{ $student['year_level'] }}</td>
-                <td class="info-label">Curriculum:</td>
-                <td>{{ $student['curriculum'] }}</td>
             </tr>
             <tr>
                 <td class="info-label">Enrollment Status:</td>

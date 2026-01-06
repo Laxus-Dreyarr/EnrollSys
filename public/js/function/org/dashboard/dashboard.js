@@ -1,46 +1,69 @@
+let allPayments = []; // Store all payments for filtering
+let currentFilters = {
+    status: '',
+    month: ''
+};
+
 // Load payments data
 function loadPayments() {
-    showLoading();
+    showLoadingState();
     
     $.ajax({
         url: '/org/fees/data',
         type: 'GET',
         dataType: 'json',
         success: function(response) {
-            hideLoading();
-            
             if (response.success) {
-                populatePaymentsTable(response.payments);
-                updatePaymentStats(response.payments);
+                allPayments = response.payments;
+                applyFilters(); // Apply any existing filters
+                updateStatsGrid(allPayments); // Update stats grid with full data
             } else {
-                // Show server-side error
-                showError('Failed to load payments: ' + (response.error || 'Unknown error'));
+                showError('Failed to load payments: ' + response.error);
+                showEmptyState('Failed to load payments');
             }
         },
         error: function(xhr, status, error) {
-            hideLoading();
-            
-            // Get response text for more details
             let errorMessage = 'Error loading payments. Please try again.';
             if (xhr.responseJSON && xhr.responseJSON.error) {
                 errorMessage = 'Error: ' + xhr.responseJSON.error;
-            } else if (xhr.status === 401) {
-                errorMessage = 'Session expired. Please log in again.';
-            } else if (xhr.status === 404) {
-                errorMessage = 'Endpoint not found. Check route configuration.';
-            } else if (xhr.status === 500) {
-                errorMessage = 'Server error. Please contact administrator.';
             }
-            
             showError(errorMessage);
-            console.error('Payment load error:', {
-                status: xhr.status,
-                statusText: xhr.statusText,
-                responseText: xhr.responseText,
-                error: error
-            });
+            showEmptyState('Failed to load payments');
+            console.error('Payment load error:', error);
         }
     });
+}
+
+// Apply filters to payments
+function applyFilters() {
+    let filteredPayments = [...allPayments];
+    
+    // Apply status filter
+    if (currentFilters.status) {
+        filteredPayments = filteredPayments.filter(payment => 
+            payment.status === currentFilters.status
+        );
+    }
+    
+    // Apply month filter
+    if (currentFilters.month) {
+        filteredPayments = filteredPayments.filter(payment => {
+            const paymentDate = new Date(payment.raw_date || payment.date);
+            const filterDate = new Date(currentFilters.month + '-01');
+            
+            return paymentDate.getFullYear() === filterDate.getFullYear() && 
+                   paymentDate.getMonth() === filterDate.getMonth();
+        });
+    }
+    
+    // Populate table with filtered payments
+    populatePaymentsTable(filteredPayments);
+    
+    // Update total amount and count
+    updateTotalAmount(filteredPayments);
+    
+    // Update UI to show active filters
+    updateFilterUI();
 }
 
 // Populate payments table
@@ -49,16 +72,7 @@ function populatePaymentsTable(payments) {
     paymentsList.empty();
     
     if (payments.length === 0) {
-        paymentsList.html(`
-            <tr>
-                <td colspan="6" class="text-center">
-                    <div class="no-data-message">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                        <p>No payment records found</p>
-                    </div>
-                </td>
-            </tr>
-        `);
+        showEmptyState('No payments match your filters');
         return;
     }
     
@@ -101,9 +115,6 @@ function populatePaymentsTable(payments) {
                         <button class="approve-btn" data-payment-id="${payment.payment_id}">
                             <i class="fas fa-check"></i>
                         </button>
-                        <button class="reject-btn" data-payment-id="${payment.payment_id}">
-                            <i class="fas fa-times"></i>
-                        </button>
                     </div>
                     ` : ''}
                 </td>
@@ -114,6 +125,177 @@ function populatePaymentsTable(payments) {
     
     // Attach event listeners
     attachPaymentEventListeners();
+}
+
+
+// Update total amount and count
+function updateTotalAmount(payments) {
+    if (payments.length === 0) {
+        $('#payments-total').text('₱0.00');
+        $('#filtered-count').text('(0 payments)');
+        return;
+    }
+    
+    const totalAmount = payments.reduce((sum, payment) => {
+        return sum + parseFloat(payment.raw_amount || payment.amount.replace('₱', '').replace(',', ''));
+    }, 0);
+    
+    $('#payments-total').text('₱' + totalAmount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,'));
+    $('#filtered-count').text(`(${payments.length} payment${payments.length !== 1 ? 's' : ''})`);
+}
+
+// Update stats grid with payment data
+function updateStatsGrid(payments) {
+    if (payments.length === 0) return;
+    
+    const approvedPayments = payments.filter(p => p.status === 'Approved');
+    const pendingPayments = payments.filter(p => p.status === 'Pending');
+    
+    // Calculate totals
+    const totalCollected = approvedPayments.reduce((sum, p) => 
+        sum + parseFloat(p.raw_amount || p.amount.replace('₱', '').replace(',', '')), 0);
+    
+    const totalPending = pendingPayments.reduce((sum, p) => 
+        sum + parseFloat(p.raw_amount || p.amount.replace('₱', '').replace(',', '')), 0);
+    
+    // Update stats cards
+    $('.stat-card:nth-child(1) .stat-value').text('₱' + totalCollected.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+    $('.stat-card:nth-child(2) .stat-value').text('₱' + totalPending.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+    $('.stat-card:nth-child(3) .stat-value').text(approvedPayments.length);
+    
+    // You might want to calculate changes from previous period
+    // For now, we'll just show the counts
+}
+
+
+// Update filter UI to show active filters
+function updateFilterUI() {
+    const statusFilter = $('#status-filter');
+    const monthFilter = $('#month-filter');
+    const clearBtn = $('#clear-filters');
+    
+    // Reset active states
+    statusFilter.removeClass('filter-active');
+    monthFilter.removeClass('filter-active');
+    
+    // Add active state to filters with values
+    if (currentFilters.status) {
+        statusFilter.addClass('filter-active');
+    }
+    if (currentFilters.month) {
+        monthFilter.addClass('filter-active');
+    }
+    
+    // Show/hide clear button
+    if (currentFilters.status || currentFilters.month) {
+        clearBtn.show();
+    } else {
+        clearBtn.hide();
+    }
+}
+
+
+// Show empty state
+function showEmptyState(message = 'No payment records found') {
+    $('#payments-list').html(`
+        <tr>
+            <td colspan="6" class="text-center">
+                <div class="empty-state">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <p>${message}</p>
+                    ${currentFilters.status || currentFilters.month ? 
+                        '<button id="clear-filters-empty" class="btn btn-sm btn-outline-secondary mt-2">Clear Filters</button>' : 
+                        ''
+                    }
+                </div>
+            </td>
+        </tr>
+    `);
+    
+    // Attach clear filter listener to empty state button
+    $('#clear-filters-empty').on('click', clearFilters);
+}
+
+// Show loading state
+function showLoadingState() {
+    $('#payments-list').html(`
+        <tr>
+            <td colspan="6" class="text-center">
+                <div class="loading-state">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading payments...</p>
+                </div>
+            </td>
+        </tr>
+    `);
+}
+
+// Filter event handlers
+function setupFilterHandlers() {
+    // Status filter change
+    $('#status-filter').on('change', function() {
+        currentFilters.status = $(this).val();
+        applyFilters();
+    });
+    
+    // Month filter change
+    $('#month-filter').on('change', function() {
+        currentFilters.month = $(this).val();
+        applyFilters();
+    });
+    
+    // Clear filters button
+    $('#clear-filters').on('click', clearFilters);
+}
+
+function clearFilters() {
+    $('#status-filter').val('');
+    $('#month-filter').val('');
+    currentFilters = { status: '', month: '' };
+    applyFilters();
+}
+
+function setupExportHandler() {
+    $('#export-btn').on('click', function() {
+        if (allPayments.length === 0) {
+            showError('No data to export');
+            return;
+        }
+        
+        // Create CSV data
+        let csvContent = "data:text/csv;charset=utf-8,";
+        
+        // Add headers
+        const headers = ["Date", "Student Name", "Student ID", "Year Level", "Amount", "Status", "Payment ID"];
+        csvContent += headers.join(",") + "\n";
+        
+        // Add data rows
+        allPayments.forEach(payment => {
+            const row = [
+                `"${payment.date}"`,
+                `"${payment.student_name}"`,
+                `"${payment.student_id}"`,
+                `"${payment.year_level}"`,
+                `"₱${payment.amount}"`,
+                `"${payment.status}"`,
+                `"${payment.payment_id}"`
+            ];
+            csvContent += row.join(",") + "\n";
+        });
+        
+        // Create download link
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `payments_export_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        
+        // Trigger download
+        link.click();
+        document.body.removeChild(link);
+        
+        showSuccess('Export started. Your download should begin shortly.');
+    });
 }
 
 // Update payment statistics
@@ -250,6 +432,8 @@ function showSuccess(message) {
         
 $(document).ready(function() {
     loadPayments();
+    setupFilterHandlers();
+    setupExportHandler();
     // Load payment data
     function loadPaymentData() {
         console.log('Attempting to load payment data...');
@@ -374,11 +558,6 @@ $(document).ready(function() {
                                             data-payment-id="${payment.id}" 
                                             data-student-id="${payment.student_id}">
                                         <i class="fas fa-check"></i> Approve
-                                    </button>
-                                    <button class="btn btn-sm btn-danger reject-payment" 
-                                            data-payment-id="${payment.id}" 
-                                            data-student-id="${payment.student_id}">
-                                        <i class="fas fa-times"></i> Reject
                                     </button>
                                     ${payment.file_path ? 
                                         `<a href="/documents/${payment.file_path.replace('documents/', '')}" 

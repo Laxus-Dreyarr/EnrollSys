@@ -3250,7 +3250,7 @@ class StudentController extends Controller
                     'status' => 'Pending',
                     'created_at' => now(),
                     'updated_at' => now(),
-                    'amount' => 120.00
+                    'amount' => 125.00
                 ]);
             }
 
@@ -3625,7 +3625,7 @@ class StudentController extends Controller
                     'status' => 'Pending',
                     'created_at' => now(),
                     'updated_at' => now(),
-                    'amount' => 120.00
+                    'amount' => 125.00
                 ]);
 
             return $filePath;

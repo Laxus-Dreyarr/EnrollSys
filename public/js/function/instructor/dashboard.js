@@ -373,7 +373,7 @@ function loadRequestDetails(request) {
             subjectsHTML += `
                 <div class="${subjectClass}">
                     <div class="subject-header">
-                        <div class="subject-code">${subject.subject_code}</div>
+                        <div class="subject-code" style="background: green; color: white; padding: 5px; border-radius: 10px;">${subject.subject_code}</div>
                         <div class="subject-meta">
                             ${subject.units} units • ${subject.semester} • ${subject.section_name}
                         </div>

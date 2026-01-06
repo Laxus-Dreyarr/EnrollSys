@@ -204,8 +204,8 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <div class="university-name">University Name</div>
-            <div class="university-address">University Address, City, Country</div>
+            <div class="university-name">Easter Visayas State University</div>
+            <div class="university-address">Ormoc, City Campus</div>
             <div class="document-title">PAYMENT NOTICE</div>
         </div>
         
@@ -215,7 +215,7 @@
             <div class="notice-content">
                 This document serves as an official notice that the student has chosen to proceed with enrollment 
                 without submitting a payment receipt at this time. The student acknowledges that payment of the 
-                organizational fee (₱150.00) will be made at a later date as agreed upon with the administration.
+                organizational fee (₱125.00) will be made at a later date as agreed upon with the administration.
             </div>
         </div>
         
@@ -248,7 +248,7 @@
             <div class="payment-title">Payment Information</div>
             <div class="payment-item">
                 <span>Organizational Fee:</span>
-                <span>₱150.00</span>
+                <span>₱125.00</span>
             </div>
             <div class="payment-item">
                 <span>Status:</span>
@@ -256,7 +256,7 @@
             </div>
             <div class="payment-item">
                 <span>Total Amount Due:</span>
-                <span>₱150.00</span>
+                <span>₱125.00</span>
             </div>
         </div>
         
@@ -264,7 +264,7 @@
         <div class="instructions">
             <div class="instructions-title">Payment Instructions:</div>
             <ul class="instructions-list">
-                <li>Payment of ₱150.00 (Organizational Fee) must be completed before the deadline specified by the administration.</li>
+                <li>Payment of ₱125.00 (Organizational Fee) must be completed before the deadline specified by the administration.</li>
                 <li>Payment can be made via GCash to the number: <strong>0912-345-6789</strong></li>
                 <li>After payment, please upload the payment receipt through the student portal.</li>
                 <li>Failure to complete payment within the specified period may result in enrollment cancellation.</li>
