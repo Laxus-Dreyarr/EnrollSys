@@ -562,7 +562,7 @@ Route::middleware(['org.auth'])->group(function () {
 
     Route::post('/org/approve-payment', [OrgController::class, 'approvePayment'])->name('org.approve.payment');
     Route::post('/org/reject-payment', [OrgController::class, 'rejectPayment'])->name('org.reject.payment');
-    
+
 
     // File serving routes for documents
     // Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {

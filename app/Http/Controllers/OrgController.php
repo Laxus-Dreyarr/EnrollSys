@@ -1416,77 +1416,117 @@ class OrgController extends Controller
         }
     }
 
+
     public function getOrganizationFeesData()
     {
+        // Get the logged-in organization's ID from session
+        $orgId = 4; 
+        
+        if (!$orgId) {
+            return response()->json(['error' => 'Organization not authenticated'], 401);
+        }
+
         try {
-            // Hardcode org_id from your database for testing
-            // From your data: orgs_info table has id=4 for organization_id=540716
-            $orgId = 4; 
-            
-            // Get year levels
-            $yearLevels = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
-            $feeData = [];
-            
-            foreach ($yearLevels as $yearLevel) {
-                // Get all officially enrolled students in this year level
-                $students = DB::table('students as s')
-                    ->join('user_info as ui', 's.student_id', '=', 'ui.id')
-                    ->where('s.year_level', $yearLevel)
-                    ->where('s.status', 'Officially Enrolled') // Only enrolled students
-                    ->select(
-                        's.id as student_id',
-                        's.id_no',
-                        'ui.firstname',
-                        'ui.lastname',
-                        'ui.phone_number'
-                    )
-                    ->get();
+            // Get the organization info to get the orgs_info ID
+            // $orgInfo = DB::table('orgs_info')
+            //     ->where('organization_id', $orgId)
+            //     ->first();
                 
-                // For each student, check if they have pending fees in PAYMENTS table only
-                $studentFees = [];
-                foreach ($students as $student) {
-                    // Query payments table only for pending payment receipts
-                    $payment = DB::table('payments')
-                        ->where('student_id', $student->student_id)
-                        ->where('type', 'PAYMENT_RECEIPT')
-                        ->where('status', 'Pending')
-                        ->first();
-                    
-                    if ($payment) {
-                        // Return data from payments table only
-                        $studentFees[] = (object)[
-                            'fee_id' => $payment->id, // Payment ID from payments table
-                            'student_id' => $student->student_id,
-                            'id_no' => $student->id_no,
-                            'firstname' => $student->firstname,
-                            'lastname' => $student->lastname,
-                            'phone_number' => $student->phone_number,
-                            'amount' => $payment->amount ?: 0.00, // Get amount from payments table
-                            'status' => $payment->status,
-                            'receipt_url' => $payment->file_path,
-                            'source_table' => 'payments' // Now returning 'payments' as source
-                        ];
+            // if (!$orgInfo) {
+            //     return response()->json(['error' => 'Organization info not found'], 404);
+            // }
+
+            // Query organization fees with student information
+            $payments = DB::table('organizationfees as of')
+                ->select(
+                    'of.id as payment_id',
+                    'of.amount',
+                    'of.status',
+                    'of.receipt_url',
+                    'of.uploaded_date',
+                    'of.year_level',
+                    's.id as student_id',
+                    's.id_no',
+                    's.year_level as student_year_level',
+                    'ui.firstname',
+                    'ui.lastname',
+                    'ui.middlename',
+                    'u.email2 as email'
+                )
+                ->leftJoin('students as s', 'of.student_id', '=', 's.id')
+                ->leftJoin('user_info as ui', 's.student_id', '=', 'ui.user_id')
+                ->leftJoin('users as u', 'ui.user_id', '=', 'u.id')
+                ->orderBy('of.uploaded_date', 'desc')
+                ->get();
+
+                // ->leftJoin('students as s', 'of.student_id', '=', 's.id')
+                // ->leftJoin('user_info as ui', 's.student_id', '=', 'ui.user_id')
+                // ->leftJoin('users as u', 'ui.user_id', '=', 'u.id')
+                // ->where('of.org_id', $orgInfo->id) // Use orgs_info.id not organization_id
+                // ->orderBy('of.uploaded_date', 'desc')
+                // ->get();
+
+            // Format the data
+            $formattedPayments = $payments->map(function ($payment) {
+                // Format student name
+                $studentName = trim($payment->lastname . ', ' . $payment->firstname);
+                if ($payment->middlename) {
+                    $studentName .= ' ' . substr($payment->middlename, 0, 1) . '.';
+                }
+
+                // Format date
+                $formattedDate = date('M d, Y h:i A', strtotime($payment->uploaded_date));
+
+                // Determine status badge class
+                $statusClass = 'status-pending';
+                if ($payment->status === 'Approved') {
+                    $statusClass = 'status-approved';
+                } elseif ($payment->status === 'Rejected') {
+                    $statusClass = 'status-rejected';
+                }
+
+                // Extract file information for viewing
+                $filePath = $payment->receipt_url;
+                $folder = '';
+                $filename = '';
+                
+                if ($filePath) {
+                    $pathParts = explode('/', $filePath);
+                    if (count($pathParts) >= 3) {
+                        $folder = $pathParts[1]; // payment_receipts
+                        $filename = end($pathParts);
                     }
                 }
-                
-                $feeData[$yearLevel] = [
-                    'students' => $studentFees,
-                    'total_count' => count($studentFees),
-                    'total_amount' => collect($studentFees)->sum('amount')
+
+                return [
+                    'payment_id' => $payment->payment_id,
+                    'date' => $formattedDate,
+                    'student_name' => $studentName,
+                    'student_id' => $payment->id_no,
+                    'student_email' => $payment->email,
+                    'year_level' => $payment->year_level ?: $payment->student_year_level,
+                    'amount' => number_format($payment->amount, 2),
+                    'raw_amount' => $payment->amount,
+                    'status' => $payment->status,
+                    'status_class' => $statusClass,
+                    'receipt_url' => $filePath,
+                    'folder' => $folder,
+                    'filename' => $filename,
+                    'student_full_info' => $payment->firstname . ' ' . $payment->lastname . ' (' . $payment->id_no . ')'
                 ];
-            }
-            
+            });
+
             return response()->json([
                 'success' => true,
-                'data' => $feeData,
-                'message' => 'Data loaded successfully'
+                'payments' => $formattedPayments,
+                'total' => $payments->count()
             ]);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ]);
+                'error' => 'Failed to fetch payments: ' . $e->getMessage()
+            ], 500);
         }
     }
 

@@ -1,6 +1,255 @@
+// Load payments data
+function loadPayments() {
+    showLoading();
+    
+    $.ajax({
+        url: '/org/fees/data',
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            hideLoading();
+            
+            if (response.success) {
+                populatePaymentsTable(response.payments);
+                updatePaymentStats(response.payments);
+            } else {
+                // Show server-side error
+                showError('Failed to load payments: ' + (response.error || 'Unknown error'));
+            }
+        },
+        error: function(xhr, status, error) {
+            hideLoading();
+            
+            // Get response text for more details
+            let errorMessage = 'Error loading payments. Please try again.';
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMessage = 'Error: ' + xhr.responseJSON.error;
+            } else if (xhr.status === 401) {
+                errorMessage = 'Session expired. Please log in again.';
+            } else if (xhr.status === 404) {
+                errorMessage = 'Endpoint not found. Check route configuration.';
+            } else if (xhr.status === 500) {
+                errorMessage = 'Server error. Please contact administrator.';
+            }
+            
+            showError(errorMessage);
+            console.error('Payment load error:', {
+                status: xhr.status,
+                statusText: xhr.statusText,
+                responseText: xhr.responseText,
+                error: error
+            });
+        }
+    });
+}
 
+// Populate payments table
+function populatePaymentsTable(payments) {
+    const paymentsList = $('#payments-list');
+    paymentsList.empty();
+    
+    if (payments.length === 0) {
+        paymentsList.html(`
+            <tr>
+                <td colspan="6" class="text-center">
+                    <div class="no-data-message">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <p>No payment records found</p>
+                    </div>
+                </td>
+            </tr>
+        `);
+        return;
+    }
+    
+    payments.forEach(payment => {
+        const row = `
+            <tr data-payment-id="${payment.payment_id}" data-student-id="${payment.student_id}">
+                <td>${payment.date}</td>
+                <td>
+                    <div class="student-info">
+                        <strong>${payment.student_name}</strong>
+                        <small>${payment.student_id}</small>
+                        <div class="student-year">${payment.year_level}</div>
+                    </div>
+                </td>
+                <td>${payment.payment_id}</td>
+                <td class="amount-cell">
+                    <span class="amount">₱${payment.amount}</span>
+                </td>
+                <td>
+                    <span class="status-badge ${payment.status_class}">
+                        ${payment.status}
+                    </span>
+                </td>
+                <td>
+                    ${payment.receipt_url ? `
+                    <button class="view-btn view-receipt-btn" 
+                            data-payment-id="${payment.payment_id}"
+                            data-receipt-url="${payment.receipt_url}"
+                            data-folder="${payment.folder}"
+                            data-filename="${payment.filename}">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                    ` : `
+                    <button class="view-btn" disabled>
+                        <i class="fas fa-eye-slash"></i> No Receipt
+                    </button>
+                    `}
+                    ${payment.status === 'Pending' ? `
+                    <div class="action-buttons">
+                        <button class="approve-btn" data-payment-id="${payment.payment_id}">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="reject-btn" data-payment-id="${payment.payment_id}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    ` : ''}
+                </td>
+            </tr>
+        `;
+        paymentsList.append(row);
+    });
+    
+    // Attach event listeners
+    attachPaymentEventListeners();
+}
+
+// Update payment statistics
+function updatePaymentStats(payments) {
+    const totalPayments = payments.length;
+    const pendingPayments = payments.filter(p => p.status === 'Pending').length;
+    const approvedPayments = payments.filter(p => p.status === 'Approved').length;
+    const totalAmount = payments.reduce((sum, p) => sum + parseFloat(p.raw_amount), 0);
+    
+    // Update stats cards if they exist
+    $('#total-payments-count').text(totalPayments);
+    $('#pending-payments-count').text(pendingPayments);
+    $('#approved-payments-count').text(approvedPayments);
+    $('#total-amount').text('₱' + totalAmount.toFixed(2));
+}
+
+// Attach event listeners to payment buttons
+function attachPaymentEventListeners() {
+    // View receipt button
+    $('.view-receipt-btn').on('click', function() {
+        const paymentId = $(this).data('payment-id');
+        const folder = $(this).data('folder');
+        const filename = $(this).data('filename');
+        
+        if (folder && filename) {
+            // Open receipt in new tab
+            const receiptUrl = `/documents/${folder}/${filename}`;
+            window.open(receiptUrl, '_blank');
+        } else {
+            showError('Receipt file not found');
+        }
+    });
+    
+    // Approve payment button
+    $('.approve-btn').on('click', function(e) {
+        e.stopPropagation();
+        const paymentId = $(this).data('payment-id');
+        approvePayment(paymentId);
+    });
+    
+    // Reject payment button
+    $('.reject-btn').on('click', function(e) {
+        e.stopPropagation();
+        const paymentId = $(this).data('payment-id');
+        rejectPayment(paymentId);
+    });
+}
+
+// Approve payment function
+function approvePayment(paymentId) {
+    if (!confirm('Are you sure you want to approve this payment?')) return;
+    
+    $.ajax({
+        url: '/org/fees/accept',
+        type: 'POST',
+        data: {
+            _token: $('meta[name="csrf-token"]').attr('content'),
+            payment_id: paymentId
+        },
+        success: function(response) {
+            if (response.success) {
+                showSuccess('Payment approved successfully!');
+                loadPayments(); // Refresh the list
+            } else {
+                showError(response.error || 'Failed to approve payment');
+            }
+        },
+        error: function() {
+            showError('Error approving payment. Please try again.');
+        }
+    });
+}
+
+// Reject payment function
+function rejectPayment(paymentId) {
+    const reason = prompt('Please enter reason for rejection:', '');
+    
+    if (reason === null) return;
+    
+    if (!reason.trim()) {
+        showError('Rejection reason is required');
+        return;
+    }
+    
+    $.ajax({
+        url: '/org/reject-payment',
+        type: 'POST',
+        data: {
+            _token: $('meta[name="csrf-token"]').attr('content'),
+            payment_id: paymentId,
+            reason: reason
+        },
+        success: function(response) {
+            if (response.success) {
+                showSuccess('Payment rejected successfully!');
+                loadPayments(); // Refresh the list
+            } else {
+                showError(response.error || 'Failed to reject payment');
+            }
+        },
+        error: function() {
+            showError('Error rejecting payment. Please try again.');
+        }
+    });
+}
+
+// Add these utility functions if not already present
+function showLoading() {
+    $('#payments-list').html(`
+        <tr>
+            <td colspan="6" class="text-center">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading payments...</p>
+                </div>
+            </td>
+        </tr>
+    `);
+}
+
+function hideLoading() {
+    // Remove loading indicator
+}
+
+function showError(message) {
+    // Use your preferred notification method
+    alert('Error: ' + message);
+}
+
+function showSuccess(message) {
+    // Use your preferred notification method
+    alert('Success: ' + message);
+}
         
 $(document).ready(function() {
+    loadPayments();
     // Load payment data
     function loadPaymentData() {
         console.log('Attempting to load payment data...');
