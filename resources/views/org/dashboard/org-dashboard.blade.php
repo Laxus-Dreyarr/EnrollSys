@@ -162,43 +162,120 @@
             <!-- Year Level Sections -->
             <div id="year-level-sections">
                 @foreach (['First Year', 'Second Year', 'Third Year', 'Fourth Year'] as $year)
-                <div class="year-level-card fade-in">
-                    <div class="card-header">
-                        <h3 class="card-title">{{ $year }} Students</h3>
-                        <span class="card-badge" id="{{ str_replace(' ', '-', strtolower($year)) }}-pending">0 pending</span>
-                    </div>
+                    @php
+                        $yearKey = strtolower(str_replace(' ', '_', $year));
+                        $yearData = $yearLevelData[$yearKey] ?? [
+                            'payments' => collect([]),
+                            'total' => 0,
+                            'pending_count' => 0
+                        ];
+                    @endphp
                     
-                    <div class="student-table-container">
-                        <table class="student-table">
-                            <thead>
-                                <tr>
-                                    <th>Student</th>
-                                    <th>ID Number</th>
-                                    <th>Contact</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="{{ str_replace(' ', '-', strtolower($year)) }}-students">
-                                <!-- Dynamic content will be loaded here -->
-                                <tr>
-                                    <td colspan="6" class="text-center">Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <div class="card-footer">
-                        <div class="total-amount">
-                            Total: <span id="{{ str_replace(' ', '-', strtolower($year)) }}-total">₱0.00</span>
+                    <div class="year-level-card fade-in">
+                        <div class="card-header">
+                            <h3 class="card-title">{{ $year }} Students</h3>
+                            <span class="card-badge" id="{{ str_replace(' ', '-', strtolower($year)) }}-pending">
+                                {{ $yearData['pending_count'] }} pending
+                            </span>
                         </div>
-                        <button class="btn btn-outline-primary d-flex align-items-center justify-content-center export-btn" 
-                                data-year="{{ $year }}">
-                            <i class="fas fa-download me-2"></i> Export
-                        </button>
+                        
+                        <div class="student-table-container">
+                            <table class="student-table">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>ID Number</th>
+                                        <th>Contact</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Date Submitted</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="{{ str_replace(' ', '-', strtolower($year)) }}-students">
+                                    @if($yearData['payments']->count() > 0)
+                                        @foreach($yearData['payments'] as $payment)
+                                            <tr>
+                                                <td>
+                                                    <div class="student-info">
+                                                        <div class="avatar">
+                                                            @if(!empty($payment->firstname))
+                                                                <span>{{ substr($payment->firstname, 0, 1) }}</span>
+                                                            @else
+                                                                <span>N</span>
+                                                            @endif
+                                                        </div>
+                                                        <div>
+                                                            <div class="student-name">
+                                                                {{ $payment->firstname ?? 'N/A' }} 
+                                                                {{ $payment->lastname ?? '' }}
+                                                            </div>
+                                                            <div class="student-email">
+                                                                {{ $payment->email ?? 'No email' }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ $payment->id_no ?? 'N/A' }}</td>
+                                                <td>{{ $payment->phone_number ?? 'No contact' }}</td>
+                                                <td class="amount">₱{{ number_format($payment->amount, 2) }}</td>
+                                                <td>
+                                                    <span class="status-badge status-{{ strtolower($payment->status) }}">
+                                                        {{ ucfirst($payment->status) }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {{ \Carbon\Carbon::parse($payment->created_at)->format('M d, Y h:i A') }}
+                                                </td>
+                                                <td>
+                                                    <div class="action-buttons d-flex gap-2">
+                                                        <button class="btn btn-sm btn-success approve-payment" 
+                                                                data-payment-id="{{ $payment->id }}"
+                                                                data-student-id="{{ $payment->student_id }}">
+                                                            <i class="fas fa-check"></i> Approve
+                                                        </button>
+                                                        <button class="btn btn-sm btn-danger reject-payment" 
+                                                                data-payment-id="{{ $payment->id }}"
+                                                                data-student-id="{{ $payment->student_id }}">
+                                                            <i class="fas fa-times"></i> Reject
+                                                        </button>
+                                                        @if(!empty($payment->file_path))
+                                                            <a href="{{ asset($payment->file_path) }}" 
+                                                            target="_blank"
+                                                            class="btn btn-sm btn-outline-primary">
+                                                                <i class="fas fa-eye"></i> View Receipt
+                                                            </a>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td colspan="7" class="text-center py-4">
+                                                <div class="text-muted">
+                                                    <i class="fas fa-inbox fa-2x mb-2"></i>
+                                                    <p>No pending payments found</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="card-footer">
+                            <div class="total-amount">
+                                Total Pending: <span id="{{ str_replace(' ', '-', strtolower($year)) }}-total">
+                                    ₱{{ number_format($yearData['total'], 2) }}
+                                </span>
+                            </div>
+                            <button class="btn btn-outline-primary d-flex align-items-center justify-content-center export-btn" 
+                                    data-year="{{ $yearKey }}">
+                                <i class="fas fa-download me-2"></i> Export
+                            </button>
+                        </div>
                     </div>
-                </div>
                 @endforeach
             </div>
             
@@ -1044,5 +1121,176 @@
     <script src="{{asset('js/sweetalert2.js')}}"></script>
     <!-- <script src="{{asset('js/sweetalert3.js')}}"></script> -->
     <script src="{{asset('js/function/org/dashboard/dashboard.js')}}"></script>
+    <script>
+$(document).ready(function() {
+    // Initialize mobile sidebar
+    setupMobileSidebar();
+    
+    // Initialize settings tabs
+    setupSettingsTabs();
+    
+    // Setup navigation
+    setupNavigation();
+    
+    // Setup touch interactions
+    setupTouchInteractions();
+});
+
+// Simplified setupMobileSidebar function
+function setupMobileSidebar() {
+    const menuToggleButtons = document.querySelectorAll('.menu-toggle:not(.sidebar-close)');
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const sidebarCloseBtn = document.querySelector('.sidebar-close');
+    
+    // Function to open sidebar
+    function openSidebar() {
+        if (sidebar) {
+            sidebar.classList.add('active');
+            if (sidebarOverlay) {
+                sidebarOverlay.classList.add('active');
+            }
+            document.body.style.overflow = 'hidden';
+        }
+    }
+    
+    // Function to close sidebar
+    function closeSidebar() {
+        if (sidebar) {
+            sidebar.classList.remove('active');
+            if (sidebarOverlay) {
+                sidebarOverlay.classList.remove('active');
+            }
+            document.body.style.overflow = '';
+        }
+    }
+    
+    // Add event listeners to all menu toggle buttons
+    menuToggleButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openSidebar();
+        });
+    });
+    
+    // Close sidebar when clicking the close button inside sidebar
+    if (sidebarCloseBtn) {
+        sidebarCloseBtn.addEventListener('click', closeSidebar);
+    }
+    
+    // Close sidebar when clicking on overlay
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeSidebar);
+    }
+    
+    // Close sidebar when clicking on a nav link (on mobile)
+    const navLinks = document.querySelectorAll('.nav-links a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth <= 1024) {
+                closeSidebar();
+            }
+        });
+    });
+    
+    // Close sidebar with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && sidebar && sidebar.classList.contains('active')) {
+            closeSidebar();
+        }
+    });
+    
+    // Handle window resize
+    function updateSidebarCloseButton() {
+        if (window.innerWidth <= 1024 && sidebarCloseBtn) {
+            sidebarCloseBtn.style.display = 'flex';
+        } else if (sidebarCloseBtn) {
+            sidebarCloseBtn.style.display = 'none';
+        }
+    }
+    
+    updateSidebarCloseButton();
+    window.addEventListener('resize', updateSidebarCloseButton);
+}
+
+// Setup navigation between sections
+function setupNavigation() {
+    const navLinks = document.querySelectorAll('.nav-links a');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Get the section to show
+            const sectionId = this.getAttribute('data-section');
+            
+            // Remove active class from all links
+            navLinks.forEach(l => l.classList.remove('active'));
+            
+            // Add active class to clicked link
+            this.classList.add('active');
+            
+            // Hide all content sections
+            const contentSections = document.querySelectorAll('.content-section');
+            contentSections.forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show the selected section
+            const targetSection = document.getElementById(`${sectionId}-section`);
+            if (targetSection) {
+                targetSection.classList.add('active');
+                window.scrollTo(0, 0);
+            }
+        });
+    });
+}
+
+// Setup settings tabs
+function setupSettingsTabs() {
+    const settingsTabs = document.querySelectorAll('[data-settings-tab]');
+    
+    settingsTabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all tabs
+            settingsTabs.forEach(t => t.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            this.classList.add('active');
+            
+            // Hide all settings content
+            const settingsContent = document.querySelectorAll('.settings-tab');
+            settingsContent.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            const tabId = this.getAttribute('data-settings-tab');
+            const targetTab = document.getElementById(`${tabId}-tab`);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+        });
+    });
+}
+
+// Setup touch interactions
+function setupTouchInteractions() {
+    // Add touch feedback to interactive elements
+    const interactiveElements = document.querySelectorAll('button, .btn, .nav-links a, .stat-card, .year-level-card');
+    
+    interactiveElements.forEach(element => {
+        element.addEventListener('touchstart', function() {
+            this.classList.add('active');
+        }, { passive: true });
+        
+        element.addEventListener('touchend', function() {
+            this.classList.remove('active');
+        }, { passive: true });
+    });
+}
+</script>
 </body>
 </html>

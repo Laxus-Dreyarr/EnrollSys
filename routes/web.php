@@ -553,11 +553,15 @@ Route::middleware(['org.auth'])->group(function () {
 
     // Verify docs and payment
     Route::get('/org/student-details/{studentId}', [OrgController::class, 'getStudentDetails']);
-    Route::post('/org/approve-payment', [OrgController::class, 'approvePayment']);
     Route::post('/org/decline-payment', [OrgController::class, 'declinePayment']);
+
+    Route::get('/org/payments/refresh', [OrgController::class, 'refreshPayments']);
 
     Route::get('/org/fees/data', [OrgController::class, 'getOrganizationFeesData'])->name('org.fees.data');
     Route::post('/org/fees/accept', [OrgController::class, 'acceptFee'])->name('org.fees.accept');
+
+    Route::post('/org/approve-payment', [OrgController::class, 'approvePayment'])->name('org.approve.payment');
+    Route::post('/org/reject-payment', [OrgController::class, 'rejectPayment'])->name('org.reject.payment');
     
 
     // File serving routes for documents

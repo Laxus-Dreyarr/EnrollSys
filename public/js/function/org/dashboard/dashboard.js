@@ -1,13 +1,12 @@
 
         
-// 
 $(document).ready(function() {
-    // Load organization fee data
-    function loadFeeData() {
-        console.log('Attempting to load fee data...');
+    // Load payment data
+    function loadPaymentData() {
+        console.log('Attempting to load payment data...');
         
         $.ajax({
-            url: '/org/fees/data',
+            url: '/org/payments/refresh',
             type: 'GET',
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -16,10 +15,11 @@ $(document).ready(function() {
                 console.log('Response received:', response);
                 
                 if (response.success) {
-                    displayFeeData(response.data);
+                    displayPaymentData(response.data);
+                    updateDashboardStats(response.data);
                 } else {
                     console.error('Server returned error:', response.message);
-                    showErrorMessage('Failed to load fee data: ' + response.message);
+                    showErrorMessage('Failed to load payment data: ' + response.message);
                 }
             },
             error: function(xhr, status, error) {
@@ -27,203 +27,286 @@ $(document).ready(function() {
                 console.error('Status:', status);
                 console.error('Error:', error);
                 console.error('Response:', xhr.responseText);
-                console.error('Status Code:', xhr.status);
                 
-                if (xhr.status === 401) {
-                    showErrorMessage('Please login again.');
-                } else if (xhr.status === 403) {
-                    showErrorMessage('Access denied.');
-                } else if (xhr.status === 404) {
-                    showErrorMessage('Route not found. Please check the URL.');
-                } else if (xhr.status === 500) {
-                    showErrorMessage('Server error. Please try again later.');
-                } else {
-                    showErrorMessage('Network error. Please check your connection.');
-                }
+                // Use embedded data from the page
+                console.log('Using embedded data instead');
+                useEmbeddedData();
             }
         });
     }
 
-    function displayFeeData(data) {
-        // Map display names to database year levels
+    // Update dashboard stats from data
+    function updateDashboardStats(data) {
+        let totalPending = 0;
+        let totalAmount = 0;
+        let acceptedToday = 0;
+        let totalStudents = 0;
+        
+        // Calculate totals from all year levels
+        Object.values(data).forEach(yearData => {
+            totalPending += yearData.pending_count || 0;
+            totalAmount += yearData.total || 0;
+            // For accepted today and total students, we would need additional data
+        });
+        
+        // Update the stats cards
+        $('#total-pending').text(totalPending);
+        $('#total-amount').text('₱' + totalAmount.toFixed(2));
+        // Update other stats as needed
+    }
+
+    // Display payment data in tables
+    function displayPaymentData(data) {
+        // Map database year levels to display IDs
         const yearMapping = {
-            'First Year': '1st Year',
-            'Second Year': '2nd Year', 
-            'Third Year': '3rd Year',
-            'Fourth Year': '4th Year'
+            'first_year': 'first-year',
+            'second_year': 'second-year',
+            'third_year': 'third-year',
+            'fourth_year': 'fourth-year'
         };
 
-        // Clear existing loading messages
-        Object.keys(yearMapping).forEach(displayYear => {
-            const tbodyId = `${displayYear.toLowerCase().replace(' ', '-')}-students`;
-            $(`#${tbodyId}`).empty();
-        });
-
-        // If no data or empty data
-        if (!data || Object.keys(data).length === 0) {
-            showNoDataMessage();
-            return;
-        }
-
-        Object.keys(yearMapping).forEach(displayYear => {
-            const dbYear = yearMapping[displayYear];
-            const yearData = data[dbYear] || { students: [], total_count: 0, total_amount: 0 };
+        // Process each year level
+        Object.keys(yearMapping).forEach(yearKey => {
+            const yearData = data[yearKey] || { payments: [], total: 0, pending_count: 0 };
+            const tbodyId = `${yearMapping[yearKey]}-students`;
             
             // Update pending count badge
-            const pendingBadge = $(`#${displayYear.toLowerCase().replace(' ', '-')}-pending`);
-            pendingBadge.text(`${yearData.total_count} pending`);
+            const pendingBadge = $(`#${yearMapping[yearKey]}-pending`);
+            pendingBadge.text(`${yearData.pending_count} pending`);
             
             // Update total amount
-            const totalSpan = $(`#${displayYear.toLowerCase().replace(' ', '-')}-total`);
-            totalSpan.text(`₱${yearData.total_amount.toFixed(2)}`);
+            const totalSpan = $(`#${yearMapping[yearKey]}-total`);
+            totalSpan.text(`₱${yearData.total.toFixed(2)}`);
             
             // Update table rows
-            const tbodyId = `${displayYear.toLowerCase().replace(' ', '-')}-students`;
             const $tbody = $(`#${tbodyId}`);
+            $tbody.empty(); // Clear existing rows
             
-            if (yearData.students.length > 0) {
-                yearData.students.forEach(student => {
-                    const fullName = `${student.firstname} ${student.lastname}`;
-                    const contact = student.phone_number || 'N/A';
-                    const amount = student.amount ? `₱${parseFloat(student.amount).toFixed(2)}` : '₱0.00';
-                    const statusBadge = student.status === 'Approved' 
-                        ? '<span class="badge bg-success">Approved</span>'
-                        : '<span class="badge bg-warning">Pending</span>';
+            if (yearData.payments && yearData.payments.length > 0) {
+                yearData.payments.forEach(payment => {
+                    const fullName = `${payment.firstname || ''} ${payment.lastname || ''}`.trim();
+                    const avatarInitial = fullName ? fullName.charAt(0) : 'N';
+                    const contact = payment.phone_number || 'No contact';
+                    const amount = payment.amount ? `₱${parseFloat(payment.amount).toFixed(2)}` : '₱0.00';
                     
-                    const actionBtn = student.status === 'Pending'
-                        ? `<button class="btn btn-sm btn-success accept-fee" 
-                                  data-id="${student.fee_id}" 
-                                  data-table="${student.source_table}">
-                              <i class="fas fa-check"></i> Accept
-                           </button>`
-                        : '<span class="text-muted">Processed</span>';
+                    // Format date
+                    const date = new Date(payment.created_at);
+                    const formattedDate = date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
                     
                     $tbody.append(`
-                        <tr>
-                            <td>${fullName}</td>
-                            <td>${student.student_id}</td>
+                        <tr data-payment-id="${payment.id}">
+                            <td>
+                                <div class="student-info">
+                                    <div class="avatar">
+                                        <span>${avatarInitial}</span>
+                                    </div>
+                                    <div>
+                                        <div class="student-name">${fullName || 'N/A'}</div>
+                                        <div class="student-email">${payment.email || 'No email'}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>${payment.id_no || 'N/A'}</td>
                             <td>${contact}</td>
-                            <td>${amount}</td>
-                            <td>${statusBadge}</td>
-                            <td>${actionBtn}</td>
+                            <td class="amount">${amount}</td>
+                            <td>
+                                <span class="status-badge status-pending">Pending</span>
+                            </td>
+                            <td>${formattedDate}</td>
+                            <td>
+                                <div class="action-buttons d-flex gap-2">
+                                    <button class="btn btn-sm btn-success approve-payment" 
+                                            data-payment-id="${payment.id}" 
+                                            data-student-id="${payment.student_id}">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                    <button class="btn btn-sm btn-danger reject-payment" 
+                                            data-payment-id="${payment.id}" 
+                                            data-student-id="${payment.student_id}">
+                                        <i class="fas fa-times"></i> Reject
+                                    </button>
+                                    ${payment.file_path ? 
+                                        `<a href="/documents/${payment.file_path.replace('documents/', '')}" 
+                                          target="_blank"
+                                          class="btn btn-sm btn-outline-primary view-receipt-btn">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>` : ''
+                                    }
+                                </div>
+                            </td>
                         </tr>
                     `);
                 });
             } else {
                 $tbody.append(`
                     <tr>
-                        <td colspan="6" class="text-center text-muted">No pending fees for ${displayYear}</td>
+                        <td colspan="7" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>No pending payments found</p>
+                            </div>
+                        </td>
                     </tr>
                 `);
             }
         });
-    }
-
-    // Show error message
-    function showErrorMessage(message) {
-        // You can implement a toast or alert system here
-        console.error(message);
-        // For now, we'll show an alert
-        alert(message);
-    }
-
-    // Show no data message
-    function showNoDataMessage() {
-        Object.keys({
-            'First Year': '1st Year',
-            'Second Year': '2nd Year', 
-            'Third Year': '3rd Year',
-            'Fourth Year': '4th Year'
-        }).forEach(displayYear => {
-            const tbodyId = `${displayYear.toLowerCase().replace(' ', '-')}-students`;
-            $(`#${tbodyId}`).html(`
-                <tr>
-                    <td colspan="6" class="text-center text-muted">No data available</td>
-                </tr>
-            `);
-        });
-    }
-
-    // Handle accept fee button click
-    $(document).on('click', '.accept-fee', function() {
-        const feeId = $(this).data('id');
-        const table = $(this).data('table');
-        const button = $(this);
-        const row = button.closest('tr');
         
-        if (confirm('Are you sure you want to approve this fee?')) {
-            // Disable button and show loading
+        attachEventHandlers();
+        updateDashboardStats(data);
+    }
+
+
+    // -------
+$(document).on('click', '.approve-payment', function(e) {
+    e.preventDefault();
+    
+    const paymentId = $(this).data('payment-id');
+    const studentId = $(this).data('student-id');
+    const button = $(this);
+    const row = button.closest('tr');
+    
+    console.log('Approve payment clicked:', { paymentId, studentId });
+    
+    Swal.fire({
+        title: 'Approve Payment?',
+        text: "Are you sure you want to approve this payment?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, approve it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading state
             button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
             
+            // Get CSRF token
+            const csrfToken = $('meta[name="csrf-token"]').attr('content');
+            
+            console.log('Sending approval request with token:', csrfToken);
+            
             $.ajax({
-                url: '/org/fees/accept',
-                type: 'POST',
+                url: '/org/approve-payment', // This should match your route
+                method: 'POST',
                 data: {
-                    _token: $('meta[name="csrf-token"]').attr('content'), // Get CSRF token
-                    fee_id: feeId,
-                    table: table
+                    _token: csrfToken,
+                    payment_id: paymentId,
+                    student_id: studentId
                 },
                 success: function(response) {
+                    console.log('Approval response:', response);
+                    
                     if (response.success) {
-                        // Update status in the table
-                        row.find('td:nth-child(5)').html('<span class="badge bg-success">Approved</span>');
-                        row.find('td:nth-child(6)').html('<span class="text-muted">Processed</span>');
-                        
-                        // Show success message
-                        showSuccessMessage('Fee approved successfully!');
-                        
-                        // Reload the data to update counts and totals
-                        setTimeout(loadFeeData, 1000);
+                        Swal.fire({
+                            title: 'Success!',
+                            text: response.message,
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            // Update row without reloading
+                            row.find('td:nth-child(5)').html('<span class="status-badge status-approved">Approved</span>');
+                            row.find('td:nth-child(7)').html('<span class="text-muted">Processed</span>');
+                            
+                            // Update pending counts
+                            updateCountsFromTable();
+                        });
                     } else {
-                        alert('Error: ' + response.message);
-                        button.prop('disabled', false).html('<i class="fas fa-check"></i> Accept');
+                        Swal.fire('Error!', response.message, 'error');
+                        button.prop('disabled', false).html('<i class="fas fa-check"></i> Approve');
                     }
                 },
                 error: function(xhr, status, error) {
-                    alert('Error approving fee. Please try again.');
-                    button.prop('disabled', false).html('<i class="fas fa-check"></i> Accept');
+                    console.error('AJAX Error:', xhr.responseText);
+                    Swal.fire('Error!', 'An error occurred. Please try again.', 'error');
+                    button.prop('disabled', false).html('<i class="fas fa-check"></i> Approve');
                 }
             });
         }
     });
+});
 
-    // Show success message
-    function showSuccessMessage(message) {
-        // You can implement a toast notification here
-        console.log(message);
-        // For now, we'll just log it
+    // Use data that's already embedded in the page (from PHP)
+    function useEmbeddedData() {
+        console.log('Using embedded payment data from page');
+        
+        // Data is already displayed by PHP in the Blade template
+        // We just need to attach event handlers
+        attachEventHandlers();
+        
+        // Update counts and totals from the current table data
+        updateCountsFromTable();
     }
 
-    // Handle export button click
-    $(document).on('click', '.export-btn', function() {
-        const year = $(this).data('year');
-        // You can implement export functionality here
-        // For now, show a message
-        alert(`Export feature for ${year} would be implemented here.`);
+    // Update counts and totals from the current table data
+    function updateCountsFromTable() {
+        const yearCards = ['first-year', 'second-year', 'third-year', 'fourth-year'];
+        let totalPending = 0;
+        let totalAmount = 0;
         
-        // Example of how to implement export:
-        // $.ajax({
-        //     url: '/org/fees/export',
-        //     type: 'POST',
-        //     data: {
-        //         _token: $('meta[name="csrf-token"]').attr('content'),
-        //         year: year
-        //     },
-        //     success: function(response) {
-        //         // Handle file download
-        //         const link = document.createElement('a');
-        //         link.href = response.file_url;
-        //         link.download = response.file_name;
-        //         link.click();
-        //     }
-        // });
-    });
+        yearCards.forEach(year => {
+            const tbodyId = `${year}-students`;
+            const $tbody = $(`#${tbodyId}`);
+            
+            // Count pending payments in this year
+            let pendingCount = 0;
+            let yearTotal = 0;
+            
+            $tbody.find('tr[data-payment-id]').each(function() {
+                const status = $(this).find('td:nth-child(5) .badge').text().trim();
+                const amountText = $(this).find('td:nth-child(4)').text().trim();
+                
+                if (status === 'Pending') {
+                    pendingCount++;
+                    totalPending++;
+                }
+                
+                // Extract amount from text like "₱120.00"
+                const amountMatch = amountText.match(/₱([\d,.]+)/);
+                if (amountMatch) {
+                    const amount = parseFloat(amountMatch[1].replace(/,/g, ''));
+                    if (!isNaN(amount)) {
+                        yearTotal += amount;
+                        totalAmount += amount;
+                    }
+                }
+            });
+            
+            // Update badge and total
+            $(`#${year}-pending`).text(`${pendingCount} pending`);
+            $(`#${year}-total`).text(`₱${yearTotal.toFixed(2)}`);
+        });
+        
+        // Update dashboard stats
+        $('#total-pending').text(totalPending);
+        $('#total-amount').text('₱' + totalAmount.toFixed(2));
+    }
 
-    // Load data on page load
-    loadFeeData();
+    // Show error message
+    function showErrorMessage(message) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: message,
+            timer: 3000,
+            showConfirmButton: false
+        });
+    }
+
+    // Initialize
+    console.log('Organization dashboard initialized');
     
-    // Optional: Auto-refresh data every 30 seconds
-    setInterval(loadFeeData, 30000);
+    // Load initial data
+    loadPaymentData();
+    
+    // Auto-refresh data every 30 seconds
+    setInterval(loadPaymentData, 30000);
 });
 
 

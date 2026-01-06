@@ -652,19 +652,287 @@ class OrgController extends Controller
             return $x;
     }
 
+
+    // return view('org.dashboard.org-dashboard', compact('user'));
     public function dashboard()
     {
+        $org = Auth::guard('org')->user();
         
-        if (!Auth::guard('org')->check()) {
-            return redirect('/org')->with('error', 'Please login first.');
+        // Get all PENDING payments from the payments table with student info
+        $payments = DB::table('payments')
+            ->select(
+                'payments.*',
+                'students.year_level',
+                'students.id_no',
+                'students.student_id as student_user_id',
+                'user_info.firstname',
+                'user_info.lastname',
+                'user_info.phone_number',
+                'users.email2 as email'
+            )
+            ->leftJoin('students', 'payments.student_id', '=', 'students.id')
+            ->leftJoin('user_info', 'students.student_id', '=', 'user_info.id')
+            ->leftJoin('users', 'user_info.user_id', '=', 'users.id')
+            ->where('payments.status', 'Pending')
+            ->where('payments.type', 'PAYMENT_RECEIPT')
+            ->orderBy('payments.created_at', 'desc')
+            ->get();
+        
+        // Organize payments by year level
+        $yearLevelData = [
+            'first_year' => [
+                'payments' => collect([]),
+                'total' => 0,
+                'pending_count' => 0
+            ],
+            'second_year' => [
+                'payments' => collect([]),
+                'total' => 0,
+                'pending_count' => 0
+            ],
+            'third_year' => [
+                'payments' => collect([]),
+                'total' => 0,
+                'pending_count' => 0
+            ],
+            'fourth_year' => [
+                'payments' => collect([]),
+                'total' => 0,
+                'pending_count' => 0
+            ]
+        ];
+        
+        // Process payments
+        foreach ($payments as $payment) {
+            if ($payment->year_level) {
+                // Convert year level to lowercase with underscore for array key
+                $yearLevel = strtolower(str_replace(' ', '_', $payment->year_level));
+                
+                // Map database year level to our array keys
+                $yearMapping = [
+                    '1st_year' => 'first_year',
+                    '2nd_year' => 'second_year', 
+                    '3rd_year' => 'third_year',
+                    '4th_year' => 'fourth_year'
+                ];
+                
+                $yearKey = $yearMapping[$yearLevel] ?? null;
+                
+                if ($yearKey && isset($yearLevelData[$yearKey])) {
+                    $yearLevelData[$yearKey]['payments']->push($payment);
+                    $yearLevelData[$yearKey]['total'] += (float) $payment->amount;
+                    $yearLevelData[$yearKey]['pending_count']++;
+                }
+            }
         }
-
-        $user = Auth::guard('org')->user();
         
-        // Check if there's an active enrollment period
-        
-        return view('org.dashboard.org-dashboard', compact('user'));
+        return view('org.dashboard.org-dashboard', [
+            'yearLevelData' => $yearLevelData
+        ]);
     }
+
+    
+
+    public function approvePayment(Request $request)
+    {
+        $request->validate([
+            'payment_id' => 'required|integer',
+            'student_id' => 'required|integer'
+        ]);
+        
+        $org = Auth::guard('org')->user();
+        
+        DB::beginTransaction();
+        
+        try {
+            // Get the payment
+            $payment = DB::table('payments')
+                ->where('id', $request->payment_id)
+                ->first();
+            
+            if (!$payment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment not found'
+                ]);
+            }
+            
+            // Get student info
+            $student = DB::table('students')
+                ->where('id', $request->student_id)
+                ->first();
+            
+            if (!$student) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Student not found'
+                ]);
+            }
+            
+            // Get orgs_info record
+            $orgsInfo = DB::table('orgs_info')
+                ->where('organization_id', $org->org_id)
+                ->first();
+            
+            if (!$orgsInfo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Organization information not found'
+                ]);
+            }
+            
+            // Update payment status
+            DB::table('payments')
+                ->where('id', $request->payment_id)
+                ->update([
+                    'status' => 'Approved',
+                    'updated_at' => now()->format('Y-m-d H:i:s')
+                ]);
+            
+            // Create record in organizationfees table
+            DB::table('organizationfees')->insert([
+                'org_id' => $orgsInfo->id,
+                'student_id' => $student->id,
+                'year_level' => $student->year_level,
+                'amount' => $payment->amount,
+                'status' => 'Approved',
+                'receipt_url' => $payment->file_path,
+                'uploaded_date' => now()->format('Y-m-d H:i:s'),
+                'red_flag_reason' => null
+            ]);
+            
+            // Add audit log
+            // DB::table('auditlogs')->insert([
+            //     'user_id' => $student->student_id,
+            //     'action' => 'Payment approved by organization',
+            //     'details' => 'Payment ID: ' . $request->payment_id . ' - Amount: ₱' . $payment->amount,
+            //     'ip_address' => request()->ip(),
+            //     'date' => now()->format('Y-m-d H:i:s'),
+            //     'access_by' => $org->org_id
+            // ]);
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment approved successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Payment approval error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
+    
+    public function rejectPayment(Request $request)
+    {
+        $request->validate([
+            'payment_id' => 'required|integer',
+            'student_id' => 'required|integer',
+            'reason' => 'required|string|max:255'
+        ]);
+        
+        try {
+            // Update payment status
+            DB::table('payments')
+                ->where('id', $request->payment_id)
+                ->update([
+                    'status' => 'Rejected',
+                    'updated_at' => now()->format('Y-m-d H:i:s')
+                ]);
+            
+            // Get student for audit log
+            $student = DB::table('students')
+                ->where('id', $request->student_id)
+                ->first();
+            
+            // Add audit log
+            if ($student) {
+                DB::table('auditlogs')->insert([
+                    'user_id' => $student->student_id,
+                    'action' => 'Payment rejected by organization',
+                    'details' => 'Payment ID: ' . $request->payment_id . ' - Reason: ' . $request->reason,
+                    'ip_address' => request()->ip(),
+                    'date' => now()->format('Y-m-d H:i:s'),
+                    'access_by' => 0
+                ]);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment rejected successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function refreshPayments()
+    {
+        $org = Auth::guard('org')->user();
+        
+        // Same logic as dashboard method but returns JSON
+        $payments = DB::table('payments')
+            ->select(
+                'payments.*',
+                'students.year_level',
+                'students.id_no',
+                'students.student_id as student_user_id',
+                'user_info.firstname',
+                'user_info.lastname',
+                'user_info.phone_number',
+                'users.email2 as email'
+            )
+            ->leftJoin('students', 'payments.student_id', '=', 'students.id')
+            ->leftJoin('user_info', 'students.student_id', '=', 'user_info.id')
+            ->leftJoin('users', 'user_info.user_id', '=', 'users.id')
+            ->where('payments.status', 'Pending')
+            ->where('payments.type', 'PAYMENT_RECEIPT')
+            ->orderBy('payments.created_at', 'desc')
+            ->get();
+        
+        $yearLevelData = [
+            'first_year' => ['payments' => [], 'total' => 0, 'pending_count' => 0],
+            'second_year' => ['payments' => [], 'total' => 0, 'pending_count' => 0],
+            'third_year' => ['payments' => [], 'total' => 0, 'pending_count' => 0],
+            'fourth_year' => ['payments' => [], 'total' => 0, 'pending_count' => 0]
+        ];
+        
+        foreach ($payments as $payment) {
+            if ($payment->year_level) {
+                $yearLevel = strtolower(str_replace(' ', '_', $payment->year_level));
+                
+                $yearMapping = [
+                    '1st_year' => 'first_year',
+                    '2nd_year' => 'second_year', 
+                    '3rd_year' => 'third_year',
+                    '4th_year' => 'fourth_year'
+                ];
+                
+                $yearKey = $yearMapping[$yearLevel] ?? null;
+                
+                if ($yearKey && isset($yearLevelData[$yearKey])) {
+                    $yearLevelData[$yearKey]['payments'][] = $payment;
+                    $yearLevelData[$yearKey]['total'] += (float) $payment->amount;
+                    $yearLevelData[$yearKey]['pending_count']++;
+                }
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => $yearLevelData
+        ]);
+    }
+
 
     public function logout(Request $request)
     {
@@ -1013,81 +1281,81 @@ class OrgController extends Controller
         }
     }
 
-    public function approvePayment(Request $request)
-    {
-        try {
-            $request->validate([
-                'student_id' => 'required|string'
-            ]);
+    // public function approvePayment(Request $request)
+    // {
+    //     try {
+    //         $request->validate([
+    //             'student_id' => 'required|string'
+    //         ]);
 
-            $studentId = $request->student_id;
+    //         $studentId = $request->student_id;
 
-            // Get student record
-            $student = DB::table('students')
-                ->where('id_no', $studentId)
-                ->first();
+    //         // Get student record
+    //         $student = DB::table('students')
+    //             ->where('id_no', $studentId)
+    //             ->first();
 
-            if (!$student) {
-                return response()->json(['success' => false, 'message' => 'Student not found']);
-            }
+    //         if (!$student) {
+    //             return response()->json(['success' => false, 'message' => 'Student not found']);
+    //         }
 
-            DB::beginTransaction();
+    //         DB::beginTransaction();
 
-            // Update payment status
-            $paymentUpdated = DB::table('payments')
-                ->where('student_id', $student->id)
-                ->where('status', 'Pending')
-                ->update([
-                    'status' => 'Approved',
-                    'updated_at' => now()->toDateTimeString()
-                ]);
+    //         // Update payment status
+    //         $paymentUpdated = DB::table('payments')
+    //             ->where('student_id', $student->id)
+    //             ->where('status', 'Pending')
+    //             ->update([
+    //                 'status' => 'Approved',
+    //                 'updated_at' => now()->toDateTimeString()
+    //             ]);
 
-            // Update document status
-            $documentUpdated = DB::table('documents')
-                ->where('student_id', $student->id)
-                ->where('status', 'Pending')
-                ->update([
-                    'status' => 'Approved'
-                ]);
+    //         // Update document status
+    //         $documentUpdated = DB::table('documents')
+    //             ->where('student_id', $student->id)
+    //             ->where('status', 'Pending')
+    //             ->update([
+    //                 'status' => 'Approved'
+    //             ]);
 
-            // Update enrollment request status if exists
-            // $enrollmentUpdated = DB::table('enrollmentrequests')
-            //     ->where('student_id', $student->id)
-            //     ->where('status', 'Pending')
-            //     ->update([
-            //         'status' => 'Approved',
-            //         'processed_date' => now()->toDateTimeString()
-            //     ]);
+    //         // Update enrollment request status if exists
+    //         // $enrollmentUpdated = DB::table('enrollmentrequests')
+    //         //     ->where('student_id', $student->id)
+    //         //     ->where('status', 'Pending')
+    //         //     ->update([
+    //         //         'status' => 'Approved',
+    //         //         'processed_date' => now()->toDateTimeString()
+    //         //     ]);
 
-            DB::commit();
+    //         DB::commit();
 
-            // Log the activity
-            $clientInfo = $this->collectClientInformation();
-            $ipaddress = $this->getClientDeviceInfo();
+    //         // Log the activity
+    //         $clientInfo = $this->collectClientInformation();
+    //         $ipaddress = $this->getClientDeviceInfo();
 
-            AuditLog::create([
-                'user_id' => $studentId,
-                'action' => 'Payment approved by organization',
-                'details' => $clientInfo['operating_system'] . '/' . $clientInfo['device_type'] . '/' . $clientInfo['user_agent'],
-                'ip_address' => $ipaddress['ip_address'],
-                'date' => now()->toDateTimeString(),
-                'access_by' => '107568'
-            ]);
+    //         AuditLog::create([
+    //             'user_id' => $studentId,
+    //             'action' => 'Payment approved by organization',
+    //             'details' => $clientInfo['operating_system'] . '/' . $clientInfo['device_type'] . '/' . $clientInfo['user_agent'],
+    //             'ip_address' => $ipaddress['ip_address'],
+    //             'date' => now()->toDateTimeString(),
+    //             'access_by' => '107568'
+    //         ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Payment and documents approved successfully'
-            ]);
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Payment and documents approved successfully'
+    //         ]);
 
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error approving payment: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to approve payment'
-            ], 500);
-        }
-    }
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         Log::error('Error approving payment: ' . $e->getMessage());
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Failed to approve payment'
+    //         ], 500);
+    //     }
+    // }
 
     public function declinePayment(Request $request)
     {
