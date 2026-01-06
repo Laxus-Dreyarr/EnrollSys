@@ -2755,7 +2755,8 @@ function initializeEnhancedEnrollmentModal() {
                     showNotification(data.message, 'error');
                     closeModal();
                 } else {
-                    showEnhancedError('Failed to load subjects: ' + (data.message || 'Unknown error'));
+                    // showEnhancedError('Failed to load subjects: ' + (data.message || 'Unknown error'));
+                    showEnhancedError('' + (data.message || 'Unknown error'));
                 }
             }
         })
@@ -3529,7 +3530,7 @@ function initializeEnhancedEnrollmentModal() {
                     <div class="enhanced-empty-state-icon">
                         <i class="fas fa-exclamation-circle"></i>
                     </div>
-                    <h4>Error Loading Subjects</h4>
+                    <h4></h4>
                     <p>${message}</p>
                     <button class="enhanced-btn-primary" onclick="loadEnhancedEnrollmentSubjects()">
                         <i class="fas fa-redo"></i>
