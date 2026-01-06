@@ -1171,5 +1171,124 @@ class OrgController extends Controller
     }
 
 
+    public function getOrganizationFeesData()
+    {
+        try {
+            // Get current organization ID
+            $orgId = session('org_id'); // Assuming you store org_id in session
+            
+            // Get year levels
+            $yearLevels = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+            $feeData = [];
+            
+            foreach ($yearLevels as $yearLevel) {
+                // Query to get unique students by year level
+                $fees = DB::table('organizationfees as of')
+                    ->join('students as s', 'of.student_id', '=', 's.id')
+                    ->join('user_info as ui', 's.student_id', '=', 'ui.id')
+                    ->where('of.year_level', $yearLevel)
+                    ->where('of.status', 'Pending') // Only pending fees
+                    ->where('of.org_id', $orgId) // Current organization's fees
+                    ->select(
+                        'of.id as fee_id',
+                        's.id as student_id',
+                        'ui.firstname',
+                        'ui.lastname',
+                        'ui.phone_number',
+                        'of.amount',
+                        'of.status',
+                        'of.receipt_url',
+                        DB::raw('"organizationfees" as source_table')
+                    )
+                    ->unionAll(
+                        // Get from payments table where not in organizationfees or if deleted
+                        DB::table('payments as p')
+                            ->join('students as s', 'p.student_id', '=', 's.id')
+                            ->join('user_info as ui', 's.student_id', '=', 'ui.id')
+                            ->leftJoin('organizationfees as of', function($join) use ($orgId) {
+                                $join->on('p.student_id', '=', 'of.student_id')
+                                    ->where('of.org_id', $orgId);
+                            })
+                            ->where('s.year_level', $yearLevel)
+                            ->where('p.type', 'PAYMENT_RECEIPT')
+                            ->where('p.status', 'Pending')
+                            ->where(function($query) {
+                                $query->whereNull('of.id') // Not in organizationfees
+                                    ->orWhereNotNull('p.deleted_at'); // Or deleted in payments
+                            })
+                            ->select(
+                                'p.id as fee_id',
+                                's.id as student_id',
+                                'ui.firstname',
+                                'ui.lastname',
+                                'ui.phone_number',
+                                DB::raw('0 as amount'), // Payments table doesn't have amount
+                                'p.status',
+                                'p.file_path as receipt_url',
+                                DB::raw('"payments" as source_table')
+                            )
+                    )
+                    ->get();
+                
+                // Remove duplicates - prefer organizationfees over payments
+                $uniqueStudents = [];
+                foreach ($fees as $fee) {
+                    $key = $fee->student_id;
+                    if (!isset($uniqueStudents[$key]) || 
+                        $fee->source_table === 'organizationfees') {
+                        $uniqueStudents[$key] = $fee;
+                    }
+                }
+                
+                $feeData[$yearLevel] = [
+                    'students' => array_values($uniqueStudents),
+                    'total_count' => count($uniqueStudents),
+                    'total_amount' => collect($uniqueStudents)->sum('amount')
+                ];
+            }
+            
+            return response()->json([
+                'success' => true,
+                'data' => $feeData
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching fee data: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function acceptFee(Request $request)
+    {
+        try {
+            $feeId = $request->input('fee_id');
+            $table = $request->input('table');
+            
+            if ($table === 'organizationfees') {
+                DB::table('organizationfees')
+                    ->where('id', $feeId)
+                    ->update(['status' => 'Approved']);
+            } elseif ($table === 'payments') {
+                DB::table('payments')
+                    ->where('id', $feeId)
+                    ->update(['status' => 'Approved']);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Fee approved successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving fee: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+
 
 }//End of Class
