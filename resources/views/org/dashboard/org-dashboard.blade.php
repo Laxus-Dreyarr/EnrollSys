@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
         :root {
             --primary-50: #f0f4ff;
@@ -34,6 +35,7 @@
             --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
             --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
             --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            /* try */
         }
         
         * {
@@ -1018,7 +1020,11 @@
         .help-card:hover {
             box-shadow: var(--shadow-md);
         }
+
+        
     </style>
+    
+    
 </head>
 <body>
     <!-- Sidebar Navigation -->
