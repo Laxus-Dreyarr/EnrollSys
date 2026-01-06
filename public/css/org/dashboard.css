@@ -569,6 +569,91 @@
         .menu-toggle:active {
             background: var(--gray-100);
         }
+
+        @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Badge styles */
+.card-badge {
+    background-color: #ffc107;
+    color: #000;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Table styles */
+.student-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.student-table th {
+    background-color: #f8f9fa;
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.student-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #dee2e6;
+    vertical-align: middle;
+}
+
+.student-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Button styles */
+.btn-success {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.btn-success:hover {
+    background-color: #157347;
+    border-color: #146c43;
+}
+
+.btn-outline-primary {
+    color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-outline-primary:hover {
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* Card footer */
+.card-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.total-amount {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+/* Responsive table container */
+.student-table-container {
+    overflow-x: auto;
+}
         
         /* Mobile Styles - Improved for better touch experience */
         @media (max-width: 1024px) {
@@ -655,6 +740,15 @@
             
             .card-title {
                 font-size: 1.0625rem;
+            }
+
+            .student-table {
+                font-size: 0.875rem;
+            }
+            
+            .student-table th,
+            .student-table td {
+                padding: 0.5rem;
             }
         }
         

@@ -1170,116 +1170,139 @@ class OrgController extends Controller
         }
     }
 
-
     public function getOrganizationFeesData()
     {
         try {
-            // Get current organization ID
-            $orgId = session('org_id'); // Assuming you store org_id in session
+            // Hardcode org_id from your database for testing
+            // From your data: orgs_info table has id=4 for organization_id=540716
+            $orgId = 4; 
             
             // Get year levels
             $yearLevels = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
             $feeData = [];
             
             foreach ($yearLevels as $yearLevel) {
-                // Query to get unique students by year level
-                $fees = DB::table('organizationfees as of')
-                    ->join('students as s', 'of.student_id', '=', 's.id')
+                // Get all officially enrolled students in this year level
+                $students = DB::table('students as s')
                     ->join('user_info as ui', 's.student_id', '=', 'ui.id')
-                    ->where('of.year_level', $yearLevel)
-                    ->where('of.status', 'Pending') // Only pending fees
-                    ->where('of.org_id', $orgId) // Current organization's fees
+                    ->where('s.year_level', $yearLevel)
+                    ->where('s.status', 'Officially Enrolled') // Only enrolled students
                     ->select(
-                        'of.id as fee_id',
                         's.id as student_id',
+                        's.id_no',
                         'ui.firstname',
                         'ui.lastname',
-                        'ui.phone_number',
-                        'of.amount',
-                        'of.status',
-                        'of.receipt_url',
-                        DB::raw('"organizationfees" as source_table')
-                    )
-                    ->unionAll(
-                        // Get from payments table where not in organizationfees or if deleted
-                        DB::table('payments as p')
-                            ->join('students as s', 'p.student_id', '=', 's.id')
-                            ->join('user_info as ui', 's.student_id', '=', 'ui.id')
-                            ->leftJoin('organizationfees as of', function($join) use ($orgId) {
-                                $join->on('p.student_id', '=', 'of.student_id')
-                                    ->where('of.org_id', $orgId);
-                            })
-                            ->where('s.year_level', $yearLevel)
-                            ->where('p.type', 'PAYMENT_RECEIPT')
-                            ->where('p.status', 'Pending')
-                            ->where(function($query) {
-                                $query->whereNull('of.id') // Not in organizationfees
-                                    ->orWhereNotNull('p.deleted_at'); // Or deleted in payments
-                            })
-                            ->select(
-                                'p.id as fee_id',
-                                's.id as student_id',
-                                'ui.firstname',
-                                'ui.lastname',
-                                'ui.phone_number',
-                                DB::raw('0 as amount'), // Payments table doesn't have amount
-                                'p.status',
-                                'p.file_path as receipt_url',
-                                DB::raw('"payments" as source_table')
-                            )
+                        'ui.phone_number'
                     )
                     ->get();
                 
-                // Remove duplicates - prefer organizationfees over payments
-                $uniqueStudents = [];
-                foreach ($fees as $fee) {
-                    $key = $fee->student_id;
-                    if (!isset($uniqueStudents[$key]) || 
-                        $fee->source_table === 'organizationfees') {
-                        $uniqueStudents[$key] = $fee;
+                // For each student, check if they have pending fees in PAYMENTS table only
+                $studentFees = [];
+                foreach ($students as $student) {
+                    // Query payments table only for pending payment receipts
+                    $payment = DB::table('payments')
+                        ->where('student_id', $student->student_id)
+                        ->where('type', 'PAYMENT_RECEIPT')
+                        ->where('status', 'Pending')
+                        ->first();
+                    
+                    if ($payment) {
+                        // Return data from payments table only
+                        $studentFees[] = (object)[
+                            'fee_id' => $payment->id, // Payment ID from payments table
+                            'student_id' => $student->student_id,
+                            'id_no' => $student->id_no,
+                            'firstname' => $student->firstname,
+                            'lastname' => $student->lastname,
+                            'phone_number' => $student->phone_number,
+                            'amount' => $payment->amount ?: 0.00, // Get amount from payments table
+                            'status' => $payment->status,
+                            'receipt_url' => $payment->file_path,
+                            'source_table' => 'payments' // Now returning 'payments' as source
+                        ];
                     }
                 }
                 
                 $feeData[$yearLevel] = [
-                    'students' => array_values($uniqueStudents),
-                    'total_count' => count($uniqueStudents),
-                    'total_amount' => collect($uniqueStudents)->sum('amount')
+                    'students' => $studentFees,
+                    'total_count' => count($studentFees),
+                    'total_amount' => collect($studentFees)->sum('amount')
                 ];
             }
             
             return response()->json([
                 'success' => true,
-                'data' => $feeData
+                'data' => $feeData,
+                'message' => 'Data loaded successfully'
             ]);
             
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching fee data: ' . $e->getMessage()
+                'message' => 'Error: ' . $e->getMessage()
             ]);
         }
     }
+
 
     public function acceptFee(Request $request)
     {
         try {
             $feeId = $request->input('fee_id');
-            $table = $request->input('table');
+            $table = $request->input('table'); // This will be 'organizationfees'
+            $orgId = 4; // Hardcoded organization ID
             
             if ($table === 'organizationfees') {
-                DB::table('organizationfees')
+                // Get the organization fee record
+                $orgFee = DB::table('organizationfees')
                     ->where('id', $feeId)
-                    ->update(['status' => 'Approved']);
-            } elseif ($table === 'payments') {
-                DB::table('payments')
-                    ->where('id', $feeId)
-                    ->update(['status' => 'Approved']);
+                    ->first();
+                
+                if ($orgFee) {
+                    // Update organizationfees table
+                    DB::table('organizationfees')
+                        ->where('id', $feeId)
+                        ->update([
+                            'status' => 'Approved',
+                            'updated_at' => date('Y-m-d H:i:s')
+                        ]);
+                    
+                    // Also update payments table if a corresponding payment exists
+                    DB::table('payments')
+                        ->where('student_id', $orgFee->student_id)
+                        ->where('type', 'PAYMENT_RECEIPT')
+                        ->where('status', 'Pending')
+                        ->update([
+                            'status' => 'Approved',
+                            'updated_at' => date('Y-m-d H:i:s')
+                        ]);
+                    
+                    // Create an audit log entry
+                    DB::table('auditlogs')->insert([
+                        'user_id' => $orgFee->student_id,
+                        'action' => 'Organization fee approved',
+                        'details' => 'Fee ID: ' . $feeId . ' - Amount: ' . $orgFee->amount,
+                        'ip_address' => $request->ip(),
+                        'date' => date('Y-m-d H:i:s'),
+                        'access_by' => auth()->check() ? auth()->id() : 0
+                    ]);
+                    
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Fee approved successfully in both tables'
+                    ]);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Fee record not found'
+                    ]);
+                }
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid table specified'
+                ]);
             }
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Fee approved successfully'
-            ]);
             
         } catch (\Exception $e) {
             return response()->json([

@@ -1,20 +1,45 @@
 
         
+// 
 $(document).ready(function() {
     // Load organization fee data
     function loadFeeData() {
+        console.log('Attempting to load fee data...');
+        
         $.ajax({
-            url: '{{ route("org.fees.data") }}',
+            url: '/org/fees/data',
             type: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
             success: function(response) {
+                console.log('Response received:', response);
+                
                 if (response.success) {
                     displayFeeData(response.data);
                 } else {
-                    console.error('Error loading fee data:', response.message);
+                    console.error('Server returned error:', response.message);
+                    showErrorMessage('Failed to load fee data: ' + response.message);
                 }
             },
             error: function(xhr, status, error) {
-                console.error('AJAX error:', error);
+                console.error('AJAX Error Details:');
+                console.error('Status:', status);
+                console.error('Error:', error);
+                console.error('Response:', xhr.responseText);
+                console.error('Status Code:', xhr.status);
+                
+                if (xhr.status === 401) {
+                    showErrorMessage('Please login again.');
+                } else if (xhr.status === 403) {
+                    showErrorMessage('Access denied.');
+                } else if (xhr.status === 404) {
+                    showErrorMessage('Route not found. Please check the URL.');
+                } else if (xhr.status === 500) {
+                    showErrorMessage('Server error. Please try again later.');
+                } else {
+                    showErrorMessage('Network error. Please check your connection.');
+                }
             }
         });
     }
@@ -28,20 +53,33 @@ $(document).ready(function() {
             'Fourth Year': '4th Year'
         };
 
+        // Clear existing loading messages
+        Object.keys(yearMapping).forEach(displayYear => {
+            const tbodyId = `${displayYear.toLowerCase().replace(' ', '-')}-students`;
+            $(`#${tbodyId}`).empty();
+        });
+
+        // If no data or empty data
+        if (!data || Object.keys(data).length === 0) {
+            showNoDataMessage();
+            return;
+        }
+
         Object.keys(yearMapping).forEach(displayYear => {
             const dbYear = yearMapping[displayYear];
             const yearData = data[dbYear] || { students: [], total_count: 0, total_amount: 0 };
             
-            // Update pending count
-            $(`#${displayYear.toLowerCase().replace(' ', '-')}-pending`).text(`${yearData.total_count} pending`);
+            // Update pending count badge
+            const pendingBadge = $(`#${displayYear.toLowerCase().replace(' ', '-')}-pending`);
+            pendingBadge.text(`${yearData.total_count} pending`);
             
             // Update total amount
-            $(`#${displayYear.toLowerCase().replace(' ', '-')}-total`).text(`₱${yearData.total_amount.toFixed(2)}`);
+            const totalSpan = $(`#${displayYear.toLowerCase().replace(' ', '-')}-total`);
+            totalSpan.text(`₱${yearData.total_amount.toFixed(2)}`);
             
             // Update table rows
             const tbodyId = `${displayYear.toLowerCase().replace(' ', '-')}-students`;
             const $tbody = $(`#${tbodyId}`);
-            $tbody.empty();
             
             if (yearData.students.length > 0) {
                 yearData.students.forEach(student => {
@@ -74,10 +112,35 @@ $(document).ready(function() {
             } else {
                 $tbody.append(`
                     <tr>
-                        <td colspan="6" class="text-center">No pending fees for ${displayYear}</td>
+                        <td colspan="6" class="text-center text-muted">No pending fees for ${displayYear}</td>
                     </tr>
                 `);
             }
+        });
+    }
+
+    // Show error message
+    function showErrorMessage(message) {
+        // You can implement a toast or alert system here
+        console.error(message);
+        // For now, we'll show an alert
+        alert(message);
+    }
+
+    // Show no data message
+    function showNoDataMessage() {
+        Object.keys({
+            'First Year': '1st Year',
+            'Second Year': '2nd Year', 
+            'Third Year': '3rd Year',
+            'Fourth Year': '4th Year'
+        }).forEach(displayYear => {
+            const tbodyId = `${displayYear.toLowerCase().replace(' ', '-')}-students`;
+            $(`#${tbodyId}`).html(`
+                <tr>
+                    <td colspan="6" class="text-center text-muted">No data available</td>
+                </tr>
+            `);
         });
     }
 
@@ -86,46 +149,80 @@ $(document).ready(function() {
         const feeId = $(this).data('id');
         const table = $(this).data('table');
         const button = $(this);
+        const row = button.closest('tr');
         
         if (confirm('Are you sure you want to approve this fee?')) {
+            // Disable button and show loading
+            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+            
             $.ajax({
-                url: '{{ route("org.fees.accept") }}',
+                url: '/org/fees/accept',
                 type: 'POST',
                 data: {
-                    _token: '{{ csrf_token() }}',
+                    _token: $('meta[name="csrf-token"]').attr('content'), // Get CSRF token
                     fee_id: feeId,
                     table: table
                 },
                 success: function(response) {
                     if (response.success) {
-                        alert(response.message);
-                        button.closest('tr').find('td:nth-child(5)').html('<span class="badge bg-success">Approved</span>');
-                        button.replaceWith('<span class="text-muted">Processed</span>');
+                        // Update status in the table
+                        row.find('td:nth-child(5)').html('<span class="badge bg-success">Approved</span>');
+                        row.find('td:nth-child(6)').html('<span class="text-muted">Processed</span>');
                         
-                        // Reload the data to update counts
-                        setTimeout(loadFeeData, 500);
+                        // Show success message
+                        showSuccessMessage('Fee approved successfully!');
+                        
+                        // Reload the data to update counts and totals
+                        setTimeout(loadFeeData, 1000);
                     } else {
                         alert('Error: ' + response.message);
+                        button.prop('disabled', false).html('<i class="fas fa-check"></i> Accept');
                     }
                 },
                 error: function(xhr, status, error) {
                     alert('Error approving fee. Please try again.');
+                    button.prop('disabled', false).html('<i class="fas fa-check"></i> Accept');
                 }
             });
         }
     });
 
+    // Show success message
+    function showSuccessMessage(message) {
+        // You can implement a toast notification here
+        console.log(message);
+        // For now, we'll just log it
+    }
+
     // Handle export button click
     $(document).on('click', '.export-btn', function() {
         const year = $(this).data('year');
+        // You can implement export functionality here
+        // For now, show a message
         alert(`Export feature for ${year} would be implemented here.`);
-        // You can implement CSV/Excel export functionality
+        
+        // Example of how to implement export:
+        // $.ajax({
+        //     url: '/org/fees/export',
+        //     type: 'POST',
+        //     data: {
+        //         _token: $('meta[name="csrf-token"]').attr('content'),
+        //         year: year
+        //     },
+        //     success: function(response) {
+        //         // Handle file download
+        //         const link = document.createElement('a');
+        //         link.href = response.file_url;
+        //         link.download = response.file_name;
+        //         link.click();
+        //     }
+        // });
     });
 
     // Load data on page load
     loadFeeData();
     
-    // Optional: Refresh data every 30 seconds
+    // Optional: Auto-refresh data every 30 seconds
     setInterval(loadFeeData, 30000);
 });
 

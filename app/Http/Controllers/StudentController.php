@@ -3249,7 +3249,8 @@ class StudentController extends Controller
                     'upload_date' => now()->format('Y-m-d H:i:s'),
                     'status' => 'Pending',
                     'created_at' => now(),
-                    'updated_at' => now()
+                    'updated_at' => now(),
+                    'amount' => 120.00
                 ]);
             }
 
@@ -3623,7 +3624,8 @@ class StudentController extends Controller
                     'upload_date' => now()->format('Y-m-d H:i:s'),
                     'status' => 'Pending',
                     'created_at' => now(),
-                    'updated_at' => now()
+                    'updated_at' => now(),
+                    'amount' => 120.00
                 ]);
 
             return $filePath;

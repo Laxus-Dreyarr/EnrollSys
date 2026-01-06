@@ -558,6 +558,7 @@ Route::middleware(['org.auth'])->group(function () {
 
     Route::get('/org/fees/data', [OrgController::class, 'getOrganizationFeesData'])->name('org.fees.data');
     Route::post('/org/fees/accept', [OrgController::class, 'acceptFee'])->name('org.fees.accept');
+    
 
     // File serving routes for documents
     // Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {
