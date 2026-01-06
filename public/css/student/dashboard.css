@@ -109,6 +109,11 @@ body {
     border-bottom: 1px solid var(--sidebar-border-color);
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
 }
 
 .sidebar-header h3 {
@@ -137,6 +142,11 @@ body {
     backdrop-filter: blur(10px);
     border: 1px solid var(--sidebar-border-color);
     transition: all 0.4s ease;
+    -webkit-backdrop-filter: blur(10px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
 }
 
 .user-avatar {
@@ -1209,7 +1219,11 @@ body.dark-mode .user-profile {
     bottom: 0;
     background: none;
     backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
     display: none;
     flex-direction: column;
     align-items: center;
@@ -2358,6 +2372,11 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
     height: 100%;
     background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
     display: none;
     align-items: center;
     justify-content: center;
@@ -2377,10 +2396,20 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
     from {
         opacity: 0;
         backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px); /* For older Safari */
+        /* Fix 2: Prevent Safari flicker */
+        transform: translate3d(0, 0, 0);
+        /* Optional: Improve performance further */
+        will-change: backdrop-filter;
     }
     to {
         opacity: 1;
         backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px); /* For older Safari */
+        /* Fix 2: Prevent Safari flicker */
+        transform: translate3d(0, 0, 0);
+        /* Optional: Improve performance further */
+        will-change: backdrop-filter;
     }
 }
 
@@ -2417,6 +2446,11 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
     height: 100%;
     background: rgba(15, 23, 42, 0.8);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
     display: none;
     align-items: center;
     justify-content: center;
@@ -3791,6 +3825,11 @@ body.dark-mode .prerequisite-info {
     height: 100%;
     background: rgba(15, 23, 42, 0.8);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
     display: none;
     align-items: center;
     justify-content: center;
@@ -5272,6 +5311,11 @@ body.dark-mode .irregular-modal-overlay,
 body.dark-mode .enhanced-enrollment-modal-overlay {
     background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
 }
 
 body.dark-mode .irregular-modal-container,
@@ -6639,6 +6683,11 @@ body.dark-mode .enhanced-fhe-requirements li {
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
+    -webkit-backdrop-filter: blur(5px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);  
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
 }
 
 .logout-modal-overlay.active {
@@ -8431,6 +8480,11 @@ body.dark-mode .empty-state-icon {
     height: 100%;
     background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
     display: none;
     align-items: center;
     justify-content: center;
@@ -10944,6 +10998,11 @@ body.dark-mode .schedule-container {
 body.dark-mode .enhanced-enrollment-modal-overlay {
     background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
 }
 
 body.dark-mode .enhanced-enrollment-modal-container {
@@ -10961,6 +11020,11 @@ body.dark-mode .enhanced-enrollment-modal-header {
 body.dark-mode .enhanced-enrollment-title-icon {
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
 }
 
 /* Enhanced Progress Steps Dark Mode */
@@ -11042,6 +11106,11 @@ body.dark-mode .enhanced-info-item {
     background: var(--card-dark);
     border: 1px solid var(--border-dark);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
 }
 
 body.dark-mode .enhanced-info-item:hover {
@@ -11075,6 +11144,11 @@ body.dark-mode .enhanced-quick-action-btn {
     border: 1px solid var(--border-dark);
     color: var(--text-dark);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
 }
 
 body.dark-mode .enhanced-quick-action-btn:hover {
@@ -11102,6 +11176,11 @@ body.dark-mode .enhanced-search-input-wrapper input {
     border: 1px solid var(--border-dark);
     color: var(--text-dark);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
 }
 
 body.dark-mode .enhanced-filter-select:focus,
@@ -11128,6 +11207,11 @@ body.dark-mode .enhanced-subject-card {
     border: 1px solid var(--border-dark);
     color: var(--text-dark);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
 }
 
 body.dark-mode .enhanced-subject-card:hover {
@@ -11235,6 +11319,11 @@ body.dark-mode .enhanced-enrollment-modal-footer {
     background: var(--card-dark);
     border-top: 1px solid var(--border-dark);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
 }
 
 body.dark-mode .enhanced-summary-count {
@@ -11252,6 +11341,11 @@ body.dark-mode .enhanced-btn-secondary {
     border: 1px solid var(--border-dark);
     color: var(--text-dark);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
 }
 
 body.dark-mode .enhanced-btn-secondary:hover {
@@ -11647,6 +11741,11 @@ body.dark-mode .current-theme-info {
 
 .theme-notification {
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
 }
 
 /* Enhanced Enrollment Modal - Theme Color Support */

@@ -2494,9 +2494,7 @@ class AdminController extends Controller
                             'middlename' => $row[4] ?? null,
                             'email' => $row[5] ?? null,
                             'contact_number' => $row[6] ?? null,
-                            'status' => 'pending', // Default status
                             'email_sent' => false,
-                            'is_qualified' => false,
                         ];
                         
                         // Check if record exists by any of the unique fields

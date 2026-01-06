@@ -344,6 +344,11 @@ ul {
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
     animation: float 6s ease-in-out infinite;
 }
 
@@ -2127,6 +2132,11 @@ ul {
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
@@ -2990,6 +3000,11 @@ ul {
     bottom: 0;
     background: rgba(0, 0, 0, 0.02);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For older Safari */
+    /* Fix 2: Prevent Safari flicker */
+    transform: translate3d(0, 0, 0);
+    /* Optional: Improve performance further */
+    will-change: backdrop-filter;
   }
   
   .dark-theme .modal-footer-enhanced {

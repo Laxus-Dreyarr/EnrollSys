@@ -2403,7 +2403,7 @@ if (isset($averageGrade) && $averageGrade > 0) {
                                 <i class="fas fa-receipt"></i>
                             </div>
                             <div class="enhanced-payment-title">
-                                <h3>Payment Receipt Upload</h3>
+                                <h3>Payment Receipt Upload (Skip if you want to Pay Later!)</h3>
                                 <p>Upload your GCash payment receipt screenshot to complete enrollment, or proceed to pay later</p>
                             </div>
                         </div>
