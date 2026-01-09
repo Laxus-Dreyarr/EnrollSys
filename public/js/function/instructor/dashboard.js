@@ -367,6 +367,7 @@ function loadRequestDetails(request) {
                             <span class="prerequisites-status none">No Prerequisites</span>
                         </div>
                     </div>
+                    
                 `;
             }
             
