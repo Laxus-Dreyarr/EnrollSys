@@ -871,9 +871,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (successMessage) {
                         successMessage.textContent = 'Login Successfully!';
                         successMessage.style.display = 'block';
-                        setTimeout(() => {
-                            window.location.href = '/instructor-dashboard';
-                        }, 5000);
+                        window.location.href = '/instructor-dashboard';
                     }
                 }
             })
