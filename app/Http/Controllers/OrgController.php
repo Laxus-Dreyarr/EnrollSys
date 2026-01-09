@@ -1458,7 +1458,8 @@ class OrgController extends Controller
             //     return response()->json(['error' => 'Organization info not found'], 404);
             // }
 
-            // Query organization fees with student information
+            // Query organization fees with student 
+            
             $payments = DB::table('organizationfees as of')
                 ->select(
                     'of.id as payment_id',
@@ -1476,7 +1477,7 @@ class OrgController extends Controller
                     'u.email2 as email'
                 )
                 ->leftJoin('students as s', 'of.student_id', '=', 's.id')
-                ->leftJoin('user_info as ui', 's.student_id', '=', 'ui.user_id')
+                ->leftJoin('user_info as ui', 's.student_id', '=', 'ui.id')
                 ->leftJoin('users as u', 'ui.user_id', '=', 'u.id')
                 ->orderBy('of.uploaded_date', 'desc')
                 ->get();

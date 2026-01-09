@@ -506,6 +506,7 @@
                     </div>
                 </div>
                 
+                <!-- This is the current code you showed -->
                 <div class="student-table-container">
                     <table class="student-table">
                         <thead>
