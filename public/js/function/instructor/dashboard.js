@@ -333,41 +333,12 @@ function loadRequestDetails(request) {
             let prerequisitesHTML = '';
             if (subject.prerequisites && subject.prerequisites.length > 0) {
                 prerequisitesHTML = `
-                    <div class="prerequisites-section">
-                        <div class="prerequisites-title">
-                            <i class="fas fa-list-check"></i>
-                            <span>Prerequisites:</span>
-                            ${subject.all_prerequisites_passed ? 
-                                '<span class="prerequisites-status passed">All Passed ✓</span>' : 
-                                '<span class="prerequisites-status failed">Not All Passed ✗</span>'
-                            }
-                        </div>
-                        <div class="prerequisites-list">
-                            ${subject.prerequisites.map(prereq => `
-                                <div class="prerequisite-item ${prereq.passed ? 'passed' : 'failed'}">
-                                    <div class="prereq-code">${prereq.code}</div>
-                                    <div class="prereq-name">${prereq.name}</div>
-                                    <div class="prereq-status">
-                                        <span class="status-badge ${prereq.passed ? 'passed' : 'failed'}">
-                                            ${prereq.passed ? '✓ Passed' : `${prereq.status}`}
-                                            ${prereq.grade ? ` (${prereq.grade})` : ''}
-                                        </span>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
+                    
                 `;
             } else {
                 prerequisitesHTML = `
-                    <div class="prerequisites-section">
-                        <div class="prerequisites-title">
-                            <i class="fas fa-list-check"></i>
-                            <span>Prerequisites:</span>
-                            <span class="prerequisites-status none">No Prerequisites</span>
-                        </div>
-                    </div>
                     
+
                 `;
             }
             
@@ -376,7 +347,8 @@ function loadRequestDetails(request) {
                     <div class="subject-header">
                         <div class="subject-code" style="background: green; color: white; padding: 5px; border-radius: 10px;">${subject.subject_code}</div>
                         <div class="subject-meta">
-                            ${subject.units} units • ${subject.semester} • ${subject.section_name}
+        
+                            ${subject.units} units • ${subject.semester}
                         </div>
                     </div>
                     <div class="subject-name">${subject.subject_name}</div>
