@@ -639,6 +639,51 @@ class GradeApiController extends Controller
     }
 
 
+    /**
+     * Get student grades by email (for external system integration)
+     */
+    public function getGradesByEmail(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 400);
+        }
+
+        try {
+            // Find student by email
+            $student = DB::table('users as u')
+                ->join('user_info as ui', 'u.id', '=', 'ui.user_id')
+                ->join('students as s', 'ui.id', '=', 's.student_id')
+                ->where('u.email2', $request->email)
+                ->select('s.id as student_id', 's.id_no as student_number')
+                ->first();
+
+            if (!$student) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Student not found with this email'
+                ], 404);
+            }
+
+            // Get grades for this student
+            return $this->getStudentGrades($student->student_id);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch grades',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
 
 
 }
