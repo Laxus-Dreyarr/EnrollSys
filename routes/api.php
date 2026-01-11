@@ -38,20 +38,20 @@ Route::middleware(['cors', 'api.key'])->group(function () {
 });
 
 // Debug route - REMOVE THIS IN PRODUCTION
-Route::get('/debug-routes', function() {
-    $routes = collect(\Illuminate\Support\Facades\Route::getRoutes()->getRoutes())
-        ->map(function ($route) {
-            return [
-                'method' => implode('|', $route->methods()),
-                'uri' => $route->uri(),
-                'name' => $route->getName(),
-                'action' => $route->getActionName(),
-            ];
-        })
-        ->filter(function ($route) {
-            return strpos($route['uri'], 'api/') === 0 || strpos($route['uri'], 'student') !== false;
-        })
-        ->values();
+// Route::get('/debug-routes', function() {
+//     $routes = collect(\Illuminate\Support\Facades\Route::getRoutes()->getRoutes())
+//         ->map(function ($route) {
+//             return [
+//                 'method' => implode('|', $route->methods()),
+//                 'uri' => $route->uri(),
+//                 'name' => $route->getName(),
+//                 'action' => $route->getActionName(),
+//             ];
+//         })
+//         ->filter(function ($route) {
+//             return strpos($route['uri'], 'api/') === 0 || strpos($route['uri'], 'student') !== false;
+//         })
+//         ->values();
     
-    return response()->json($routes);
-});
+//     return response()->json($routes);
+// });

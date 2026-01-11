@@ -86,7 +86,6 @@ class AuthController extends Controller
                     'students.year_level',
                     'students.curriculum',
                     'students.status',
-                    'students.section',
                     'students.is_regular'
                 )
                 ->first();
@@ -217,8 +216,6 @@ class AuthController extends Controller
                     'sub.code as subject_code',
                     'sub.name as subject_name',
                     'es.units',
-                    'es.section',
-                    'es.schedule',
                     'es.grade'
                 )
                 ->get();
