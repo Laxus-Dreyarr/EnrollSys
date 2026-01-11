@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GradeApiController;
+use App\Http\Controllers\Api\EnrollmentApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,6 +28,14 @@ Route::middleware(['cors', 'api.key'])->group(function () {
     Route::get('/student/grades/by-email', [AuthController::class, 'getStudentGradesByEmail']);
     Route::post('/student/change-password', [AuthController::class, 'changePassword']);
     Route::post('/student/logout', [AuthController::class, 'logout']);
+
+    // New enrollment routes
+    Route::get('/enrollments', [EnrollmentApiController::class, 'getEnrolledStudents']);
+    Route::get('/enrollments/students', [EnrollmentApiController::class, 'getStudentsWithSubjects']);
+    Route::get('/enrollments/stats', [EnrollmentApiController::class, 'getEnrollmentStats']);
+    
+    // Optional: Get enrollment by student ID
+    Route::get('/enrollments/student/{student_id}', [EnrollmentApiController::class, 'getStudentEnrollments']);
     
     // Grade endpoints
     Route::get('/failed-grades', [GradeApiController::class, 'getFailedGrades']);
