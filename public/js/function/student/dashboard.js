@@ -6182,7 +6182,7 @@ function renderMainGradeSubjects(response) {
 
     allTablesHTML += `
             <div class="subject-group-header" style="text-align: center;"><br><br>
-                <h3>Prospectus</h3>
+                <h3 style="var(--primary-dark);">Prospectus</h3>
             </div>
         `;
 
@@ -6222,7 +6222,7 @@ function renderMainGradeSubjects(response) {
         allTablesHTML += `
             <br>
             <div class="subject-group-header">
-                <h3 style="margin-left: 10px;">${groupLabel}</h3>
+                <h3 style="margin-left: 10px;var(--primary-dark);">${groupLabel}</h3>
             </div>
         `;
 
