@@ -531,13 +531,19 @@ $(document).ready(function() {
                         hour: '2-digit',
                         minute: '2-digit'
                     });
+
+                    const isPaymentNotice = payment.file_path && payment.file_path.includes('payment_notice_');
+                    const rowClass = isPaymentNotice ? 'payment-notice-row' : '';
                     
                     $tbody.append(`
-                        <tr data-payment-id="${payment.id}">
+                        <tr data-payment-id="${payment.id}" class="${rowClass}">
                             <td>
                                 <div class="student-info">
                                     <div class="avatar">
-                                        <span>${avatarInitial}</span>
+                                        ${isPaymentNotice ? 
+                                            '' : 
+                                            `<span>${avatarInitial}</span>`
+                                        }
                                     </div>
                                     <div>
                                         <div class="student-name">${fullName || 'N/A'}</div>
@@ -547,7 +553,13 @@ $(document).ready(function() {
                             </td>
                             <td>${payment.id_no || 'N/A'}</td>
                             <td>${contact}</td>
-                            <td class="amount">${amount}</td>
+                            <td class="amount">
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold">${amount}</span>
+                                    ${isPaymentNotice ? 
+                                        '<small style="color: green;"><i class="fas fa-info-circle"></i> Payment will be made later</small>' : ''}
+                                </div>
+                            </td>
                             <td>
                                 <span class="status-badge status-pending">Pending</span>
                             </td>
@@ -561,8 +573,8 @@ $(document).ready(function() {
                                     </button>
                                     ${payment.file_path ? 
                                         `<a href="/documents/${payment.file_path.replace('documents/', '')}" 
-                                          target="_blank"
-                                          class="btn btn-sm btn-outline-primary view-receipt-btn">
+                                        target="_blank"
+                                        class="btn btn-sm btn-outline-primary view-receipt-btn">
                                             <i class="fas fa-eye"></i> View
                                         </a>` : ''
                                     }
@@ -1270,10 +1282,7 @@ $(document).on('click', '.approve-payment', function(e) {
                     // For this demo, we'll just simulate data loading
                     const yearLevelSections = document.getElementById('year-level-sections');
                     yearLevelSections.style.opacity = '0.7';
-                    
-                    setTimeout(() => {
-                        yearLevelSections.style.opacity = '1';
-                    }, 300);
+                    yearLevelSections.style.opacity = '1';
                 });
             }
             

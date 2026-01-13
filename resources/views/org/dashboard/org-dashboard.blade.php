@@ -90,9 +90,9 @@
                         </ul> -->
                     </div>
                     
-                    <button class="btn btn-primary d-flex align-items-center justify-content-center">
+                    <!-- <button class="btn btn-primary d-flex align-items-center justify-content-center">
                         <i class="fas fa-plus me-2"></i> <span>Add Payment</span>
-                    </button>
+                    </button> -->
                 </div>
             </header>
 
@@ -102,7 +102,7 @@
                     <div class="stat-header">
                         <div>
                             <div class="stat-value" id="total-pending">12</div>
-                            <div class="stat-label">Pending Payments</div>
+                            <div class="stat-label">Collected</div>
                         </div>
                         <div class="stat-icon pending">
                             <i class="fas fa-clock"></i>
