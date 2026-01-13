@@ -223,6 +223,61 @@ function displayEnrollmentRequests(requests) {
     });
 }
 
+// Search student enrollment request!
+$('#studentSearch').on('keyup', function() {
+    const searchValue = $(this).val().toLowerCase().trim();
+    const searchTerms = searchValue.split(' ').filter(term => term.length > 0);
+    
+    // Show all if search is empty
+    if (!searchValue) {
+        $('.enrollment-request-item').show();
+        updateSearchCount($('.enrollment-request-item').length, $('.enrollment-request-item').length);
+        return;
+    }
+    
+    let matchCount = 0;
+    const totalItems = $('.enrollment-request-item').length;
+    
+    $('.enrollment-request-item').each(function() {
+        const $item = $(this);
+        const itemText = $item.text().toLowerCase();
+        
+        // Check if all search terms are found in the item
+        const matches = searchTerms.every(term => itemText.indexOf(term) > -1);
+        
+        if (matches) {
+            $item.show();
+            matchCount++;
+            
+            // Optional: Highlight matching text
+            highlightSearchTerms($item, searchTerms);
+        } else {
+            $item.hide();
+            // Remove any existing highlights
+            $item.find('.highlight').each(function() {
+                $(this).replaceWith($(this).text());
+            });
+        }
+    });
+    
+    updateSearchCount(matchCount, totalItems);
+});
+
+// Optional: Function to highlight search terms
+function highlightSearchTerms($item, searchTerms) {
+    searchTerms.forEach(term => {
+        $item.find('.student-name, .student-id').each(function() {
+            const $element = $(this);
+            const originalText = $element.text();
+            const highlightedText = originalText.replace(
+                new RegExp(`(${term})`, 'gi'),
+                '<span class="highlight bg-warning">$1</span>'
+            );
+            $element.html(highlightedText);
+        });
+    });
+}
+
 function createRequestItem(request) {
     const item = document.createElement('div');
     item.className = 'enrollment-request-item';

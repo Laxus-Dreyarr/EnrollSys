@@ -4796,6 +4796,27 @@ body.dark-mode #delete-all-notifications:hover {
     margin-right: 10px;
 }
 
+.highlight {
+    background-color: #ffeb3b;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+.search-count {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.enrollment-request-item {
+    transition: all 0.3s ease;
+}
+
+/* Optional: Hide items with animation */
+.enrollment-request-item[style*="display: none"] {
+    display: none !important;
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
     .sidebar {

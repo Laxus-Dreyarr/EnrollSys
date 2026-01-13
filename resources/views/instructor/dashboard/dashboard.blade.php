@@ -1193,6 +1193,9 @@ $profile_picture = $user->profile;
                     <h2>Enrollment Requests</h2>
                     <p>Review and manage student enrollment requests</p>
                 </div>
+                <div class="search-container me-2">
+                    <input type="text" class="form-control search-input" placeholder="Search student..." id="studentSearch">
+                </div>
 
                 <div class="section-content">
                     <div id="enrollment-requests-loading" class="loading-container" style="display: none;">
