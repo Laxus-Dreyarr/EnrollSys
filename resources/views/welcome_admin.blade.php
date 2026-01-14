@@ -411,5 +411,75 @@
      <script src="{{asset('js/jquery.js')}}"></script>
     <!-- Custom JS -->
      <script src="{{asset('js/function/index.js')}}"></script>
+     <script>
+        // Status bar configuration for Median.co app
+        function configureMedianStatusBar() {
+            // Check if running in Median app
+            if (navigator.userAgent.indexOf('median') > -1) {
+                // Function to set status bar based on current theme
+                function setStatusBarForTheme() {
+                    const isDarkTheme = document.body.classList.contains('dark-theme');
+                    const bodyBackgroundColor = getComputedStyle(document.body).backgroundColor;
+                    
+                    // Convert RGB to hex format (RRGGBB)
+                    const rgbToHex = (rgb) => {
+                        const values = rgb.match(/\d+/g);
+                        if (!values) return '101126'; // fallback dark color
+                        
+                        const hex = values.slice(0, 3).map(x => {
+                            const hex = parseInt(x).toString(16);
+                            return hex.length === 1 ? '0' + hex : hex;
+                        }).join('');
+                        
+                        return hex;
+                    };
+                    
+                    const backgroundColor = rgbToHex(bodyBackgroundColor);
+                    const theme = isDarkTheme ? 'dark' : 'light';
+                    
+                    // Set status bar properties
+                    median.statusbar.set({
+                        'style': theme, // 'light' or 'dark' text/icons
+                        'color': backgroundColor, // Match body background color
+                        'overlay': true, // Content extends under status bar
+                        'blur': false // iOS only
+                    });
+                }
+                
+                // Set initial status bar
+                setStatusBarForTheme();
+                
+                // Listen for theme changes
+                const themeToggleBtn = document.getElementById('themeToggle');
+                if (themeToggleBtn) {
+                    themeToggleBtn.addEventListener('click', () => {
+                        // Wait a moment for theme to be applied
+                        setTimeout(setStatusBarForTheme, 100);
+                    });
+                }
+                
+                // Optional: Use Median's helper function (if available)
+                try {
+                    if (typeof median_match_statusbar_to_body_background_color === 'function') {
+                        median_match_statusbar_to_body_background_color();
+                    }
+                } catch (e) {
+                    console.log('Median helper function not available');
+                }
+            }
+        }
+
+        // Call when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            configureMedianStatusBar();
+        });
+
+        // Also call when Median library is ready
+        if (typeof median_library_ready !== 'undefined') {
+            median_library_ready = function() {
+                configureMedianStatusBar();
+            };
+        }
+     </script>
 </body>
 </html>
