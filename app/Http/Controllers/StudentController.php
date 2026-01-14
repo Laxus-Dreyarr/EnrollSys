@@ -4487,6 +4487,7 @@ class StudentController extends Controller
      */
     private function checkIfRegularStudent($studentId, $passingGrades, $failingGrades)
     {
+        
         try {
             $curriculum_year = DB::table('students')
                 ->where('id', $studentId)
