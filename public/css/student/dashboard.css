@@ -1462,6 +1462,10 @@ body.dark-mode .user-profile {
     }
 }
 
+#inptGrdButton2 {
+    display: none;
+}
+
 /* Responsive Upload Loading Animation */
 @media (max-width: 768px) {
     .upload-loading-content {
@@ -10538,7 +10542,27 @@ background: linear-gradient(135deg, #38a169, #2f855a);
         font-size: 0.80rem;
     }
 
+    #subname {
+        display: none;
+    }
+
+    #unts {
+        display: none;
+    }
+
+    #preq {
+        display: none;
+    }
+
+    #inptGrdButton {
+        display: none;
+        position: relative;
+    }
     
+    #inptGrdButton2 {
+        display: flex;
+        position: relative;
+    }
 }
 
 @media (max-width: 480px) {
