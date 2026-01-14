@@ -4487,14 +4487,37 @@ class StudentController extends Controller
      */
     private function checkIfRegularStudent($studentId, $passingGrades, $failingGrades)
     {
-        
         try {
-            $curriculum_year = DB::table('students')
+            // Get student information
+            $student = DB::table('students')
                 ->where('id', $studentId)
-                ->value('curriculum');
+                ->first();
+            
+            if (!$student) {
+                return false;
+            }
+            
+            $curriculum_year = $student->curriculum;
+            $yearLevel = $student->year_level;
             
             if (!$curriculum_year) {
                 return false;
+            }
+            
+            // Get active enrollment semester
+            $enrollment_date = DB::table('enrollment_date')
+                ->where('is_active', 1)
+                ->first();
+            
+            if (!$enrollment_date) {
+                return false;
+            }
+            
+            $currentSemester = $enrollment_date->semester;
+            
+            // Special case: 1st Year 1st Sem students are automatically considered regular (freshmen)
+            if ($yearLevel === '1st Year' && $currentSemester === '1st Sem') {
+                return true;
             }
             
             $curriculum = DB::table('curriculum')
@@ -4508,70 +4531,99 @@ class StudentController extends Controller
             
             $curriculum_id = $curriculum->id;
             
-            // Define all semesters from 1st Year to 3rd Year Summer
-            $semesters = [
-                ['year_level' => '1st Year', 'semester' => '1st Sem'],
-                ['year_level' => '1st Year', 'semester' => '2nd Sem'],
-                ['year_level' => '2nd Year', 'semester' => '1st Sem'],
-                ['year_level' => '2nd Year', 'semester' => '2nd Sem'],
-                ['year_level' => '3rd Year', 'semester' => '1st Sem'],
-                ['year_level' => '3rd Year', 'semester' => '2nd Sem'],
-                ['year_level' => '3rd Year', 'semester' => 'Summer'],
-            ];
+            // Get all subjects for the current year level and semester
+            $currentSemesterSubjects = DB::table('subjects')
+                ->where('curriculum_id', $curriculum_id)
+                ->where('is_active', 1)
+                ->where('year_level', $yearLevel)
+                ->where('semester', $currentSemester)
+                ->pluck('id')
+                ->toArray();
             
-            // Check each semester
-            foreach ($semesters as $semesterInfo) {
-                // Get all subjects for this semester
-                $semesterSubjects = DB::table('subjects')
-                    ->where('curriculum_id', $curriculum_id)
-                    ->where('is_active', 1)
-                    ->where('year_level', $semesterInfo['year_level'])
-                    ->where('semester', $semesterInfo['semester'])
-                    ->pluck('id')
+            if (empty($currentSemesterSubjects)) {
+                // No subjects for this semester, consider as regular
+                return true;
+            }
+            
+            // Get student's grades for these subjects
+            $studentGrades = DB::table('enrolled_sub')
+                ->where('student_id', $studentId)
+                ->whereIn('subject_id', $currentSemesterSubjects)
+                ->whereNotNull('grade')
+                ->get()
+                ->keyBy('subject_id');
+            
+            // Check which subjects are available for enrollment
+            $availableSubjectsCount = 0;
+            
+            foreach ($currentSemesterSubjects as $subjectId) {
+                $subject = DB::table('subjects')->where('id', $subjectId)->first();
+                
+                if (!$subject) {
+                    continue;
+                }
+                
+                // Check if student has already passed this subject
+                if (isset($studentGrades[$subjectId]) && in_array($studentGrades[$subjectId]->grade, $passingGrades)) {
+                    // Student already passed this subject, so it's not available for enrollment
+                    // But this doesn't make them irregular since they've already completed it
+                    $availableSubjectsCount++;
+                    continue;
+                }
+                
+                // Check if this subject has prerequisites
+                $prerequisites = DB::table('subjectprerequisites')
+                    ->where('subject_id', $subjectId)
+                    ->pluck('prerequisite_id')
                     ->toArray();
                 
-                if (empty($semesterSubjects)) {
-                    continue; // Skip if no subjects for this semester
+                if (empty($prerequisites)) {
+                    // No prerequisites, so subject is available
+                    $availableSubjectsCount++;
+                    continue;
                 }
                 
-                // Get student's grades for this semester
-                $studentGrades = DB::table('enrolled_sub')
+                // Get student's passed subjects
+                $passedSubjects = DB::table('enrolled_sub')
                     ->where('student_id', $studentId)
-                    ->whereIn('subject_id', $semesterSubjects)
-                    ->get()
-                    ->keyBy('subject_id');
+                    ->whereIn('grade', $passingGrades)
+                    ->pluck('subject_id')
+                    ->toArray();
                 
-                // Check if student has enrolled in all subjects for this semester
-                if (count($studentGrades) < count($semesterSubjects)) {
-                    return false; // Not all subjects enrolled
+                // Check if all prerequisites are met
+                $prerequisitesMet = true;
+                foreach ($prerequisites as $prereqId) {
+                    if (!in_array($prereqId, $passedSubjects)) {
+                        $prerequisitesMet = false;
+                        break;
+                    }
                 }
                 
-                // Check each subject in this semester
-                foreach ($semesterSubjects as $subjectId) {
-                    if (!isset($studentGrades[$subjectId])) {
-                        return false; // Subject not enrolled
-                    }
-                    
-                    $grade = $studentGrades[$subjectId]->grade;
-                    
-                    // Check if grade is null or empty
-                    if ($grade === null || $grade === '' || trim($grade) === '') {
-                        return false;
-                    }
-                    
-                    // Check if grade is a failing grade
-                    if (in_array($grade, $failingGrades)) {
-                        return false;
-                    }
-                    
-                    // Check if grade is a passing grade
-                    if (!in_array($grade, $passingGrades)) {
-                        return false; // Unknown grade format
-                    }
+                if ($prerequisitesMet) {
+                    $availableSubjectsCount++;
                 }
             }
             
-            return true;
+            // If student can enroll in all subjects for the current semester, they are regular
+            // Note: We need to consider if they've already passed some subjects
+            $totalSubjects = count($currentSemesterSubjects);
+            
+            // Get count of already passed subjects in current semester
+            $passedCurrentSemesterSubjects = 0;
+            foreach ($studentGrades as $subjectId => $gradeRecord) {
+                if (in_array($gradeRecord->grade, $passingGrades)) {
+                    $passedCurrentSemesterSubjects++;
+                }
+            }
+            
+            // Student is regular if:
+            // 1. They can enroll in all remaining subjects (that they haven't passed yet)
+            // OR
+            // 2. They have already passed all subjects for this semester
+            $remainingSubjects = $totalSubjects - $passedCurrentSemesterSubjects;
+            $canEnrollAllRemaining = ($availableSubjectsCount - $passedCurrentSemesterSubjects) >= $remainingSubjects;
+            
+            return $canEnrollAllRemaining;
             
         } catch (\Exception $e) {
             Log::error('Error in checkIfRegularStudent: ' . $e->getMessage());
