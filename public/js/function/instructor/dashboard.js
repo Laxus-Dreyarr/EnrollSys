@@ -225,49 +225,56 @@ function displayEnrollmentRequests(requests) {
     });
 }
 
-// Search student enrollment request!
-$('#studentSearch').on('keyup', function() {
-    const searchValue = $(this).val().toLowerCase().trim();
-    const searchTerms = searchValue.split(' ').filter(term => term.length > 0);
-    
-    // Show all if search is empty
-    if (!searchValue) {
-        $('.enrollment-request-item').show();
-        updateSearchCount($('.enrollment-request-item').length, $('.enrollment-request-item').length);
-        return;
-    }
-    
-    let matchCount = 0;
-    const totalItems = $('.enrollment-request-item').length;
-    
-    $('.enrollment-request-item').each(function() {
-        const $item = $(this);
-        const itemText = $item.text().toLowerCase();
+$('#studentSearch').on('click', function() {
+    initializeEnrollmentRequests();
+    // Search student enrollment request!
+    $('#studentSearch').on('keyup', function() {
+
+        const searchValue = $(this).val().toLowerCase().trim();
+        const searchTerms = searchValue.split(' ').filter(term => term.length > 0);
         
-        // Check if all search terms are found in the item
-        const matches = searchTerms.every(term => itemText.indexOf(term) > -1);
-        
-        if (matches) {
-            $item.show();
-            matchCount++;
-            
-            // Optional: Highlight matching text
-            highlightSearchTerms($item, searchTerms);
-        } else {
-            $item.hide();
-            // Remove any existing highlights
-            $item.find('.highlight').each(function() {
-                $(this).replaceWith($(this).text());
-            });
+        // Show all if search is empty
+        if (!searchValue) {
+            $('.enrollment-request-item').show();
+            updateSearchCount($('.enrollment-request-item').length, $('.enrollment-request-item').length);
+            return;
         }
+        
+        let matchCount = 0;
+        const totalItems = $('.enrollment-request-item').length;
+        
+        $('.enrollment-request-item').each(function() {
+            const $item = $(this);
+            
+            // Get text content excluding HTML tags for search
+            const itemText = $item.find('.student-name, .student-id, .meta-item:not(.payment-status-indicator)').text().toLowerCase();
+            
+            // Check if all search terms are found in the item
+            const matches = searchTerms.every(term => itemText.indexOf(term) > -1);
+            
+            if (matches) {
+                $item.show();
+                matchCount++;
+                
+                // Optional: Highlight matching text
+                highlightSearchTerms($item, searchTerms);
+            } else {
+                $item.hide();
+                // Remove any existing highlights
+                $item.find('.highlight').each(function() {
+                    $(this).replaceWith($(this).text());
+                });
+            }
+        });
+        
+        updateSearchCount(matchCount, totalItems);
     });
-    
-    updateSearchCount(matchCount, totalItems);
-});
+})
 
 // Optional: Function to highlight search terms
 function highlightSearchTerms($item, searchTerms) {
     searchTerms.forEach(term => {
+        // Only highlight in student-name and student-id, not in payment status
         $item.find('.student-name, .student-id').each(function() {
             const $element = $(this);
             const originalText = $element.text();
@@ -280,16 +287,32 @@ function highlightSearchTerms($item, searchTerms) {
     });
 }
 
+// Function to update search count display
+function updateSearchCount(matchCount, totalCount) {
+    const searchCountElement = document.getElementById('search-count');
+    if (searchCountElement) {
+        if (matchCount === totalCount) {
+            searchCountElement.textContent = `Showing all ${totalCount} requests`;
+        } else {
+            searchCountElement.textContent = `Showing ${matchCount} of ${totalCount} requests`;
+        }
+    }
+}
+
+
 function createRequestItem(request) {
     const item = document.createElement('div');
     item.className = 'enrollment-request-item';
     item.dataset.requestId = request.request_id;
     item.dataset.studentId = request.student_id;
     
-    
     const studentType = request.is_regular === '1' ? 'Regular' : 'Irregular';
     const subjectsCount = request.enrolled_subjects_count || 0;
-
+    
+    // Get payment status
+    const paymentStatus = request.payment_receipt ? request.payment_receipt.status : 'Not Submitted';
+    const paymentStatusClass = getStatusClass(paymentStatus);
+    const paymentStatusText = paymentStatus;
 
     // Helper function to determine avatar HTML
     function getAvatarHtml(request) {
@@ -301,10 +324,8 @@ function createRequestItem(request) {
             const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName + ' ' + lastName)}&background=none&color=fff`;
             
             return `
-                
-                    <img src="${avatarUrl}" alt="User Avatar" class="user-avatar">
-                    <div class="status-indicator"></div>
-                
+                <img src="${avatarUrl}" alt="User Avatar" class="user-avatar">
+                <div class="status-indicator"></div>
             `;
         }
     }
@@ -339,6 +360,10 @@ function createRequestItem(request) {
                     <i class="fas fa-graduation-cap"></i>
                     ${subjectsCount} Subjects
                 </span>
+                <span class="meta-item payment-status-indicator">
+                    <i class="fas fa-receipt"></i>
+                    <span class="payment-status ${paymentStatusClass}">${paymentStatusText}</span>
+                </span>
             </div>
             <div class="request-date">
                 Requested: ${new Date(request.request_date).toLocaleDateString()}
@@ -356,7 +381,7 @@ function createRequestItem(request) {
         this.classList.add('active');
         
         // Load request details
-        loadRequestDetails(request);
+        loadRequestDetails(request, paymentStatusClass, paymentStatusText);
     });
     
     return item;
@@ -364,6 +389,8 @@ function createRequestItem(request) {
 
 // Realtime 
 function updatePaymentReceiptStatus(studentId, newStatus) {
+    console.log(`Updating payment status for student ${studentId} to: ${newStatus}`);
+    
     // Check if the currently displayed request details are for this student
     const requestDetails = document.getElementById('enrollment-request-details');
     if (!requestDetails) return;
@@ -373,8 +400,8 @@ function updatePaymentReceiptStatus(studentId, newStatus) {
     
     // If the currently displayed request matches the updated student
     if (currentStudentId && currentStudentId == studentId) {
-        // Find the payment receipt status element
-        const paymentReceiptElement = requestDetails.querySelector('.document-item:nth-child(3) .status-badge');
+        // Find the payment receipt status element in details view
+        const paymentReceiptElement = requestDetails.querySelector('.document-item[data-document-type="payment-receipt"] .status-badge');
         
         if (paymentReceiptElement) {
             // Update the status text
@@ -384,7 +411,7 @@ function updatePaymentReceiptStatus(studentId, newStatus) {
             const statusClass = getStatusClass(newStatus);
             paymentReceiptElement.className = `status-badge ${statusClass}`;
             
-            console.log(`Updated payment receipt status for student ${studentId} to: ${newStatus}`);
+            console.log(`Updated payment receipt status in details view for student ${studentId} to: ${newStatus}`);
         }
     }
     
@@ -392,18 +419,18 @@ function updatePaymentReceiptStatus(studentId, newStatus) {
     updateSearchResultPaymentStatus(studentId, newStatus);
 }
 
-// Helper function to update status in search results
 function updateSearchResultPaymentStatus(studentId, newStatus) {
     const requestItems = document.querySelectorAll('.enrollment-request-item');
+    const statusClass = getStatusClass(newStatus);
     
     requestItems.forEach(item => {
         if (item.getAttribute('data-student-id') == studentId) {
-            // If you're displaying payment status in the list item, update it here
-            // For example, if you add a payment status indicator in the list
+            // Find the payment status element in the list item
             const paymentStatusElement = item.querySelector('.payment-status');
             if (paymentStatusElement) {
                 paymentStatusElement.textContent = newStatus;
-                paymentStatusElement.className = `payment-status ${getStatusClass(newStatus)}`;
+                paymentStatusElement.className = `payment-status ${statusClass}`;
+                console.log(`Updated payment status in search list for student ${studentId}`);
             }
         }
     });
@@ -422,7 +449,7 @@ function getStatusClass(status) {
 }
 
 
-function loadRequestDetails(request) {
+function loadRequestDetails(request, paymentStatusClass, paymentStatusText) {
     const requestDetails = document.getElementById('enrollment-request-details');
     if (!requestDetails) return;
     
@@ -555,8 +582,8 @@ function loadRequestDetails(request) {
     // Payment Receipt Section - UPDATED
     if (request.payment_receipt && request.payment_receipt.web_path) {
         const receipt = request.payment_receipt;
-        const receiptStatusClass = getStatusClass(receipt.status);
-        const receiptStatusText = receipt.status || 'Pending';
+        const receiptStatusClass = paymentStatusClass;
+        const receiptStatusText = paymentStatusText || 'Approved';
         
         // In the payment receipt section HTML, add a data attribute:
         documentsHTML += `
@@ -567,11 +594,11 @@ function loadRequestDetails(request) {
                         <span>Payment Receipt</span>
                     </div>
                     <div class="document-status">
-                        <span class="status-badge ${receiptStatusClass}" id="payment-status-${request.student_id}">${receiptStatusText}</span>
+                        <span class="status-badge ${receiptStatusClass}">${receiptStatusText}</span>
                     </div>
                 </div>
                 ${receipt.web_path ? 
-                    `<a class="btn-view-document" href="${receipt.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    `<a class="btn-view-document" href="${receipt.web_path}" target="_blank">
                         <i class="fas fa-eye"></i> View Receipt
                     </a>` : ''}
             </div>
