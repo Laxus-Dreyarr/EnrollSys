@@ -28,7 +28,7 @@ function setupRealtimeSubscription() {
                 } else if (payload.new.operation == 'NOTIF') {
                     updateNotificationCount();
                 } else if (payload.new.operation === 'UPDATE2') {
-                    loadEnrollmentRequests();
+                    updatePaymentReceiptStatus(payload.new.student_id, payload.new.status);
                 }
                 // Refresh the notification count when changes occur
                 // fetchNotificationCount();
@@ -558,20 +558,22 @@ function loadRequestDetails(request) {
         const receiptStatusClass = getStatusClass(receipt.status);
         const receiptStatusText = receipt.status || 'Pending';
         
+        // In the payment receipt section HTML, add a data attribute:
         documentsHTML += `
-            <div class="document-item">
+            <div class="document-item" data-document-type="payment-receipt" data-student-id="${request.student_id}">
                 <div class="document-header">
                     <div class="document-title">
                         <i class="fas fa-receipt"></i>
                         <span>Payment Receipt</span>
                     </div>
                     <div class="document-status">
-                        <span class="status-badge ${receiptStatusClass}">${receiptStatusText}</span>
+                        <span class="status-badge ${receiptStatusClass}" id="payment-status-${request.student_id}">${receiptStatusText}</span>
                     </div>
                 </div>
-                <a class="btn-view-document" href="${receipt.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-eye"></i> View Receipt
-                </a>
+                ${receipt.web_path ? 
+                    `<a class="btn-view-document" href="${receipt.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i> View Receipt
+                    </a>` : ''}
             </div>
         `;
     } else {

@@ -81,10 +81,12 @@ async function insertsupabase(){
             }
 }
 
-async function updatesupabase(){
+async function updatesupabase(studentId){
     const data = {
         table_name: 'status',  // make sure these variables are defined
-        operation: 'UPDATE2'
+        operation: 'UPDATE2',
+        student_id: studentId,
+        status: 'Approved'
     };
     // Create AbortController for timeout (similar to PHP's 10s timeout)
     const controller = new AbortController();
@@ -778,7 +780,7 @@ $(document).on('click', '.approve-payment', function(e) {
                             
                             // Update pending counts
                             updateCountsFromTable();
-                            updatesupabase();
+                            updatesupabase(studentId);
                         });
                     } else {
                         Swal.fire('Error!', response.message, 'error');
