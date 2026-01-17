@@ -27,6 +27,8 @@ function setupRealtimeSubscription() {
                     count_pending();
                 } else if (payload.new.operation == 'NOTIF') {
                     updateNotificationCount();
+                } else if (payload.new.operation === 'UPDATE2') {
+                    loadEnrollmentRequests();
                 }
                 // Refresh the notification count when changes occur
                 // fetchNotificationCount();
@@ -360,6 +362,65 @@ function createRequestItem(request) {
     return item;
 }
 
+// Realtime 
+function updatePaymentReceiptStatus(studentId, newStatus) {
+    // Check if the currently displayed request details are for this student
+    const requestDetails = document.getElementById('enrollment-request-details');
+    if (!requestDetails) return;
+    
+    // Get the student ID from the currently displayed request
+    const currentStudentId = requestDetails.querySelector('.btn-view-history')?.getAttribute('data-student-id');
+    
+    // If the currently displayed request matches the updated student
+    if (currentStudentId && currentStudentId == studentId) {
+        // Find the payment receipt status element
+        const paymentReceiptElement = requestDetails.querySelector('.document-item:nth-child(3) .status-badge');
+        
+        if (paymentReceiptElement) {
+            // Update the status text
+            paymentReceiptElement.textContent = newStatus;
+            
+            // Update the CSS class based on status
+            const statusClass = getStatusClass(newStatus);
+            paymentReceiptElement.className = `status-badge ${statusClass}`;
+            
+            console.log(`Updated payment receipt status for student ${studentId} to: ${newStatus}`);
+        }
+    }
+    
+    // Also update the search results if this student is in the list
+    updateSearchResultPaymentStatus(studentId, newStatus);
+}
+
+// Helper function to update status in search results
+function updateSearchResultPaymentStatus(studentId, newStatus) {
+    const requestItems = document.querySelectorAll('.enrollment-request-item');
+    
+    requestItems.forEach(item => {
+        if (item.getAttribute('data-student-id') == studentId) {
+            // If you're displaying payment status in the list item, update it here
+            // For example, if you add a payment status indicator in the list
+            const paymentStatusElement = item.querySelector('.payment-status');
+            if (paymentStatusElement) {
+                paymentStatusElement.textContent = newStatus;
+                paymentStatusElement.className = `payment-status ${getStatusClass(newStatus)}`;
+            }
+        }
+    });
+}
+
+// Your existing helper function (make sure it's accessible)
+function getStatusClass(status) {
+    if (!status) return 'missing';
+    
+    switch(status.toLowerCase()) {
+        case 'approved': return 'approved';
+        case 'rejected': return 'rejected';
+        case 'pending': return 'pending';
+        default: return 'missing';
+    }
+}
+
 
 function loadRequestDetails(request) {
     const requestDetails = document.getElementById('enrollment-request-details');
@@ -433,9 +494,6 @@ function loadRequestDetails(request) {
                     <div class="document-title">
                         <i class="fas fa-file-pdf"></i>
                         <span>FHE Document</span>
-                    </div>
-                    <div class="document-status">
-                        <span class="status-badge ${fheStatusClass}">${fheStatusText}</span>
                     </div>
                 </div>
                 <a class="btn-view-document" href="${fhe.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
