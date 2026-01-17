@@ -1585,15 +1585,15 @@ class OrgController extends Controller
                 ->first();
 
             $payment2 = DB::table('payments')
-                ->where('id', $paymentId)
+                ->where('file_path', $payment->receipt_url)
                 ->first();
 
-            if($payment2) {
-                $updated_it = DB::table('payments')
-                ->where('id', $paymentId)
-                ->update([
-                    'status' => 'Approved',
-                ]);
+            if ($payment2) {
+                DB::table('payments')
+                    ->where('file_path', $payment->receipt_url)
+                    ->update([
+                        'status' => 'Approved',
+                    ]);
             }
                 
             if (!$payment) {

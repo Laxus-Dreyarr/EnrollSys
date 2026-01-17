@@ -112,7 +112,7 @@ function populatePaymentsTable(payments) {
                     `}
                     ${payment.status === 'Pending' ? `
                     <div class="action-buttons">
-                        <button class="approve-btn" data-payment-id="${payment.payment_id}">
+                        <button class="approve-btn" data-payment-id="${payment.payment_id}" placeholder="Approve">
                             <i class="fas fa-check"></i>
                         </button>
                     </div>
@@ -746,7 +746,7 @@ $(document).on('click', '.approve-payment', function(e) {
     loadPaymentData();
     
     // Auto-refresh data every 30 seconds
-    setInterval(loadPaymentData, 30000);
+    // setInterval(loadPaymentData, 30000);
 });
 
 
