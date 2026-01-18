@@ -886,6 +886,62 @@
 [title] {
     cursor: help;
 }
+
+/* Search style */
+.dashboard-search-container {
+    margin-bottom: 2rem;
+}
+
+.search-box {
+    position: relative;
+    max-width: 500px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    z-index: 2;
+}
+
+.search-input {
+    padding-left: 45px;
+    border-radius: 25px;
+    border: 2px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.search-count {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+    text-align: right;
+}
+
+/* Highlight style for search matches */
+.highlight {
+    background-color: #fff3cd;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+/* Search result styles */
+.search-no-results {
+    color: #dc3545;
+    font-style: italic;
+}
+
+.search-has-results .year-level-card {
+    border: 2px solid #28a745;
+}
         
         /* Mobile Styles - Improved for better touch experience */
         @media (max-width: 1024px) {

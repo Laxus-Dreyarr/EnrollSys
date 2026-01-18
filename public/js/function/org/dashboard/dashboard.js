@@ -558,6 +558,201 @@ $(document).ready(function() {
     loadPayments();
     setupFilterHandlers();
     setupExportHandler();
+    initializeSearch(); 
+
+
+    // Initialize search functionality
+    function initializeSearch() {
+        console.log('Initializing search functionality...');
+        
+        // Search input handler
+        $('#paymentSearch').on('keyup', function() {
+            const searchValue = $(this).val().toLowerCase().trim();
+            const searchTerms = searchValue.split(' ').filter(term => term.length > 0);
+            
+            // Show all if search is empty
+            if (!searchValue) {
+                $('.student-table tbody tr[data-payment-id]').show();
+                removeHighlights();
+                updatePaymentSearchCount($('.student-table tbody tr[data-payment-id]').length, $('.student-table tbody tr[data-payment-id]').length);
+                $('.year-level-card').removeClass('search-has-results');
+                return;
+            }
+            
+            let totalMatches = 0;
+            let totalItems = 0;
+            
+            // Process each year-level table
+            const yearLevels = ['first-year', 'second-year', 'third-year', 'fourth-year'];
+            
+            yearLevels.forEach(yearLevel => {
+                const $tbody = $(`#${yearLevel}-students`);
+                const $rows = $tbody.find('tr[data-payment-id]');
+                let yearMatches = 0;
+                
+                $rows.each(function() {
+                    const $row = $(this);
+                    totalItems++;
+                    
+                    // Get text content for searching
+                    const rowText = getRowText($row).toLowerCase();
+                    
+                    // Check if all search terms are found
+                    const matches = searchTerms.every(term => rowText.indexOf(term) > -1);
+                    
+                    if (matches) {
+                        $row.show();
+                        yearMatches++;
+                        totalMatches++;
+                        
+                        // Highlight matching text
+                        highlightSearchTerms($row, searchTerms);
+                    } else {
+                        $row.hide();
+                        removeRowHighlights($row);
+                    }
+                });
+                
+                // Update year-level badge to show matches
+                updateYearLevelBadge(yearLevel, yearMatches, $rows.length);
+            });
+            
+            // Update global search count
+            updatePaymentSearchCount(totalMatches, totalItems);
+            
+            // Add visual indicator if there are results
+            if (totalMatches > 0) {
+                $('.year-level-card').addClass('search-has-results');
+            } else {
+                $('.year-level-card').removeClass('search-has-results');
+            }
+        });
+        
+        // Clear search button (optional)
+        $('#paymentSearch').on('input', function() {
+            const $clearBtn = $(this).next('.search-clear');
+            if ($(this).val()) {
+                if ($clearBtn.length === 0) {
+                    $(this).after('<button class="search-clear"><i class="fas fa-times"></i></button>');
+                }
+            } else {
+                $('.search-clear').remove();
+            }
+        });
+        
+        // Clear search when clicking X
+        $(document).on('click', '.search-clear', function() {
+            $('#paymentSearch').val('').trigger('keyup');
+            $(this).remove();
+        });
+    }
+
+    // Helper function to get all searchable text from a row
+    function getRowText($row) {
+        // Get text from all cells except action buttons (last column)
+        let text = '';
+        $row.find('td:not(:last-child)').each(function() {
+            // For student info cell, get name and email
+            if ($(this).find('.student-info').length) {
+                text += $(this).find('.student-name').text() + ' ';
+                text += $(this).find('.student-email').text() + ' ';
+            } else {
+                text += $(this).text() + ' ';
+            }
+        });
+        return text.trim();
+    }
+
+    // Highlight search terms in a row
+    function highlightSearchTerms($row, searchTerms) {
+        // Remove existing highlights first
+        removeRowHighlights($row);
+        
+        // Highlight in each cell except action buttons
+        $row.find('td:not(:last-child)').each(function() {
+            let $cell = $(this);
+            let cellHtml = $cell.html();
+            
+            searchTerms.forEach(term => {
+                if (term.length < 2) return; // Skip very short terms
+                
+                // Create regex for case-insensitive highlighting
+                const regex = new RegExp(`(${escapeRegExp(term)})`, 'gi');
+                
+                // For student info cell, highlight specific elements
+                if ($cell.find('.student-info').length) {
+                    const $name = $cell.find('.student-name');
+                    const $email = $cell.find('.student-email');
+                    
+                    if ($name.length) {
+                        let nameText = $name.text();
+                        $name.html(nameText.replace(regex, '<span class="highlight">$1</span>'));
+                    }
+                    if ($email.length) {
+                        let emailText = $email.text();
+                        $email.html(emailText.replace(regex, '<span class="highlight">$1</span>'));
+                    }
+                } else {
+                    // For regular cells
+                    cellHtml = cellHtml.replace(regex, '<span class="highlight">$1</span>');
+                    $cell.html(cellHtml);
+                }
+            });
+        });
+    }
+
+    // Remove highlights from a specific row
+    function removeRowHighlights($row) {
+        $row.find('.highlight').each(function() {
+            $(this).replaceWith($(this).text());
+        });
+    }
+
+    // Remove all highlights
+    function removeHighlights() {
+        $('.highlight').each(function() {
+            $(this).replaceWith($(this).text());
+        });
+    }
+
+    // Update year-level badge to show match count
+    function updateYearLevelBadge(yearLevel, matches, total) {
+        const $badge = $(`#${yearLevel}-pending`);
+        const originalText = $badge.data('original-text') || $badge.text();
+        
+        // Store original text if not already stored
+        if (!$badge.data('original-text')) {
+            $badge.data('original-text', originalText);
+        }
+        
+        if (matches === 0 && $('#paymentSearch').val()) {
+            $badge.text(`${matches} matches`).addClass('text-danger');
+        } else if (matches > 0 && $('#paymentSearch').val()) {
+            $badge.text(`${matches} of ${total} matched`).addClass('text-success');
+        } else {
+            $badge.text(originalText).removeClass('text-danger text-success');
+        }
+    }
+
+    // Update global search count display
+    function updatePaymentSearchCount(matches, total) {
+        const $searchCount = $('#search-count');
+        const searchValue = $('#paymentSearch').val();
+        
+        if (!searchValue) {
+            $searchCount.text(`Showing ${total} payments`).removeClass('search-no-results');
+        } else if (matches === 0) {
+            $searchCount.text(`No results found for "${searchValue}"`).addClass('search-no-results');
+        } else {
+            $searchCount.text(`Found ${matches} of ${total} payments for "${searchValue}"`).removeClass('search-no-results');
+        }
+    }
+
+    // Escape regex special characters
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
     // Load payment data
     function loadPaymentData() {
         console.log('Attempting to load payment data...');
@@ -574,6 +769,8 @@ $(document).ready(function() {
                 if (response.success) {
                     displayPaymentData(response.data);
                     updateDashboardStats(response.data);
+                    // Reset search after loading new data
+                    $('#paymentSearch').val('').trigger('keyup');
                 } else {
                     console.error('Server returned error:', response.message);
                     showErrorMessage('Failed to load payment data: ' + response.message);
@@ -588,6 +785,8 @@ $(document).ready(function() {
                 // Use embedded data from the page
                 console.log('Using embedded data instead');
                 useEmbeddedData();
+                // Reset search
+                $('#paymentSearch').val('').trigger('keyup');
             }
         });
     }
@@ -723,6 +922,9 @@ $(document).ready(function() {
         
         attachEventHandlers();
         updateDashboardStats(data);
+         // Reset search counts
+        updatePaymentSearchCount($('.student-table tbody tr[data-payment-id]').length, 
+        $('.student-table tbody tr[data-payment-id]').length);
     }
 
 
