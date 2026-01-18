@@ -159,21 +159,8 @@
                 </div>
             </div>
 
-            <div class="dashboard-search-container fade-in">
-                <div class="search-box">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" 
-                           id="paymentSearch" 
-                           class="form-control search-input" 
-                           placeholder="Search by name, ID, email, amount, or contact...">
-                    <div id="search-count" class="search-count">
-                        Showing all payments
-                    </div>
-                </div>
-            </div>
-
             <!-- Year Level Sections -->
-            <div id="year-level-sections">
+            {{-- <div id="year-level-sections">
                 @foreach (['First Year', 'Second Year', 'Third Year', 'Fourth Year'] as $year)
                     @php
                         $yearKey = strtolower(str_replace(' ', '_', $year));
@@ -290,6 +277,67 @@
                         </div>
                     </div>
                 @endforeach
+            </div> --}}
+
+            <div class="card fade-in">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="card-title mb-0">All Pending Payments</h3>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" 
+                               id="paymentSearch" 
+                               class="form-control search-input" 
+                               placeholder="Search by name, ID, email, amount, contact, or year level...">
+                        <div id="search-count" class="search-count">
+                            Showing all payments
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="all-payments-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="25%">Student</th>
+                                    <th>ID Number</th>
+                                    <th>Contact</th>
+                                    <th>Year Level</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Date Submitted</th>
+                                    <th width="15%">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="all-payments-body">
+                                <!-- This will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="no-payments-message" class="text-center py-5" style="display: none;">
+                        <div class="text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <h5>No pending payments found</h5>
+                            <p class="mb-0">When new payments are submitted, they will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <div class="total-summary">
+                        <span class="text-muted me-3">Total Pending:</span>
+                        <span class="fw-bold fs-5" id="total-pending-amount">₱0.00</span>
+                        <span class="text-muted ms-2" id="payment-count">(0 payments)</span>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-primary d-flex align-items-center justify-content-center export-btn" 
+                                id="export-all-btn">
+                            <i class="fas fa-download me-2"></i> Export All
+                        </button>
+                    </div>
+                </div>
             </div>
             
             <!-- Footer -->

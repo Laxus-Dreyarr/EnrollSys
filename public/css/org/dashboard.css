@@ -942,6 +942,33 @@
 .search-has-results .year-level-card {
     border: 2px solid #28a745;
 }
+
+.year-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.year-badge-1st { background-color: #e3f2fd; color: #1565c0; }
+.year-badge-2nd { background-color: #f3e5f5; color: #7b1fa2; }
+.year-badge-3rd { background-color: #e8f5e8; color: #2e7d32; }
+.year-badge-4th { background-color: #fff3e0; color: #ef6c00; }
+
+.payment-notice-row {
+    background-color: #f8f9fa;
+    border-left: 4px solid #28a745;
+}
+
+.highlight {
+    background-color: #fff3cd;
+    padding: 1px 3px;
+    border-radius: 3px;
+    font-weight: 600;
+}
         
         /* Mobile Styles - Improved for better touch experience */
         @media (max-width: 1024px) {

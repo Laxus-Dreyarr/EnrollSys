@@ -553,87 +553,102 @@ function showSuccess(message) {
     // Use your preferred notification method
     alert('Success: ' + message);
 }
+
+
         
 $(document).ready(function() {
     loadPayments();
     setupFilterHandlers();
     setupExportHandler();
-    initializeSearch(); 
+    initializeSingleTableSearch();
+    
+    loadPaymentData();
+
+    // Export all button
+    $('#export-all-btn').on('click', function() {
+        exportAllPayments();
+    });
 
 
     // Initialize search functionality
-    function initializeSearch() {
-        console.log('Initializing search functionality...');
+    function initializeSingleTableSearch() {
+        console.log('Initializing search for single table...');
         
-        // Search input handler
-        $('#paymentSearch').on('keyup', function() {
+        $('#paymentSearch').off('keyup').on('keyup', function() {
             const searchValue = $(this).val().toLowerCase().trim();
             const searchTerms = searchValue.split(' ').filter(term => term.length > 0);
             
+            const $rows = $('.payment-row');
+            
             // Show all if search is empty
             if (!searchValue) {
-                $('.student-table tbody tr[data-payment-id]').show();
+                $rows.show();
                 removeHighlights();
-                updatePaymentSearchCount($('.student-table tbody tr[data-payment-id]').length, $('.student-table tbody tr[data-payment-id]').length);
-                $('.year-level-card').removeClass('search-has-results');
+                updateSingleTableSearchCount($rows.length, $rows.length);
                 return;
             }
             
-            let totalMatches = 0;
-            let totalItems = 0;
+            let matchCount = 0;
+            const totalItems = $rows.length;
             
-            // Process each year-level table
-            const yearLevels = ['first-year', 'second-year', 'third-year', 'fourth-year'];
-            
-            yearLevels.forEach(yearLevel => {
-                const $tbody = $(`#${yearLevel}-students`);
-                const $rows = $tbody.find('tr[data-payment-id]');
-                let yearMatches = 0;
+            $rows.each(function() {
+                const $row = $(this);
                 
-                $rows.each(function() {
-                    const $row = $(this);
-                    totalItems++;
+                // Get searchable data from row
+                const searchData = {
+                    name: $row.data('student-name') || '',
+                    id: $row.data('student-id-no') || '',
+                    email: $row.data('student-email') || '',
+                    contact: $row.data('student-contact') || '',
+                    year: $row.data('year-level') || '',
+                    amount: $row.find('.amount').text().toLowerCase(),
+                    date: $row.find('td:nth-child(7)').text().toLowerCase()
+                };
+                
+                // Combine all searchable text
+                const searchText = Object.values(searchData).join(' ');
+                
+                // Check if all search terms are found
+                const matches = searchTerms.every(term => {
+                    // Check for year level match (e.g., "1st", "first", "year")
+                    if (term.match(/^(1st|first)/) && searchData.year.includes('first')) return true;
+                    if (term.match(/^(2nd|second)/) && searchData.year.includes('second')) return true;
+                    if (term.match(/^(3rd|third)/) && searchData.year.includes('third')) return true;
+                    if (term.match(/^(4th|fourth)/) && searchData.year.includes('fourth')) return true;
+                    if (term === 'year' && searchData.year) return true;
                     
-                    // Get text content for searching
-                    const rowText = getRowText($row).toLowerCase();
-                    
-                    // Check if all search terms are found
-                    const matches = searchTerms.every(term => rowText.indexOf(term) > -1);
-                    
-                    if (matches) {
-                        $row.show();
-                        yearMatches++;
-                        totalMatches++;
-                        
-                        // Highlight matching text
-                        highlightSearchTerms($row, searchTerms);
-                    } else {
-                        $row.hide();
-                        removeRowHighlights($row);
-                    }
+                    // Check other fields
+                    return searchText.indexOf(term) > -1;
                 });
                 
-                // Update year-level badge to show matches
-                updateYearLevelBadge(yearLevel, yearMatches, $rows.length);
+                if (matches) {
+                    $row.show();
+                    matchCount++;
+                    
+                    // Highlight matching text
+                    highlightSearchTermsSingleTable($row, searchTerms);
+                } else {
+                    $row.hide();
+                    removeRowHighlights($row);
+                }
             });
             
-            // Update global search count
-            updatePaymentSearchCount(totalMatches, totalItems);
-            
-            // Add visual indicator if there are results
-            if (totalMatches > 0) {
-                $('.year-level-card').addClass('search-has-results');
-            } else {
-                $('.year-level-card').removeClass('search-has-results');
-            }
+            updateSingleTableSearchCount(matchCount, totalItems);
         });
         
-        // Clear search button (optional)
+        // Clear search button
         $('#paymentSearch').on('input', function() {
-            const $clearBtn = $(this).next('.search-clear');
-            if ($(this).val()) {
+            const $input = $(this);
+            const $clearBtn = $input.next('.search-clear');
+            
+            if ($input.val()) {
                 if ($clearBtn.length === 0) {
-                    $(this).after('<button class="search-clear"><i class="fas fa-times"></i></button>');
+                    $input.after(`
+                        <button class="search-clear btn btn-sm btn-link position-absolute" 
+                                style="right: 10px; top: 50%; transform: translateY(-50%);">
+                            <i class="fas fa-times text-muted"></i>
+                        </button>
+                    `);
                 }
             } else {
                 $('.search-clear').remove();
@@ -641,7 +656,8 @@ $(document).ready(function() {
         });
         
         // Clear search when clicking X
-        $(document).on('click', '.search-clear', function() {
+        $(document).on('click', '.search-clear', function(e) {
+            e.preventDefault();
             $('#paymentSearch').val('').trigger('keyup');
             $(this).remove();
         });
@@ -664,38 +680,27 @@ $(document).ready(function() {
     }
 
     // Highlight search terms in a row
-    function highlightSearchTerms($row, searchTerms) {
-        // Remove existing highlights first
+    
+    function highlightSearchTermsSingleTable($row, searchTerms) {
         removeRowHighlights($row);
         
-        // Highlight in each cell except action buttons
-        $row.find('td:not(:last-child)').each(function() {
-            let $cell = $(this);
-            let cellHtml = $cell.html();
+        searchTerms.forEach(term => {
+            if (term.length < 2) return;
             
-            searchTerms.forEach(term => {
-                if (term.length < 2) return; // Skip very short terms
+            const regex = new RegExp(`(${escapeRegExp(term)})`, 'gi');
+            
+            // Highlight in each cell except action buttons
+            $row.find('td:not(:last-child)').each(function() {
+                const $cell = $(this);
                 
-                // Create regex for case-insensitive highlighting
-                const regex = new RegExp(`(${escapeRegExp(term)})`, 'gi');
+                // Skip if cell contains badge or avatar
+                if ($cell.find('.badge, .avatar').length) return;
                 
-                // For student info cell, highlight specific elements
-                if ($cell.find('.student-info').length) {
-                    const $name = $cell.find('.student-name');
-                    const $email = $cell.find('.student-email');
-                    
-                    if ($name.length) {
-                        let nameText = $name.text();
-                        $name.html(nameText.replace(regex, '<span class="highlight">$1</span>'));
-                    }
-                    if ($email.length) {
-                        let emailText = $email.text();
-                        $email.html(emailText.replace(regex, '<span class="highlight">$1</span>'));
-                    }
-                } else {
-                    // For regular cells
-                    cellHtml = cellHtml.replace(regex, '<span class="highlight">$1</span>');
-                    $cell.html(cellHtml);
+                const originalHtml = $cell.html();
+                const highlightedHtml = originalHtml.replace(regex, '<span class="highlight">$1</span>');
+                
+                if (originalHtml !== highlightedHtml) {
+                    $cell.html(highlightedHtml);
                 }
             });
         });
@@ -735,16 +740,16 @@ $(document).ready(function() {
     }
 
     // Update global search count display
-    function updatePaymentSearchCount(matches, total) {
+    function updateSingleTableSearchCount(matches, total) {
         const $searchCount = $('#search-count');
         const searchValue = $('#paymentSearch').val();
         
         if (!searchValue) {
-            $searchCount.text(`Showing ${total} payments`).removeClass('search-no-results');
+            $searchCount.text(`Showing ${total} payments`).removeClass('text-danger');
         } else if (matches === 0) {
-            $searchCount.text(`No results found for "${searchValue}"`).addClass('search-no-results');
+            $searchCount.text(`No results found for "${searchValue}"`).addClass('text-danger');
         } else {
-            $searchCount.text(`Found ${matches} of ${total} payments for "${searchValue}"`).removeClass('search-no-results');
+            $searchCount.text(`Found ${matches} of ${total} payments for "${searchValue}"`).removeClass('text-danger');
         }
     }
 
@@ -755,7 +760,7 @@ $(document).ready(function() {
 
     // Load payment data
     function loadPaymentData() {
-        console.log('Attempting to load payment data...');
+        console.log('Loading payment data for single table...');
         
         $.ajax({
             url: '/org/payments/refresh',
@@ -767,7 +772,7 @@ $(document).ready(function() {
                 console.log('Response received:', response);
                 
                 if (response.success) {
-                    displayPaymentData(response.data);
+                    displayAllPaymentsInSingleTable(response.data);
                     updateDashboardStats(response.data);
                     // Reset search after loading new data
                     $('#paymentSearch').val('').trigger('keyup');
@@ -782,8 +787,7 @@ $(document).ready(function() {
                 console.error('Error:', error);
                 console.error('Response:', xhr.responseText);
                 
-                // Use embedded data from the page
-                console.log('Using embedded data instead');
+                // Try to use embedded data if available
                 useEmbeddedData();
                 // Reset search
                 $('#paymentSearch').val('').trigger('keyup');
@@ -812,192 +816,243 @@ $(document).ready(function() {
     }
 
     // Display payment data in tables
-    function displayPaymentData(data) {
-        // Map database year levels to display IDs
+    function displayAllPaymentsInSingleTable(data) {
+        const $tbody = $('#all-payments-body');
+        const $noPaymentsMsg = $('#no-payments-message');
+        const $table = $('#all-payments-table');
+        
+        $tbody.empty(); // Clear existing rows
+        
+        // Flatten all payments from all year levels
+        let allPayments = [];
+        let totalPending = 0;
+        let totalAmount = 0;
+        
         const yearMapping = {
-            'first_year': 'first-year',
-            'second_year': 'second-year',
-            'third_year': 'third-year',
-            'fourth_year': 'fourth-year'
+            'first_year': '1st Year',
+            'second_year': '2nd Year',
+            'third_year': '3rd Year',
+            'fourth_year': '4th Year'
         };
-
+        
         // Process each year level
         Object.keys(yearMapping).forEach(yearKey => {
             const yearData = data[yearKey] || { payments: [], total: 0, pending_count: 0 };
-            const tbodyId = `${yearMapping[yearKey]}-students`;
-            
-            // Update pending count badge
-            const pendingBadge = $(`#${yearMapping[yearKey]}-pending`);
-            pendingBadge.text(`${yearData.pending_count} pending`);
-            
-            // Update total amount
-            const totalSpan = $(`#${yearMapping[yearKey]}-total`);
-            totalSpan.text(`₱${yearData.total.toFixed(2)}`);
-            
-            // Update table rows
-            const $tbody = $(`#${tbodyId}`);
-            $tbody.empty(); // Clear existing rows
             
             if (yearData.payments && yearData.payments.length > 0) {
                 yearData.payments.forEach(payment => {
-                    const fullName = `${payment.firstname || ''} ${payment.lastname || ''}`.trim();
-                    const avatarInitial = fullName ? fullName.charAt(0) : 'N';
-                    const contact = payment.phone_number || 'No contact';
-                    const amount = payment.amount ? `₱${parseFloat(payment.amount).toFixed(2)}` : '₱0.00';
-                    
-                    // Format date
-                    const date = new Date(payment.created_at);
-                    const formattedDate = date.toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-
-                    const isPaymentNotice = payment.file_path && payment.file_path.includes('payment_notice_');
-                    const rowClass = isPaymentNotice ? 'payment-notice-row' : '';
-                    
-                    $tbody.append(`
-                        <tr data-payment-id="${payment.id}" class="${rowClass}">
-                            <td>
-                                <div class="student-info">
-                                    <div class="avatar">
-                                        ${isPaymentNotice ? 
-                                            '' : 
-                                            `<span>${avatarInitial}</span>`
-                                        }
-                                    </div>
-                                    <div>
-                                        <div class="student-name">${fullName || 'N/A'}</div>
-                                        <div class="student-email">${payment.email || 'No email'}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>${payment.id_no || 'N/A'}</td>
-                            <td>${contact}</td>
-                            <td class="amount">
-                                <div class="d-flex flex-column">
-                                    <span class="fw-bold">${amount}</span>
+                    // Add year level to payment object
+                    payment.year_level_display = yearMapping[yearKey];
+                    payment.year_level_class = yearKey.replace('_', '-');
+                    allPayments.push(payment);
+                });
+                
+                totalPending += yearData.pending_count || 0;
+                totalAmount += yearData.total || 0;
+            }
+        });
+        
+        // Sort by date (most recent first)
+        allPayments.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        // Display payments
+        if (allPayments.length > 0) {
+            $table.show();
+            $noPaymentsMsg.hide();
+            
+            allPayments.forEach(payment => {
+                const fullName = `${payment.firstname || ''} ${payment.lastname || ''}`.trim();
+                const avatarInitial = fullName ? fullName.charAt(0) : 'N';
+                const contact = payment.phone_number || 'No contact';
+                const amount = payment.amount ? `₱${parseFloat(payment.amount).toFixed(2)}` : '₱0.00';
+                
+                // Format date
+                const date = new Date(payment.created_at);
+                const formattedDate = date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+    
+                const isPaymentNotice = payment.file_path && payment.file_path.includes('payment_notice_');
+                const rowClass = isPaymentNotice ? 'payment-notice-row' : '';
+                
+                // Year level badge class
+                const yearBadgeClass = `year-badge year-badge-${payment.year_level_class}`;
+                
+                $tbody.append(`
+                    <tr data-payment-id="${payment.id}" 
+                        data-student-id="${payment.student_id}"
+                        data-year-level="${payment.year_level_class}"
+                        data-student-name="${fullName.toLowerCase()}"
+                        data-student-id-no="${payment.id_no || ''}"
+                        data-student-email="${payment.email || ''}"
+                        data-student-contact="${contact.toLowerCase()}"
+                        class="${rowClass} payment-row">
+                        <td>
+                            <div class="student-info d-flex align-items-center">
+                                <div class="avatar me-3">
                                     ${isPaymentNotice ? 
-                                        '<small style="color: green;"><i class="fas fa-info-circle"></i> Payment will be made later</small>' : ''}
-                                </div>
-                            </td>
-                            <td>
-                                <span class="status-badge status-pending">Pending</span>
-                            </td>
-                            <td>${formattedDate}</td>
-                            <td>
-                                <div class="action-buttons d-flex gap-2">
-                                    <button class="btn btn-sm btn-success approve-payment" 
-                                            data-payment-id="${payment.id}" 
-                                            data-student-id="${payment.student_id}">
-                                        <i class="fas fa-check"></i> Approve
-                                    </button>
-                                    ${payment.file_path ? 
-                                        `<a href="/documents/${payment.file_path.replace('documents/', '')}" 
-                                        target="_blank"
-                                        class="btn btn-sm btn-outline-primary view-receipt-btn">
-                                            <i class="fas fa-eye"></i> View
-                                        </a>` : ''
+                                        '' : 
+                                        `<span class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                            ${avatarInitial}
+                                        </span>`
                                     }
                                 </div>
-                            </td>
-                        </tr>
-                    `);
-                });
-            } else {
-                $tbody.append(`
-                    <tr>
-                        <td colspan="7" class="text-center py-4">
-                            <div class="text-muted">
-                                <i class="fas fa-inbox fa-2x mb-2"></i>
-                                <p>No pending payments found</p>
+                                <div>
+                                    <div class="student-name fw-bold">${fullName || 'N/A'}</div>
+                                    <div class="student-email small text-muted">${payment.email || 'No email'}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="student-id">${payment.id_no || 'N/A'}</div>
+                        </td>
+                        <td>${contact}</td>
+                        <td>
+                            <span class="${yearBadgeClass}">${payment.year_level_display}</span>
+                        </td>
+                        <td class="amount">
+                            <div class="d-flex flex-column">
+                                <span class="fw-bold">${amount}</span>
+                                ${isPaymentNotice ? 
+                                    '<small class="text-success"><i class="fas fa-info-circle me-1"></i>Payment notice</small>' : ''}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        </td>
+                        <td>${formattedDate}</td>
+                        <td>
+                            <div class="action-buttons d-flex gap-2">
+                                <button class="btn btn-sm btn-success approve-payment" 
+                                        data-payment-id="${payment.id}" 
+                                        data-student-id="${payment.student_id}"
+                                        title="Approve Payment">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                                ${payment.file_path ? 
+                                    `<a href="/documents/${payment.file_path.replace('documents/', '')}" 
+                                    target="_blank"
+                                    class="btn btn-sm btn-outline-primary view-receipt-btn"
+                                    title="View Receipt">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>` : ''
+                                }
                             </div>
                         </td>
                     </tr>
                 `);
+            });
+            
+            // Update summary
+            updatePaymentSummary(allPayments.length, totalAmount);
+        } else {
+            $table.hide();
+            $noPaymentsMsg.show();
+            updatePaymentSummary(0, 0);
+        }
+        
+        attachEventHandlers();
+        initializeSingleTableSearch();
+    }
+
+    function updatePaymentSummary(count, totalAmount) {
+        $('#total-pending-amount').text(`₱${totalAmount.toFixed(2)}`);
+        $('#payment-count').text(`(${count} payment${count !== 1 ? 's' : ''})`);
+    }
+
+    // -------
+    $(document).on('click', '.approve-payment', function(e) {
+        e.preventDefault();
+        
+        const paymentId = $(this).data('payment-id');
+        const studentId = $(this).data('student-id');
+        const button = $(this);
+        const row = button.closest('tr');
+        
+        Swal.fire({
+            title: 'Approve Payment?',
+            text: "Are you sure you want to approve this payment?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, approve it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Show loading state
+                button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+                
+                const csrfToken = $('meta[name="csrf-token"]').attr('content');
+                
+                $.ajax({
+                    url: '/org/approve-payment',
+                    method: 'POST',
+                    data: {
+                        _token: csrfToken,
+                        payment_id: paymentId,
+                        student_id: studentId
+                    },
+                    success: function(response) {
+                        console.log('Approval response:', response);
+                        
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Success!',
+                                text: response.message,
+                                icon: 'success',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                // Update row
+                                row.find('td:nth-child(6)').html('<span class="badge bg-success">Approved</span>');
+                                row.find('td:nth-child(8)').html('<span class="text-muted small">Processed</span>');
+                                
+                                // Remove row after delay for better UX
+                                setTimeout(() => {
+                                    row.fadeOut(300, function() {
+                                        $(this).remove();
+                                        updatePaymentSummaryAfterApproval();
+                                    });
+                                }, 1000);
+                                
+                                updatesupabase(studentId);
+                            });
+                        } else {
+                            Swal.fire('Error!', response.message, 'error');
+                            button.prop('disabled', false).html('<i class="fas fa-check"></i> Approve');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', xhr.responseText);
+                        Swal.fire('Error!', 'An error occurred. Please try again.', 'error');
+                        button.prop('disabled', false).html('<i class="fas fa-check"></i> Approve');
+                    }
+                });
+            }
+        });
+    });
+
+    function updatePaymentSummaryAfterApproval() {
+        const $rows = $('.payment-row');
+        let totalAmount = 0;
+        
+        $rows.each(function() {
+            const amountText = $(this).find('.amount .fw-bold').text();
+            const amountMatch = amountText.match(/₱([\d,.]+)/);
+            if (amountMatch) {
+                const amount = parseFloat(amountMatch[1].replace(/,/g, ''));
+                if (!isNaN(amount)) {
+                    totalAmount += amount;
+                }
             }
         });
         
-        attachEventHandlers();
-        updateDashboardStats(data);
-         // Reset search counts
-        updatePaymentSearchCount($('.student-table tbody tr[data-payment-id]').length, 
-        $('.student-table tbody tr[data-payment-id]').length);
+        updatePaymentSummary($rows.length, totalAmount);
     }
-
-
-    // -------
-$(document).on('click', '.approve-payment', function(e) {
-    e.preventDefault();
-    
-    const paymentId = $(this).data('payment-id');
-    const studentId = $(this).data('student-id');
-    const button = $(this);
-    const row = button.closest('tr');
-    
-    console.log('Approve payment clicked:', { paymentId, studentId });
-    
-    Swal.fire({
-        title: 'Approve Payment?',
-        text: "Are you sure you want to approve this payment?",
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#28a745',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, approve it!'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Show loading state
-            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
-            
-            // Get CSRF token
-            const csrfToken = $('meta[name="csrf-token"]').attr('content');
-            
-            console.log('Sending approval request with token:', csrfToken);
-            
-            $.ajax({
-                url: '/org/approve-payment', // This should match your route
-                method: 'POST',
-                data: {
-                    _token: csrfToken,
-                    payment_id: paymentId,
-                    student_id: studentId
-                },
-                success: function(response) {
-                    console.log('Approval response:', response);
-                    
-                    if (response.success) {
-                        Swal.fire({
-                            title: 'Success!',
-                            text: response.message,
-                            icon: 'success',
-                            timer: 1500,
-                            showConfirmButton: false
-                        }).then(() => {
-                            // Update row without reloading
-                            row.find('td:nth-child(5)').html('<span class="status-badge status-approved">Approved</span>');
-                            row.find('td:nth-child(7)').html('<span class="text-muted">Processed</span>');
-                            
-                            // Update pending counts
-                            updateCountsFromTable();
-                            updatesupabase(studentId);
-                        });
-                    } else {
-                        Swal.fire('Error!', response.message, 'error');
-                        button.prop('disabled', false).html('<i class="fas fa-check"></i> Approve');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('AJAX Error:', xhr.responseText);
-                    Swal.fire('Error!', 'An error occurred. Please try again.', 'error');
-                    button.prop('disabled', false).html('<i class="fas fa-check"></i> Approve');
-                }
-            });
-        }
-    });
-});
 
     // Use data that's already embedded in the page (from PHP)
     function useEmbeddedData() {
@@ -1075,6 +1130,80 @@ $(document).on('click', '.approve-payment', function(e) {
     // Auto-refresh data every 30 seconds
     // setInterval(loadPaymentData, 30000);
 });
+
+// Export all payments function
+function exportAllPayments() {
+    const payments = [];
+    
+    $('.payment-row').each(function() {
+        const $row = $(this);
+        const studentName = $row.find('.student-name').text();
+        const studentId = $row.find('.student-id').text();
+        const contact = $row.find('td:nth-child(3)').text();
+        const yearLevel = $row.find('.year-badge').text();
+        const amount = $row.find('.amount .fw-bold').text();
+        const status = $row.find('td:nth-child(6) .badge').text();
+        const date = $row.find('td:nth-child(7)').text();
+        const email = $row.find('.student-email').text();
+        
+        payments.push({
+            name: studentName,
+            id: studentId,
+            email: email,
+            contact: contact,
+            yearLevel: yearLevel,
+            amount: amount,
+            status: status,
+            date: date
+        });
+    });
+    
+    if (payments.length === 0) {
+        Swal.fire('No Data', 'There are no payments to export.', 'info');
+        return;
+    }
+    
+    // Create CSV
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // Add headers
+    const headers = ["Student Name", "ID Number", "Email", "Contact", "Year Level", "Amount", "Status", "Date Submitted"];
+    csvContent += headers.join(",") + "\n";
+    
+    // Add data rows
+    payments.forEach(payment => {
+        const row = [
+            `"${payment.name}"`,
+            `"${payment.id}"`,
+            `"${payment.email}"`,
+            `"${payment.contact}"`,
+            `"${payment.yearLevel}"`,
+            `"${payment.amount}"`,
+            `"${payment.status}"`,
+            `"${payment.date}"`
+        ];
+        csvContent += row.join(",") + "\n";
+    });
+    
+    // Create download link
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `all_payments_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    
+    // Trigger download
+    link.click();
+    document.body.removeChild(link);
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'Export Started',
+        text: 'Your CSV file download should begin shortly.',
+        timer: 2000,
+        showConfirmButton: false
+    });
+}
 
 
         // Sample data for payments
