@@ -873,23 +873,27 @@ $(document).ready(function() {
 
     // Update dashboard stats from data
     function updateDashboardStats(data) {
+        console.log('Updating dashboard stats with data:', data);
+        
         let totalPending = 0;
         let totalAmount = 0;
-        let acceptedToday = 0;
-        let totalStudents = 0;
         
         // Calculate totals from all year levels
         Object.values(data).forEach(yearData => {
+            console.log('Year data:', yearData);
             totalPending += yearData.pending_count || 0;
             totalAmount += yearData.total || 0;
-            // For accepted today and total students, we would need additional data
         });
+        
+        console.log('Calculated totals:', { totalPending, totalAmount });
         
         // Update the stats cards
         $('#total-pending').text(totalPending);
         $('#total-amount').text('₱' + totalAmount.toFixed(2));
-        // Update other stats as needed
-    }
+        
+        // Also update the card footer summary (optional)
+        updatePaymentSummary(totalPending, totalAmount);
+    } 
 
     // Display all payments grouped by year level
     function displayAllPaymentsGroupedByYear(data) {
@@ -1053,6 +1057,9 @@ $(document).ready(function() {
         
         // Update summary
         updatePaymentSummary(totalPayments, totalAmount);
+
+        $('#total-amount').text('₱' + totalAmount.toFixed(2));
+        updateTotalAmount(totalAmount);
         
         // Initialize search
         initializeGroupedSearch();
