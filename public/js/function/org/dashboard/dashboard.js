@@ -560,9 +560,10 @@ $(document).ready(function() {
     loadPayments();
     setupFilterHandlers();
     setupExportHandler();
-    initializeSingleTableSearch();
+    initializeGroupedSearch();
     
     loadPaymentData();
+    
 
     // Export all button
     $('#export-all-btn').on('click', function() {
@@ -570,79 +571,72 @@ $(document).ready(function() {
     });
 
 
-    // Initialize search functionality
-    function initializeSingleTableSearch() {
-        console.log('Initializing search for single table...');
-        
+    // Initialize search for grouped tables
+    function initializeGroupedSearch() {
         $('#paymentSearch').off('keyup').on('keyup', function() {
             const searchValue = $(this).val().toLowerCase().trim();
             const searchTerms = searchValue.split(' ').filter(term => term.length > 0);
             
-            const $rows = $('.payment-row');
+            const $yearSections = $('.year-section');
             
             // Show all if search is empty
             if (!searchValue) {
-                $rows.show();
+                $yearSections.show();
+                $('.payment-row').show();
                 removeHighlights();
-                updateSingleTableSearchCount($rows.length, $rows.length);
+                updateGroupedSearchCount($('.payment-row').length, $('.payment-row').length);
+                updateYearSectionCounts();
                 return;
             }
             
-            let matchCount = 0;
-            const totalItems = $rows.length;
+            let totalMatches = 0;
+            let totalItems = 0;
             
-            $rows.each(function() {
-                const $row = $(this);
+            // Process each year section
+            $yearSections.each(function() {
+                const $yearSection = $(this);
+                const $rows = $yearSection.find('.payment-row');
+                let yearMatches = 0;
                 
-                // Get searchable data from row
-                const searchData = {
-                    name: $row.data('student-name') || '',
-                    id: $row.data('student-id-no') || '',
-                    email: $row.data('student-email') || '',
-                    contact: $row.data('student-contact') || '',
-                    year: $row.data('year-level') || '',
-                    amount: $row.find('.amount').text().toLowerCase(),
-                    date: $row.find('td:nth-child(7)').text().toLowerCase()
-                };
+                totalItems += $rows.length;
                 
-                // Combine all searchable text
-                const searchText = Object.values(searchData).join(' ');
-                
-                // Check if all search terms are found
-                const matches = searchTerms.every(term => {
-                    // Check for year level match (e.g., "1st", "first", "year")
-                    if (term.match(/^(1st|first)/) && searchData.year.includes('first')) return true;
-                    if (term.match(/^(2nd|second)/) && searchData.year.includes('second')) return true;
-                    if (term.match(/^(3rd|third)/) && searchData.year.includes('third')) return true;
-                    if (term.match(/^(4th|fourth)/) && searchData.year.includes('fourth')) return true;
-                    if (term === 'year' && searchData.year) return true;
+                $rows.each(function() {
+                    const $row = $(this);
+                    const searchText = getRowSearchText($row);
                     
-                    // Check other fields
-                    return searchText.indexOf(term) > -1;
+                    // Check if all search terms are found
+                    const matches = searchTerms.every(term => searchText.indexOf(term) > -1);
+                    
+                    if (matches) {
+                        $row.show();
+                        yearMatches++;
+                        totalMatches++;
+                        
+                        // Highlight matching text
+                        highlightSearchTermsGrouped($row, searchTerms);
+                    } else {
+                        $row.hide();
+                        removeRowHighlights($row);
+                    }
                 });
                 
-                if (matches) {
-                    $row.show();
-                    matchCount++;
-                    
-                    // Highlight matching text
-                    highlightSearchTermsSingleTable($row, searchTerms);
+                // Update year section visibility
+                if (yearMatches > 0) {
+                    $yearSection.show();
+                    updateYearSectionHeader($yearSection, yearMatches, $rows.length);
                 } else {
-                    $row.hide();
-                    removeRowHighlights($row);
+                    $yearSection.hide();
                 }
             });
             
-            updateSingleTableSearchCount(matchCount, totalItems);
+            updateGroupedSearchCount(totalMatches, totalItems);
         });
         
         // Clear search button
         $('#paymentSearch').on('input', function() {
             const $input = $(this);
-            const $clearBtn = $input.next('.search-clear');
-            
             if ($input.val()) {
-                if ($clearBtn.length === 0) {
+                if (!$input.next('.search-clear').length) {
                     $input.after(`
                         <button class="search-clear btn btn-sm btn-link position-absolute" 
                                 style="right: 10px; top: 50%; transform: translateY(-50%);">
@@ -664,24 +658,19 @@ $(document).ready(function() {
     }
 
     // Helper function to get all searchable text from a row
-    function getRowText($row) {
-        // Get text from all cells except action buttons (last column)
-        let text = '';
-        $row.find('td:not(:last-child)').each(function() {
-            // For student info cell, get name and email
-            if ($(this).find('.student-info').length) {
-                text += $(this).find('.student-name').text() + ' ';
-                text += $(this).find('.student-email').text() + ' ';
-            } else {
-                text += $(this).text() + ' ';
-            }
-        });
-        return text.trim();
+    function getRowSearchText($row) {
+        return [
+            $row.data('student-name') || '',
+            $row.data('student-id-no') || '',
+            $row.data('student-email') || '',
+            $row.data('student-contact') || '',
+            $row.find('.amount .fw-bold').text().toLowerCase(),
+            $row.find('td:nth-child(6)').text().toLowerCase()
+        ].join(' ');
     }
 
-    // Highlight search terms in a row
-    
-    function highlightSearchTermsSingleTable($row, searchTerms) {
+    // Highlight search terms in grouped tables
+    function highlightSearchTermsGrouped($row, searchTerms) {
         removeRowHighlights($row);
         
         searchTerms.forEach(term => {
@@ -692,15 +681,71 @@ $(document).ready(function() {
             // Highlight in each cell except action buttons
             $row.find('td:not(:last-child)').each(function() {
                 const $cell = $(this);
+                const cellText = $cell.text(); // Get plain text for searching
                 
-                // Skip if cell contains badge or avatar
-                if ($cell.find('.badge, .avatar').length) return;
-                
-                const originalHtml = $cell.html();
-                const highlightedHtml = originalHtml.replace(regex, '<span class="highlight">$1</span>');
-                
-                if (originalHtml !== highlightedHtml) {
-                    $cell.html(highlightedHtml);
+                // Check if this cell contains the search term
+                if (regex.test(cellText)) {
+                    // For cells with complex HTML structure, we need to highlight specific elements
+                    
+                    // 1. Student info cell (name and email)
+                    if ($cell.find('.student-info').length) {
+                        const $name = $cell.find('.student-name');
+                        const $email = $cell.find('.student-email');
+                        
+                        if ($name.length) {
+                            const nameText = $name.text();
+                            const highlightedName = nameText.replace(regex, '<span class="highlight">$1</span>');
+                            if (highlightedName !== nameText) {
+                                $name.html(highlightedName);
+                            }
+                        }
+                        
+                        if ($email.length) {
+                            const emailText = $email.text();
+                            const highlightedEmail = emailText.replace(regex, '<span class="highlight">$1</span>');
+                            if (highlightedEmail !== emailText) {
+                                $email.html(highlightedEmail);
+                            }
+                        }
+                    }
+                    // 2. Student ID cell
+                    else if ($cell.find('.student-id').length) {
+                        const $studentId = $cell.find('.student-id');
+                        const idText = $studentId.text();
+                        const highlightedId = idText.replace(regex, '<span class="highlight">$1</span>');
+                        if (highlightedId !== idText) {
+                            $studentId.html(highlightedId);
+                        }
+                    }
+                    // 3. Amount cell
+                    else if ($cell.find('.amount').length) {
+                        const $amountSpan = $cell.find('.amount .fw-bold');
+                        if ($amountSpan.length) {
+                            const amountText = $amountSpan.text();
+                            const highlightedAmount = amountText.replace(regex, '<span class="highlight">$1</span>');
+                            if (highlightedAmount !== amountText) {
+                                $amountSpan.html(highlightedAmount);
+                            }
+                        }
+                    }
+                    // 4. Regular text cells (contact, date, etc.)
+                    else {
+                        // For simple text cells, we need to preserve any existing HTML structure
+                        const textNodes = [];
+                        $cell.contents().each(function() {
+                            if (this.nodeType === 3) { // Text node
+                                textNodes.push(this);
+                            }
+                        });
+                        
+                        textNodes.forEach(textNode => {
+                            const text = textNode.nodeValue;
+                            const highlightedText = text.replace(regex, '<span class="highlight">$1</span>');
+                            if (highlightedText !== text) {
+                                $(textNode).replaceWith(highlightedText);
+                            }
+                        });
+                    }
                 }
             });
         });
@@ -720,27 +765,57 @@ $(document).ready(function() {
         });
     }
 
-    // Update year-level badge to show match count
-    function updateYearLevelBadge(yearLevel, matches, total) {
-        const $badge = $(`#${yearLevel}-pending`);
-        const originalText = $badge.data('original-text') || $badge.text();
+    // Update year section header during search
+    function updateYearSectionHeader($yearSection, matches, total) {
+        const $header = $yearSection.find('.year-section-header');
+        const yearDisplay = $header.find('h4').contents().first().text().trim();
+        const $badge = $header.find('.badge');
         
-        // Store original text if not already stored
-        if (!$badge.data('original-text')) {
-            $badge.data('original-text', originalText);
-        }
+        const searchValue = $('#paymentSearch').val();
         
-        if (matches === 0 && $('#paymentSearch').val()) {
-            $badge.text(`${matches} matches`).addClass('text-danger');
-        } else if (matches > 0 && $('#paymentSearch').val()) {
-            $badge.text(`${matches} of ${total} matched`).addClass('text-success');
+        if (searchValue) {
+            $badge.text(`${matches} of ${total} matched`);
+            $badge.removeClass().addClass('badge bg-info');
         } else {
-            $badge.text(originalText).removeClass('text-danger text-success');
+            const yearKey = $yearSection.data('year-level');
+            const yearData = getYearDataFromBadge($badge.text());
+            $badge.text(`${total} pending`);
+            $badge.removeClass().addClass(`badge year-badge-${getYearClassFromKey(yearKey)}`);
         }
     }
 
-    // Update global search count display
-    function updateSingleTableSearchCount(matches, total) {
+    // Update all year section counts
+    function updateYearSectionCounts() {
+        $('.year-section').each(function() {
+            const $yearSection = $(this);
+            const $rows = $yearSection.find('.payment-row');
+            const $badge = $yearSection.find('.year-section-header .badge');
+            const yearKey = $yearSection.data('year-level');
+            
+            $badge.text(`${$rows.length} pending`);
+            $badge.removeClass().addClass(`badge year-badge-${getYearClassFromKey(yearKey)}`);
+        });
+    }
+
+    // Helper function to get year class from key
+    function getYearClassFromKey(yearKey) {
+        const mapping = {
+            'first_year': '1st',
+            'second_year': '2nd',
+            'third_year': '3rd',
+            'fourth_year': '4th'
+        };
+        return mapping[yearKey] || '1st';
+    }
+
+    // Helper to extract count from badge text
+    function getYearDataFromBadge(badgeText) {
+        const match = badgeText.match(/(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+    }
+
+    // Update search count for grouped view
+    function updateGroupedSearchCount(matches, total) {
         const $searchCount = $('#search-count');
         const searchValue = $('#paymentSearch').val();
         
@@ -760,7 +835,7 @@ $(document).ready(function() {
 
     // Load payment data
     function loadPaymentData() {
-        console.log('Loading payment data for single table...');
+        console.log('Loading payment data grouped by year...');
         
         $.ajax({
             url: '/org/payments/refresh',
@@ -772,7 +847,7 @@ $(document).ready(function() {
                 console.log('Response received:', response);
                 
                 if (response.success) {
-                    displayAllPaymentsInSingleTable(response.data);
+                    displayAllPaymentsGroupedByYear(response.data);
                     updateDashboardStats(response.data);
                     // Reset search after loading new data
                     $('#paymentSearch').val('').trigger('keyup');
@@ -815,148 +890,178 @@ $(document).ready(function() {
         // Update other stats as needed
     }
 
-    // Display payment data in tables
-    function displayAllPaymentsInSingleTable(data) {
-        const $tbody = $('#all-payments-body');
+    // Display all payments grouped by year level
+    function displayAllPaymentsGroupedByYear(data) {
+        const $container = $('#year-sections-container');
         const $noPaymentsMsg = $('#no-payments-message');
-        const $table = $('#all-payments-table');
         
-        $tbody.empty(); // Clear existing rows
+        $container.empty(); // Clear existing content
         
-        // Flatten all payments from all year levels
-        let allPayments = [];
-        let totalPending = 0;
+        // Define year levels and their display properties
+        const yearLevels = [
+            { key: 'first_year', display: '1st Year', badgeClass: 'year-badge-1st', order: 1 },
+            { key: 'second_year', display: '2nd Year', badgeClass: 'year-badge-2nd', order: 2 },
+            { key: 'third_year', display: '3rd Year', badgeClass: 'year-badge-3rd', order: 3 },
+            { key: 'fourth_year', display: '4th Year', badgeClass: 'year-badge-4th', order: 4 }
+        ];
+        
+        let totalPayments = 0;
         let totalAmount = 0;
+        let hasAnyPayments = false;
         
-        const yearMapping = {
-            'first_year': '1st Year',
-            'second_year': '2nd Year',
-            'third_year': '3rd Year',
-            'fourth_year': '4th Year'
-        };
+        // Sort year levels by order
+        yearLevels.sort((a, b) => a.order - b.order);
         
         // Process each year level
-        Object.keys(yearMapping).forEach(yearKey => {
-            const yearData = data[yearKey] || { payments: [], total: 0, pending_count: 0 };
+        yearLevels.forEach(year => {
+            const yearData = data[year.key] || { payments: [], total: 0, pending_count: 0 };
             
             if (yearData.payments && yearData.payments.length > 0) {
-                yearData.payments.forEach(payment => {
-                    // Add year level to payment object
-                    payment.year_level_display = yearMapping[yearKey];
-                    payment.year_level_class = yearKey.replace('_', '-');
-                    allPayments.push(payment);
-                });
-                
-                totalPending += yearData.pending_count || 0;
+                hasAnyPayments = true;
+                totalPayments += yearData.payments.length;
                 totalAmount += yearData.total || 0;
+                
+                // Create year section
+                const yearSectionId = `year-section-${year.key.replace('_', '-')}`;
+                const $yearSection = $(`
+                    <div class="year-section" id="${yearSectionId}" data-year-level="${year.key}">
+                        <div class="year-section-header d-flex justify-content-between align-items-center">
+                            <h4>
+                                ${year.display}
+                                <span class="badge ${year.badgeClass}">${yearData.payments.length} pending</span>
+                            </h4>
+                            <div class="year-total">
+                                <small class="text-muted">Total:</small>
+                                <span class="fw-bold ms-1">₱${yearData.total ? yearData.total.toFixed(2) : '0.00'}</span>
+                            </div>
+                        </div>
+                        <div class="table-responsive table-section">
+                            <table class="table table-hover mb-0 year-table" data-year="${year.key}">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="25%">Student</th>
+                                        <th>ID Number</th>
+                                        <th>Contact</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Date Submitted</th>
+                                        <th width="15%">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="${year.key}-payments-body">
+                                    <!-- Payments will be inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `);
+                
+                $container.append($yearSection);
+                
+                // Populate table rows for this year level
+                const $tbody = $(`#${year.key}-payments-body`);
+                
+                // Sort payments by date (most recent first)
+                yearData.payments.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                
+                yearData.payments.forEach(payment => {
+                    const fullName = `${payment.firstname || ''} ${payment.lastname || ''}`.trim();
+                    const avatarInitial = fullName ? fullName.charAt(0) : 'N';
+                    const contact = payment.phone_number || 'No contact';
+                    const amount = payment.amount ? `₱${parseFloat(payment.amount).toFixed(2)}` : '₱0.00';
+                    
+                    // Format date
+                    const date = new Date(payment.created_at);
+                    const formattedDate = date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    const isPaymentNotice = payment.file_path && payment.file_path.includes('payment_notice_');
+                    const rowClass = isPaymentNotice ? 'payment-notice-row' : '';
+                    
+                    $tbody.append(`
+                        <tr data-payment-id="${payment.id}" 
+                            data-student-id="${payment.student_id}"
+                            data-year-level="${year.key}"
+                            data-student-name="${fullName.toLowerCase()}"
+                            data-student-id-no="${payment.id_no || ''}"
+                            data-student-email="${payment.email || ''}"
+                            data-student-contact="${contact.toLowerCase()}"
+                            class="${rowClass} payment-row">
+                            <td>
+                                <div class="student-info d-flex align-items-center">
+                                    <div class="avatar me-3">
+                                        ${isPaymentNotice ? 
+                                            '' : 
+                                            `<span class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                                ${avatarInitial}
+                                            </span>`
+                                        }
+                                    </div>
+                                    <div>
+                                        <div class="student-name fw-bold">${fullName || 'N/A'}</div>
+                                        <div class="student-email small text-muted">${payment.email || 'No email'}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="student-id">${payment.id_no || 'N/A'}</div>
+                            </td>
+                            <td>${contact}</td>
+                            <td class="amount">
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold">${amount}</span>
+                                    ${isPaymentNotice ? 
+                                        '<small class="text-success"><i class="fas fa-info-circle me-1"></i>Payment notice</small>' : ''}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            </td>
+                            <td>${formattedDate}</td>
+                            <td>
+                                <div class="action-buttons d-flex gap-2">
+                                    <button class="btn btn-sm btn-success approve-payment" 
+                                            data-payment-id="${payment.id}" 
+                                            data-student-id="${payment.student_id}"
+                                            title="Approve Payment">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                    ${payment.file_path ? 
+                                        `<a href="/documents/${payment.file_path.replace('documents/', '')}" 
+                                        target="_blank"
+                                        class="btn btn-sm btn-outline-primary view-receipt-btn"
+                                        title="View Receipt">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>` : ''
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    `);
+                });
             }
         });
         
-        // Sort by date (most recent first)
-        allPayments.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        
-        // Display payments
-        if (allPayments.length > 0) {
-            $table.show();
+        // Show/hide no payments message
+        if (hasAnyPayments) {
             $noPaymentsMsg.hide();
-            
-            allPayments.forEach(payment => {
-                const fullName = `${payment.firstname || ''} ${payment.lastname || ''}`.trim();
-                const avatarInitial = fullName ? fullName.charAt(0) : 'N';
-                const contact = payment.phone_number || 'No contact';
-                const amount = payment.amount ? `₱${parseFloat(payment.amount).toFixed(2)}` : '₱0.00';
-                
-                // Format date
-                const date = new Date(payment.created_at);
-                const formattedDate = date.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-    
-                const isPaymentNotice = payment.file_path && payment.file_path.includes('payment_notice_');
-                const rowClass = isPaymentNotice ? 'payment-notice-row' : '';
-                
-                // Year level badge class
-                const yearBadgeClass = `year-badge year-badge-${payment.year_level_class}`;
-                
-                $tbody.append(`
-                    <tr data-payment-id="${payment.id}" 
-                        data-student-id="${payment.student_id}"
-                        data-year-level="${payment.year_level_class}"
-                        data-student-name="${fullName.toLowerCase()}"
-                        data-student-id-no="${payment.id_no || ''}"
-                        data-student-email="${payment.email || ''}"
-                        data-student-contact="${contact.toLowerCase()}"
-                        class="${rowClass} payment-row">
-                        <td>
-                            <div class="student-info d-flex align-items-center">
-                                <div class="avatar me-3">
-                                    ${isPaymentNotice ? 
-                                        '' : 
-                                        `<span class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                                            ${avatarInitial}
-                                        </span>`
-                                    }
-                                </div>
-                                <div>
-                                    <div class="student-name fw-bold">${fullName || 'N/A'}</div>
-                                    <div class="student-email small text-muted">${payment.email || 'No email'}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="student-id">${payment.id_no || 'N/A'}</div>
-                        </td>
-                        <td>${contact}</td>
-                        <td>
-                            <span class="${yearBadgeClass}">${payment.year_level_display}</span>
-                        </td>
-                        <td class="amount">
-                            <div class="d-flex flex-column">
-                                <span class="fw-bold">${amount}</span>
-                                ${isPaymentNotice ? 
-                                    '<small class="text-success"><i class="fas fa-info-circle me-1"></i>Payment notice</small>' : ''}
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge bg-warning text-dark">Pending</span>
-                        </td>
-                        <td>${formattedDate}</td>
-                        <td>
-                            <div class="action-buttons d-flex gap-2">
-                                <button class="btn btn-sm btn-success approve-payment" 
-                                        data-payment-id="${payment.id}" 
-                                        data-student-id="${payment.student_id}"
-                                        title="Approve Payment">
-                                    <i class="fas fa-check"></i> Approve
-                                </button>
-                                ${payment.file_path ? 
-                                    `<a href="/documents/${payment.file_path.replace('documents/', '')}" 
-                                    target="_blank"
-                                    class="btn btn-sm btn-outline-primary view-receipt-btn"
-                                    title="View Receipt">
-                                        <i class="fas fa-eye"></i> View
-                                    </a>` : ''
-                                }
-                            </div>
-                        </td>
-                    </tr>
-                `);
-            });
-            
-            // Update summary
-            updatePaymentSummary(allPayments.length, totalAmount);
         } else {
-            $table.hide();
             $noPaymentsMsg.show();
-            updatePaymentSummary(0, 0);
         }
         
+        // Update summary
+        updatePaymentSummary(totalPayments, totalAmount);
+        
+        // Initialize search
+        initializeGroupedSearch();
+        
+        // Attach event handlers
         attachEventHandlers();
-        initializeSingleTableSearch();
     }
 
     function updatePaymentSummary(count, totalAmount) {
@@ -972,6 +1077,7 @@ $(document).ready(function() {
         const studentId = $(this).data('student-id');
         const button = $(this);
         const row = button.closest('tr');
+        const $yearSection = row.closest('.year-section');
         
         Swal.fire({
             title: 'Approve Payment?',
@@ -983,7 +1089,6 @@ $(document).ready(function() {
             confirmButtonText: 'Yes, approve it!'
         }).then((result) => {
             if (result.isConfirmed) {
-                // Show loading state
                 button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
                 
                 const csrfToken = $('meta[name="csrf-token"]').attr('content');
@@ -1008,14 +1113,14 @@ $(document).ready(function() {
                                 showConfirmButton: false
                             }).then(() => {
                                 // Update row
-                                row.find('td:nth-child(6)').html('<span class="badge bg-success">Approved</span>');
-                                row.find('td:nth-child(8)').html('<span class="text-muted small">Processed</span>');
+                                row.find('td:nth-child(5)').html('<span class="badge bg-success">Approved</span>');
+                                row.find('td:nth-child(7)').html('<span class="text-muted small">Processed</span>');
                                 
-                                // Remove row after delay for better UX
+                                // Remove row after delay
                                 setTimeout(() => {
                                     row.fadeOut(300, function() {
                                         $(this).remove();
-                                        updatePaymentSummaryAfterApproval();
+                                        updatePaymentSummaryAfterApprovalGrouped($yearSection);
                                     });
                                 }, 1000);
                                 
@@ -1036,11 +1141,22 @@ $(document).ready(function() {
         });
     });
 
-    function updatePaymentSummaryAfterApproval() {
-        const $rows = $('.payment-row');
+    // Payment summary after approval for grouped view
+    function updatePaymentSummaryAfterApprovalGrouped($yearSection) {
+        // Update year section count
+        const $rows = $yearSection.find('.payment-row');
+        const $badge = $yearSection.find('.year-section-header .badge');
+        const yearKey = $yearSection.data('year-level');
+        
+        $badge.text(`${$rows.length} pending`);
+        $badge.removeClass().addClass(`badge year-badge-${getYearClassFromKey(yearKey)}`);
+        
+        // Update overall summary
+        let totalPayments = 0;
         let totalAmount = 0;
         
-        $rows.each(function() {
+        $('.payment-row').each(function() {
+            totalPayments++;
             const amountText = $(this).find('.amount .fw-bold').text();
             const amountMatch = amountText.match(/₱([\d,.]+)/);
             if (amountMatch) {
@@ -1051,7 +1167,7 @@ $(document).ready(function() {
             }
         });
         
-        updatePaymentSummary($rows.length, totalAmount);
+        updatePaymentSummary(totalPayments, totalAmount);
     }
 
     // Use data that's already embedded in the page (from PHP)

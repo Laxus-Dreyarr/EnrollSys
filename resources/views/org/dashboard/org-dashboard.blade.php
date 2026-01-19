@@ -283,12 +283,14 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <div>
                         <h3 class="card-title mb-0">All Pending Payments</h3>
+                        <small class="text-muted">Grouped by year level</small>
                     </div>
                     <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
                         <input type="text" 
-                               id="paymentSearch" 
-                               class="form-control search-input" 
-                               placeholder="Search by name, ID, email, amount, contact, or year level...">
+                            id="paymentSearch" 
+                            class="form-control search-input" 
+                            placeholder="Search by name, ID, email, amount, or contact...">
                         <div id="search-count" class="search-count">
                             Showing all payments
                         </div>
@@ -296,24 +298,9 @@
                 </div>
                 
                 <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0" id="all-payments-table">
-                            <thead class="table-light">
-                                <tr>
-                                    <th width="25%">Student</th>
-                                    <th>ID Number</th>
-                                    <th>Contact</th>
-                                    <th>Year Level</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                    <th>Date Submitted</th>
-                                    <th width="15%">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="all-payments-body">
-                                <!-- This will be populated by JavaScript -->
-                            </tbody>
-                        </table>
+                    <!-- Container for year-level sections -->
+                    <div id="year-sections-container">
+                        <!-- This will be populated by JavaScript -->
                     </div>
                     
                     <div id="no-payments-message" class="text-center py-5" style="display: none;">

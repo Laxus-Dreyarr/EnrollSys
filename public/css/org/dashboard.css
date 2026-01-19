@@ -969,6 +969,55 @@
     border-radius: 3px;
     font-weight: 600;
 }
+
+.year-section {
+    margin-bottom: 2rem;
+}
+
+.year-section-header {
+    background-color: #f8f9fa;
+    border-bottom: 3px solid #dee2e6;
+    padding: 1rem 1.5rem;
+    margin-bottom: 0;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.year-section-header h4 {
+    margin: 0;
+    font-weight: 600;
+    color: #495057;
+    display: flex;
+    align-items: center;
+}
+
+.year-section-header .badge {
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.year-section:last-child {
+    margin-bottom: 0;
+}
+
+.table-section {
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.year-badge-1st { background-color: #e3f2fd; color: #1565c0; }
+.year-badge-2nd { background-color: #f3e5f5; color: #7b1fa2; }
+.year-badge-3rd { background-color: #e8f5e8; color: #2e7d32; }
+.year-badge-4th { background-color: #fff3e0; color: #ef6c00; }
+
+.year-section.search-empty {
+    opacity: 0.5;
+}
+
+.year-section.search-empty .year-section-header {
+    opacity: 0.7;
+}
         
         /* Mobile Styles - Improved for better touch experience */
         @media (max-width: 1024px) {
