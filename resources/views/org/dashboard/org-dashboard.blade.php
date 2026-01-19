@@ -286,11 +286,7 @@
                         <small class="text-muted">Grouped by year level</small>
                     </div>
                     <div class="search-box">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" 
-                            id="paymentSearch" 
-                            class="form-control search-input" 
-                            placeholder="Search by name, ID, email, amount, or contact...">
+                        <input type="search" id="paymentSearch" class="form-control search-input" placeholder="Search by name, ID, email, amount, or contact...">
                         <div id="search-count" class="search-count">
                             Showing all payments
                         </div>

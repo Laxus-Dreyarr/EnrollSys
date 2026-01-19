@@ -429,6 +429,7 @@ function updatePaymentStats(payments) {
     const approvedPayments = payments.filter(p => p.status === 'Approved').length;
     const totalAmount = payments.reduce((sum, p) => sum + parseFloat(p.raw_amount), 0);
     
+    
     // Update stats cards if they exist
     $('#total-payments-count').text(totalPayments);
     $('#pending-payments-count').text(pendingPayments);
@@ -637,12 +638,12 @@ $(document).ready(function() {
             const $input = $(this);
             if ($input.val()) {
                 if (!$input.next('.search-clear').length) {
-                    $input.after(`
-                        <button class="search-clear btn btn-sm btn-link position-absolute" 
-                                style="right: 10px; top: 50%; transform: translateY(-50%);">
-                            <i class="fas fa-times text-muted"></i>
-                        </button>
-                    `);
+                    // $input.after(`
+                    //     <button class="search-clear btn btn-sm btn-link position-absolute" 
+                    //             style="right: 10px; top: 50%; transform: translateY(-50%);">
+                    //         <i class="fas fa-times text-muted"></i>
+                    //     </button>
+                    // `);
                 }
             } else {
                 $('.search-clear').remove();
@@ -930,12 +931,8 @@ $(document).ready(function() {
                                 ${year.display}
                                 <span class="badge ${year.badgeClass}">${yearData.payments.length} pending</span>
                             </h4>
-                            <div class="year-total">
-                                <small class="text-muted">Total:</small>
-                                <span class="fw-bold ms-1">₱${yearData.total ? yearData.total.toFixed(2) : '0.00'}</span>
-                            </div>
                         </div>
-                        <div class="table-responsive table-section">
+                        <div style="white-space: nowrap;" class="table-responsive table-section">
                             <table class="table table-hover mb-0 year-table" data-year="${year.key}">
                                 <thead class="table-light">
                                     <tr>
@@ -1251,26 +1248,46 @@ $(document).ready(function() {
 function exportAllPayments() {
     const payments = [];
     
-    $('.payment-row').each(function() {
-        const $row = $(this);
-        const studentName = $row.find('.student-name').text();
-        const studentId = $row.find('.student-id').text();
-        const contact = $row.find('td:nth-child(3)').text();
-        const yearLevel = $row.find('.year-badge').text();
-        const amount = $row.find('.amount .fw-bold').text();
-        const status = $row.find('td:nth-child(6) .badge').text();
-        const date = $row.find('td:nth-child(7)').text();
-        const email = $row.find('.student-email').text();
+    // Loop through each year section
+    $('.year-section').each(function() {
+        const $yearSection = $(this);
+        const yearLevel = $yearSection.find('.year-section-header h4').text().trim().split(' ')[0] + ' Year';
         
-        payments.push({
-            name: studentName,
-            id: studentId,
-            email: email,
-            contact: contact,
-            yearLevel: yearLevel,
-            amount: amount,
-            status: status,
-            date: date
+        // Loop through each row in this year section
+        $yearSection.find('.payment-row').each(function() {
+            const $row = $(this);
+            
+            // Get data from the correct elements
+            const studentName = $row.find('.student-name').text().trim();
+            const studentId = $row.find('.student-id').text().trim();
+            const email = $row.find('.student-email').text().trim();
+            const contact = $row.find('td:nth-child(3)').text().trim();
+            
+            // Get amount - remove the peso sign
+            const amountText = $row.find('.amount .fw-bold').text().trim();
+            const amount = amountText.replace('₱', '').replace(/\s/g, '').trim();
+            
+            // Get status
+            const status = $row.find('td:nth-child(5) .badge').text().trim() || 'Pending';
+            
+            // Get date - from the 6th column
+            const date = $row.find('td:nth-child(6)').text().trim();
+            
+            // Get payment type
+            const paymentType = $row.find('.amount .text-success').text().trim() ? 
+                'Payment Notice' : 'Receipt';
+            
+            payments.push({
+                name: studentName,
+                id: studentId,
+                email: email,
+                contact: contact,
+                yearLevel: yearLevel,
+                amount: amount,
+                status: status,
+                date: date,
+                paymentType: paymentType
+            });
         });
     });
     
@@ -1280,32 +1297,33 @@ function exportAllPayments() {
     }
     
     // Create CSV
-    let csvContent = "data:text/csv;charset=utf-8,";
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // Add BOM for Excel compatibility
     
     // Add headers
-    const headers = ["Student Name", "ID Number", "Email", "Contact", "Year Level", "Amount", "Status", "Date Submitted"];
-    csvContent += headers.join(",") + "\n";
+    const headers = ["Student Name", "ID Number", "Email", "Contact", "Year Level", "Amount", "Status", "Date Submitted", "Payment Type"];
+    csvContent += headers.join(",") + "\r\n";
     
     // Add data rows
     payments.forEach(payment => {
         const row = [
-            `"${payment.name}"`,
-            `"${payment.id}"`,
-            `"${payment.email}"`,
-            `"${payment.contact}"`,
-            `"${payment.yearLevel}"`,
-            `"${payment.amount}"`,
-            `"${payment.status}"`,
-            `"${payment.date}"`
+            escapeCSV(payment.name),
+            escapeCSV(payment.id),
+            escapeCSV(payment.email),
+            escapeCSV(payment.contact),
+            escapeCSV(payment.yearLevel),
+            payment.amount,
+            escapeCSV(payment.status),
+            escapeCSV(payment.date),
+            escapeCSV(payment.paymentType)
         ];
-        csvContent += row.join(",") + "\n";
+        csvContent += row.join(",") + "\r\n";
     });
     
     // Create download link
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `all_payments_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `payments_export_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     
     // Trigger download
@@ -1321,6 +1339,22 @@ function exportAllPayments() {
     });
 }
 
+// Helper function to escape CSV special characters
+function escapeCSV(text) {
+    if (text === null || text === undefined) return '';
+    text = String(text);
+    
+    // If text contains commas, quotes, or newlines, wrap in quotes
+    if (text.includes(',') || text.includes('"') || text.includes('\n') || text.includes('\r')) {
+        text = text.replace(/"/g, '""'); // Escape double quotes
+        text = `"${text}"`;
+    }
+    
+    // Replace any remaining line breaks
+    text = text.replace(/(\r\n|\n|\r)/gm, ' ');
+    
+    return text;
+}
 
         // Sample data for payments
         const paymentsData = [
