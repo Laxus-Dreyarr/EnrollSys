@@ -456,48 +456,101 @@ function loadRequestDetails(request, paymentStatusClass, paymentStatusText) {
     const avatarUrl = request.profile;
     const studentType = request.is_regular === '1' ? 'Regular' : 'Irrigular';
     
+    // Replace the subjectsHTML building section in loadRequestDetails function:
     let subjectsHTML = '';
     if (request.subjects && request.subjects.length > 0) {
+        // Group subjects by year level and semester
+        const groupedSubjects = {};
+        
         request.subjects.forEach(subject => {
-            // Determine CSS class based on prerequisites status
-            let subjectClass = 'subject-enrollment-item';
-            let prerequisiteWarning = '';
-            
-            if (subject.has_prerequisites) {
-                if (subject.all_prerequisites_passed) {
-                    subjectClass += ' prerequisites-passed';
-                } else {
-                    subjectClass += ' prerequisites-failed';
-                    prerequisiteWarning = '<div class="prerequisite-warning">⚠️ Missing/Unpassed Prerequisites</div>';
-                }
+            const key = `${subject.year_level} - ${subject.semester}`;
+            if (!groupedSubjects[key]) {
+                groupedSubjects[key] = [];
             }
-            
-            // Build prerequisites HTML
-            let prerequisitesHTML = '';
-            if (subject.prerequisites && subject.prerequisites.length > 0) {
-                prerequisitesHTML = `
-                    
-                `;
-            } else {
-                prerequisitesHTML = `
-                    
-
-                `;
-            }
+            groupedSubjects[key].push(subject);
+        });
+        
+        // Build table for each group
+        Object.keys(groupedSubjects).forEach(groupKey => {
+            const subjects = groupedSubjects[groupKey];
             
             subjectsHTML += `
-                <div class="${subjectClass}">
-                    <div class="subject-header">
-                        <div class="subject-code" style="background: green; color: white; padding: 5px; border-radius: 10px;">${subject.subject_code}</div>
-                        <div class="subject-meta">
-        
-                            ${subject.units} units • ${subject.semester}
+                <div class="subject-group">
+                    <h4 class="group-title">
+                        <i class="fas fa-book"></i>
+                        ${groupKey}
+                    </h4>
+                    <div class="table-responsive">
+                        <table class="subject-table">
+                            <thead>
+                                <tr>
+                                    <th>Subject Code</th>
+                                    <th>Subject Name</th>
+                                    <th>Units</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            subjects.forEach(subject => {
+                // Determine CSS class based on prerequisites status
+                let rowClass = 'subject-row';
+                let statusHTML = '<span class="status-eligible">Eligible</span>';
+                
+                if (subject.has_prerequisites) {
+                    if (subject.all_prerequisites_passed) {
+                        rowClass += ' prerequisites-passed';
+                        statusHTML = '<span class="status-passed">✓ Prerequisites Met</span>';
+                    } else {
+                        rowClass += ' prerequisites-failed';
+                        statusHTML = '<span class="status-failed">⚠ Missing Prerequisites</span>';
+                    }
+                }
+                
+                // Build prerequisites list
+                let prerequisitesHTML = 'None';
+                if (subject.prerequisites && subject.prerequisites.length > 0) {
+                    prerequisitesHTML = subject.prerequisites.map(prereq => 
+                        `${prereq.prerequisite_code}`
+                    ).join(', ');
+                }
+                
+                // Add prerequisites details tooltip
+                let prerequisitesDetails = '';
+                if (subject.prerequisites && subject.prerequisites.length > 0) {
+                    const prereqDetails = subject.prerequisites.map(prereq => 
+                        `<strong>${prereq.prerequisite_code}:</strong> ${prereq.prerequisite_name}<br>` +
+                        `<small>${prereq.prerequisite_status === 'passed' ? '✓ Passed' : '✗ Not Passed'}</small>`
+                    ).join('<br>');
+                    
+                    prerequisitesDetails = `
+                        <div class="prerequisites-tooltip">
+                            <i class="fas fa-info-circle" title="${subject.prerequisites.length} prerequisites"></i>
+                            <div class="tooltip-content">
+                                <strong>Prerequisites:</strong><br>
+                                ${prereqDetails}
+                            </div>
                         </div>
+                    `;
+                }
+                
+                subjectsHTML += `
+                    <tr class="${rowClass}">
+                        <td data-label="Subject Code">
+                            <span class="subject-code-badge">${subject.subject_code}</span>
+                        </td>
+                        <td data-label="Subject Name">
+                            <div class="subject-name">${subject.subject_name}</div>
+                        </td>
+                        <td data-label="Units" class="text-center">${subject.units}</td>
+                    </tr>
+                `;
+            });
+            
+            subjectsHTML += `
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="subject-name">${subject.subject_name}</div>
-                    <div class="subject-year">${subject.year_level}</div>
-                    ${prerequisiteWarning}
-                    ${prerequisitesHTML}
                 </div>
             `;
         });
