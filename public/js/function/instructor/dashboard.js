@@ -458,6 +458,8 @@ function loadRequestDetails(request, paymentStatusClass, paymentStatusText) {
     
     // Replace the subjectsHTML building section in loadRequestDetails function:
     let subjectsHTML = '';
+    let overallTotalUnits = 0;
+
     if (request.subjects && request.subjects.length > 0) {
         // Group subjects by year level and semester
         const groupedSubjects = {};
@@ -473,13 +475,19 @@ function loadRequestDetails(request, paymentStatusClass, paymentStatusText) {
         // Build table for each group
         Object.keys(groupedSubjects).forEach(groupKey => {
             const subjects = groupedSubjects[groupKey];
+            let groupTotalUnits = 0;
             
             subjectsHTML += `
                 <div class="subject-group">
-                    <h4 class="group-title">
-                        <i class="fas fa-book"></i>
-                        ${groupKey}
-                    </h4>
+                    <div class="group-header">
+                        <h4 class="group-title">
+                            <i class="fas fa-book"></i>
+                            ${groupKey}
+                        </h4>
+                        <div class="group-total-badge" id="group-total-${groupKey.replace(/\s+/g, '-')}">
+                            <!-- Group total will be calculated and inserted here -->
+                        </div>
+                    </div>
                     <div class="table-responsive">
                         <table class="subject-table">
                             <thead>
@@ -487,12 +495,19 @@ function loadRequestDetails(request, paymentStatusClass, paymentStatusText) {
                                     <th>Subject Code</th>
                                     <th>Subject Name</th>
                                     <th>Units</th>
+                                    <th>Prerequisite</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
             `;
             
             subjects.forEach(subject => {
+                // Calculate totals
+                const units = parseFloat(subject.units) || 0;
+                groupTotalUnits += units;
+                overallTotalUnits += units;
+                
                 // Determine CSS class based on prerequisites status
                 let rowClass = 'subject-row';
                 let statusHTML = '<span class="status-eligible">Eligible</span>';
@@ -541,19 +556,114 @@ function loadRequestDetails(request, paymentStatusClass, paymentStatusText) {
                         </td>
                         <td data-label="Subject Name">
                             <div class="subject-name">${subject.subject_name}</div>
+                            <div class="subject-meta">
+                                ${subject.semester} • ${subject.year_level}
+                            </div>
                         </td>
-                        <td data-label="Units" class="text-center">${subject.units}</td>
+                        <td data-label="Units" class="text-center">
+                            <span class="unit-count">${subject.units}</span>
+                        </td>
+                        <td data-label="Prerequisite">
+                            <div class="prerequisites-cell">
+                                ${prerequisitesHTML}
+                                ${prerequisitesDetails}
+                            </div>
+                        </td>
+                        <td data-label="Status" class="status-cell">${statusHTML}</td>
                     </tr>
                 `;
             });
             
+            // Add group total row
             subjectsHTML += `
                             </tbody>
+                            <tfoot>
+                                <tr class="group-total-row">
+                                    <td colspan="2" class="text-right">
+                                        <strong>Group Total:</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="total-units">${groupTotalUnits}</span>
+                                    </td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
             `;
+            
+            // Update group header badge
+            setTimeout(() => {
+                const groupBadge = document.getElementById(`group-total-${groupKey.replace(/\s+/g, '-')}`);
+                if (groupBadge) {
+                    groupBadge.innerHTML = `
+                        <span class="total-badge">
+                            <i class="fas fa-calculator"></i>
+                            ${groupTotalUnits} units
+                        </span>
+                    `;
+                }
+            }, 0);
         });
+        
+        // Add overall total section
+        subjectsHTML += `
+            <div class="overall-total-section">
+                <div class="overall-total-card">
+                    <div class="total-header">
+                        <h5>
+                            <i class="fas fa-chart-bar"></i>
+                            Enrollment Summary
+                        </h5>
+                        <div class="summary-stats">
+                            <span class="stat-item">
+                                <i class="fas fa-layer-group"></i>
+                                ${Object.keys(groupedSubjects).length} Semester(s)
+                            </span>
+                            <span class="stat-item">
+                                <i class="fas fa-book-open"></i>
+                                ${request.subjects.length} Subject(s)
+                            </span>
+                        </div>
+                    </div>
+                    <div class="total-content">
+                        <div class="total-item">
+                            <div class="total-label">
+                                <i class="fas fa-calculator"></i>
+                                Total Units
+                            </div>
+                            <div class="total-value">
+                                <span class="grand-total">${overallTotalUnits}</span>
+                                <small>units</small>
+                            </div>
+                        </div>
+                        <div class="total-breakdown">
+                            <div class="breakdown-header">Breakdown by Semester:</div>
+        `;
+        
+        // Add breakdown for each group
+        Object.keys(groupedSubjects).forEach(groupKey => {
+            const subjectsInGroup = groupedSubjects[groupKey];
+            const groupUnits = subjectsInGroup.reduce((total, subject) => 
+                total + (parseFloat(subject.units) || 0), 0
+            );
+            
+            subjectsHTML += `
+                <div class="breakdown-item">
+                    <span class="breakdown-semester">${groupKey}</span>
+                    <span class="breakdown-units">${groupUnits} units</span>
+                </div>
+            `;
+        });
+        
+        subjectsHTML += `
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
     } else {
         subjectsHTML = '<div class="no-subjects">No subjects found for enrollment</div>';
     }
