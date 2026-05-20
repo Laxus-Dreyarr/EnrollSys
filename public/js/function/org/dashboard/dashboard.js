@@ -722,6 +722,30 @@ $(document).ready(function() {
     loadAllStudents();
     setupFilterHandlers();
     setupExportHandler();
+
+    // ── Year filter pill click handler ──────────────────────────────────────
+    $(document).on('click', '.year-pill', function() {
+        // Reset all pills to inactive style
+        $('.year-pill').css({
+            background: 'white',
+            color: '#475569',
+            'border-color': '#e2e8f0'
+        });
+        // Mark clicked pill as active
+        $(this).css({
+            background: '#3b82f6',
+            color: 'white',
+            'border-color': '#3b82f6'
+        });
+        activeYearFilter = $(this).data('year');
+        applyStudentFilters();
+    });
+
+    // ── Search input handler ─────────────────────────────────────────────────
+    $(document).on('input keyup', '#search-students', function() {
+        applyStudentFilters();
+    });
+
     // Load payment data
     function loadPaymentData() {
         console.log('Attempting to load payment data...');
@@ -951,29 +975,6 @@ $(document).on('click', '.approve-payment', function(e) {
                 }
             });
         }
-    });
-
-    // Search input handler for students — respects active year filter
-    $(document).on('input keyup', '#search-students', function() {
-        applyStudentFilters();
-    });
-
-    // Year filter pill click handler
-    $(document).on('click', '.year-pill', function() {
-        // Update active pill styles
-        $('.year-pill').css({
-            background: 'white',
-            color: '#475569',
-            'border-color': '#e2e8f0'
-        });
-        $(this).css({
-            background: '#3b82f6',
-            color: 'white',
-            'border-color': '#3b82f6'
-        });
-
-        activeYearFilter = $(this).data('year');
-        applyStudentFilters();
     });
 
     // Export button handler for students (CSV format)

@@ -39,10 +39,10 @@
             <ul class="nav-links">
                 <li><a href="#" class="active" data-section="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                 <li><a href="#" data-section="students"><i class="fas fa-users"></i> Students</a></li>
-                <li><a href="#" data-section="payments"><i class="fas fa-file-invoice-dollar"></i> Payments</a></li>
-                <li><a href="#" data-section="analytics"><i class="fas fa-chart-bar"></i> Analytics</a></li>
+                <li><a href="#" data-section="payments"><i class="fas fa-file-invoice-dollar"></i> Enrolled Students</a></li>
+                {{-- <li><a href="#" data-section="analytics"><i class="fas fa-chart-bar"></i> Analytics</a></li> --}}
                 <li><a href="#" data-section="settings"><i class="fas fa-cog"></i> Settings</a></li>
-                <li><a href="#" data-section="help"><i class="fas fa-question-circle"></i> Help</a></li>
+                {{-- <li><a href="#" data-section="help"><i class="fas fa-question-circle"></i> Help</a></li> --}}
                 <li><a href="#" id="logout-btn" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </nav>
@@ -409,9 +409,9 @@
                     <div class="total-amount">
                         Showing <span id="students-count">48</span> students
                     </div>
-                    <button id="export-students-btn" class="btn btn-outline-primary d-flex align-items-center justify-content-center">
+                    {{-- <button id="export-students-btn" class="btn btn-outline-primary d-flex align-items-center justify-content-center">
                         <i class="fas fa-download me-2"></i> Export All
-                    </button>
+                    </button> --}}
                 </div>
             </div>
         </section>
@@ -757,18 +757,18 @@
                         <a href="#" class="list-group-item list-group-item-action active" data-settings-tab="organization">
                             <i class="fas fa-university me-2"></i> Organization
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action" data-settings-tab="fees">
+                        {{-- <a href="#" class="list-group-item list-group-item-action" data-settings-tab="fees">
                             <i class="fas fa-money-bill-wave me-2"></i> Fee Settings
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action" data-settings-tab="notifications">
+                        </a> --}}
+                        {{-- <a href="#" class="list-group-item list-group-item-action" data-settings-tab="notifications">
                             <i class="fas fa-bell me-2"></i> Notifications
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action" data-settings-tab="users">
+                        </a> --}}
+                        {{-- <a href="#" class="list-group-item list-group-item-action" data-settings-tab="users">
                             <i class="fas fa-users me-2"></i> User Management
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action" data-settings-tab="security">
+                        </a> --}}
+                        {{-- <a href="#" class="list-group-item list-group-item-action" data-settings-tab="security">
                             <i class="fas fa-shield-alt me-2"></i> Security
-                        </a>
+                        </a> --}}
                     </div>
                 </div>
                 
