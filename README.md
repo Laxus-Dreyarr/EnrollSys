@@ -49,7 +49,7 @@ To run this project locally, follow these steps:
 
 2.  **Clone the repository:**
     ```bash
-    git clone https://github.com/Laxus-Dreyarr/EnrollSys.git
+    git clone -b laravel-version-5 https://github.com/Laxus-Dreyarr/EnrollSys.git
     ```
 
 3.  **Setup:**
