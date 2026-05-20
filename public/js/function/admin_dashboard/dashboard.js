@@ -887,6 +887,7 @@ function generateEnrolledStudentsPDF() {
 // Function to load file list (call this when page loads)
 function loadFileList() {
     const fileList = document.getElementById('fileList');
+    if (!fileList) return;
     
     // Clear existing content
     fileList.innerHTML = '';
@@ -900,7 +901,7 @@ function loadFileList() {
         </div>
         <div class="file-info">
             <div class="file-name">List of All Enrolled Students.pdf</div>
-            <div class="file-meta"></div>
+            <div class="file-meta">System Compiled PDF</div>
         </div>
         <div class="file-actions">
             <button class="btn btn-sm btn-outline-primary" id="downloadEnrolledStudents" onclick="generateEnrolledStudentsPDF()">
@@ -911,42 +912,42 @@ function loadFileList() {
     
     fileList.appendChild(enrolledStudentsItem);
     
-    // Add other static files (if any)
-    const staticFiles = [
-        // {
-        //     icon: 'fa-file-pdf',
-        //     name: 'Academic Calendar 2023-2024.pdf',
-        //     meta: '2.4 MB • PDF • Uploaded: 2023-11-10'
-        // },
-        // {
-        //     icon: 'fa-file-excel',
-        //     name: 'Student List.xlsx',
-        //     meta: '1.8 MB • Excel • Uploaded: 2023-11-08'
-        // },
-        // {
-        //     icon: 'fa-file-word',
-        //     name: 'Enrollment Guidelines.docx',
-        //     meta: '850 KB • Word • Uploaded: 2023-11-05'
-        // }
-    ];
-    
-    staticFiles.forEach(file => {
-        const fileItem = document.createElement('div');
-        fileItem.className = 'file-item';
-        fileItem.innerHTML = `
-            <div class="file-icon">
-                <i class="fas ${file.icon}"></i>
-            </div>
-            <div class="file-info">
-                <div class="file-name">${file.name}</div>
-                <div class="file-meta">${file.meta}</div>
-            </div>
-            <div class="file-actions">
-                <button class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i></button>
-                <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></button>
-            </div>
-        `;
-        fileList.appendChild(fileItem);
+    // Load dynamically uploaded files from backend
+    $.get('/admin/ajax/get-files', function(response) {
+        if (response.success && response.files) {
+            response.files.forEach(file => {
+                // Determine icon based on mime type or extension
+                let iconClass = 'fa-file';
+                const nameLower = file.name.toLowerCase();
+                if (nameLower.endsWith('.pdf')) iconClass = 'fa-file-pdf text-danger';
+                else if (nameLower.endsWith('.xls') || nameLower.endsWith('.xlsx') || nameLower.endsWith('.csv')) iconClass = 'fa-file-excel text-success';
+                else if (nameLower.endsWith('.doc') || nameLower.endsWith('.docx')) iconClass = 'fa-file-word text-primary';
+                else if (nameLower.endsWith('.png') || nameLower.endsWith('.jpg') || nameLower.endsWith('.jpeg') || nameLower.endsWith('.gif')) iconClass = 'fa-file-image text-warning';
+                else if (nameLower.endsWith('.zip') || nameLower.endsWith('.rar')) iconClass = 'fa-file-archive text-secondary';
+                
+                const uploadDate = file.created_at ? new Date(file.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Unknown';
+                const fileMeta = `${file.file_size || '0 B'} • Uploaded: ${uploadDate} ${file.description ? '• ' + file.description : ''}`;
+
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-icon">
+                        <i class="fas ${iconClass}"></i>
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-meta">${fileMeta}</div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-sm btn-outline-primary" onclick="downloadAdminFile(${file.id})"><i class="fas fa-download"></i></button>
+                        <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteAdminFile(${file.id})"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+    }, 'json').fail(function(xhr, status, error) {
+        console.error('Error loading uploaded files:', error);
     });
 }
 
@@ -1003,6 +1004,108 @@ function setupFileSearch() {
             }
         });
 
+        // File Manager - auto-populate filename on file select
+        const fileUploadInput = document.getElementById('fileUpload');
+        const fileNameInput = document.getElementById('fileName');
+        if (fileUploadInput && fileNameInput) {
+            fileUploadInput.addEventListener('change', function() {
+                if (this.files && this.files.length > 0) {
+                    const fullPath = this.value;
+                    const startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
+                    let filename = fullPath.substring(startIndex);
+                    if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
+                        filename = filename.substring(1);
+                    }
+                    fileNameInput.value = filename;
+                }
+            });
+        }
+
+        // File Manager - Submit Upload Form
+        const uploadFileForm = document.getElementById('uploadFileForm');
+        if (uploadFileForm) {
+            uploadFileForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const fileInput = document.getElementById('fileUpload');
+                const customNameInput = document.getElementById('fileName');
+                const descriptionInput = document.getElementById('fileDescription');
+                const btnSubmit = document.getElementById('btnSubmitUpload');
+                
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Please select a file to upload.',
+                        icon: 'error',
+                        background: '#1a1a2e',
+                        color: '#ffffff'
+                    });
+                    return;
+                }
+
+                const originalHTML = btnSubmit.innerHTML;
+                btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Uploading...';
+                btnSubmit.disabled = true;
+
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                formData.append('name', customNameInput.value);
+                formData.append('description', descriptionInput.value);
+                formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+
+                $.ajax({
+                    url: '/admin/ajax/upload-file',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'json',
+                    success: function(response) {
+                        btnSubmit.innerHTML = originalHTML;
+                        btnSubmit.disabled = false;
+                        
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Success!',
+                                text: 'File uploaded successfully!',
+                                icon: 'success',
+                                background: '#1a1a2e',
+                                color: '#ffffff'
+                            }).then(() => {
+                                // Reset form and close modal
+                                uploadFileForm.reset();
+                                const uploadModal = bootstrap.Modal.getInstance(document.getElementById('uploadFileModal'));
+                                if (uploadModal) {
+                                    uploadModal.hide();
+                                }
+                                loadFileList();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: response.message || 'Failed to upload file.',
+                                icon: 'error',
+                                background: '#1a1a2e',
+                                color: '#ffffff'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        btnSubmit.innerHTML = originalHTML;
+                        btnSubmit.disabled = false;
+                        console.error('File upload failed:', error);
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Failed to upload file: ' + error,
+                            icon: 'error',
+                            background: '#1a1a2e',
+                            color: '#ffffff'
+                        });
+                    }
+                });
+            });
+        }
+
     
     // Attach upload function to button
     if (uploadBtn) {
@@ -1041,6 +1144,7 @@ function setupFileSearch() {
         insertsupabase2();
 
         loadSubjects();
+        loadStudents();
         loadStatistics();
 
         loadCurriculums();
@@ -1322,9 +1426,46 @@ function setupFileSearch() {
         
         // Clear all logs button
         document.getElementById('clearAllLogsBtn').addEventListener('click', function() {
-            if (confirm('Are you sure you want to clear all audit logs? This action cannot be undone.')) {
-                alert('All audit logs have been cleared');
-            }
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This will permanently delete all audit logs in the system!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, clear them!',
+                background: '#1a1a2e',
+                color: '#ffffff',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('/admin/ajax/clear-audit-logs', {
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    }, function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Cleared!',
+                                text: 'All audit logs have been successfully cleared.',
+                                icon: 'success',
+                                background: '#1a1a2e',
+                                color: '#ffffff'
+                            }).then(() => {
+                                loadAuditLogs();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: 'Failed to clear logs: ' + response.message,
+                                icon: 'error',
+                                background: '#1a1a2e',
+                                color: '#ffffff'
+                            });
+                        }
+                    }, 'json').fail(function(xhr, status, error) {
+                        console.error('Error clearing audit logs:', error);
+                    });
+                }
+            });
         });
         
         // Mobile menu toggle
@@ -1358,6 +1499,14 @@ function setupFileSearch() {
                 tabPanes.forEach(pane => pane.classList.remove('show', 'active'));
                 document.querySelector(target).classList.add('show', 'active');
                 
+                if (target === '#instructors') {
+                    loadInstructors();
+                } else if (target === '#organizations') {
+                    loadOrganizations();
+                } else if (target === '#audit') {
+                    loadAuditLogs();
+                }
+                
                 // Close sidebar on mobile after clicking a menu item
                 if (window.innerWidth <= 768 ) {
                     sidebar.classList.remove('active');
@@ -1383,6 +1532,22 @@ function setupFileSearch() {
             });
         });
         
+        // Instructors search
+        $('#instructorSearch').on('keyup', function() {
+            const value = $(this).val().toLowerCase();
+            $('#instructorsTable tbody tr').filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+        
+        // Organizations search
+        $('#organizationSearch').on('keyup', function() {
+            const value = $(this).val().toLowerCase();
+            $('#organizationsTable tbody tr').filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+        
         // Files search
         $('#fileSearch').on('keyup', function() {
             const value = $(this).val().toLowerCase();
@@ -1394,6 +1559,9 @@ function setupFileSearch() {
         // Load statistics and prerequisites on page load
         loadStatistics();
         loadPrerequisiteOptions();
+        loadInstructors();
+        loadOrganizations();
+        loadAuditLogs();
         
         // Initialize the create subject form submission
         $('#createSubjectBtn').click(function() {
@@ -2069,7 +2237,7 @@ function setupFileSearch() {
                 tbody.empty();
                 
                 if (response.logs.length === 0) {
-                    tbody.append('<tr><td colspan="5" class="text-center">No audit logs found</td></tr>');
+                    tbody.append('<tr><td colspan="6" class="text-center">No audit logs found</td></tr>');
                     return;
                 }
                 
@@ -2084,19 +2252,22 @@ function setupFileSearch() {
                             <td>${log.user_id || 'System'}</td>
                             <td>${log.details || 'N/A'}</td>
                             <td>${log.ip_address || 'N/A'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteAuditLog(${log.id})"><i class="fas fa-trash"></i></button>
+                            </td>
                         </tr>
                     `;
                     tbody.append(row);
                 });
             } else {
                 console.error('Response success is false:', response.message);
-                $('#auditTableBody').html('<tr><td colspan="5" class="text-center text-danger">Error: ' + (response.message || 'Unknown error') + '</td></tr>');
+                $('#auditTableBody').html('<tr><td colspan="6" class="text-center text-danger">Error: ' + (response.message || 'Unknown error') + '</td></tr>');
             }
         }, 'json').fail(function(xhr, status, error) {
             console.error('AJAX Error:', error);
             console.log('Status:', status);
             console.log('XHR Response:', xhr.responseText);
-            $('#auditTableBody').html('<tr><td colspan="5" class="text-center text-danger">AJAX Error: ' + error + '</td></tr>');
+            $('#auditTableBody').html('<tr><td colspan="6" class="text-center text-danger">AJAX Error: ' + error + '</td></tr>');
         });
     }
 
@@ -2491,3 +2662,700 @@ function setupFileSearch() {
         $('#editScheduleList').empty();
         $('#editSubjectForm input[name="subjectType[]"]').prop('checked', false);
     });
+
+    $(document).ready(function() {
+        // Students search and filter coordinator
+        window.filterStudents = function() {
+            const searchValue = $('#studentSearch').val().toLowerCase();
+            const activeYear = $('#yearLevelFilters .btn-year-filter.active').data('year') || 'All';
+            
+            console.log('Filtering students: search=' + searchValue + ', year=' + activeYear);
+            
+            $('#studentsTable tbody tr').each(function() {
+                const rowText = $(this).text().toLowerCase();
+                const rowYear = $(this).attr('data-year-level') || 'NONE';
+                
+                const matchesSearch = rowText.indexOf(searchValue) > -1;
+                const matchesYear = (activeYear === 'All') || (rowYear === activeYear);
+                
+                if (matchesSearch && matchesYear) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        };
+
+        // Bind Year Level Filter Buttons
+        $(document).on('click', '.btn-year-filter', function(e) {
+            e.preventDefault();
+            $('.btn-year-filter').removeClass('active');
+            $(this).addClass('active');
+            filterStudents();
+        });
+
+        // Students search event
+        $('#studentSearch').on('keyup', function() {
+            filterStudents();
+        });
+
+        // Save Student Changes
+        $('#saveStudentBtn').click(function() {
+            const formData = $('#editStudentForm').serializeArray();
+            const data = {
+                action: 'update_student',
+                _token: $('meta[name="csrf-token"]').attr('content')
+            };
+            
+            formData.forEach(function(item) {
+                data[item.name] = item.value;
+            });
+
+            console.log('Saving student data:', data);
+
+            $.post('/admin/ajax/get-stats', data, function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Student updated successfully!',
+                        icon: 'success',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#0d6efd',
+                        background: '#1a1a2e',
+                        color: '#ffffff'
+                    }).then(() => {
+                        $('#editStudentModal').modal('hide');
+                        loadStudents();
+                        loadStatistics();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Failed to update student: ' + response.message,
+                        icon: 'error',
+                        background: '#1a1a2e',
+                        color: '#ffffff'
+                    });
+                }
+            }, 'json').fail(function(xhr, status, error) {
+                console.error('Error saving student:', error);
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to save student changes',
+                    icon: 'error',
+                    background: '#1a1a2e',
+                    color: '#ffffff'
+                });
+            });
+        });
+    });
+
+    // Global Student CRUD Functions
+    function loadStudents() {
+        console.log('Loading students...');
+        $.post('/admin/ajax/get-stats', {
+            action: 'get_students',
+            _token: $('meta[name="csrf-token"]').attr('content')
+        }, function(response) {
+            if (response.success) {
+                const tbody = $('#studentsTable tbody');
+                tbody.empty();
+                
+                if (response.students.length === 0) {
+                    tbody.append('<tr><td colspan="5" class="text-center">No students found</td></tr>');
+                    return;
+                }
+                
+                response.students.forEach(function(student) {
+                    let badgeClass = 'badge-secondary';
+                    if (student.status === 'Officially Enrolled') {
+                        badgeClass = 'badge-success';
+                    } else if (student.status === 'Pending') {
+                        badgeClass = 'badge-warning';
+                    } else if (student.status === 'Rejected') {
+                        badgeClass = 'badge-danger';
+                    }
+                    
+                    const row = `
+                        <tr data-id="${student.id}" data-year-level="${student.year_level}">
+                            <td>${student.student_id}</td>
+                            <td>${student.name}</td>
+                            <td>${student.program}</td>
+                            <td><span class="badge ${badgeClass}">${student.status}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewStudent(${student.id})"><i class="fas fa-eye"></i></button>
+                                <button class="btn btn-sm btn-outline-warning ms-1" onclick="editStudent(${student.id})"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteStudent(${student.id})"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+                
+                // Immediately apply search/filtering on newly loaded students!
+                if (typeof window.filterStudents === 'function') {
+                    window.filterStudents();
+                }
+            } else {
+                console.error('Failed to load students:', response.message);
+            }
+        }, 'json').fail(function(xhr, status, error) {
+            console.error('Error loading students:', error);
+        });
+    }
+
+    function viewStudent(studentId) {
+        console.log('Viewing student:', studentId);
+        $.post('/admin/ajax/get-stats', {
+            action: 'get_student_details',
+            student_id: studentId,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        }, function(response) {
+            if (response.success) {
+                const s = response.student;
+                const ui = response.userInfo || {};
+                const u = response.user || {};
+                
+                // Set initials
+                const initials = ((ui.firstname || '').charAt(0) + (ui.lastname || '').charAt(0)).toUpperCase() || 'SD';
+                if ($('#viewStudentInitials').length) {
+                    $('#viewStudentInitials').text(initials);
+                }
+                
+                // Personal details
+                $('#viewStudentName').text((ui.firstname || '') + ' ' + (ui.lastname || ''));
+                $('#viewStudentIdNo').text(s.id_no || 'N/A');
+                $('#viewStudentSex').text(ui.sex || 'N/A');
+                $('#viewStudentAge').text(ui.age || 'N/A');
+                
+                // Format birthdate nicely
+                let bdate = 'N/A';
+                if (ui.birthdate) {
+                    const dateObj = new Date(ui.birthdate);
+                    if (!isNaN(dateObj.getTime())) {
+                        bdate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                    }
+                }
+                $('#viewStudentBirthdate').text(bdate);
+                $('#viewStudentPhone').text(ui.phone_number || 'N/A');
+                $('#viewStudentEmail').text(u.email2 || 'N/A');
+                $('#viewStudentAddress').text(ui.address || 'N/A');
+                $('#viewStudentCivilStatus').text(ui.relationship_status || 'N/A');
+                
+                // Academic details
+                $('#viewStudentYearLevel').text(s.year_level || 'N/A');
+                $('#viewStudentCurriculum').text(s.curriculum || 'N/A');
+                $('#viewStudentType').text(s.is_regular == 1 ? 'Regular' : 'Irregular');
+                $('#viewStudentSy').text(s.sy || 'N/A');
+                
+                // Status Badge
+                let badgeClass = 'bg-secondary';
+                if (s.status === 'Officially Enrolled') {
+                    badgeClass = 'bg-success';
+                } else if (s.status === 'Pending') {
+                    badgeClass = 'bg-warning text-dark';
+                } else if (s.status === 'Rejected') {
+                    badgeClass = 'bg-danger';
+                }
+                $('#viewStudentStatusBadge')
+                    .removeClass()
+                    .addClass('badge ' + badgeClass)
+                    .text(s.status);
+                
+                // Edit button binding in modal
+                $('#viewStudentEditBtn').off('click').on('click', function() {
+                    $('#viewStudentModal').modal('hide');
+                    editStudent(studentId);
+                });
+                
+                $('#viewStudentModal').modal('show');
+            } else {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to retrieve student details: ' + response.message,
+                    icon: 'error',
+                    background: '#1a1a2e',
+                    color: '#ffffff'
+                });
+            }
+        }, 'json').fail(function(xhr, status, error) {
+            console.error('Error fetching student details:', error);
+        });
+    }
+
+    function editStudent(studentId) {
+        console.log('Editing student:', studentId);
+        $.post('/admin/ajax/get-stats', {
+            action: 'get_student_details',
+            student_id: studentId,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        }, function(response) {
+            if (response.success) {
+                const s = response.student;
+                const ui = response.userInfo || {};
+                const u = response.user || {};
+                
+                // Populate the form fields
+                $('#editStudentId').val(s.id);
+                $('#editStudentIdNo').val(s.id_no);
+                $('#editStudentYearLevel').val(s.year_level || '1st Year');
+                $('#editStudentCurriculum').val(s.curriculum || '2018');
+                $('#editStudentStatus').val(s.status || 'Not Enrolled');
+                $('#editStudentIsRegular').val(s.is_regular || '1');
+                $('#editStudentSy').val(s.sy || '2025-2026');
+                
+                // Personal fields
+                $('#editStudentFirstname').val(ui.firstname || '');
+                $('#editStudentLastname').val(ui.lastname || '');
+                $('#editStudentMiddlename').val(ui.middlename || '');
+                $('#editStudentEmail').val(u.email2 || '');
+                $('#editStudentPhone').val(ui.phone_number || '');
+                $('#editStudentSex').val(ui.sex || 'Male');
+                $('#editStudentAge').val(ui.age || '');
+                $('#editStudentBirthdate').val(ui.birthdate || '');
+                $('#editStudentAddress').val(ui.address || '');
+                $('#editStudentRelationshipStatus').val(ui.relationship_status || 'Single');
+                
+                $('#editStudentModal').modal('show');
+            } else {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to retrieve student details: ' + response.message,
+                    icon: 'error',
+                    background: '#1a1a2e',
+                    color: '#ffffff'
+                });
+            }
+        }, 'json').fail(function(xhr, status, error) {
+            console.error('Error fetching student details:', error);
+        });
+    }
+
+    function deleteStudent(studentId) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This will permanently delete the student and all of their related records (enrollments, payments, etc.)!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!',
+            background: '#1a1a2e',
+            color: '#ffffff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post('/admin/ajax/get-stats', {
+                    action: 'delete_student',
+                    student_id: studentId,
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                }, function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: 'Student record has been deleted.',
+                            icon: 'success',
+                            background: '#1a1a2e',
+                            color: '#ffffff'
+                        }).then(() => {
+                            loadStudents();
+                            loadStatistics();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Failed to delete student: ' + response.message,
+                            icon: 'error',
+                            background: '#1a1a2e',
+                            color: '#ffffff'
+                        });
+                    }
+                }, 'json').fail(function(xhr, status, error) {
+                    console.error('Error deleting student:', error);
+                });
+            }
+        });
+    }
+
+    // Global Instructor CRUD Functions
+    function loadInstructors() {
+        console.log('Loading instructors...');
+        $.post('/admin/ajax/get-stats', {
+            action: 'get_instructors',
+            _token: $('meta[name="csrf-token"]').attr('content')
+        }, function(response) {
+            if (response.success) {
+                const tbody = $('#instructorsTable tbody');
+                tbody.empty();
+                
+                if (response.instructors.length === 0) {
+                    tbody.append('<tr><td colspan="6" class="text-center">No instructors found</td></tr>');
+                    return;
+                }
+                
+                response.instructors.forEach(function(inst) {
+                    let badgeClass = 'badge-success';
+                    let statusText = 'Active';
+                    if (!inst.is_active) {
+                        badgeClass = 'badge-secondary';
+                        statusText = 'Inactive';
+                    }
+                    
+                    const row = `
+                        <tr data-id="${inst.instructor_id}">
+                            <td>${inst.instructor_id}</td>
+                            <td>${inst.name}</td>
+                            <td>${inst.department}</td>
+                            <td>${inst.office}</td>
+                            <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewInstructor(${inst.instructor_id})"><i class="fas fa-eye"></i></button>
+                                <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteInstructor(${inst.instructor_id})"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            } else {
+                console.error('Failed to load instructors:', response.message);
+            }
+        }, 'json').fail(function(xhr, status, error) {
+            console.error('Error loading instructors:', error);
+        });
+    }
+
+    // Expose functions globally for onclick handlers
+    window.viewInstructor = function(id) {
+        console.log('Viewing instructor:', id);
+        $.post('/admin/ajax/get-stats', {
+            action: 'get_instructor_details',
+            instructor_id: id,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        }, function(response) {
+            if (response.success) {
+                const inst = response.instructor;
+                
+                // Get initials
+                const first = inst.firstname ? inst.firstname.charAt(0) : 'T';
+                const last = inst.lastname ? inst.lastname.charAt(0) : 'R';
+                $('#viewInstructorInitials').text(first + last);
+                
+                $('#viewInstructorName').text((inst.firstname || '') + ' ' + (inst.lastname || ''));
+                $('#viewInstructorId').text('ID: ' + inst.instructor_id);
+                
+                // Status Badge
+                const badge = $('#viewInstructorStatusBadge');
+                badge.removeClass('badge-success badge-secondary');
+                if (inst.is_active) {
+                    badge.addClass('badge-success').text('Active');
+                } else {
+                    badge.addClass('badge-secondary').text('Inactive');
+                }
+                
+                // Professional Details
+                $('#viewInstructorDepartment').text(inst.department || 'N/A');
+                $('#viewInstructorOffice').text(inst.office || 'N/A');
+                $('#viewInstructorBio').text(inst.bio || 'No bio introduction added yet.');
+                
+                // Personal details
+                $('#viewInstructorEmail').text(inst.email5 || 'N/A');
+                $('#viewInstructorPhone').text(inst.phone_number || 'N/A');
+                $('#viewInstructorAddress').text(inst.address || 'N/A');
+                $('#viewInstructorBirthdate').text(inst.birthdate || 'N/A');
+                $('#viewInstructorAge').text(inst.age || 'N/A');
+                
+                $('#viewInstructorModal').modal('show');
+            } else {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to fetch details: ' + response.message,
+                    icon: 'error',
+                    background: '#1a1a2e',
+                    color: '#ffffff'
+                });
+            }
+        }, 'json').fail(function(xhr, status, error) {
+            console.error('Error fetching instructor details:', error);
+        });
+    };
+
+    window.deleteInstructor = function(id) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This will permanently delete this instructor and all of their information!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!',
+            background: '#1a1a2e',
+            color: '#ffffff',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post('/admin/ajax/get-stats', {
+                    action: 'delete_instructor',
+                    instructor_id: id,
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                }, function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: 'Instructor record has been deleted.',
+                            icon: 'success',
+                            background: '#1a1a2e',
+                            color: '#ffffff'
+                        }).then(() => {
+                            loadInstructors();
+                            loadStatistics();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Failed to delete instructor: ' + response.message,
+                            icon: 'error',
+                            background: '#1a1a2e',
+                            color: '#ffffff'
+                        });
+                    }
+                }, 'json').fail(function(xhr, status, error) {
+                    console.error('Error deleting instructor:', error);
+                });
+            }
+        });
+    };
+
+    // Global Organization CRUD Functions
+    function loadOrganizations() {
+        console.log('Loading organizations...');
+        $.post('/admin/ajax/get-stats', {
+            action: 'get_organizations',
+            _token: $('meta[name="csrf-token"]').attr('content')
+        }, function(response) {
+            if (response.success) {
+                const tbody = $('#organizationsTable tbody');
+                tbody.empty();
+                
+                if (response.organizations.length === 0) {
+                    tbody.append('<tr><td colspan="6" class="text-center">No organizations found</td></tr>');
+                    return;
+                }
+                
+                response.organizations.forEach(function(org) {
+                    let badgeClass = 'badge-success';
+                    let statusText = 'Active';
+                    if (!org.is_active) {
+                        badgeClass = 'badge-secondary';
+                        statusText = 'Inactive';
+                    }
+                    
+                    const row = `
+                        <tr data-id="${org.org_id}">
+                            <td>${org.org_id}</td>
+                            <td>${org.name}</td>
+                            <td>${org.email}</td>
+                            <td>${org.address}</td>
+                            <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewOrganization(${org.org_id})"><i class="fas fa-eye"></i></button>
+                                <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteOrganization(${org.org_id})"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            } else {
+                console.error('Failed to load organizations:', response.message);
+            }
+        }, 'json').fail(function(xhr, status, error) {
+            console.error('Error loading organizations:', error);
+        });
+    }
+
+    // Expose functions globally for onclick handlers
+    window.viewOrganization = function(id) {
+        console.log('Viewing organization:', id);
+        $.post('/admin/ajax/get-stats', {
+            action: 'get_organization_details',
+            org_id: id,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        }, function(response) {
+            if (response.success) {
+                const org = response.organization;
+                
+                // Get initials
+                const first = org.firstname ? org.firstname.charAt(0) : 'O';
+                const last = org.lastname ? org.lastname.charAt(0) : 'R';
+                $('#viewOrganizationInitials').text(first + last);
+                
+                $('#viewOrganizationName').text((org.firstname || '') + ' ' + (org.lastname || ''));
+                $('#viewOrganizationId').text('ID: ' + org.org_id);
+                
+                // Status Badge
+                const badge = $('#viewOrganizationStatusBadge');
+                badge.removeClass('badge-success badge-secondary');
+                if (org.is_active) {
+                    badge.addClass('badge-success').text('Active');
+                } else {
+                    badge.addClass('badge-secondary').text('Inactive');
+                }
+                
+                // Organization Details
+                $('#viewOrganizationEmail').text(org.email4 || 'N/A');
+                $('#viewOrganizationAddress').text(org.address || 'N/A');
+                $('#viewOrganizationDateCreated').text(org.date_created || 'N/A');
+                
+                $('#viewOrganizationModal').modal('show');
+            } else {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to fetch details: ' + response.message,
+                    icon: 'error',
+                    background: '#1a1a2e',
+                    color: '#ffffff'
+                });
+            }
+        }, 'json').fail(function(xhr, status, error) {
+            console.error('Error fetching organization details:', error);
+        });
+    };
+
+    window.deleteOrganization = function(id) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This will permanently delete this organization and all of their information!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!',
+            background: '#1a1a2e',
+            color: '#ffffff',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post('/admin/ajax/get-stats', {
+                    action: 'delete_organization',
+                    org_id: id,
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                }, function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: 'Organization record has been deleted.',
+                            icon: 'success',
+                            background: '#1a1a2e',
+                            color: '#ffffff'
+                        }).then(() => {
+                            loadOrganizations();
+                            loadStatistics();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Failed to delete organization: ' + response.message,
+                            icon: 'error',
+                            background: '#1a1a2e',
+                            color: '#ffffff'
+                        });
+                    }
+                }, 'json').fail(function(xhr, status, error) {
+                    console.error('Error deleting organization:', error);
+                });
+            }
+        });
+    };
+
+    window.deleteAuditLog = function(id) {
+        console.log('Deleting audit log:', id);
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This will permanently delete this audit log record!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!',
+            background: '#1a1a2e',
+            color: '#ffffff',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post('/admin/ajax/delete-audit-log', {
+                    log_id: id,
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                }, function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: 'Audit log record has been deleted.',
+                            icon: 'success',
+                            background: '#1a1a2e',
+                            color: '#ffffff'
+                        }).then(() => {
+                            loadAuditLogs();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Failed to delete audit log: ' + response.message,
+                            icon: 'error',
+                            background: '#1a1a2e',
+                            color: '#ffffff'
+                        });
+                    }
+                }, 'json').fail(function(xhr, status, error) {
+                    console.error('Error deleting audit log:', error);
+                });
+            }
+        });
+    };
+
+    window.downloadAdminFile = function(id) {
+        console.log('Downloading admin file:', id);
+        window.location.href = '/admin/download-file/' + id;
+    };
+
+    window.deleteAdminFile = function(id) {
+        console.log('Deleting admin file:', id);
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This will permanently delete this uploaded file!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!',
+            background: '#1a1a2e',
+            color: '#ffffff',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post('/admin/ajax/delete-file', {
+                    file_id: id,
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                }, function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: 'File has been deleted.',
+                            icon: 'success',
+                            background: '#1a1a2e',
+                            color: '#ffffff'
+                        }).then(() => {
+                            loadFileList();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Failed to delete file: ' + response.message,
+                            icon: 'error',
+                            background: '#1a1a2e',
+                            color: '#ffffff'
+                        });
+                    }
+                }, 'json').fail(function(xhr, status, error) {
+                    console.error('Error deleting file:', error);
+                });
+            }
+        });
+    };

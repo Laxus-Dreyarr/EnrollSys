@@ -60,15 +60,15 @@
             background-color: #e9ecef; 
         }
         .group-header { 
-            background: linear-gradient(135deg, #3498db, #2980b9);
+            background-color: #2c3e50;
             color: white; 
             padding: 10px 12px; 
             margin: 25px 0 12px 0;
             font-weight: bold; 
             font-size: 13px; 
             border-radius: 4px;
+            border-left: 5px solid #3498db;
             page-break-inside: avoid;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .no-data { 
             text-align: center; 

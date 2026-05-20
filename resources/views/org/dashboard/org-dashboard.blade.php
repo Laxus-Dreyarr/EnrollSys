@@ -43,6 +43,7 @@
                 <li><a href="#" data-section="analytics"><i class="fas fa-chart-bar"></i> Analytics</a></li>
                 <li><a href="#" data-section="settings"><i class="fas fa-cog"></i> Settings</a></li>
                 <li><a href="#" data-section="help"><i class="fas fa-question-circle"></i> Help</a></li>
+                <li><a href="#" id="logout-btn" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </nav>
         
@@ -90,9 +91,9 @@
                         </ul> -->
                     </div>
                     
-                    <button class="btn btn-primary d-flex align-items-center justify-content-center">
+                    <!-- <button class="btn btn-primary d-flex align-items-center justify-content-center">
                         <i class="fas fa-plus me-2"></i> <span>Add Payment</span>
-                    </button>
+                    </button> -->
                 </div>
             </header>
 
@@ -102,14 +103,14 @@
                     <div class="stat-header">
                         <div>
                             <div class="stat-value" id="total-pending">12</div>
-                            <div class="stat-label">Pending Payments</div>
+                            <div class="stat-label">Collected</div>
                         </div>
                         <div class="stat-icon pending">
                             <i class="fas fa-clock"></i>
                         </div>
                     </div>
-                    <div class="stat-change positive">
-                        <i class="fas fa-arrow-up me-1"></i> 2 from yesterday
+                    <div class="stat-change positive" id="collected-change">
+                        <i class="fas fa-arrow-up me-1"></i> ₱{{ number_format($collectedToday, 2) }} today
                     </div>
                 </div>
                 
@@ -123,8 +124,8 @@
                             <i class="fas fa-peso-sign"></i>
                         </div>
                     </div>
-                    <div class="stat-change positive">
-                        <i class="fas fa-arrow-up me-1"></i> ₱1,200
+                    <div class="stat-change positive" id="pending-change">
+                        <i class="fas fa-arrow-up me-1"></i> ₱{{ number_format($pendingToday, 2) }} today
                     </div>
                 </div>
                 
@@ -138,23 +139,23 @@
                             <i class="fas fa-check-circle"></i>
                         </div>
                     </div>
-                    <div class="stat-change positive">
-                        <i class="fas fa-arrow-up me-1"></i> 1 from yesterday
+                    <div class="stat-change positive" id="accepted-change">
+                        <i class="fas fa-arrow-up me-1"></i> {{ $approvedTodayCount }} today
                     </div>
                 </div>
                 
                 <div class="stat-card fade-in">
                     <div class="stat-header">
                         <div>
-                            <div class="stat-value" id="total-students">Not Done</div>
+                            <div class="stat-value" id="total-students">{{ $totalStudents }}</div>
                             <div class="stat-label">Total Students</div>
                         </div>
                         <div class="stat-icon students">
                             <i class="fas fa-user-graduate"></i>
                         </div>
                     </div>
-                    <div class="stat-change positive">
-                        <i class="fas fa-arrow-up me-1"></i> 5 this week
+                    <div class="stat-change positive" id="students-change">
+                        <i class="fas fa-arrow-up me-1"></i> {{ $newStudentsThisWeek }} this week
                     </div>
                 </div>
             </div>
@@ -171,7 +172,7 @@
                         ];
                     @endphp
                     
-                    <div class="year-level-card fade-in">
+                    <div class="year-level-card fade-in" id="{{ str_replace(' ', '-', strtolower($year)) }}-card" @if($yearData['payments']->count() == 0) style="display: none;" @endif>
                         <div class="card-header">
                             <h3 class="card-title">{{ $year }} Students</h3>
                             <span class="card-badge" id="{{ str_replace(' ', '-', strtolower($year)) }}-pending">
@@ -298,14 +299,14 @@
                     <p>Manage all students in the organization</p>
                 </div>
                 
-                <div class="top-bar-actions">
+                {{-- <div class="top-bar-actions">
                     <button class="btn btn-primary d-flex align-items-center justify-content-center">
                         <i class="fas fa-plus me-2"></i> <span>Add Student</span>
                     </button>
-                </div>
+                </div> --}}
             </header>
 
-            <div class="stats-grid">
+            {{-- <div class="stats-grid">
                 <div class="stat-card fade-in">
                     <div class="stat-header">
                         <div>
@@ -365,13 +366,13 @@
                         <i class="fas fa-arrow-up me-1"></i> 1 from yesterday
                     </div>
                 </div>
-            </div>
+            </div> --}}
 
             <div class="year-level-card">
                 <div class="card-header">
                     <h3 class="card-title">All Students</h3>
                     <div class="d-flex flex-column flex-sm-row gap-2 w-100">
-                        <input type="text" class="form-control" placeholder="Search students...">
+                        <input type="text" id="search-students" class="form-control" placeholder="Search students...">
                         <button class="btn btn-outline-primary d-flex align-items-center justify-content-center">
                             <i class="fas fa-filter me-2"></i> Filter
                         </button>
@@ -400,7 +401,7 @@
                     <div class="total-amount">
                         Showing <span id="students-count">48</span> students
                     </div>
-                    <button class="btn btn-outline-primary d-flex align-items-center justify-content-center">
+                    <button id="export-students-btn" class="btn btn-outline-primary d-flex align-items-center justify-content-center">
                         <i class="fas fa-download me-2"></i> Export All
                     </button>
                 </div>
@@ -506,6 +507,7 @@
                     </div>
                 </div>
                 
+                <!-- This is the current code you showed -->
                 <div class="student-table-container">
                     <table class="student-table">
                         <thead>
@@ -1137,6 +1139,9 @@ $(document).ready(function() {
     
     // Setup touch interactions
     setupTouchInteractions();
+
+    // Setup logout handler
+    setupLogout();
 });
 
 // Simplified setupMobileSidebar function
@@ -1222,10 +1227,11 @@ function setupNavigation() {
     
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
-            e.preventDefault();
-            
             // Get the section to show
             const sectionId = this.getAttribute('data-section');
+            if (!sectionId) return;
+
+            e.preventDefault();
             
             // Remove active class from all links
             navLinks.forEach(l => l.classList.remove('active'));
@@ -1247,6 +1253,30 @@ function setupNavigation() {
             }
         });
     });
+}
+
+// Setup logout confirmation and form submit
+function setupLogout() {
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Confirm Logout',
+                text: 'Are you sure you want to logout?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Logout',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logout-form').submit();
+                }
+            });
+        });
+    }
 }
 
 // Setup settings tabs
@@ -1295,5 +1325,10 @@ function setupTouchInteractions() {
     });
 }
 </script>
+
+    <!-- Hidden Logout Form -->
+    <form id="logout-form" action="{{ route('org.logout') }}" method="POST" style="display: none;">
+        @csrf
+    </form>
 </body>
 </html>

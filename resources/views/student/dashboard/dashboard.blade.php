@@ -58,6 +58,7 @@ if (isset($averageGrade) && $averageGrade > 0) {
     </style>
     <link rel="stylesheet" href="{{ asset('css/student/dashboard.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 <body>
     <div class="dashboard-container">
@@ -247,8 +248,304 @@ if (isset($averageGrade) && $averageGrade > 0) {
                     </div> -->
                 </div>
                 
-                <!-- HIDE -->
-                <!-- <h2 class="section-title">My Courses</h2> -->
+                <!-- Academic Performance Analytics -->
+                <style>
+                    .performance-section {
+                        margin-top: 40px;
+                        margin-bottom: 40px;
+                        animation: fadeIn 0.5s ease-out;
+                    }
+                    .analytics-grid {
+                        display: grid;
+                        grid-template-columns: 2fr 1fr;
+                        gap: 24px;
+                        margin-top: 20px;
+                    }
+                    .analytics-card {
+                        background: var(--card-bg);
+                        border-radius: var(--border-radius);
+                        padding: 24px;
+                        box-shadow: var(--card-shadow);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        transition: var(--transition-smooth);
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: space-between;
+                        min-width: 0; /* Prevents flexbox overflow */
+                    }
+                    .chart-container-card {
+                        min-width: 0;
+                        width: 100%;
+                    }
+                    body.dark-mode .analytics-card {
+                        background: var(--card-dark);
+                        box-shadow: var(--shadow-dark);
+                        border-color: var(--border-dark);
+                    }
+                    .analytics-card:hover {
+                        transform: translateY(-5px);
+                        box-shadow: var(--card-shadow-hover);
+                    }
+                    body.dark-mode .analytics-card:hover {
+                        box-shadow: var(--shadow-hover-dark);
+                    }
+                    .card-subtitle {
+                        font-size: 1.1rem;
+                        font-weight: 600;
+                        color: var(--text-primary);
+                        margin-bottom: 16px;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+                        padding-bottom: 12px;
+                    }
+                    body.dark-mode .card-subtitle {
+                        color: var(--text-dark);
+                        border-bottom-color: var(--border-dark);
+                    }
+                    .card-subtitle i {
+                        color: var(--primary-color);
+                    }
+                    .prediction-info-box {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 16px;
+                        height: 100%;
+                    }
+                    .prediction-trend-badge {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 12px;
+                        border-radius: var(--border-radius-sm);
+                        background: rgba(0, 0, 0, 0.02);
+                        font-size: 0.95rem;
+                    }
+                    body.dark-mode .prediction-trend-badge {
+                        background: rgba(255, 255, 255, 0.02);
+                    }
+                    .prediction-trend-badge .badge-label {
+                        color: var(--text-secondary);
+                        font-weight: 500;
+                    }
+                    body.dark-mode .prediction-trend-badge .badge-label {
+                        color: var(--text-muted-dark);
+                    }
+                    .prediction-trend-badge .badge-value {
+                        font-weight: 700;
+                        padding: 4px 10px;
+                        border-radius: 20px;
+                        font-size: 0.85rem;
+                        text-transform: uppercase;
+                    }
+                    .prediction-trend-badge.improving .badge-value {
+                        background: rgba(16, 185, 129, 0.1);
+                        color: #10b981;
+                    }
+                    .prediction-trend-badge.declining .badge-value {
+                        background: rgba(239, 68, 68, 0.1);
+                        color: #ef4444;
+                    }
+                    .prediction-trend-badge.stable .badge-value {
+                        background: rgba(67, 97, 238, 0.1);
+                        color: #4361ee;
+                    }
+                    .divider {
+                        border: 0;
+                        height: 1px;
+                        background: rgba(0, 0, 0, 0.05);
+                        margin: 4px 0;
+                    }
+                    body.dark-mode .divider {
+                        background: var(--border-dark);
+                    }
+                    .prediction-status-card {
+                        border-radius: var(--border-radius-md);
+                        padding: 20px;
+                        color: white;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 12px;
+                        flex-grow: 1;
+                        justify-content: center;
+                        align-items: center;
+                        box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+                    }
+                    .prediction-pass {
+                        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                    }
+                    .prediction-risk {
+                        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                    }
+                    .prediction-unknown {
+                        background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+                    }
+                    .prediction-label-large {
+                        font-size: 1.15rem;
+                        font-weight: 800;
+                        letter-spacing: 0.5px;
+                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+                    }
+                    .prediction-text {
+                        font-size: 0.85rem;
+                        line-height: 1.4;
+                        opacity: 0.95;
+                        margin: 0;
+                    }
+                    .predicted-gpa-badge {
+                        background: rgba(255, 255, 255, 0.2);
+                        padding: 8px 16px;
+                        border-radius: 30px;
+                        font-size: 0.85rem;
+                        display: flex;
+                        gap: 8px;
+                        align-items: center;
+                        backdrop-filter: blur(5px);
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                    }
+                    .predicted-gpa-badge strong {
+                        font-size: 1.1rem;
+                        font-weight: 800;
+                    }
+                    .no-chart-data {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100%;
+                        color: var(--text-muted);
+                        gap: 12px;
+                        padding: 40px;
+                        text-align: center;
+                    }
+                    body.dark-mode .no-chart-data {
+                        color: var(--text-muted-dark);
+                    }
+                    .no-chart-data i {
+                        font-size: 3rem;
+                        opacity: 0.5;
+                    }
+                    @media (max-width: 991px) {
+                        .analytics-grid {
+                            grid-template-columns: 1fr;
+                        }
+                    }
+
+                    /* Input Grades Section Dark Mode Support */
+                    body.dark-mode .subjects-table-container {
+                        background: var(--card-dark) !important;
+                        border-color: var(--border-dark) !important;
+                        box-shadow: var(--shadow-dark) !important;
+                    }
+                    body.dark-mode .subjects-table-container table {
+                        background: transparent !important;
+                        color: var(--text-dark) !important;
+                    }
+                    body.dark-mode .subjects-table-container td.tbl_data {
+                        background: transparent !important;
+                        color: var(--text-dark) !important;
+                        border-color: var(--border-dark) !important;
+                    }
+                    body.dark-mode .subjects-table-container th.tbl_header {
+                        background: rgba(255, 255, 255, 0.05) !important;
+                        color: var(--text-dark) !important;
+                        border-color: var(--border-dark) !important;
+                    }
+                    body.dark-mode .subjects-table-container .table-bordered {
+                        border-color: var(--border-dark) !important;
+                    }
+                    body.dark-mode .subjects-table-container .table-hover tbody tr:hover {
+                        background-color: rgba(255, 255, 255, 0.05) !important;
+                    }
+                    body.dark-mode .subject-group-header h3 {
+                        color: var(--text-dark) !important;
+                    }
+                    body.dark-mode .grade-badge.ungraded {
+                        background: rgba(245, 158, 11, 0.15) !important;
+                        color: #f59e0b !important;
+                    }
+                    body.dark-mode .empty-state {
+                        color: var(--text-muted-dark) !important;
+                    }
+
+                    /* Files Section Dark Mode Support */
+                    body.dark-mode #files-section table {
+                        background: transparent !important;
+                        color: var(--text-dark) !important;
+                        border-color: var(--border-dark) !important;
+                    }
+                    body.dark-mode #files-section thead.table-light,
+                    body.dark-mode #files-section thead.table-light th {
+                        background: rgba(255, 255, 255, 0.05) !important;
+                        color: var(--text-dark) !important;
+                        border-color: var(--border-dark) !important;
+                    }
+                    body.dark-mode #files-section tbody tr td {
+                        color: var(--text-dark) !important;
+                        border-color: var(--border-dark) !important;
+                        background: transparent !important;
+                    }
+                    body.dark-mode #files-section tbody tr td strong {
+                        color: var(--text-dark) !important;
+                    }
+                    body.dark-mode #files-section tbody tr td small.text-muted {
+                        color: var(--text-muted-dark) !important;
+                    }
+                    body.dark-mode #files-section .table-striped tbody tr:nth-of-type(odd) {
+                        background-color: rgba(255, 255, 255, 0.02) !important;
+                    }
+                    body.dark-mode #files-section .table-hover tbody tr:hover {
+                        background-color: rgba(255, 255, 255, 0.05) !important;
+                    }
+                    body.dark-mode #files-section .btn-outline-primary {
+                        color: var(--primary-color) !important;
+                        border-color: var(--primary-color) !important;
+                    }
+                    body.dark-mode #files-section .btn-outline-primary:hover {
+                        background-color: var(--primary-color) !important;
+                        color: white !important;
+                    }
+                    body.dark-mode #files-section .btn-outline-success {
+                        color: #10b981 !important;
+                        border-color: #10b981 !important;
+                    }
+                    body.dark-mode #files-section .btn-outline-success:hover {
+                        background-color: #10b981 !important;
+                        color: white !important;
+                    }
+                </style>
+
+                <div class="performance-section mt-4">
+                    <h2 class="section-title">Academic Performance & Analytics</h2>
+                    <div class="analytics-grid">
+                        <div class="analytics-card chart-container-card">
+                            <h4 class="card-subtitle"><i class="fas fa-chart-line"></i> Semester GPA Progress</h4>
+                            <div id="gpa_chart_div" style="width: 100%; height: 300px; min-width: 0; overflow: hidden;"></div>
+                        </div>
+                        <div class="analytics-card prediction-container-card">
+                            <h4 class="card-subtitle"><i class="fas fa-brain"></i> Predictive Analytics</h4>
+                            <div class="prediction-info-box">
+                                <div class="prediction-trend-badge {{ $trendDirection }}">
+                                    <span class="badge-label">Performance Trend:</span>
+                                    <span class="badge-value">{{ str_replace('Academic performance is ', '', $trend) }}</span>
+                                </div>
+                                <hr class="divider">
+                                <div class="prediction-status-card {{ $predictionClass }}">
+                                    <div class="prediction-label-large">{{ $predictionLabel }}</div>
+                                    <p class="prediction-text">{{ $predictionConfidence }}</p>
+                                    @if($predictedGpa !== null)
+                                        <div class="predicted-gpa-badge">
+                                            <span>Projected Next GPA:</span>
+                                            <strong>{{ number_format($predictedGpa, 2) }}</strong>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Filter Container -->
                 <!-- <div class="filter-container">
@@ -3126,5 +3423,349 @@ if (isset($averageGrade) && $averageGrade > 0) {
     <script src="{{asset('js/sweetalert2.js')}}"></script>
     <!-- <script src="{{asset('js/sweetalert3.js')}}"></script> -->
     <script src="{{asset('js/function/student/dashboard.js')}}"></script>
+<!-- <script>
+        //Disable right-click context menu
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+    //Disable F12 and Ctrl+Shift+I
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+            e.preventDefault();
+        }
+    });
+    //Disable Ctrl+U
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'u') {
+            e.preventDefault();
+        }
+    });
+    //Disable Ctrl+S
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+        }
+    });
+    //Disable Ctrl+P
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'p') {
+            e.preventDefault();
+        }
+    });
+    
+    // Disable drag and drop
+    document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+    });
+    
+    // Disable paste
+    document.addEventListener('paste', function(e) {
+        e.preventDefault();
+    });
+    // Disable cut
+    document.addEventListener('cut', function(e) {
+        e.preventDefault();
+    });
+    // Disable right-click on images
+    const images = document.querySelectorAll('img');
+    images.forEach(function(image) {
+        image.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    });
+    // Disable right-click on links
+    const links = document.querySelectorAll('a');
+    links.forEach(function(link) {
+        link.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    });
+    // Disable right-click on buttons
+    const buttons = document.querySelectorAll('button');
+    buttons.forEach(function(button) {
+        button.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    });
+    // Disable right-click on input fields
+    const inputs = document.querySelectorAll('input, textarea');
+    inputs.forEach(function(input) {
+        input.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    });
+    // Disable right-click on the body
+    document.body.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+    // Disable right-click on the document
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+    // Disable right-click on the window
+    window.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+    // Disable right-click on the document element
+    document.documentElement.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+</script> -->
+    <script>
+    // Function to get the dominant background color from an element
+    function getBackgroundColor(element) {
+        // Get computed style
+        const style = getComputedStyle(element);
+        let backgroundColor = style.backgroundColor;
+        
+        // If background is transparent, check parent elements up to html
+        if (backgroundColor === 'rgba(0, 0, 0, 0)' || backgroundColor === 'transparent') {
+            let currentElement = element.parentElement;
+            while (currentElement && currentElement !== document.documentElement) {
+                const parentBg = getComputedStyle(currentElement).backgroundColor;
+                if (parentBg !== 'rgba(0, 0, 0, 0)' && parentBg !== 'transparent') {
+                    backgroundColor = parentBg;
+                    break;
+                }
+                currentElement = currentElement.parentElement;
+            }
+        }
+        
+        return backgroundColor;
+    }
+
+    // Convert RGB/RGBA to hex format (RRGGBB or AARRGGBB)
+    function colorToHex(color) {
+        // Handle named colors
+        if (color === 'transparent') return '00000000';
+        
+        // Parse RGB/RGBA
+        const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+        
+        if (!match) {
+            // Try hex format
+            if (color.startsWith('#')) {
+                const hex = color.substring(1);
+                if (hex.length === 3) {
+                    // Convert #RGB to #RRGGBB
+                    return hex.split('').map(c => c + c).join('');
+                }
+                if (hex.length === 6 || hex.length === 8) {
+                    return hex;
+                }
+            }
+            return '101126'; // Fallback to your dark theme color
+        }
+        
+        const r = parseInt(match[1]).toString(16).padStart(2, '0');
+        const g = parseInt(match[2]).toString(16).padStart(2, '0');
+        const b = parseInt(match[3]).toString(16).padStart(2, '0');
+        
+        // Handle alpha channel
+        if (match[4]) {
+            const alpha = Math.round(parseFloat(match[4]) * 255).toString(16).padStart(2, '0');
+            return alpha + r + g + b; // AARRGGBB format
+        }
+        
+        return r + g + b; // RRGGBB format
+    }
+
+    // Determine if color is dark or light
+    function getTextStyleForColor(hexColor) {
+        // Remove alpha if present (first 2 characters)
+        const rgbHex = hexColor.length === 8 ? hexColor.substring(2) : hexColor;
+        
+        // Convert to RGB
+        const r = parseInt(rgbHex.substring(0, 2), 16);
+        const g = parseInt(rgbHex.substring(2, 4), 16);
+        const b = parseInt(rgbHex.substring(4, 6), 16);
+        
+        // Calculate relative luminance (WCAG formula)
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        
+        // Use dark text on light backgrounds, light text on dark backgrounds
+        return luminance > 0.5 ? 'dark' : 'light';
+    }
+
+    // Function to set status bar based on current background
+    function setDynamicStatusBar() {
+        // Check if running in Median app
+        if (navigator.userAgent.indexOf('median') > -1 && typeof median !== 'undefined') {
+            // Get body background color
+            const bgColor = getBackgroundColor(document.body);
+            
+            // Convert to hex
+            const hexColor = colorToHex(bgColor);
+            
+            // Determine text style
+            const textStyle = getTextStyleForColor(hexColor);
+            
+            console.log('Detected background:', {
+                original: bgColor,
+                hex: hexColor,
+                textStyle: textStyle
+            });
+            
+            // Set status bar
+            median.statusbar.set({
+                'style': textStyle,
+                'color': hexColor,
+                'overlay': false,
+                'blur': true
+            });
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set initial status bar
+        setDynamicStatusBar();
+        
+        // Listen for theme toggle
+        const themeToggleBtn = document.getElementById('themeToggle');
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', function() {
+                // Wait for theme to change and re-render
+                setTimeout(setDynamicStatusBar, 150);
+            });
+        }
+        
+        // Also update when CSS transitions complete
+        document.body.addEventListener('transitionend', function(e) {
+            if (e.propertyName.includes('background') || e.propertyName.includes('color')) {
+                setDynamicStatusBar();
+            }
+        });
+    });
+
+    // Median library ready callback
+    function median_library_ready() {
+        setDynamicStatusBar();
+    }
+    
+    // Optional: Also update on window resize (in case layout changes affect background)
+    window.addEventListener('resize', setDynamicStatusBar);
+</script>
+
+<!-- Google Charts GPA Progression Script -->
+<script>
+    // Load Google Charts
+    if (typeof google !== 'undefined') {
+        google.charts.load('current', {'packages':['corechart']});
+        google.charts.setOnLoadCallback(drawGpaChart);
+    }
+
+    function drawGpaChart() {
+        const rawHistory = @json($gpaHistory);
+        const chartDiv = document.getElementById('gpa_chart_div');
+        
+        if (!chartDiv) return;
+        
+        if (!rawHistory || rawHistory.length === 0) {
+            chartDiv.innerHTML = `
+                <div class="no-chart-data">
+                    <i class="fas fa-info-circle"></i>
+                    <p>No graded semesters found to display performance chart.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const dataArray = [['Semester', 'GPA', { role: 'tooltip', type: 'string', p: { html: false } }]];
+        rawHistory.forEach(item => {
+            dataArray.push([
+                item.label.replace(' Year - ', ' Yr, '), 
+                item.gpa,
+                `Semester: ${item.label}\nGPA: ${item.gpa.toFixed(2)}`
+            ]);
+        });
+
+        const data = google.visualization.arrayToDataTable(dataArray);
+
+        // Get the active primary color / themeColor
+        const themeColor = localStorage.getItem('themeColor') || '#4361ee';
+        const isDarkMode = document.body.classList.contains('dark-mode');
+
+        const options = {
+            curveType: 'function',
+            legend: { position: 'none' },
+            colors: [themeColor],
+            backgroundColor: 'transparent',
+            chartArea: { width: '85%', height: '75%', top: 20, bottom: 40 },
+            hAxis: {
+                textStyle: { color: isDarkMode ? '#94a3b8' : '#64748b', fontSize: 10, fontName: 'Poppins' },
+                gridlines: { color: isDarkMode ? '#334155' : '#e2e8f0' }
+            },
+            vAxis: {
+                textStyle: { color: isDarkMode ? '#94a3b8' : '#64748b', fontName: 'Poppins' },
+                gridlines: { color: isDarkMode ? '#334155' : '#e2e8f0' },
+                direction: -1, // Invert axis: 1.0 at the top, 5.0 at the bottom
+                minValue: 1.0,
+                maxValue: 5.0,
+                ticks: [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
+            },
+            lineWidth: 3,
+            pointsVisible: true,
+            pointSize: 6,
+            tooltip: { textStyle: { color: '#334155', fontName: 'Poppins' }, showColorCode: false }
+        };
+
+        const chart = new google.visualization.LineChart(chartDiv);
+        chart.draw(data, options);
+
+        // Initial alignment delay to handle dynamic sidebar layout transitions
+        setTimeout(() => {
+            chart.draw(data, options);
+        }, 150);
+
+        // Redraw chart when container size changes (highly responsive on mobile orientation & sidebar toggling)
+        let lastWidth = chartDiv.clientWidth;
+        if (window.ResizeObserver) {
+            const resizeObserver = new ResizeObserver(() => {
+                const newWidth = chartDiv.clientWidth;
+                if (newWidth !== lastWidth && newWidth > 0) {
+                    lastWidth = newWidth;
+                    window.requestAnimationFrame(() => {
+                        chart.draw(data, options);
+                    });
+                }
+            });
+            resizeObserver.observe(chartDiv);
+        } else {
+            window.addEventListener('resize', () => {
+                chart.draw(data, options);
+            });
+        }
+
+        // Observe theme class changes on body to dynamically update grid colors
+        const themeObserver = new MutationObserver(() => {
+            const isDark = document.body.classList.contains('dark-mode');
+            const activeColor = localStorage.getItem('themeColor') || '#4361ee';
+            options.colors = [activeColor];
+            options.hAxis.textStyle.color = isDark ? '#94a3b8' : '#64748b';
+            options.hAxis.gridlines.color = isDark ? '#334155' : '#e2e8f0';
+            options.vAxis.textStyle.color = isDark ? '#94a3b8' : '#64748b';
+            options.vAxis.gridlines.color = isDark ? '#334155' : '#e2e8f0';
+            chart.draw(data, options);
+        });
+        themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+        // Also watch color-option clicks
+        document.querySelectorAll('.color-option').forEach(option => {
+            option.addEventListener('click', () => {
+                setTimeout(() => {
+                    const isDark = document.body.classList.contains('dark-mode');
+                    const activeColor = localStorage.getItem('themeColor') || '#4361ee';
+                    options.colors = [activeColor];
+                    options.hAxis.textStyle.color = isDark ? '#94a3b8' : '#64748b';
+                    options.hAxis.gridlines.color = isDark ? '#334155' : '#e2e8f0';
+                    options.vAxis.textStyle.color = isDark ? '#94a3b8' : '#64748b';
+                    options.vAxis.gridlines.color = isDark ? '#334155' : '#e2e8f0';
+                    chart.draw(data, options);
+                }, 200);
+            });
+        });
+    }
+</script>
 </body>
 </html>

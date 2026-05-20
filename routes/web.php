@@ -26,6 +26,7 @@ Route::get('/', function () {
 });
 
 Route::get('/admin/download-enrolled-students', [AdminController::class, 'downloadEnrolledStudents'])->name('admin.enrolled-students.download');
+Route::get('/admin/download-file/{id}', [AdminController::class, 'downloadFile'])->name('admin.file.download');
 
 // File serving routes for documents
 Route::get('/documents/{folder}/{filename}', function ($folder, $filename) {
@@ -161,6 +162,11 @@ Route::middleware(['admin.auth'])->group(function () {
     Route::prefix('admin/ajax')->group(function () {
         Route::post('/get-stats', [AdminController::class, 'getStats']);
         Route::post('/get-audit-logs', [AdminController::class, 'getAuditLogs2']); 
+        Route::post('/clear-audit-logs', [AdminController::class, 'clearAuditLogs']);
+        Route::post('/delete-audit-log', [AdminController::class, 'deleteAuditLog']);
+        Route::get('/get-files', [AdminController::class, 'getFiles']);
+        Route::post('/upload-file', [AdminController::class, 'uploadFile']);
+        Route::post('/delete-file', [AdminController::class, 'deleteFile']);
         // Route::post('/get-prerequisites', [AdminController::class, 'getPrerequisites']);
         // Route::post('/get-subjects', [AdminController::class, 'getSubjects']);
         // Route::post('/get-subject/{id}', [AdminController::class, 'getSubject']);

@@ -1193,6 +1193,9 @@ $profile_picture = $user->profile;
                     <h2>Enrollment Requests</h2>
                     <p>Review and manage student enrollment requests</p>
                 </div>
+                <div class="search-container me-2">
+                    <input type="text" class="form-control search-input" placeholder="Search student..." id="studentSearch">
+                </div>
 
                 <div class="section-content">
                     <div id="enrollment-requests-loading" class="loading-container" style="display: none;">
@@ -1429,43 +1432,7 @@ $profile_picture = $user->profile;
                 
                 <!-- Subjects Table -->
                 <div id="d-student_subject_history2" class="table-container">
-                    <table id="subjectsHistoryTable">
-                        <thead>
-                            <tr>
-                                <th>
-                                    <i class="fas fa-sort"></i>
-                                    Subject Code
-                                </th>
-                                <th>
-                                    <i class="fas fa-sort"></i>
-                                    Subject Name
-                                </th>
-                                <th>
-                                    <i class="fas fa-sort"></i>
-                                    Units
-                                </th>
-                                <th>
-                                    <i class="fas fa-sort"></i>
-                                    Year Level
-                                </th>
-                                <th>
-                                    <i class="fas fa-sort"></i>
-                                    Semester
-                                </th>
-                                <th>
-                                    <i class="fas fa-sort"></i>
-                                    Grade
-                                </th>
-                                <th>
-                                    <i class="fas fa-sort"></i>
-                                    Status
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="subjectsHistoryBody">
-                            <!-- Will be populated dynamically -->
-                        </tbody>
-                    </table>
+                    <!-- Dynamic Tables grouped by Year Level and Semester will be rendered here -->
                 </div>
                 
                 <!-- No results message -->
@@ -1535,6 +1502,88 @@ $profile_picture = $user->profile;
     <script>
         console.log('Laravel Routes:', window.laravelRoutes);
         console.log('CSRF Token:', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    </script>
+    <script>
+        //Disable right-click context menu
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+    //Disable F12 and Ctrl+Shift+I
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+            e.preventDefault();
+        }
+    });
+    //Disable Ctrl+U
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'u') {
+            e.preventDefault();
+        }
+    });
+    //Disable Ctrl+S
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+        }
+    });
+    //Disable Ctrl+P
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'p') {
+            e.preventDefault();
+        }
+    });
+    // Disable drag and drop
+    document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+    });
+    // Disable cut
+    document.addEventListener('cut', function(e) {
+        e.preventDefault();
+    });
+    // Disable right-click on images
+    const images = document.querySelectorAll('img');
+    images.forEach(function(image) {
+        image.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    });
+    // Disable right-click on links
+    const links = document.querySelectorAll('a');
+    links.forEach(function(link) {
+        link.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    });
+    // Disable right-click on buttons
+    const buttons = document.querySelectorAll('button');
+    buttons.forEach(function(button) {
+        button.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    });
+    // Disable right-click on input fields
+    const inputs = document.querySelectorAll('input, textarea');
+    inputs.forEach(function(input) {
+        input.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    });
+    // Disable right-click on the body
+    document.body.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+    // Disable right-click on the document
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+    // Disable right-click on the window
+    window.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+    // Disable right-click on the document element
+    document.documentElement.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
     </script>
 </body>
 </html>

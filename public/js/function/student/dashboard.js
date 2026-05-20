@@ -5876,6 +5876,19 @@ function initializeGradeInput() {
         loadGradeSubjects();
     });
 
+    // Setup automatic filtering on changes
+    $('#year_level, #grade_status').on('change', function() {
+        loadGradeSubjects();
+    });
+
+    let searchDebounceTimeout = null;
+    $('#subject_search').on('input', function() {
+        clearTimeout(searchDebounceTimeout);
+        searchDebounceTimeout = setTimeout(function() {
+            loadGradeSubjects();
+        }, 300); // 300ms debounce to prevent database spamming while typing
+    });
+
     // Setup reset filters
     $('#reset-filters').on('click', function() {
         $('#grade-filter-form')[0].reset();
@@ -6182,7 +6195,7 @@ function renderMainGradeSubjects(response) {
 
     allTablesHTML += `
             <div class="subject-group-header" style="text-align: center;"><br><br>
-                <h3>Prospectus</h3>
+                <h3 style="color: var(--primary-dark);">Prospectus</h3>
             </div>
         `;
 
@@ -6222,7 +6235,7 @@ function renderMainGradeSubjects(response) {
         allTablesHTML += `
             <br>
             <div class="subject-group-header">
-                <h3 style="margin-left: 10px;">${groupLabel}</h3>
+                <h3 style="margin-left: 10px; color: var(--primary-dark)">${groupLabel}</h3>
             </div>
         `;
 
@@ -6233,9 +6246,9 @@ function renderMainGradeSubjects(response) {
                     <thead class="thead-light">
                         <tr>
                             <th class="tbl_header" style="color:white;" scope="col">Subject Code</th>
-                            <th class="tbl_header" style="color:white;" scope="col">Subject Name</th>
-                            <th class="tbl_header" style="color:white;" scope="col">Units</th>
-                            <th class="tbl_header" style="color:white;" scope="col">Prerequisite</th>
+                            <th id="subname" class="tbl_header" style="color:white;" scope="col">Subject Name</th>
+                            <th id="unts" class="tbl_header" style="color:white;" scope="col">Units</th>
+                            <th id="preq" class="tbl_header" style="color:white;" scope="col">Prerequisite</th>
                             <th class="tbl_header" style="color:white;" scope="col">Grade</th>
                             <th class="tbl_header" style="color:white;" scope="col">Action</th>
                         </tr>
@@ -6268,18 +6281,29 @@ function renderMainGradeSubjects(response) {
                 : `<button class="btn btn-secondary btn-sm" disabled title="Grade input is disabled. No active enrollment period.">
                        <i class="fas fa-ban"></i> Disabled
                    </button>`;
+
+            const buttonHTML2 = isEnrollmentPeriodActive 
+                ? `<button style="width: 95%; height: 5vh; padding: 10px; font-size: 12px; justify-content: center;" class="btn btn-primary btn-sm open-grade-modal" data-id="${subject.id}">
+                        Input Grade
+                   </button>`
+                : `<button style="width: 99%; height: 5vh; padding: 5px;" class="btn btn-secondary btn-sm" disabled title="Grade input is disabled. No active enrollment period.">
+                        Disabled
+                   </button>`;
             
             tableHTML += `
                 <tr>
                     <td class="tbl_data">${subject.subject_code || ''}</td>
-                    <td class="tbl_data">${subject.subject_name || ''}</td>
-                    <td class="tbl_data">${subject.units || '0'}</td>
-                    <td class="tbl_data">${prerequisites}</td>
+                    <td id="subname" class="tbl_data">${subject.subject_name || ''}</td>
+                    <td id="unts" class="tbl_data">${subject.units || '0'}</td>
+                    <td id="preq" class="tbl_data">${prerequisites}</td>
                     <td class="tbl_data">
                         <span class="${gradeClass}">${gradeText}</span>
                     </td>
-                    <td class="tbl_data">
+                    <td id="inptGrdButton" class="tbl_data">
                         ${buttonHTML}
+                    </td>
+                    <td id="inptGrdButton2" class="tbl_data">
+                        ${buttonHTML2}
                     </td>
                 </tr>
             `;

@@ -14,3 +14,8 @@
 # /.idea
 # /.vscode
 .env
+database/u290529906_enrollsys.sql
+readme.html
+retention/
+public/js/psgc/
+public/js/sweetalert3.js

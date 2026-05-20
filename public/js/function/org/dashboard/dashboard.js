@@ -1,4 +1,129 @@
+const supabaseUrl = "https://dfvapjrkotprotpbpeju.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmdmFwanJrb3Rwcm90cGJwZWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNDg1OTMsImV4cCI6MjA3MjcyNDU5M30.Hou-GtB-P8qJ4fxXbC-VtyaCkDpf5Kr01DD9aSckhiU";
+
+// Create Supabase client
+const { createClient } = supabase;
+const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+// Function to set up real-time subscription
+function setupRealtimeSubscription() {
+    const subscription = supabaseClient
+        .channel('enrollment_status-changes')
+        .on('postgres_changes', 
+        { 
+            event: '*',  // Listen for all changes (INSERT, UPDATE, DELETE)
+            schema: 'public', 
+            table: 'enrollment_status' 
+        }, 
+        (payload) => {
+            // Refresh data based on the operation type
+            if (payload.new && payload.new.table_name === 'status') {
+                if (payload.new.operation === 'DELETE') {
+                    status_update();
+                    count_enrolled_subjects();
+                    count_documents();
+                } else if (payload.new.operation === 'RESTART') {
+                    window.location.reload();
+                }
+                // Refresh the notification count when changes occur
+                // fetchNotificationCount();
+            }
+                        
+        }
+        )
+        .subscribe((status) => {
+            console.log('Subscription status:', status);
+            if (status === 'SUBSCRIBED') {
+                console.log('Real-time subscription established');
+            }
+        });
+            
+    return subscription;
+}
+
+
+// Realtime update for submit
+async function insertsupabase(){
+    const data = {
+        table_name: 'status',  // make sure these variables are defined
+        operation: 'INSERT'
+    };
+    // Create AbortController for timeout (similar to PHP's 10s timeout)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+            try {
+            const response = await fetch(`${supabaseUrl}/rest/v1/enrollment_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseAnonKey,
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                    'Prefer': 'return=minimal'
+                },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData = await response.json();
+            console.log(responseData);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.error('Request timed out');
+                } else {
+                    console.error('Error:', error);
+                }
+            }
+}
+
+async function updatesupabase(studentId){
+    const data = {
+        table_name: 'status',  // make sure these variables are defined
+        operation: 'UPDATE2',
+        student_id: studentId,
+        status: 'Approved'
+    };
+    // Create AbortController for timeout (similar to PHP's 10s timeout)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+            try {
+            const response = await fetch(`${supabaseUrl}/rest/v1/enrollment_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseAnonKey,
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                    'Prefer': 'return=minimal'
+                },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData = await response.json();
+            console.log(responseData);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.error('Request timed out');
+                } else {
+                    console.error('Error:', error);
+                }
+            }
+}
+
+
 let allPayments = []; // Store all payments for filtering
+let allStudentsList = []; // Store all students for search/filter and export
 let currentFilters = {
     status: '',
     month: ''
@@ -17,6 +142,21 @@ function loadPayments() {
                 allPayments = response.payments;
                 applyFilters(); // Apply any existing filters
                 updateStatsGrid(allPayments); // Update stats grid with full data
+                if (response.total_students !== undefined) {
+                    $('#total-students').text(response.total_students);
+                }
+                if (response.collected_today !== undefined) {
+                    $('#collected-change').html(`<i class="fas fa-arrow-up me-1"></i> ₱${parseFloat(response.collected_today).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} today`);
+                }
+                if (response.pending_today !== undefined) {
+                    $('#pending-change').html(`<i class="fas fa-arrow-up me-1"></i> ₱${parseFloat(response.pending_today).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} today`);
+                }
+                if (response.approved_today_count !== undefined) {
+                    $('#accepted-change').html(`<i class="fas fa-arrow-up me-1"></i> ${response.approved_today_count} today`);
+                }
+                if (response.new_students_this_week !== undefined) {
+                    $('#students-change').html(`<i class="fas fa-arrow-up me-1"></i> ${response.new_students_this_week} this week`);
+                }
             } else {
                 showError('Failed to load payments: ' + response.error);
                 showEmptyState('Failed to load payments');
@@ -31,6 +171,120 @@ function loadPayments() {
             showEmptyState('Failed to load payments');
             console.error('Payment load error:', error);
         }
+    });
+}
+
+// Load all students data via AJAX
+function loadAllStudents() {
+    const tableBody = $('#all-students-list');
+    tableBody.html(`
+        <tr>
+            <td colspan="6" class="text-center py-4">
+                <div class="d-flex flex-column align-items-center justify-content-center gap-2">
+                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                    <p class="text-muted mb-0">Loading students data...</p>
+                </div>
+            </td>
+        </tr>
+    `);
+
+    $.ajax({
+        url: '/org-dashboard/students',
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            if (response.success && response.students) {
+                allStudentsList = response.students;
+                renderAllStudents(allStudentsList);
+            } else {
+                showStudentEmptyState('Failed to load students data');
+            }
+        },
+        error: function(xhr, status, error) {
+            showStudentEmptyState('Error loading students data. Please try again.');
+            console.error('Students load error:', error);
+        }
+    });
+}
+
+// Show empty state for student table
+function showStudentEmptyState(message) {
+    const tableBody = $('#all-students-list');
+    tableBody.html(`
+        <tr>
+            <td colspan="6" class="text-center py-5">
+                <div class="d-flex flex-column align-items-center justify-content-center p-4">
+                    <i class="fas fa-users-slash fa-3x text-muted mb-3" style="opacity: 0.5;"></i>
+                    <p class="text-muted mb-0" style="font-weight: 500;">${message}</p>
+                </div>
+            </td>
+        </tr>
+    `);
+}
+
+// Render student table rows with premium UI styling
+function renderAllStudents(students) {
+    const tableBody = $('#all-students-list');
+    tableBody.empty();
+    
+    // Update students count badge
+    $('#students-count').text(students.length);
+    
+    if (students.length === 0) {
+        showStudentEmptyState('No students found matching the criteria.');
+        return;
+    }
+    
+    students.forEach(student => {
+        // Initials avatar
+        const initials = student.name
+            .split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+            
+        // Map status to badge style matching org styling
+        let statusBadge = '';
+        const statusClean = (student.status || '').toLowerCase().trim();
+        
+        if (statusClean === 'paid' || statusClean === 'approved' || statusClean === 'enrolled') {
+            statusBadge = '<span class="status-badge status-paid">Paid</span>';
+        } else if (statusClean === 'pending') {
+            statusBadge = '<span class="status-badge status-pending">Pending</span>';
+        } else if (statusClean === 'overdue') {
+            statusBadge = '<span class="status-badge" style="background: #fee2e2; color: #991b1b; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; display: inline-block;">Overdue</span>';
+        } else {
+            statusBadge = `<span class="status-badge" style="background: #e2e8f0; color: #475569; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; display: inline-block;">${student.status || 'Pending'}</span>`;
+        }
+        
+        const row = `
+            <tr>
+                <td>
+                    <div class="student-info">
+                        <div class="student-avatar" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; margin-right: 12px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);">
+                            ${initials}
+                        </div>
+                        <div class="student-details">
+                            <h4 style="margin: 0; font-size: 14px; font-weight: 600; color: #1e293b;">${student.name}</h4>
+                            <p style="margin: 0; font-size: 12px; color: #64748b;">${student.email || 'No email'}</p>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span style="font-family: monospace; font-size: 13px; color: #475569; font-weight: 500;">${student.student_id}</span>
+                </td>
+                <td>${student.year_level}</td>
+                <td>${student.program || 'BS Information Technology'}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <button class="view-btn view-student-btn" data-student='${JSON.stringify(student).replace(/'/g, "&apos;")}'>
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                </td>
+            </tr>
+        `;
+        tableBody.append(row);
     });
 }
 
@@ -112,7 +366,7 @@ function populatePaymentsTable(payments) {
                     `}
                     ${payment.status === 'Pending' ? `
                     <div class="action-buttons">
-                        <button class="approve-btn" data-payment-id="${payment.payment_id}">
+                        <button class="approve-btn" data-payment-id="${payment.payment_id}" placeholder="Approve">
                             <i class="fas fa-check"></i>
                         </button>
                     </div>
@@ -432,6 +686,7 @@ function showSuccess(message) {
         
 $(document).ready(function() {
     loadPayments();
+    loadAllStudents();
     setupFilterHandlers();
     setupExportHandler();
     // Load payment data
@@ -515,7 +770,9 @@ $(document).ready(function() {
             const $tbody = $(`#${tbodyId}`);
             $tbody.empty(); // Clear existing rows
             
+            const card = $(`#${yearMapping[yearKey]}-card`);
             if (yearData.payments && yearData.payments.length > 0) {
+                card.show();
                 yearData.payments.forEach(payment => {
                     const fullName = `${payment.firstname || ''} ${payment.lastname || ''}`.trim();
                     const avatarInitial = fullName ? fullName.charAt(0) : 'N';
@@ -531,13 +788,19 @@ $(document).ready(function() {
                         hour: '2-digit',
                         minute: '2-digit'
                     });
+
+                    const isPaymentNotice = payment.file_path && payment.file_path.includes('payment_notice_');
+                    const rowClass = isPaymentNotice ? 'payment-notice-row' : '';
                     
                     $tbody.append(`
-                        <tr data-payment-id="${payment.id}">
+                        <tr data-payment-id="${payment.id}" class="${rowClass}">
                             <td>
                                 <div class="student-info">
                                     <div class="avatar">
-                                        <span>${avatarInitial}</span>
+                                        ${isPaymentNotice ? 
+                                            '' : 
+                                            `<span>${avatarInitial}</span>`
+                                        }
                                     </div>
                                     <div>
                                         <div class="student-name">${fullName || 'N/A'}</div>
@@ -547,7 +810,13 @@ $(document).ready(function() {
                             </td>
                             <td>${payment.id_no || 'N/A'}</td>
                             <td>${contact}</td>
-                            <td class="amount">${amount}</td>
+                            <td class="amount">
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold">${amount}</span>
+                                    ${isPaymentNotice ? 
+                                        '<small style="color: green;"><i class="fas fa-info-circle"></i> Payment will be made later</small>' : ''}
+                                </div>
+                            </td>
                             <td>
                                 <span class="status-badge status-pending">Pending</span>
                             </td>
@@ -561,8 +830,8 @@ $(document).ready(function() {
                                     </button>
                                     ${payment.file_path ? 
                                         `<a href="/documents/${payment.file_path.replace('documents/', '')}" 
-                                          target="_blank"
-                                          class="btn btn-sm btn-outline-primary view-receipt-btn">
+                                        target="_blank"
+                                        class="btn btn-sm btn-outline-primary view-receipt-btn">
                                             <i class="fas fa-eye"></i> View
                                         </a>` : ''
                                     }
@@ -572,16 +841,7 @@ $(document).ready(function() {
                     `);
                 });
             } else {
-                $tbody.append(`
-                    <tr>
-                        <td colspan="7" class="text-center py-4">
-                            <div class="text-muted">
-                                <i class="fas fa-inbox fa-2x mb-2"></i>
-                                <p>No pending payments found</p>
-                            </div>
-                        </td>
-                    </tr>
-                `);
+                card.hide();
             }
         });
         
@@ -644,6 +904,7 @@ $(document).on('click', '.approve-payment', function(e) {
                             
                             // Update pending counts
                             updateCountsFromTable();
+                            updatesupabase(studentId);
                         });
                     } else {
                         Swal.fire('Error!', response.message, 'error');
@@ -657,6 +918,183 @@ $(document).on('click', '.approve-payment', function(e) {
                 }
             });
         }
+    });
+
+    // Search input handler for students
+    $(document).on('input keyup', '#search-students', function() {
+        const query = $(this).val().toLowerCase().trim();
+        if (!query) {
+            renderAllStudents(allStudentsList);
+            return;
+        }
+        
+        const filtered = allStudentsList.filter(student => {
+            const name = (student.name || '').toLowerCase();
+            const studentId = (student.student_id || '').toLowerCase();
+            const email = (student.email || '').toLowerCase();
+            const program = (student.program || '').toLowerCase();
+            const yearLevel = (student.year_level || '').toLowerCase();
+            const status = (student.status || '').toLowerCase();
+            
+            return name.includes(query) || 
+                   studentId.includes(query) || 
+                   email.includes(query) || 
+                   program.includes(query) || 
+                   yearLevel.includes(query) ||
+                   status.includes(query);
+        });
+        
+        renderAllStudents(filtered);
+    });
+
+    // Export button handler for students (CSV format)
+    $(document).on('click', '#export-students-btn', function(e) {
+        e.preventDefault();
+        
+        const query = $('#search-students').val() || '';
+        let listToExport = allStudentsList;
+        if (query.trim()) {
+            const queryLower = query.toLowerCase().trim();
+            listToExport = allStudentsList.filter(student => {
+                const name = (student.name || '').toLowerCase();
+                const studentId = (student.student_id || '').toLowerCase();
+                const email = (student.email || '').toLowerCase();
+                const program = (student.program || '').toLowerCase();
+                const yearLevel = (student.year_level || '').toLowerCase();
+                const status = (student.status || '').toLowerCase();
+                
+                return name.includes(queryLower) || 
+                       studentId.includes(queryLower) || 
+                       email.includes(queryLower) || 
+                       program.includes(queryLower) || 
+                       yearLevel.includes(queryLower) ||
+                       status.includes(queryLower);
+            });
+        }
+        
+        if (listToExport.length === 0) {
+            Swal.fire({
+                icon: 'info',
+                title: 'No Data',
+                text: 'No student records to export.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            return;
+        }
+        
+        let csvContent = "data:text/csv;charset=utf-8,";
+        
+        // Headers
+        const headers = ["Student Name", "Student Email", "Student ID", "Year Level", "Program", "Status", "Curriculum", "Enrollment Type"];
+        csvContent += headers.join(",") + "\n";
+        
+        // Rows
+        listToExport.forEach(student => {
+            const name = (student.name || '').replace(/"/g, '""');
+            const email = (student.email || '').replace(/"/g, '""');
+            const studentId = (student.student_id || '').replace(/"/g, '""');
+            const yearLevel = (student.year_level || '').replace(/"/g, '""');
+            const program = (student.program || 'BS Information Technology').replace(/"/g, '""');
+            const status = (student.status || 'Pending').replace(/"/g, '""');
+            const curriculum = (student.curriculum || '').replace(/"/g, '""');
+            const isRegular = (student.is_regular || 'Regular').replace(/"/g, '""');
+            
+            const row = [
+                `"${name}"`,
+                `"${email}"`,
+                `"${studentId}"`,
+                `"${yearLevel}"`,
+                `"${program}"`,
+                `"${status}"`,
+                `"${curriculum}"`,
+                `"${isRegular}"`
+            ];
+            csvContent += row.join(",") + "\n";
+        });
+        
+        // Create download link
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `organization_students_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        
+        // Trigger download
+        link.click();
+        document.body.removeChild(link);
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Exported!',
+            text: `Successfully exported ${listToExport.length} student records to CSV.`,
+            timer: 2000,
+            showConfirmButton: false
+        });
+    });
+
+    // View details button handler for students
+    $(document).on('click', '.view-student-btn', function() {
+        const student = $(this).data('student');
+        
+        let statusBadgeClass = 'bg-secondary text-white';
+        const statusClean = (student.status || '').toLowerCase().trim();
+        if (statusClean === 'paid' || statusClean === 'approved' || statusClean === 'enrolled') {
+            statusBadgeClass = 'bg-success text-white';
+        } else if (statusClean === 'pending') {
+            statusBadgeClass = 'bg-warning text-dark';
+        } else if (statusClean === 'overdue') {
+            statusBadgeClass = 'bg-danger text-white';
+        }
+        
+        Swal.fire({
+            title: `<span style="font-family: inherit; font-weight: 700; color: #1e293b;">Student Details</span>`,
+            html: `
+                <div class="text-start p-2" style="font-family: inherit; color: #334155; line-height: 1.6;">
+                    <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                        <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; margin-right: 12px; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);">
+                            ${student.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">${student.name}</h4>
+                            <p style="margin: 0; font-size: 12px; color: #64748b;">${student.email || 'No email provided'}</p>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <small class="text-muted d-block mb-1" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Student ID</small>
+                            <span style="font-family: monospace; font-size: 13px; font-weight: 600; color: #1e293b;">${student.student_id}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block mb-1" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Status</small>
+                            <span class="badge ${statusBadgeClass} px-2 py-1" style="font-size: 11px; font-weight: 600; border-radius: 4px;">${student.status}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block mb-1" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Year Level</small>
+                            <span style="font-size: 13px; font-weight: 600; color: #1e293b;">${student.year_level}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block mb-1" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Program</small>
+                            <span style="font-size: 13px; font-weight: 600; color: #1e293b;">${student.program}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block mb-1" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Curriculum</small>
+                            <span style="font-size: 13px; color: #1e293b;">${student.curriculum || 'N/A'}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block mb-1" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Enrollment Type</small>
+                            <span style="font-size: 13px; color: #1e293b;">${student.is_regular}</span>
+                        </div>
+                    </div>
+                </div>
+            `,
+            confirmButtonText: 'Close',
+            confirmButtonColor: '#3b82f6',
+            customClass: {
+                popup: 'border-0 rounded-3 shadow-lg',
+                confirmButton: 'btn btn-primary px-4 py-2'
+            }
+        });
     });
 });
 
@@ -687,7 +1125,7 @@ $(document).on('click', '.approve-payment', function(e) {
             let yearTotal = 0;
             
             $tbody.find('tr[data-payment-id]').each(function() {
-                const status = $(this).find('td:nth-child(5) .badge').text().trim();
+                const status = $(this).find('td:nth-child(5) span').text().trim();
                 const amountText = $(this).find('td:nth-child(4)').text().trim();
                 
                 if (status === 'Pending') {
@@ -709,6 +1147,14 @@ $(document).on('click', '.approve-payment', function(e) {
             // Update badge and total
             $(`#${year}-pending`).text(`${pendingCount} pending`);
             $(`#${year}-total`).text(`₱${yearTotal.toFixed(2)}`);
+            
+            // Show or hide card based on pending payments count
+            const card = $(`#${year}-card`);
+            if (pendingCount === 0) {
+                card.hide();
+            } else {
+                card.show();
+            }
         });
         
         // Update dashboard stats
@@ -733,584 +1179,84 @@ $(document).on('click', '.approve-payment', function(e) {
     // Load initial data
     loadPaymentData();
     
-    // Auto-refresh data every 30 seconds
-    setInterval(loadPaymentData, 30000);
-});
-
-
-        // Sample data for payments
-        const paymentsData = [
-            { id: 1, date: "2023-10-15", student: "Maria Santos", paymentId: "PAY-001", amount: 500, method: "Cash", status: "Paid" },
-            { id: 2, date: "2023-10-14", student: "Juan Dela Cruz", paymentId: "PAY-002", amount: 500, method: "GCash", status: "Paid" },
-            { id: 3, date: "2023-10-13", student: "Ana Reyes", paymentId: "PAY-003", amount: 500, method: "Bank Transfer", status: "Paid" },
-            { id: 4, date: "2023-10-12", student: "Carlos Lopez", paymentId: "PAY-004", amount: 500, method: "Cash", status: "Pending" },
-            { id: 5, date: "2023-10-11", student: "Sofia Garcia", paymentId: "PAY-005", amount: 500, method: "GCash", status: "Paid" },
-            { id: 6, date: "2023-10-10", student: "Miguel Torres", paymentId: "PAY-006", amount: 700, method: "Bank Transfer", status: "Overdue" }
-        ];
+    // Export year level students to CSV
+    $(document).on('click', '.export-btn', function(e) {
+        e.preventDefault();
+        const yearKey = $(this).data('year'); // e.g. 'first_year'
+        const yearMapping = {
+            'first_year': 'first-year',
+            'second_year': 'second-year',
+            'third_year': 'third-year',
+            'fourth_year': 'fourth-year'
+        };
+        const displayYear = yearMapping[yearKey] || yearKey;
+        const tbodyId = `${displayYear}-students`;
+        const $tbody = $(`#${tbodyId}`);
         
-        // Initialize dashboard
-        document.addEventListener('DOMContentLoaded', function() {
-            renderDashboard();
-            setupEventListeners();
-            setupNavigation();
-            setupMobileSidebar();
+        // Find all rows in this year level table
+        const rows = $tbody.find('tr[data-payment-id]');
+        if (rows.length === 0) {
+            Swal.fire({
+                icon: 'info',
+                title: 'No Data',
+                text: 'No student records to export for this year level.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            return;
+        }
+        
+        let csvContent = "data:text/csv;charset=utf-8,";
+        
+        // Headers
+        const headers = ["Student Name", "Student Email", "ID Number", "Contact", "Amount", "Status", "Date Submitted"];
+        csvContent += headers.join(",") + "\n";
+        
+        // Rows
+        rows.each(function() {
+            const studentName = $(this).find('.student-name').text().trim().replace(/"/g, '""');
+            const studentEmail = $(this).find('.student-email').text().trim().replace(/"/g, '""');
+            const idNumber = $(this).find('td:nth-child(2)').text().trim().replace(/"/g, '""');
+            const contact = $(this).find('td:nth-child(3)').text().trim().replace(/"/g, '""');
+            const amount = $(this).find('td:nth-child(4) .fw-bold').text().trim().replace(/"/g, '""') || $(this).find('td:nth-child(4)').text().trim().replace(/"/g, '""');
+            const status = $(this).find('td:nth-child(5) span').text().trim().replace(/"/g, '""');
+            const dateSubmitted = $(this).find('td:nth-child(6)').text().trim().replace(/"/g, '""');
             
-            // Load initial data for other sections
-            renderAllStudents();
-            renderPayments();
-            
-            // Setup touch interactions
-            setupTouchInteractions();
-            
-            // Setup settings tabs
-            setupSettingsTabs();
+            const row = [
+                `"${studentName}"`,
+                `"${studentEmail}"`,
+                `"${idNumber}"`,
+                `"${contact}"`,
+                `"${amount}"`,
+                `"${status}"`,
+                `"${dateSubmitted}"`
+            ];
+            csvContent += row.join(",") + "\n";
         });
         
-        function setupMobileSidebar() {
-            const menuToggleButtons = document.querySelectorAll('.menu-toggle:not(.sidebar-close)');
-            const sidebar = document.querySelector('.sidebar');
-            const sidebarOverlay = document.getElementById('sidebarOverlay');
-            const sidebarCloseBtn = document.querySelector('.sidebar-close');
-            
-            // Function to open sidebar
-            function openSidebar() {
-                sidebar.classList.add('active');
-                sidebarOverlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-            
-            // Function to close sidebar
-            function closeSidebar() {
-                sidebar.classList.remove('active');
-                sidebarOverlay.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-            
-            // Add event listeners to all menu toggle buttons
-            menuToggleButtons.forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    openSidebar();
-                });
-            });
-            
-            // Close sidebar when clicking the close button inside sidebar
-            if (sidebarCloseBtn) {
-                sidebarCloseBtn.addEventListener('click', closeSidebar);
-            }
-            
-            // Close sidebar when clicking on overlay
-            if (sidebarOverlay) {
-                sidebarOverlay.addEventListener('click', closeSidebar);
-            }
-            
-            // Close sidebar when clicking on a nav link (on mobile)
-            const navLinks = document.querySelectorAll('.nav-links a');
-            navLinks.forEach(link => {
-                link.addEventListener('click', function() {
-                    if (window.innerWidth <= 1024) {
-                        closeSidebar();
-                    }
-                });
-            });
-            
-            // Close sidebar with Escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && sidebar.classList.contains('active')) {
-                    closeSidebar();
-                }
-            });
-            
-            // Show/hide sidebar close button based on screen size
-            function updateSidebarCloseButton() {
-                if (window.innerWidth <= 1024) {
-                    sidebarCloseBtn.style.display = 'flex';
-                } else {
-                    sidebarCloseBtn.style.display = 'none';
-                }
-            }
-            
-            // Initial check
-            updateSidebarCloseButton();
-            
-            // Update on resize
-            window.addEventListener('resize', updateSidebarCloseButton);
-            
-            // Handle swipe to close sidebar on mobile
-            let touchStartX = 0;
-            let touchEndX = 0;
-            
-            sidebar.addEventListener('touchstart', function(e) {
-                touchStartX = e.changedTouches[0].screenX;
-            }, { passive: true });
-            
-            sidebar.addEventListener('touchend', function(e) {
-                touchEndX = e.changedTouches[0].screenX;
-                handleSwipe();
-            }, { passive: true });
-            
-            function handleSwipe() {
-                const swipeThreshold = 50;
-                const swipeDistance = touchEndX - touchStartX;
-                
-                // If swiping left (closing sidebar)
-                if (swipeDistance < -swipeThreshold && sidebar.classList.contains('active')) {
-                    closeSidebar();
-                }
-            }
-        }
+        // Create download link
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
         
-        function setupSettingsTabs() {
-            const settingsTabs = document.querySelectorAll('[data-settings-tab]');
-            
-            settingsTabs.forEach(tab => {
-                tab.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // Remove active class from all tabs
-                    settingsTabs.forEach(t => t.classList.remove('active'));
-                    
-                    // Add active class to clicked tab
-                    this.classList.add('active');
-                    
-                    // Hide all settings content
-                    const settingsContent = document.querySelectorAll('.settings-tab');
-                    settingsContent.forEach(content => {
-                        content.classList.remove('active');
-                    });
-                    
-                    // Show selected tab content
-                    const tabId = this.getAttribute('data-settings-tab');
-                    const targetTab = document.getElementById(`${tabId}-tab`);
-                    if (targetTab) {
-                        targetTab.classList.add('active');
-                    }
-                });
-            });
-        }
+        const formattedYear = yearKey.replace('_', ' ');
+        const capitalizedYear = formattedYear.charAt(0).toUpperCase() + formattedYear.slice(1);
+        link.setAttribute("download", `${yearKey}_students_pending_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
         
-        function setupTouchInteractions() {
-            // Add touch feedback to interactive elements
-            const interactiveElements = document.querySelectorAll('button, .btn, .nav-links a, .stat-card, .year-level-card');
-            
-            interactiveElements.forEach(element => {
-                element.addEventListener('touchstart', function() {
-                    this.classList.add('active');
-                }, { passive: true });
-                
-                element.addEventListener('touchend', function() {
-                    this.classList.remove('active');
-                }, { passive: true });
-                
-                element.addEventListener('touchcancel', function() {
-                    this.classList.remove('active');
-                }, { passive: true });
-            });
-            
-            // Prevent context menu on long press for buttons
-            document.addEventListener('contextmenu', function(e) {
-                if (e.target.closest('button') || e.target.closest('.btn')) {
-                    e.preventDefault();
-                }
-            });
-            
-            // Setup swipe to refresh (simulated)
-            let refreshStartY = 0;
-            const refreshIndicator = document.getElementById('refreshIndicator');
-            
-            document.addEventListener('touchstart', function(e) {
-                // Only trigger at the top of the page
-                if (window.scrollY === 0) {
-                    refreshStartY = e.touches[0].clientY;
-                }
-            }, { passive: true });
-            
-            document.addEventListener('touchmove', function(e) {
-                if (window.scrollY === 0 && refreshStartY > 0) {
-                    const touchY = e.touches[0].clientY;
-                    const pullDistance = touchY - refreshStartY;
-                    
-                    if (pullDistance > 0) {
-                        const progress = Math.min(pullDistance / 100, 1);
-                        refreshIndicator.style.transform = `scaleX(${progress})`;
-                        
-                        if (pullDistance > 100) {
-                            // Trigger refresh
-                            refreshIndicator.style.transform = 'scaleX(1)';
-                        }
-                    }
-                }
-            }, { passive: true });
-            
-            document.addEventListener('touchend', function() {
-                if (refreshIndicator.style.transform === 'scaleX(1)') {
-                    // Simulate refresh
-                    setTimeout(() => {
-                        refreshIndicator.style.transform = 'scaleX(0)';
-                        showToast('Data refreshed successfully');
-                    }, 500);
-                } else {
-                    refreshIndicator.style.transform = 'scaleX(0)';
-                }
-                refreshStartY = 0;
-            }, { passive: true });
-        }
+        // Trigger download
+        link.click();
+        document.body.removeChild(link);
         
-        function showToast(message) {
-            // Create toast element
-            const toast = document.createElement('div');
-            toast.className = 'position-fixed bottom-0 start-50 translate-middle-x mb-3 p-3 bg-success text-white rounded-pill shadow-lg';
-            toast.style.zIndex = '1100';
-            toast.style.minWidth = '200px';
-            toast.style.textAlign = 'center';
-            toast.style.fontSize = '0.875rem';
-            toast.style.fontWeight = '500';
-            toast.textContent = message;
-            
-            document.body.appendChild(toast);
-            
-            // Remove toast after 3 seconds
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transition = 'opacity 0.3s';
-                setTimeout(() => {
-                    document.body.removeChild(toast);
-                }, 300);
-            }, 3000);
-        }
-        
-        function setupNavigation() {
-            // Get all sidebar links
-            const navLinks = document.querySelectorAll('.nav-links a');
-            
-            // Add click event to each link
-            navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // Get the section to show
-                    const sectionId = this.getAttribute('data-section');
-                    
-                    // Remove active class from all links
-                    navLinks.forEach(l => l.classList.remove('active'));
-                    
-                    // Add active class to clicked link
-                    this.classList.add('active');
-                    
-                    // Hide all content sections
-                    const contentSections = document.querySelectorAll('.content-section');
-                    contentSections.forEach(section => {
-                        section.classList.remove('active');
-                    });
-                    
-                    // Show the selected section
-                    const targetSection = document.getElementById(`${sectionId}-section`);
-                    if (targetSection) {
-                        targetSection.classList.add('active');
-                        
-                        // Scroll to top when switching sections
-                        window.scrollTo(0, 0);
-                        
-                        // Update page title based on section
-                        updatePageTitle(sectionId);
-                    }
-                });
-            });
-        }
-        
-        function updatePageTitle(section) {
-            const titles = {
-                'dashboard': { main: 'Fee Management', sub: 'Monitor and manage student fee payments' },
-                'students': { main: 'Students', sub: 'Manage all students in the organization' },
-                'payments': { main: 'Payments', sub: 'Track payment transactions' },
-                'analytics': { main: 'Analytics', sub: 'Insights and trends in fee collection' },
-                'settings': { main: 'Settings', sub: 'Configure organization and system preferences' },
-                'help': { main: 'Help & Support', sub: 'Get assistance and learn how to use the system' }
-            };
-            
-            const title = titles[section];
-            if (title) {
-                // Update the active section's title
-                const activeSection = document.querySelector('.content-section.active');
-                const titleElement = activeSection.querySelector('.page-title h1');
-                const subtitleElement = activeSection.querySelector('.page-title p');
-                
-                if (titleElement) titleElement.textContent = title.main;
-                if (subtitleElement) subtitleElement.textContent = title.sub;
-            }
-        }
-        
-        function renderDashboard() {
-            // Clear existing student tables
-            document.getElementById('first-year-students').innerHTML = '';
-            document.getElementById('second-year-students').innerHTML = '';
-            document.getElementById('third-year-students').innerHTML = '';
-            document.getElementById('fourth-year-students').innerHTML = '';
-            
-            // Group students by year level
-            const firstYearStudents = studentsData.filter(student => student.yearLevel === "First Year" && student.status === "pending");
-            const secondYearStudents = studentsData.filter(student => student.yearLevel === "Second Year" && student.status === "pending");
-            const thirdYearStudents = studentsData.filter(student => student.yearLevel === "Third Year" && student.status === "pending");
-            const fourthYearStudents = studentsData.filter(student => student.yearLevel === "Fourth Year" && student.status === "pending");
-            
-            // Render each year level table
-            renderStudentTable('first-year-students', firstYearStudents);
-            renderStudentTable('second-year-students', secondYearStudents);
-            renderStudentTable('third-year-students', thirdYearStudents);
-            renderStudentTable('fourth-year-students', fourthYearStudents);
-            
-            // Update card badges
-            updateCardBadges(firstYearStudents, secondYearStudents, thirdYearStudents, fourthYearStudents);
-            
-            // Calculate and update totals
-            updateTotals(firstYearStudents, secondYearStudents, thirdYearStudents, fourthYearStudents);
-        }
-        
-        function renderAllStudents() {
-            const tableBody = document.getElementById('all-students-list');
-            tableBody.innerHTML = '';
-            
-            studentsData.forEach(student => {
-                const row = document.createElement('tr');
-                let statusBadge = '';
-                
-                if (student.status === 'pending') {
-                    statusBadge = '<span class="status-badge status-pending">Pending</span>';
-                } else if (student.status === 'accepted') {
-                    statusBadge = '<span class="status-badge status-paid">Paid</span>';
-                } else {
-                    statusBadge = '<span class="status-badge" style="background: #fee2e2; color: #991b1b;">Overdue</span>';
-                }
-                
-                row.innerHTML = `
-                    <td>
-                        <div class="student-info">
-                            <div class="student-avatar">${student.avatarInitials}</div>
-                            <div class="student-details">
-                                <h4>${student.name}</h4>
-                                <p>${student.studentId}</p>
-                            </div>
-                        </div>
-                    </td>
-                    <td>${student.studentId}</td>
-                    <td>${student.yearLevel}</td>
-                    <td>${student.program}</td>
-                    <td>${statusBadge}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1 mb-1">View</button>
-                        <button class="btn btn-sm btn-outline-secondary mb-1">Edit</button>
-                    </td>
-                `;
-                
-                tableBody.appendChild(row);
-            });
-        }
-        
-        function renderPayments() {
-            const tableBody = document.getElementById('payments-list');
-            tableBody.innerHTML = '';
-            
-            paymentsData.forEach(payment => {
-                const row = document.createElement('tr');
-                let statusBadge = '';
-                
-                if (payment.status === 'Paid') {
-                    statusBadge = '<span class="status-badge status-paid">Paid</span>';
-                } else if (payment.status === 'Pending') {
-                    statusBadge = '<span class="status-badge status-pending">Pending</span>';
-                } else {
-                    statusBadge = '<span class="status-badge status-overdue">Overdue</span>';
-                }
-                
-                row.innerHTML = `
-                    <td>${payment.date}</td>
-                    <td>
-                        <div class="student-info">
-                            <div class="student-avatar">${payment.student.split(' ').map(n => n[0]).join('')}</div>
-                            <div class="student-details">
-                                <h4>${payment.student}</h4>
-                            </div>
-                        </div>
-                    </td>
-                    <td>${payment.paymentId}</td>
-                    <td><strong>₱${payment.amount.toLocaleString()}</strong></td>
-                    <td>${statusBadge}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-receipt"></i>
-                        </button>
-                    </td>
-                `;
-                
-                tableBody.appendChild(row);
-            });
-        }
-        
-        function renderStudentTable(tableId, students) {
-            const tableBody = document.getElementById(tableId);
-            
-            if (students.length === 0) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="empty-state">
-                            <i class="fas fa-check-circle"></i>
-                            <p class="mt-3">No pending payments</p>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            students.forEach(student => {
-                const row = document.createElement('tr');
-                
-                row.innerHTML = `
-                    <td>
-                        <div class="student-info">
-                            <div class="student-avatar">${student.avatarInitials}</div>
-                            <div class="student-details">
-                                <h4>${student.name}</h4>
-                                <p>${student.studentId}</p>
-                            </div>
-                        </div>
-                    </td>
-                    <td>${student.program}</td>
-                    <td>${student.contact}</td>
-                    <td><strong>₱${student.amount.toLocaleString()}</strong></td>
-                    <td><span class="status-badge status-pending">Pending</span></td>
-                    <td>
-                        <button class="btn-accept" onclick="acceptPayment(${student.id})">
-                            <i class="fas fa-check"></i> Accept
-                        </button>
-                    </td>
-                `;
-                
-                tableBody.appendChild(row);
-            });
-        }
-        
-        function updateCardBadges(firstYear, secondYear, thirdYear, fourthYear) {
-            const badges = document.querySelectorAll('.card-badge');
-            if (badges[0]) badges[0].textContent = `${firstYear.length} pending`;
-            if (badges[1]) badges[1].textContent = `${secondYear.length} pending`;
-            if (badges[2]) badges[2].textContent = `${thirdYear.length} pending`;
-            if (badges[3]) badges[3].textContent = `${fourthYear.length} pending`;
-        }
-        
-        function updateTotals(firstYear, secondYear, thirdYear, fourthYear) {
-            // Calculate totals for each year level
-            const firstYearTotal = firstYear.reduce((sum, student) => sum + student.amount, 0);
-            const secondYearTotal = secondYear.reduce((sum, student) => sum + student.amount, 0);
-            const thirdYearTotal = thirdYear.reduce((sum, student) => sum + student.amount, 0);
-            const fourthYearTotal = fourthYear.reduce((sum, student) => sum + student.amount, 0);
-            
-            // Update year level totals
-            document.getElementById('first-year-total').textContent = `₱${firstYearTotal.toLocaleString()}`;
-            document.getElementById('second-year-total').textContent = `₱${secondYearTotal.toLocaleString()}`;
-            document.getElementById('third-year-total').textContent = `₱${thirdYearTotal.toLocaleString()}`;
-            document.getElementById('fourth-year-total').textContent = `₱${fourthYearTotal.toLocaleString()}`;
-            
-            // Calculate overall totals
-            const totalPending = firstYear.length + secondYear.length + thirdYear.length + fourthYear.length;
-            const totalAmount = firstYearTotal + secondYearTotal + thirdYearTotal + fourthYearTotal;
-            
-            // Update dashboard stats
-            document.getElementById('total-pending').textContent = totalPending;
-            document.getElementById('total-amount').textContent = `₱${totalAmount.toLocaleString()}`;
-            
-            // Total students (all year levels)
-            const totalStudents = studentsData.length;
-            document.getElementById('total-students').textContent = totalStudents;
-        }
-        
-        function acceptPayment(studentId) {
-            // Find the student
-            const studentIndex = studentsData.findIndex(student => student.id === studentId);
-            
-            if (studentIndex !== -1) {
-                const student = studentsData[studentIndex];
-                
-                // Update student status
-                studentsData[studentIndex].status = "accepted";
-                
-                // Show modal confirmation
-                document.getElementById('accepted-student-name').textContent = student.name;
-                document.getElementById('accepted-amount').textContent = `₱${student.amount.toLocaleString()}`;
-                
-                // Update timestamp
-                const now = new Date();
-                const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                document.getElementById('accepted-timestamp').textContent = `Today, ${timeString}`;
-                
-                const modal = new bootstrap.Modal(document.getElementById('paymentAcceptedModal'));
-                modal.show();
-                
-                // Re-render dashboard with animation
-                setTimeout(() => {
-                    renderDashboard();
-                    // Add animation class to new elements
-                    document.querySelectorAll('.fade-in').forEach(el => {
-                        el.classList.remove('fade-in');
-                        void el.offsetWidth; // Trigger reflow
-                        el.classList.add('fade-in');
-                    });
-                    
-                    // Show success toast
-                    showToast('Payment accepted successfully');
-                }, 500);
-            }
-        }
-        
-        function setupEventListeners() {
-            // School year filter change
-            const yearDropdown = document.getElementById('yearDropdown');
-            if (yearDropdown) {
-                yearDropdown.addEventListener('click', function(e) {
-                    // In a real application, this would filter data from the backend
-                    // For this demo, we'll just simulate data loading
-                    const yearLevelSections = document.getElementById('year-level-sections');
-                    yearLevelSections.style.opacity = '0.7';
-                    
-                    setTimeout(() => {
-                        yearLevelSections.style.opacity = '1';
-                    }, 300);
-                });
-            }
-            
-            // Analytics period dropdown
-            const analyticsPeriod = document.getElementById('analyticsPeriod');
-            if (analyticsPeriod) {
-                analyticsPeriod.addEventListener('click', function(e) {
-                    showToast('Analytics period changed');
-                });
-            }
-            
-            // Add hover effects to table rows (for desktop)
-            if (window.innerWidth > 768) {
-                document.addEventListener('mouseover', function(e) {
-                    if (e.target.closest('.student-table tbody tr')) {
-                        e.target.closest('.student-table tbody tr').style.transition = 'all 0.2s ease';
-                    }
-                });
-            }
-            
-            // Handle orientation change
-            window.addEventListener('orientationchange', function() {
-                // Close sidebar on orientation change for better UX
-                if (window.innerWidth <= 1024) {
-                    const sidebar = document.querySelector('.sidebar');
-                    const sidebarOverlay = document.getElementById('sidebarOverlay');
-                    if (sidebar.classList.contains('active')) {
-                        sidebar.classList.remove('active');
-                        sidebarOverlay.classList.remove('active');
-                        document.body.style.overflow = '';
-                    }
-                }
-                
-                // Recalculate layout after orientation change
-                setTimeout(() => {
-                    // Trigger resize event to recalc responsive layouts
-                    window.dispatchEvent(new Event('resize'));
-                }, 300);
-            });
-        }
+        Swal.fire({
+            icon: 'success',
+            title: 'Exported!',
+            text: `Successfully exported ${capitalizedYear} pending student records.`,
+            timer: 2000,
+            showConfirmButton: false
+        });
+    });
+    
+    // Auto-refresh data every 30 seconds
+    // setInterval(loadPaymentData, 30000);
+});

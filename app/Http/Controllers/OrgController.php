@@ -747,9 +747,67 @@ class OrgController extends Controller
             }
         }
         
+        $collectedToday = 0;
+        $pendingToday = 0;
+        $approvedTodayCount = 0;
+        $newStudentsThisWeek = 0;
+        
+        try {
+            $collectedToday = DB::table('payments')
+                ->where('status', 'Approved')
+                ->whereDate('updated_at', \Carbon\Carbon::today())
+                ->sum('amount');
+            if ($collectedToday == 0) {
+                $collectedToday = DB::table('organizationfees')
+                    ->where('status', 'Approved')
+                    ->whereDate('uploaded_date', \Carbon\Carbon::today())
+                    ->sum('amount');
+            }
+        } catch (\Exception $e) {}
+
+        try {
+            $pendingToday = DB::table('payments')
+                ->where('status', 'Pending')
+                ->whereDate('created_at', \Carbon\Carbon::today())
+                ->sum('amount');
+            if ($pendingToday == 0) {
+                $pendingToday = DB::table('organizationfees')
+                    ->where('status', 'Pending')
+                    ->whereDate('uploaded_date', \Carbon\Carbon::today())
+                    ->sum('amount');
+            }
+        } catch (\Exception $e) {}
+
+        try {
+            $approvedTodayCount = DB::table('payments')
+                ->where('status', 'Approved')
+                ->whereDate('updated_at', \Carbon\Carbon::today())
+                ->count();
+            if ($approvedTodayCount == 0) {
+                $approvedTodayCount = DB::table('organizationfees')
+                    ->where('status', 'Approved')
+                    ->whereDate('uploaded_date', \Carbon\Carbon::today())
+                    ->count();
+            }
+        } catch (\Exception $e) {}
+
+        try {
+            $newStudentsThisWeek = DB::table('students')
+                ->where('created_at', '>=', \Carbon\Carbon::now()->startOfWeek())
+                ->count();
+            if ($newStudentsThisWeek == 0) {
+                $newStudentsThisWeek = DB::table('students')->count();
+            }
+        } catch (\Exception $e) {}
+        
         return view('org.dashboard.org-dashboard', [
             'yearLevelData' => $yearLevelData,
-            'sy' => $sy
+            'sy' => $sy,
+            'totalStudents' => Student::count(),
+            'collectedToday' => $collectedToday,
+            'pendingToday' => $pendingToday,
+            'approvedTodayCount' => $approvedTodayCount,
+            'newStudentsThisWeek' => $newStudentsThisWeek
         ]);
     }
 
@@ -1144,20 +1202,30 @@ class OrgController extends Controller
         }
 
         try {
-            // Fetch students with their basic information
+            // Fetch students with their basic information and personal details
             $students = DB::table('students')
+                ->leftJoin('user_info', 'students.student_id', '=', 'user_info.id')
+                ->leftJoin('users', 'user_info.user_id', '=', 'users.id')
                 ->select(
                     'students.id',
                     'students.id_no',
                     'students.year_level',
                     'students.status',
                     'students.curriculum',
-                    'students.is_regular'
+                    'students.is_regular',
+                    'user_info.firstname',
+                    'user_info.lastname',
+                    'user_info.middlename',
+                    'users.email2 as email'
                 )
                 ->where('students.id_no', '!=', 'None') // Exclude invalid student records
                 ->orderBy('students.id_no', 'asc')
                 ->get()
                 ->map(function($student) {
+                    $fullName = trim(($student->firstname ?? '') . ' ' . ($student->lastname ?? ''));
+                    if (empty($fullName)) {
+                        $fullName = 'Student ' . $student->id_no;
+                    }
                     return [
                         'id' => $student->id,
                         'student_id' => $student->id_no,
@@ -1165,17 +1233,22 @@ class OrgController extends Controller
                         'status' => $student->status,
                         'curriculum' => $student->curriculum,
                         'is_regular' => $student->is_regular ? 'Regular' : 'Irregular',
-                        'program' => 'BS Information Technology' // Default program since it's not stored in students table
+                        'program' => 'BS Information Technology', // Default program
+                        'firstname' => $student->firstname,
+                        'lastname' => $student->lastname,
+                        'name' => $fullName,
+                        'email' => $student->email ?? ''
                     ];
                 });
 
             return response()->json([
+                'success' => true,
                 'students' => $students
             ]);
 
         } catch (\Exception $e) {
             Log::error('Error fetching students data: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to fetch students data'], 500);
+            return response()->json(['error' => 'Failed to fetch students data: ' . $e->getMessage()], 500);
         }
     }
 
@@ -1458,7 +1531,8 @@ class OrgController extends Controller
             //     return response()->json(['error' => 'Organization info not found'], 404);
             // }
 
-            // Query organization fees with student information
+            // Query organization fees with student 
+            
             $payments = DB::table('organizationfees as of')
                 ->select(
                     'of.id as payment_id',
@@ -1476,7 +1550,7 @@ class OrgController extends Controller
                     'u.email2 as email'
                 )
                 ->leftJoin('students as s', 'of.student_id', '=', 's.id')
-                ->leftJoin('user_info as ui', 's.student_id', '=', 'ui.user_id')
+                ->leftJoin('user_info as ui', 's.student_id', '=', 'ui.id')
                 ->leftJoin('users as u', 'ui.user_id', '=', 'u.id')
                 ->orderBy('of.uploaded_date', 'desc')
                 ->get();
@@ -1538,10 +1612,68 @@ class OrgController extends Controller
                 ];
             });
 
+            $collectedToday = 0;
+            $pendingToday = 0;
+            $approvedTodayCount = 0;
+            $newStudentsThisWeek = 0;
+            
+            try {
+                $collectedToday = DB::table('payments')
+                    ->where('status', 'Approved')
+                    ->whereDate('updated_at', \Carbon\Carbon::today())
+                    ->sum('amount');
+                if ($collectedToday == 0) {
+                    $collectedToday = DB::table('organizationfees')
+                        ->where('status', 'Approved')
+                        ->whereDate('uploaded_date', \Carbon\Carbon::today())
+                        ->sum('amount');
+                }
+            } catch (\Exception $e) {}
+
+            try {
+                $pendingToday = DB::table('payments')
+                    ->where('status', 'Pending')
+                    ->whereDate('created_at', \Carbon\Carbon::today())
+                    ->sum('amount');
+                if ($pendingToday == 0) {
+                    $pendingToday = DB::table('organizationfees')
+                        ->where('status', 'Pending')
+                        ->whereDate('uploaded_date', \Carbon\Carbon::today())
+                        ->sum('amount');
+                }
+            } catch (\Exception $e) {}
+
+            try {
+                $approvedTodayCount = DB::table('payments')
+                    ->where('status', 'Approved')
+                    ->whereDate('updated_at', \Carbon\Carbon::today())
+                    ->count();
+                if ($approvedTodayCount == 0) {
+                    $approvedTodayCount = DB::table('organizationfees')
+                        ->where('status', 'Approved')
+                        ->whereDate('uploaded_date', \Carbon\Carbon::today())
+                        ->count();
+                }
+            } catch (\Exception $e) {}
+
+            try {
+                $newStudentsThisWeek = DB::table('students')
+                    ->where('created_at', '>=', \Carbon\Carbon::now()->startOfWeek())
+                    ->count();
+                if ($newStudentsThisWeek == 0) {
+                    $newStudentsThisWeek = DB::table('students')->count();
+                }
+            } catch (\Exception $e) {}
+
             return response()->json([
                 'success' => true,
                 'payments' => $formattedPayments,
-                'total' => $payments->count()
+                'total' => $payments->count(),
+                'total_students' => Student::count(),
+                'collected_today' => $collectedToday,
+                'pending_today' => $pendingToday,
+                'approved_today_count' => $approvedTodayCount,
+                'new_students_this_week' => $newStudentsThisWeek
             ]);
 
         } catch (\Exception $e) {
@@ -1584,15 +1716,15 @@ class OrgController extends Controller
                 ->first();
 
             $payment2 = DB::table('payments')
-                ->where('id', $paymentId)
+                ->where('file_path', $payment->receipt_url)
                 ->first();
 
-            if($payment2) {
-                $updated_it = DB::table('payments')
-                ->where('id', $paymentId)
-                ->update([
-                    'status' => 'Approved',
-                ]);
+            if ($payment2) {
+                DB::table('payments')
+                    ->where('file_path', $payment->receipt_url)
+                    ->update([
+                        'status' => 'Approved',
+                    ]);
             }
                 
             if (!$payment) {

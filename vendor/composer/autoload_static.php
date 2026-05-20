@@ -575,6 +575,8 @@ class ComposerStaticInitc61ff82cbf0142a401a48a8161e1595a
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
         'App\\Helpers\\PSGC' => __DIR__ . '/../..' . '/app/Helpers/PSGC.php',
         'App\\Http\\Controllers\\AdminController' => __DIR__ . '/../..' . '/app/Http/Controllers/AdminController.php',
+        'App\\Http\\Controllers\\Api\\AuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/AuthController.php',
+        'App\\Http\\Controllers\\Api\\EnrollmentApiController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/EnrollmentApiController.php',
         'App\\Http\\Controllers\\Api\\GradeApiController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/GradeApiController.php',
         'App\\Http\\Controllers\\AuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/AuthController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',

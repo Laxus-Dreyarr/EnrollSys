@@ -499,5 +499,6 @@ $password = $resetData['password'];
      <script src="{{asset('js/jquery.js')}}"></script>
     <!-- Custom JS -->
     <script src="{{ asset('js/function/index_reset_admin.js') }}"></script>
+    <script src="{{asset('js/sweetalert3.js')}}"></script>
 </body>
 </html>

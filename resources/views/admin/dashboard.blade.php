@@ -22,6 +22,112 @@ $profile_picture = $user->profile;
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sweetalert2.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <style>
+        /* Light Theme (Default) styles for Year Level Filters */
+        .year-level-filter-container {
+            background-color: rgba(0, 0, 0, 0.02);
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            margin-bottom: 20px;
+        }
+        .filter-title {
+            color: #4a5568 !important; /* Deep slate gray for light mode */
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        .btn-pill {
+            border-radius: 50px;
+            padding: 6px 16px;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-year-filter {
+            background-color: rgba(0, 0, 0, 0.04);
+            color: #4a5568;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        .btn-year-filter:hover {
+            background-color: rgba(0, 0, 0, 0.08);
+            color: #1a202c;
+            border-color: rgba(0, 0, 0, 0.15);
+        }
+        .btn-year-filter.active {
+            background-color: #0d6efd;
+            color: #fff !important;
+            border-color: #0d6efd;
+            box-shadow: 0 2px 6px rgba(13, 110, 253, 0.3);
+        }
+
+        /* Dark Theme overrides for Year Level Filters */
+        body.dark-theme .year-level-filter-container {
+            background-color: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        body.dark-theme .filter-title {
+            color: #0dcaf0 !important; /* Vibrant cyan for dark mode */
+        }
+        body.dark-theme .btn-year-filter {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #a0aec0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        body.dark-theme .btn-year-filter:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff !important;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        body.dark-theme .btn-year-filter.active {
+            background-color: #0d6efd;
+            color: #fff !important;
+            border-color: #0d6efd;
+            box-shadow: 0 0 10px rgba(13, 110, 253, 0.4);
+        }
+
+        /* LEGIBILITY FIX: Muted 'Not Enrolled' status styling in Light/Dark themes */
+        .badge-secondary {
+            background-color: rgba(108, 117, 125, 0.15) !important;
+            color: #495057 !important; /* Legible dark slate gray in light mode */
+        }
+        body.dark-theme .badge-secondary {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            color: #ced4da !important; /* Clear light gray in dark mode */
+        }
+
+        /* Audit Table Custom wrapping and responsiveness */
+        #auditTable {
+            table-layout: fixed;
+            width: 100%;
+        }
+        #auditTable th:nth-child(1), #auditTable td:nth-child(1) { width: 15%; } /* Timestamp */
+        #auditTable th:nth-child(2), #auditTable td:nth-child(2) { width: 22%; } /* Action */
+        #auditTable th:nth-child(3), #auditTable td:nth-child(3) { width: 10%; } /* User */
+        #auditTable th:nth-child(4), #auditTable td:nth-child(4) { width: 33%; } /* Details */
+        #auditTable th:nth-child(5), #auditTable td:nth-child(5) { width: 12%; } /* IP Address */
+        #auditTable th:nth-child(6), #auditTable td:nth-child(6) { width: 8%; text-align: center; } /* Actions */
+        
+        #auditTable td {
+            word-wrap: break-word;
+            word-break: break-word;
+            white-space: normal !important;
+            vertical-align: middle;
+        }
+
+        /* Screen responsiveness for mobile layouts */
+        @media (max-width: 992px) {
+            #auditTable {
+                table-layout: auto;
+            }
+            #auditTable th:nth-child(1), #auditTable td:nth-child(1),
+            #auditTable th:nth-child(2), #auditTable td:nth-child(2),
+            #auditTable th:nth-child(3), #auditTable td:nth-child(3),
+            #auditTable th:nth-child(4), #auditTable td:nth-child(4),
+            #auditTable th:nth-child(5), #auditTable td:nth-child(5),
+            #auditTable th:nth-child(6), #auditTable td:nth-child(6) {
+                width: auto;
+            }
+        }
+    </style>
 </head>
 <body class="light-theme">
     <div class="dashboard-container">
@@ -482,6 +588,18 @@ $profile_picture = $user->profile;
                                 </div>
                             </div>
                             <div class="card-body">
+                                <!-- Year Level Filter Above Table -->
+                                <div class="year-level-filter-container">
+                                    <div class="small fw-bold mb-2 uppercase-tracking filter-title"><i class="fas fa-filter me-1"></i> FILTER BY YEAR LEVEL</div>
+                                    <div class="d-flex flex-wrap gap-2" id="yearLevelFilters">
+                                        <button class="btn btn-sm btn-pill btn-year-filter active" data-year="All">All Years</button>
+                                        <button class="btn btn-sm btn-pill btn-year-filter" data-year="1st Year">1st Year</button>
+                                        <button class="btn btn-sm btn-pill btn-year-filter" data-year="2nd Year">2nd Year</button>
+                                        <button class="btn btn-sm btn-pill btn-year-filter" data-year="3rd Year">3rd Year</button>
+                                        <button class="btn btn-sm btn-pill btn-year-filter" data-year="4th Year">4th Year</button>
+                                    </div>
+                                </div>
+
                                 <div class="table-responsive">
                                     <table class="table table-hover" id="studentsTable">
                                         <thead>
@@ -489,49 +607,45 @@ $profile_picture = $user->profile;
                                                 <th>Student ID</th>
                                                 <th>Name</th>
                                                 <th>Program</th>
-                                                <th>Year Level</th>
                                                 <th>Status</th>
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr>
-                                                <td>2023-001</td>
-                                                <td>Eva Elfie</td>
-                                                <td>BS Information Technology</td>
-                                                <td>3rd Year</td>
-                                                <td><span class="badge badge-success">Active</span></td>
-                                                <td id="_student_btn">
-                                                    <button class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></button>
-                                                    <button class="btn btn-sm btn-outline-warning ms-1"><i class="fas fa-edit"></i></button>
-                                                    <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>2023-002</td>
-                                                <td>Lexi Lore</td>
-                                                <td>BS Information Technology</td>
-                                                <td>2nd Year</td>
-                                                <td><span class="badge badge-success">Active</span></td>
-                                                <td id="_student_btn">
-                                                    <button class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></button>
-                                                    <button class="btn btn-sm btn-outline-warning ms-1"><i class="fas fa-edit"></i></button>
-                                                    <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>2023-003</td>
-                                                <td>Abella Danger</td>
-                                                <td>BS Information Technology</td>
-                                                <td>4th Year</td>
-                                                <td><span class="badge badge-warning">Probation</span></td>
-                                                <td id="_student_btn">
-                                                    <button class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></button>
-                                                    <button class="btn btn-sm btn-outline-warning ms-1"><i class="fas fa-edit"></i></button>
-                                                    <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></button>
-                                                </td>
-                                            </tr>
-                                        </tbody>
+                                             <tr>
+                                                 <td>2023-001</td>
+                                                 <td>Eva Elfie</td>
+                                                 <td>BS Information Technology</td>
+                                                 <td><span class="badge badge-success">Active</span></td>
+                                                 <td id="_student_btn">
+                                                     <button class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></button>
+                                                     <button class="btn btn-sm btn-outline-warning ms-1"><i class="fas fa-edit"></i></button>
+                                                     <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></button>
+                                                 </td>
+                                             </tr>
+                                             <tr>
+                                                 <td>2023-002</td>
+                                                 <td>Lexi Lore</td>
+                                                 <td>BS Information Technology</td>
+                                                 <td><span class="badge badge-success">Active</span></td>
+                                                 <td id="_student_btn">
+                                                     <button class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></button>
+                                                     <button class="btn btn-sm btn-outline-warning ms-1"><i class="fas fa-edit"></i></button>
+                                                     <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></button>
+                                                 </td>
+                                             </tr>
+                                             <tr>
+                                                 <td>2023-003</td>
+                                                 <td>Abella Danger</td>
+                                                 <td>BS Information Technology</td>
+                                                 <td><span class="badge badge-warning">Probation</span></td>
+                                                 <td id="_student_btn">
+                                                     <button class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></button>
+                                                     <button class="btn btn-sm btn-outline-warning ms-1"><i class="fas fa-edit"></i></button>
+                                                     <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></button>
+                                                 </td>
+                                             </tr>
+                                         </tbody>
                                     </table>
                                 </div>
                             </div>
@@ -552,7 +666,23 @@ $profile_picture = $user->profile;
                                 </div>
                             </div>
                             <div class="card-body">
-                                <p class="text-center">Instructors management content will be displayed here.</p>
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="instructorsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Instructor ID</th>
+                                                <th>Name</th>
+                                                <th>Department</th>
+                                                <th>Office</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Loaded dynamically via AJAX -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -568,7 +698,23 @@ $profile_picture = $user->profile;
                                 </div>
                             </div>
                             <div class="card-body">
-                                <p class="text-center">Organizations management content will be displayed here.</p>
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="organizationsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Organization ID</th>
+                                                <th>Name</th>
+                                                <th>Email</th>
+                                                <th>Address</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Loaded dynamically via AJAX -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -629,6 +775,7 @@ $profile_picture = $user->profile;
                                                 <th>User</th>
                                                 <th>Details</th>
                                                 <th>IP Address</th>
+                                                <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody id="auditTableBody">
@@ -1268,7 +1415,335 @@ $profile_picture = $user->profile;
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary">Upload File</button>
+                    <button type="submit" form="uploadFileForm" class="btn btn-primary" id="btnSubmitUpload">Upload File</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Student Modal -->
+    <div class="modal fade" id="viewStudentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-white border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-primary"><i class="fas fa-user-graduate me-2"></i>Student Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <!-- Profile Card -->
+                        <div class="col-md-4 text-center border-md-end border-secondary">
+                            <div class="p-3">
+                                <div class="student-avatar-container mb-3 d-flex justify-content-center">
+                                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width: 100px; height: 100px; font-size: 2.5rem; font-weight: bold; color: white; box-shadow: 0 0 15px rgba(13, 110, 253, 0.4);" id="viewStudentInitials">
+                                        JD
+                                    </div>
+                                </div>
+                                <h4 class="mb-1" id="viewStudentName">John Doe</h4>
+                                <p class="text-muted mb-2" id="viewStudentIdNo">2020-00000</p>
+                                <span class="badge" id="viewStudentStatusBadge" style="font-size: 0.9rem; padding: 8px 12px;">Active</span>
+                            </div>
+                        </div>
+                        <!-- Details Grid -->
+                        <div class="col-md-8">
+                            <h5 class="text-info border-bottom border-secondary pb-2 mb-3"><i class="fas fa-info-circle me-2"></i>Personal Information</h5>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Sex:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewStudentSex">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Age:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewStudentAge">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Birthdate:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewStudentBirthdate">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Phone Number:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewStudentPhone">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Email Address:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewStudentEmail">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Home Address:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewStudentAddress">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Civil Status:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewStudentCivilStatus">N/A</div>
+                            </div>
+
+                            <h5 class="text-info border-bottom border-secondary pb-2 mb-3 mt-4"><i class="fas fa-university me-2"></i>Academic Profile</h5>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Program / Degree:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewStudentProgram">BS Information Technology</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Year Level:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewStudentYearLevel">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Curriculum Year:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewStudentCurriculum">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Student Type:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewStudentType">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">School Year (SY):</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewStudentSy">N/A</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="viewStudentEditBtn"><i class="fas fa-edit me-1"></i>Edit Student</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Instructor Details Modal -->
+    <div class="modal fade" id="viewInstructorModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-white border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-primary"><i class="fas fa-chalkboard-teacher me-2"></i>Instructor Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <!-- Profile Card -->
+                        <div class="col-md-4 text-center border-md-end border-secondary">
+                            <div class="p-3">
+                                <div class="student-avatar-container mb-3 d-flex justify-content-center">
+                                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width: 100px; height: 100px; font-size: 2.5rem; font-weight: bold; color: white; box-shadow: 0 0 15px rgba(13, 110, 253, 0.4);" id="viewInstructorInitials">
+                                        TR
+                                    </div>
+                                </div>
+                                <h4 class="mb-1" id="viewInstructorName">Trainer Name</h4>
+                                <p class="text-muted mb-2" id="viewInstructorId">ID-00000</p>
+                                <span class="badge" id="viewInstructorStatusBadge" style="font-size: 0.9rem; padding: 8px 12px;">Active</span>
+                            </div>
+                        </div>
+                        <!-- Details Grid -->
+                        <div class="col-md-8">
+                            <h5 class="text-info border-bottom border-secondary pb-2 mb-3"><i class="fas fa-info-circle me-2"></i>Professional Info</h5>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Department:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewInstructorDepartment">Computer Studies Department</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Office Location:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewInstructorOffice">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Bio/Introduction:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewInstructorBio">N/A</div>
+                            </div>
+
+                            <h5 class="text-info border-bottom border-secondary pb-2 mb-3 mt-4"><i class="fas fa-address-book me-2"></i>Personal & Contact Details</h5>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Email Address:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewInstructorEmail">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Phone Number:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewInstructorPhone">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Home Address:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewInstructorAddress">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Birthdate:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewInstructorBirthdate">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Age:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewInstructorAge">N/A</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Organization Details Modal -->
+    <div class="modal fade" id="viewOrganizationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-white border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-primary"><i class="fas fa-sitemap me-2"></i>Organization Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <!-- Profile Card -->
+                        <div class="col-md-4 text-center border-md-end border-secondary">
+                            <div class="p-3">
+                                <div class="student-avatar-container mb-3 d-flex justify-content-center">
+                                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width: 100px; height: 100px; font-size: 2.5rem; font-weight: bold; color: white; box-shadow: 0 0 15px rgba(13, 110, 253, 0.4);" id="viewOrganizationInitials">
+                                        OR
+                                    </div>
+                                </div>
+                                <h4 class="mb-1" id="viewOrganizationName">Organization Name</h4>
+                                <p class="text-muted mb-2" id="viewOrganizationId">ID-00000</p>
+                                <span class="badge" id="viewOrganizationStatusBadge" style="font-size: 0.9rem; padding: 8px 12px;">Active</span>
+                            </div>
+                        </div>
+                        <!-- Details Grid -->
+                        <div class="col-md-8">
+                            <h5 class="text-info border-bottom border-secondary pb-2 mb-3"><i class="fas fa-info-circle me-2"></i>Organization Information</h5>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Organization Email:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewOrganizationEmail">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Office/Location Address:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewOrganizationAddress">N/A</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Date Created:</div>
+                                <div class="col-sm-8 text-white font-weight-bold" id="viewOrganizationDateCreated">N/A</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Student Modal -->
+    <div class="modal fade" id="editStudentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-white border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-warning"><i class="fas fa-user-edit me-2"></i>Edit Student Information</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editStudentForm">
+                        <input type="hidden" id="editStudentId" name="student_id">
+                        
+                        <div class="row g-3">
+                            <h6 class="text-info mb-1"><i class="fas fa-id-card me-2"></i>Academic Details</h6>
+                            
+                            <div class="col-md-4">
+                                <label for="editStudentIdNo" class="form-label text-muted">Student ID / ID No.</label>
+                                <input type="text" class="form-control bg-secondary text-white border-secondary" id="editStudentIdNo" name="id_no" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editStudentYearLevel" class="form-label text-muted">Year Level</label>
+                                <select class="form-select bg-secondary text-white border-secondary" id="editStudentYearLevel" name="year_level" required>
+                                    <option value="1st Year">1st Year</option>
+                                    <option value="2nd Year">2nd Year</option>
+                                    <option value="3rd Year">3rd Year</option>
+                                    <option value="4th Year">4th Year</option>
+                                    <option value="5th Year">5th Year</option>
+                                    <option value="NONE">NONE</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editStudentCurriculum" class="form-label text-muted">Curriculum</label>
+                                <input type="text" class="form-control bg-secondary text-white border-secondary" id="editStudentCurriculum" name="curriculum" required>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="editStudentStatus" class="form-label text-muted">Enrollment Status</label>
+                                <select class="form-select bg-secondary text-white border-secondary" id="editStudentStatus" name="status" required>
+                                    <option value="Not Enrolled">Not Enrolled</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Officially Enrolled">Officially Enrolled</option>
+                                    <option value="Rejected">Rejected</option>
+                                    <option value="None">None</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editStudentIsRegular" class="form-label text-muted">Student Type</label>
+                                <select class="form-select bg-secondary text-white border-secondary" id="editStudentIsRegular" name="is_regular" required>
+                                    <option value="1">Regular</option>
+                                    <option value="2">Irregular</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editStudentSy" class="form-label text-muted">School Year (SY)</label>
+                                <input type="text" class="form-control bg-secondary text-white border-secondary" id="editStudentSy" name="sy" required>
+                            </div>
+
+                            <hr class="my-4 border-secondary">
+                            <h6 class="text-info mb-1"><i class="fas fa-user me-2"></i>Personal Details</h6>
+
+                            <div class="col-md-4">
+                                <label for="editStudentFirstname" class="form-label text-muted">First Name</label>
+                                <input type="text" class="form-control bg-secondary text-white border-secondary" id="editStudentFirstname" name="firstname" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editStudentLastname" class="form-label text-muted">Last Name</label>
+                                <input type="text" class="form-control bg-secondary text-white border-secondary" id="editStudentLastname" name="lastname" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editStudentMiddlename" class="form-label text-muted">Middle Name</label>
+                                <input type="text" class="form-control bg-secondary text-white border-secondary" id="editStudentMiddlename" name="middlename">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="editStudentEmail" class="form-label text-muted">Email Address</label>
+                                <input type="email" class="form-control bg-secondary text-white border-secondary" id="editStudentEmail" name="email2" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editStudentPhone" class="form-label text-muted">Phone Number</label>
+                                <input type="text" class="form-control bg-secondary text-white border-secondary" id="editStudentPhone" name="phone_number">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="editStudentSex" class="form-label text-muted">Sex</label>
+                                <select class="form-select bg-secondary text-white border-secondary" id="editStudentSex" name="sex">
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editStudentAge" class="form-label text-muted">Age</label>
+                                <input type="number" class="form-control bg-secondary text-white border-secondary" id="editStudentAge" name="age">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editStudentBirthdate" class="form-label text-muted">Birthdate</label>
+                                <input type="date" class="form-control bg-secondary text-white border-secondary" id="editStudentBirthdate" name="birthdate">
+                            </div>
+
+                            <div class="col-md-8">
+                                <label for="editStudentAddress" class="form-label text-muted">Address</label>
+                                <input type="text" class="form-control bg-secondary text-white border-secondary" id="editStudentAddress" name="address">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editStudentRelationshipStatus" class="form-label text-muted">Civil Status</label>
+                                <select class="form-select bg-secondary text-white border-secondary" id="editStudentRelationshipStatus" name="relationship_status">
+                                    <option value="Single">Single</option>
+                                    <option value="Married">Married</option>
+                                    <option value="Divorced">Divorced</option>
+                                    <option value="Widowed">Widowed</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning text-dark font-weight-bold" id="saveStudentBtn"><i class="fas fa-save me-1"></i>Save Changes</button>
                 </div>
             </div>
         </div>
@@ -1282,5 +1757,6 @@ $profile_picture = $user->profile;
     <script src="{{asset('js/sweetalert2.js')}}"></script>
     <script src="{{asset('js/function/admin_dashboard/dashboard.js')}}"></script>
     <script src="{{asset('js/function/admin_dashboard/enrollment.js')}}"></script>
+    <script src="{{asset('js/sweetalert3.js')}}"></script>
 </body>
 </html>

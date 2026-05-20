@@ -27,6 +27,8 @@ function setupRealtimeSubscription() {
                     count_pending();
                 } else if (payload.new.operation == 'NOTIF') {
                     updateNotificationCount();
+                } else if (payload.new.operation === 'UPDATE2') {
+                    updatePaymentReceiptStatus(payload.new.student_id, payload.new.status);
                 }
                 // Refresh the notification count when changes occur
                 // fetchNotificationCount();
@@ -223,16 +225,94 @@ function displayEnrollmentRequests(requests) {
     });
 }
 
+$('#studentSearch').on('click', function() {
+    initializeEnrollmentRequests();
+    // Search student enrollment request!
+    $('#studentSearch').on('keyup', function() {
+
+        const searchValue = $(this).val().toLowerCase().trim();
+        const searchTerms = searchValue.split(' ').filter(term => term.length > 0);
+        
+        // Show all if search is empty
+        if (!searchValue) {
+            $('.enrollment-request-item').show();
+            updateSearchCount($('.enrollment-request-item').length, $('.enrollment-request-item').length);
+            return;
+        }
+        
+        let matchCount = 0;
+        const totalItems = $('.enrollment-request-item').length;
+        
+        $('.enrollment-request-item').each(function() {
+            const $item = $(this);
+            
+            // Get text content excluding HTML tags for search
+            const itemText = $item.find('.student-name, .student-id, .meta-item:not(.payment-status-indicator)').text().toLowerCase();
+            
+            // Check if all search terms are found in the item
+            const matches = searchTerms.every(term => itemText.indexOf(term) > -1);
+            
+            if (matches) {
+                $item.show();
+                matchCount++;
+                
+                // Optional: Highlight matching text
+                highlightSearchTerms($item, searchTerms);
+            } else {
+                $item.hide();
+                // Remove any existing highlights
+                $item.find('.highlight').each(function() {
+                    $(this).replaceWith($(this).text());
+                });
+            }
+        });
+        
+        updateSearchCount(matchCount, totalItems);
+    });
+})
+
+// Optional: Function to highlight search terms
+function highlightSearchTerms($item, searchTerms) {
+    searchTerms.forEach(term => {
+        // Only highlight in student-name and student-id, not in payment status
+        $item.find('.student-name, .student-id').each(function() {
+            const $element = $(this);
+            const originalText = $element.text();
+            const highlightedText = originalText.replace(
+                new RegExp(`(${term})`, 'gi'),
+                '<span class="highlight bg-warning">$1</span>'
+            );
+            $element.html(highlightedText);
+        });
+    });
+}
+
+// Function to update search count display
+function updateSearchCount(matchCount, totalCount) {
+    const searchCountElement = document.getElementById('search-count');
+    if (searchCountElement) {
+        if (matchCount === totalCount) {
+            searchCountElement.textContent = `Showing all ${totalCount} requests`;
+        } else {
+            searchCountElement.textContent = `Showing ${matchCount} of ${totalCount} requests`;
+        }
+    }
+}
+
+
 function createRequestItem(request) {
     const item = document.createElement('div');
     item.className = 'enrollment-request-item';
     item.dataset.requestId = request.request_id;
     item.dataset.studentId = request.student_id;
     
-    
     const studentType = request.is_regular === '1' ? 'Regular' : 'Irregular';
     const subjectsCount = request.enrolled_subjects_count || 0;
-
+    
+    // Get payment status
+    const paymentStatus = request.payment_receipt ? request.payment_receipt.status : 'Not Submitted';
+    const paymentStatusClass = getStatusClass(paymentStatus);
+    const paymentStatusText = paymentStatus;
 
     // Helper function to determine avatar HTML
     function getAvatarHtml(request) {
@@ -244,10 +324,8 @@ function createRequestItem(request) {
             const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName + ' ' + lastName)}&background=none&color=fff`;
             
             return `
-                
-                    <img src="${avatarUrl}" alt="User Avatar" class="user-avatar">
-                    <div class="status-indicator"></div>
-                
+                <img src="${avatarUrl}" alt="User Avatar" class="user-avatar">
+                <div class="status-indicator"></div>
             `;
         }
     }
@@ -282,6 +360,10 @@ function createRequestItem(request) {
                     <i class="fas fa-graduation-cap"></i>
                     ${subjectsCount} Subjects
                 </span>
+                <span class="meta-item payment-status-indicator">
+                    <i class="fas fa-receipt"></i>
+                    <span class="payment-status ${paymentStatusClass}">${paymentStatusText}</span>
+                </span>
             </div>
             <div class="request-date">
                 Requested: ${new Date(request.request_date).toLocaleDateString()}
@@ -299,14 +381,75 @@ function createRequestItem(request) {
         this.classList.add('active');
         
         // Load request details
-        loadRequestDetails(request);
+        loadRequestDetails(request, paymentStatusClass, paymentStatusText);
     });
     
     return item;
 }
 
+// Realtime 
+function updatePaymentReceiptStatus(studentId, newStatus) {
+    console.log(`Updating payment status for student ${studentId} to: ${newStatus}`);
+    
+    // Check if the currently displayed request details are for this student
+    const requestDetails = document.getElementById('enrollment-request-details');
+    if (!requestDetails) return;
+    
+    // Get the student ID from the currently displayed request
+    const currentStudentId = requestDetails.querySelector('.btn-view-history')?.getAttribute('data-student-id');
+    
+    // If the currently displayed request matches the updated student
+    if (currentStudentId && currentStudentId == studentId) {
+        // Find the payment receipt status element in details view
+        const paymentReceiptElement = requestDetails.querySelector('.document-item[data-document-type="payment-receipt"] .status-badge');
+        
+        if (paymentReceiptElement) {
+            // Update the status text
+            paymentReceiptElement.textContent = newStatus;
+            
+            // Update the CSS class based on status
+            const statusClass = getStatusClass(newStatus);
+            paymentReceiptElement.className = `status-badge ${statusClass}`;
+            
+            console.log(`Updated payment receipt status in details view for student ${studentId} to: ${newStatus}`);
+        }
+    }
+    
+    // Also update the search results if this student is in the list
+    updateSearchResultPaymentStatus(studentId, newStatus);
+}
 
-function loadRequestDetails(request) {
+function updateSearchResultPaymentStatus(studentId, newStatus) {
+    const requestItems = document.querySelectorAll('.enrollment-request-item');
+    const statusClass = getStatusClass(newStatus);
+    
+    requestItems.forEach(item => {
+        if (item.getAttribute('data-student-id') == studentId) {
+            // Find the payment status element in the list item
+            const paymentStatusElement = item.querySelector('.payment-status');
+            if (paymentStatusElement) {
+                paymentStatusElement.textContent = newStatus;
+                paymentStatusElement.className = `payment-status ${statusClass}`;
+                console.log(`Updated payment status in search list for student ${studentId}`);
+            }
+        }
+    });
+}
+
+// Your existing helper function (make sure it's accessible)
+function getStatusClass(status) {
+    if (!status) return 'missing';
+    
+    switch(status.toLowerCase()) {
+        case 'approved': return 'approved';
+        case 'rejected': return 'rejected';
+        case 'pending': return 'pending';
+        default: return 'missing';
+    }
+}
+
+
+function loadRequestDetails(request, paymentStatusClass, paymentStatusText) {
     const requestDetails = document.getElementById('enrollment-request-details');
     if (!requestDetails) return;
     
@@ -333,40 +476,12 @@ function loadRequestDetails(request) {
             let prerequisitesHTML = '';
             if (subject.prerequisites && subject.prerequisites.length > 0) {
                 prerequisitesHTML = `
-                    <div class="prerequisites-section">
-                        <div class="prerequisites-title">
-                            <i class="fas fa-list-check"></i>
-                            <span>Prerequisites:</span>
-                            ${subject.all_prerequisites_passed ? 
-                                '<span class="prerequisites-status passed">All Passed ✓</span>' : 
-                                '<span class="prerequisites-status failed">Not All Passed ✗</span>'
-                            }
-                        </div>
-                        <div class="prerequisites-list">
-                            ${subject.prerequisites.map(prereq => `
-                                <div class="prerequisite-item ${prereq.passed ? 'passed' : 'failed'}">
-                                    <div class="prereq-code">${prereq.code}</div>
-                                    <div class="prereq-name">${prereq.name}</div>
-                                    <div class="prereq-status">
-                                        <span class="status-badge ${prereq.passed ? 'passed' : 'failed'}">
-                                            ${prereq.passed ? '✓ Passed' : `${prereq.status}`}
-                                            ${prereq.grade ? ` (${prereq.grade})` : ''}
-                                        </span>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
+                    
                 `;
             } else {
                 prerequisitesHTML = `
-                    <div class="prerequisites-section">
-                        <div class="prerequisites-title">
-                            <i class="fas fa-list-check"></i>
-                            <span>Prerequisites:</span>
-                            <span class="prerequisites-status none">No Prerequisites</span>
-                        </div>
-                    </div>
+                    
+
                 `;
             }
             
@@ -375,7 +490,8 @@ function loadRequestDetails(request) {
                     <div class="subject-header">
                         <div class="subject-code" style="background: green; color: white; padding: 5px; border-radius: 10px;">${subject.subject_code}</div>
                         <div class="subject-meta">
-                            ${subject.units} units • ${subject.semester} • ${subject.section_name}
+        
+                            ${subject.units} units • ${subject.semester}
                         </div>
                     </div>
                     <div class="subject-name">${subject.subject_name}</div>
@@ -405,9 +521,6 @@ function loadRequestDetails(request) {
                     <div class="document-title">
                         <i class="fas fa-file-pdf"></i>
                         <span>FHE Document</span>
-                    </div>
-                    <div class="document-status">
-                        <span class="status-badge ${fheStatusClass}">${fheStatusText}</span>
                     </div>
                 </div>
                 <a class="btn-view-document" href="${fhe.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
@@ -469,11 +582,12 @@ function loadRequestDetails(request) {
     // Payment Receipt Section - UPDATED
     if (request.payment_receipt && request.payment_receipt.web_path) {
         const receipt = request.payment_receipt;
-        const receiptStatusClass = getStatusClass(receipt.status);
-        const receiptStatusText = receipt.status || 'Pending';
+        const receiptStatusClass = paymentStatusClass;
+        const receiptStatusText = paymentStatusText || 'Approved';
         
+        // In the payment receipt section HTML, add a data attribute:
         documentsHTML += `
-            <div class="document-item">
+            <div class="document-item" data-document-type="payment-receipt" data-student-id="${request.student_id}">
                 <div class="document-header">
                     <div class="document-title">
                         <i class="fas fa-receipt"></i>
@@ -483,9 +597,10 @@ function loadRequestDetails(request) {
                         <span class="status-badge ${receiptStatusClass}">${receiptStatusText}</span>
                     </div>
                 </div>
-                <a class="btn-view-document" href="${receipt.web_path}" target="_blank" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-eye"></i> View Receipt
-                </a>
+                ${receipt.web_path ? 
+                    `<a class="btn-view-document" href="${receipt.web_path}" target="_blank">
+                        <i class="fas fa-eye"></i> View Receipt
+                    </a>` : ''}
             </div>
         `;
     } else {
@@ -1864,7 +1979,8 @@ function showSubjectsHistoryModal(studentId, studentName, studentIdNo) {
 function fetchSubjectsHistory(studentId) {
     // Show loading indicator
     document.getElementById('loadingIndicator').style.display = 'flex';
-    document.getElementById('subjectsHistoryBody').innerHTML = '';
+    const container = document.getElementById('d-student_subject_history2');
+    if (container) container.innerHTML = '';
     document.getElementById('noResults').style.display = 'none';
     
     // Make API call to fetch subjects history
@@ -1891,14 +2007,14 @@ function fetchSubjectsHistory(studentId) {
         .catch(error => {
             console.error('Error fetching subjects history:', error);
             document.getElementById('loadingIndicator').style.display = 'none';
-            document.getElementById('subjectsHistoryBody').innerHTML = `
-                <tr>
-                    <td colspan="8" class="error-message">
-                        <i class="fas fa-exclamation-circle"></i>
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-message" style="padding: 20px; text-align: center; color: #ef4444;">
+                        <i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i>
                         Error loading subjects history. Please try again.
-                    </td>
-                </tr>
-            `;
+                    </div>
+                `;
+            }
         });
 }
 
@@ -1950,52 +2066,96 @@ function extractNumericYear(yearLevel) {
 
 // Render subjects table
 function renderSubjectsTable(subjects) {
-    const tbody = document.getElementById('subjectsHistoryBody');
+    const container = document.getElementById('d-student_subject_history2');
+    if (!container) return;
     
     if (subjects.length === 0) {
         document.getElementById('noResults').style.display = 'block';
-        tbody.innerHTML = '';
+        container.innerHTML = '';
         return;
     }
     
     document.getElementById('noResults').style.display = 'none';
     
-    tbody.innerHTML = subjects.map(subject => {
-        const grade = subject.grade || 'Not Graded';
-        const status = getGradeStatus(grade);
-        const statusClass = getStatusClass(grade);
+    // Group subjects by Year Level and Semester
+    const groups = {};
+    subjects.forEach(subject => {
+        const groupKey = `${subject.year_level || 'Unknown Year'} - ${subject.semester || 'Unknown Semester'}`;
+        if (!groups[groupKey]) {
+            groups[groupKey] = [];
+        }
+        groups[groupKey].push(subject);
+    });
+    
+    const yearOrder = { '1st Year': 1, '2nd Year': 2, '3rd Year': 3, '4th Year': 4, '5th Year': 5 };
+    const semOrder = { '1st Sem': 1, '2nd Sem': 2, 'Summer': 3 };
+    
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+        const getYear = (key) => key.split(' - ')[0] || '';
+        const getSem = (key) => key.split(' - ')[1] || '';
         
-        // Format date
-        const dateEnrolled = subject.date_enrolled ? 
-            new Date(subject.date_enrolled).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            }) : 'N/A';
+        const yearA = getYear(a);
+        const yearB = getYear(b);
+        const semA = getSem(a);
+        const semB = getSem(b);
         
-        return `
-            <tr id="d-student_subject_history2_1">
-                <td class="subject-code-cell">
-                    <span class="subject-code">${subject.subject_code}</span>
-                </td>
-                <td class="subject-name-cell">
-                    <span class="subject-name">${subject.subject_name}</span>
-                </td>
-                <td class="units-cell">${subject.units}</td>
-                <td class="year-cell">${subject.year_level}</td>
-                <td class="semester-cell">${subject.semester}</td>
-                <td class="grade-cell ${statusClass}">
-                    ${grade}
-                </td>
-                <td class="status-cell">
-                    <span class="status-badge ${statusClass}">
-                        ${status}
-                    </span>
-                </td>
-
-            </tr>
+        const valA = yearOrder[yearA] || 99;
+        const valB = yearOrder[yearB] || 99;
+        
+        if (valA !== valB) return valA - valB;
+        
+        const sA = semOrder[semA] || 99;
+        const sB = semOrder[semB] || 99;
+        return sA - sB;
+    });
+    
+    let htmlContent = '';
+    
+    sortedKeys.forEach(groupKey => {
+        htmlContent += `
+            <div class="history-group-header">
+                <i class="fas fa-graduation-cap"></i>${groupKey}
+            </div>
+            <table class="table table-bordered table-striped history-group-table">
+                <thead>
+                    <tr>
+                        <th>Subject Code</th>
+                        <th>Subject Name</th>
+                        <th class="text-center-th">Units</th>
+                        <th class="text-center-th">Grade</th>
+                        <th class="text-center-th">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
         `;
-    }).join('');
+        
+        groups[groupKey].forEach(subject => {
+            const grade = subject.grade || 'Not Graded';
+            const status = getGradeStatus(grade);
+            const statusClass = getStatusClass(grade);
+            
+            htmlContent += `
+                <tr class="history-row">
+                    <td class="history-code-td">${subject.subject_code}</td>
+                    <td class="history-name-td">${subject.subject_name}</td>
+                    <td class="history-units-td">${subject.units}</td>
+                    <td class="grade-cell ${statusClass} history-grade-td">${grade}</td>
+                    <td class="history-status-td">
+                        <span class="status-badge ${statusClass}">
+                            ${status}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        htmlContent += `
+                </tbody>
+            </table>
+        `;
+    });
+    
+    container.innerHTML = htmlContent;
 }
 
 // Get grade status
@@ -2198,6 +2358,7 @@ function sortTable(columnIndex) {
     });
     
     const tbody = document.getElementById('subjectsHistoryBody');
+    if (!tbody) return;
     tbody.innerHTML = '';
     rows.forEach(row => tbody.appendChild(row));
     

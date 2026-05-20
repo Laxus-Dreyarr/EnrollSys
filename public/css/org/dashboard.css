@@ -141,6 +141,15 @@
             text-align: center;
             font-size: 1.125rem;
         }
+
+        .nav-links a.logout-link {
+            color: var(--danger-500);
+        }
+
+        .nav-links a.logout-link:hover {
+            background: #fee2e2;
+            color: #dc2626;
+        }
         
         /* Main Content */
         .main-content {
@@ -856,6 +865,35 @@
 .loading-spinner p {
     color: #6c757d;
     font-size: 14px;
+}
+
+/* For Option 1 & 2 */
+.badge.bg-info.ms-1 {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+}
+
+/* For Option 3 */
+.payment-notice-row {
+    background-color: #f0f8ff;
+    border-left: 3px solid #0d6efd;
+}
+
+.payment-notice-row:hover {
+    background-color: #e7f1ff;
+}
+
+/* For Option 4 */
+.payment-notice-amount {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 8px;
+    border: 1px dashed #dee2e6;
+}
+
+/* Tooltip style for icons */
+[title] {
+    cursor: help;
 }
         
         /* Mobile Styles - Improved for better touch experience */

@@ -411,5 +411,141 @@
      <script src="{{asset('js/jquery.js')}}"></script>
     <!-- Custom JS -->
      <script src="{{asset('js/function/index.js')}}"></script>
+     <!-- Median.co Status Bar Configuration -->
+    <script>
+    // Function to get the dominant background color from an element
+    function getBackgroundColor(element) {
+        // Get computed style
+        const style = getComputedStyle(element);
+        let backgroundColor = style.backgroundColor;
+        
+        // If background is transparent, check parent elements up to html
+        if (backgroundColor === 'rgba(0, 0, 0, 0)' || backgroundColor === 'transparent') {
+            let currentElement = element.parentElement;
+            while (currentElement && currentElement !== document.documentElement) {
+                const parentBg = getComputedStyle(currentElement).backgroundColor;
+                if (parentBg !== 'rgba(0, 0, 0, 0)' && parentBg !== 'transparent') {
+                    backgroundColor = parentBg;
+                    break;
+                }
+                currentElement = currentElement.parentElement;
+            }
+        }
+        
+        return backgroundColor;
+    }
+
+    // Convert RGB/RGBA to hex format (RRGGBB or AARRGGBB)
+    function colorToHex(color) {
+        // Handle named colors
+        if (color === 'transparent') return '00000000';
+        
+        // Parse RGB/RGBA
+        const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+        
+        if (!match) {
+            // Try hex format
+            if (color.startsWith('#')) {
+                const hex = color.substring(1);
+                if (hex.length === 3) {
+                    // Convert #RGB to #RRGGBB
+                    return hex.split('').map(c => c + c).join('');
+                }
+                if (hex.length === 6 || hex.length === 8) {
+                    return hex;
+                }
+            }
+            return '101126'; // Fallback to your dark theme color
+        }
+        
+        const r = parseInt(match[1]).toString(16).padStart(2, '0');
+        const g = parseInt(match[2]).toString(16).padStart(2, '0');
+        const b = parseInt(match[3]).toString(16).padStart(2, '0');
+        
+        // Handle alpha channel
+        if (match[4]) {
+            const alpha = Math.round(parseFloat(match[4]) * 255).toString(16).padStart(2, '0');
+            return alpha + r + g + b; // AARRGGBB format
+        }
+        
+        return r + g + b; // RRGGBB format
+    }
+
+    // Determine if color is dark or light
+    function getTextStyleForColor(hexColor) {
+        // Remove alpha if present (first 2 characters)
+        const rgbHex = hexColor.length === 8 ? hexColor.substring(2) : hexColor;
+        
+        // Convert to RGB
+        const r = parseInt(rgbHex.substring(0, 2), 16);
+        const g = parseInt(rgbHex.substring(2, 4), 16);
+        const b = parseInt(rgbHex.substring(4, 6), 16);
+        
+        // Calculate relative luminance (WCAG formula)
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        
+        // Use dark text on light backgrounds, light text on dark backgrounds
+        return luminance > 0.5 ? 'dark' : 'light';
+    }
+
+    // Function to set status bar based on current background
+    function setDynamicStatusBar() {
+        // Check if running in Median app
+        if (navigator.userAgent.indexOf('median') > -1 && typeof median !== 'undefined') {
+            // Get body background color
+            const bgColor = getBackgroundColor(document.body);
+            
+            // Convert to hex
+            const hexColor = colorToHex(bgColor);
+            
+            // Determine text style
+            const textStyle = getTextStyleForColor(hexColor);
+            
+            console.log('Detected background:', {
+                original: bgColor,
+                hex: hexColor,
+                textStyle: textStyle
+            });
+            
+            // Set status bar
+            median.statusbar.set({
+                'style': textStyle,
+                'color': hexColor,
+                'overlay': false,
+                'blur': true
+            });
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set initial status bar
+        setDynamicStatusBar();
+        
+        // Listen for theme toggle
+        const themeToggleBtn = document.getElementById('themeToggle');
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', function() {
+                // Wait for theme to change and re-render
+                setTimeout(setDynamicStatusBar, 150);
+            });
+        }
+        
+        // Also update when CSS transitions complete
+        document.body.addEventListener('transitionend', function(e) {
+            if (e.propertyName.includes('background') || e.propertyName.includes('color')) {
+                setDynamicStatusBar();
+            }
+        });
+    });
+
+    // Median library ready callback
+    function median_library_ready() {
+        setDynamicStatusBar();
+    }
+    
+    // Optional: Also update on window resize (in case layout changes affect background)
+    window.addEventListener('resize', setDynamicStatusBar);
+</script>
 </body>
 </html>

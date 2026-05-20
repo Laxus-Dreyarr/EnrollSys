@@ -606,8 +606,438 @@ class AdminController extends Controller
             case 'delete_enrollment_period':
                 return $this->deleteEnrollmentPeriod($request);
                 
+            case 'get_students':
+                return $this->getStudents($request);
+
+            case 'get_student_details':
+                return $this->getStudentDetails($request);
+
+            case 'update_student':
+                return $this->updateStudent($request);
+
+            case 'delete_student':
+                return $this->deleteStudent($request);
+
+            case 'get_instructors':
+                return $this->getInstructors($request);
+
+            case 'get_instructor_details':
+                return $this->getInstructorDetails($request);
+
+            case 'delete_instructor':
+                return $this->deleteInstructor($request);
+
+            case 'get_organizations':
+                return $this->getOrganizations($request);
+
+            case 'get_organization_details':
+                return $this->getOrganizationDetails($request);
+
+            case 'delete_organization':
+                return $this->deleteOrganization($request);
+                
             default:
                 return response()->json(['success' => false, 'message' => 'Invalid action']);
+        }
+    }
+
+    public function getStudents(Request $request)
+    {
+        try {
+            $students = DB::table('students')
+                ->select(
+                    'students.id',
+                    'students.id_no',
+                    'students.year_level',
+                    'students.status',
+                    'students.curriculum',
+                    'students.is_regular',
+                    'user_info.firstname',
+                    'user_info.lastname'
+                )
+                ->leftJoin('user_info', 'students.student_id', '=', 'user_info.id')
+                ->where('students.id_no', '!=', 'None')
+                ->orderBy('students.id_no', 'asc')
+                ->get()
+                ->map(function($student) {
+                    return [
+                        'id' => $student->id,
+                        'student_id' => $student->id_no,
+                        'name' => trim(($student->firstname ?? '') . ' ' . ($student->lastname ?? '')),
+                        'year_level' => $student->year_level,
+                        'status' => $student->status,
+                        'curriculum' => $student->curriculum,
+                        'is_regular' => $student->is_regular ? 'Regular' : 'Irregular',
+                        'program' => 'BS Information Technology'
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'students' => $students
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch students: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch students: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function getStudentDetails(Request $request)
+    {
+        try {
+            $id = $request->input('student_id');
+            $student = DB::table('students')
+                ->where('students.id', $id)
+                ->first();
+                
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student not found']);
+            }
+            
+            $userInfo = DB::table('user_info')
+                ->where('id', $student->student_id)
+                ->first();
+                
+            $user = null;
+            if ($userInfo) {
+                $user = DB::table('users')
+                    ->where('id', $userInfo->user_id)
+                    ->first();
+            }
+
+            return response()->json([
+                'success' => true,
+                'student' => $student,
+                'userInfo' => $userInfo,
+                'user' => $user
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch student details: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch student details: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function updateStudent(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $id = $request->input('student_id');
+            $student = DB::table('students')->where('id', $id)->first();
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student not found']);
+            }
+
+            // Update student
+            DB::table('students')
+                ->where('id', $id)
+                ->update([
+                    'id_no' => $request->input('id_no'),
+                    'year_level' => $request->input('year_level'),
+                    'status' => $request->input('status'),
+                    'curriculum' => $request->input('curriculum'),
+                    'is_regular' => $request->input('is_regular'),
+                    'sy' => $request->input('sy', '2025-2026')
+                ]);
+
+            // Update user info
+            if ($student->student_id) {
+                DB::table('user_info')
+                    ->where('id', $student->student_id)
+                    ->update([
+                        'firstname' => $request->input('firstname'),
+                        'lastname' => $request->input('lastname'),
+                        'middlename' => $request->input('middlename'),
+                        'birthdate' => $request->input('birthdate'),
+                        'age' => $request->input('age'),
+                        'sex' => $request->input('sex'),
+                        'address' => $request->input('address'),
+                        'phone_number' => $request->input('phone_number'),
+                        'relationship_status' => $request->input('relationship_status')
+                    ]);
+                
+                // Get user_id to optionally update email
+                $userInfo = DB::table('user_info')->where('id', $student->student_id)->first();
+                if ($userInfo && $userInfo->user_id && $request->has('email2')) {
+                    DB::table('users')
+                        ->where('id', $userInfo->user_id)
+                        ->update([
+                            'email2' => $request->input('email2')
+                        ]);
+                }
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Student updated successfully']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to update student: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to update student: ' . $e->getMessage()]);
+        }
+    }
+
+    public function deleteStudent(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $id = $request->input('student_id');
+            $student = DB::table('students')->where('id', $id)->first();
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student not found']);
+            }
+
+            // Disable foreign key checks for safety
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+            // Delete references in other tables
+            DB::table('enrollments')->where('student_id', $id)->delete();
+            DB::table('enrolled_sub')->where('student_id', $id)->delete();
+            DB::table('enrollmentrequests')->where('student_id', $id)->delete();
+            DB::table('documents')->where('student_id', $id)->delete();
+            DB::table('payments')->where('student_id', $id)->delete();
+            DB::table('organizationfees')->where('student_id', $id)->delete();
+            DB::table('student_count_year')->where('student_id', $id)->delete();
+
+            // Delete the student row
+            DB::table('students')->where('id', $id)->delete();
+
+            // Delete user_info and user rows
+            if ($student->student_id) {
+                $userInfo = DB::table('user_info')->where('id', $student->student_id)->first();
+                DB::table('user_info')->where('id', $student->student_id)->delete();
+                if ($userInfo && $userInfo->user_id) {
+                    DB::table('users')->where('id', $userInfo->user_id)->delete();
+                }
+            }
+
+            // Re-enable foreign key checks
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Student and all related records deleted successfully']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            Log::error('Failed to delete student: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to delete student: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getInstructors(Request $request)
+    {
+        try {
+            $instructors = DB::table('instructor')
+                ->select(
+                    'instructor.instructor_id',
+                    'instructor.email5',
+                    'instructor.is_active',
+                    'instructor_info.firstname',
+                    'instructor_info.lastname',
+                    'instructor_info.department',
+                    'instructor_info.office',
+                    'instructor_info.phone_number'
+                )
+                ->leftJoin('instructor_info', 'instructor.instructor_id', '=', 'instructor_info.instructor_id')
+                ->orderBy('instructor_info.lastname', 'asc')
+                ->get()
+                ->map(function($instructor) {
+                    return [
+                        'instructor_id' => $instructor->instructor_id,
+                        'name' => trim(($instructor->firstname ?? '') . ' ' . ($instructor->lastname ?? '')),
+                        'email' => $instructor->email5,
+                        'department' => $instructor->department ?? 'N/A',
+                        'office' => $instructor->office ?? 'N/A',
+                        'phone_number' => $instructor->phone_number ?? 'N/A',
+                        'is_active' => $instructor->is_active
+                    ];
+                });
+
+            return response()->json(['success' => true, 'instructors' => $instructors]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch instructors: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to fetch instructors: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getInstructorDetails(Request $request)
+    {
+        try {
+            $id = $request->input('instructor_id');
+            $instructor = DB::table('instructor')
+                ->select(
+                    'instructor.instructor_id',
+                    'instructor.email5',
+                    'instructor.is_active',
+                    'instructor.profile',
+                    'instructor_info.firstname',
+                    'instructor_info.lastname',
+                    'instructor_info.middlename',
+                    'instructor_info.birthdate',
+                    'instructor_info.age',
+                    'instructor_info.address',
+                    'instructor_info.department',
+                    'instructor_info.office',
+                    'instructor_info.phone_number',
+                    'instructor_info.bio'
+                )
+                ->leftJoin('instructor_info', 'instructor.instructor_id', '=', 'instructor_info.instructor_id')
+                ->where('instructor.instructor_id', $id)
+                ->first();
+
+            if (!$instructor) {
+                return response()->json(['success' => false, 'message' => 'Instructor not found']);
+            }
+
+            return response()->json(['success' => true, 'instructor' => $instructor]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch instructor details: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to fetch instructor details: ' . $e->getMessage()]);
+        }
+    }
+
+    public function deleteInstructor(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $id = $request->input('instructor_id');
+            $instructor = DB::table('instructor')->where('instructor_id', $id)->first();
+            if (!$instructor) {
+                return response()->json(['success' => false, 'message' => 'Instructor not found']);
+            }
+
+            // Disable foreign key checks for safety
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+            // Clean up related notifications (note: foreign key column is user_id)
+            DB::table('notifications_instructor')->where('user_id', $id)->delete();
+
+            // Safely disassociate from sections so that class schedules are preserved
+            DB::table('sections')->where('instructor_id', $id)->update(['instructor_id' => null]);
+
+            // Safely disassociate processed enrollment requests
+            DB::table('enrollmentrequests')->where('instructor_id', $id)->update(['instructor_id' => null]);
+
+            // Delete instructor profile info
+            DB::table('instructor_info')->where('instructor_id', $id)->delete();
+            
+            // Delete the primary instructor record
+            DB::table('instructor')->where('instructor_id', $id)->delete();
+
+            // Re-enable foreign key checks
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Instructor and all related records deleted successfully']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            Log::error('Failed to delete instructor: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to delete instructor: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getOrganizations(Request $request)
+    {
+        try {
+            $organizations = DB::table('organization')
+                ->select(
+                    'organization.org_id',
+                    'organization.email4',
+                    'organization.is_active',
+                    'orgs_info.firstname',
+                    'orgs_info.lastname',
+                    'orgs_info.address'
+                )
+                ->leftJoin('orgs_info', 'organization.org_id', '=', 'orgs_info.organization_id')
+                ->orderBy('orgs_info.firstname', 'asc')
+                ->get()
+                ->map(function($org) {
+                    return [
+                        'org_id' => $org->org_id,
+                        'name' => trim(($org->firstname ?? '') . ' ' . ($org->lastname ?? '')),
+                        'email' => $org->email4,
+                        'address' => $org->address ?? 'N/A',
+                        'is_active' => $org->is_active
+                    ];
+                });
+
+            return response()->json(['success' => true, 'organizations' => $organizations]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch organizations: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to fetch organizations: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getOrganizationDetails(Request $request)
+    {
+        try {
+            $id = $request->input('org_id');
+            $org = DB::table('organization')
+                ->select(
+                    'organization.org_id',
+                    'organization.email4',
+                    'organization.is_active',
+                    'organization.profile',
+                    'organization.date_created',
+                    'orgs_info.firstname',
+                    'orgs_info.lastname',
+                    'orgs_info.middlename',
+                    'orgs_info.birthdate',
+                    'orgs_info.age',
+                    'orgs_info.address'
+                )
+                ->leftJoin('orgs_info', 'organization.org_id', '=', 'orgs_info.organization_id')
+                ->where('organization.org_id', $id)
+                ->first();
+
+            if (!$org) {
+                return response()->json(['success' => false, 'message' => 'Organization not found']);
+            }
+
+            return response()->json(['success' => true, 'organization' => $org]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch organization details: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to fetch organization details: ' . $e->getMessage()]);
+        }
+    }
+
+    public function deleteOrganization(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $id = $request->input('org_id');
+            $org = DB::table('organization')->where('org_id', $id)->first();
+            if (!$org) {
+                return response()->json(['success' => false, 'message' => 'Organization not found']);
+            }
+
+            // Disable foreign key checks for safety
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+            // Delete references in organizationfees table
+            DB::table('organizationfees')->where('org_id', $id)->delete();
+
+            // Delete references in orgs_info table
+            DB::table('orgs_info')->where('organization_id', $id)->delete();
+            
+            // Delete the primary organization record
+            DB::table('organization')->where('org_id', $id)->delete();
+
+            // Re-enable foreign key checks
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Organization and all related records deleted successfully']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            Log::error('Failed to delete organization: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to delete organization: ' . $e->getMessage()]);
         }
     }
 
@@ -1381,7 +1811,7 @@ class AdminController extends Controller
             Log::info('getAuditLogs method called'); // Add this line
             
             $logs = DB::table('auditlogs')
-                ->select('date as timestamp', 'action', 'details', 'ip_address', 'user_id')
+                ->select('id', 'date as timestamp', 'action', 'details', 'ip_address', 'user_id')
                 ->orderBy('date', 'desc')
                 ->limit(100)
                 ->get()
@@ -1397,6 +1827,32 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to fetch audit logs: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to fetch audit logs']);
+        }
+    }
+
+    public function clearAuditLogs(Request $request)
+    {
+        try {
+            DB::table('auditlogs')->truncate();
+            return response()->json(['success' => true, 'message' => 'All audit logs have been successfully cleared']);
+        } catch (\Exception $e) {
+            Log::error('Failed to clear audit logs: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to clear audit logs: ' . $e->getMessage()]);
+        }
+    }
+
+    public function deleteAuditLog(Request $request)
+    {
+        try {
+            $id = $request->input('log_id');
+            $deleted = DB::table('auditlogs')->where('id', $id)->delete();
+            if ($deleted) {
+                return response()->json(['success' => true, 'message' => 'Audit log deleted successfully']);
+            }
+            return response()->json(['success' => false, 'message' => 'Audit log not found or already deleted']);
+        } catch (\Exception $e) {
+            Log::error('Failed to delete audit log: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to delete audit log: ' . $e->getMessage()]);
         }
     }
 
@@ -3051,13 +3507,9 @@ class AdminController extends Controller
             ->join('students as s', 'er.student_id', '=', 's.id')
             ->join('user_info as ui', 's.student_id', '=', 'ui.id')
             ->join('users as u', 'ui.user_id', '=', 'u.id')
-            ->leftJoin('enrollments as e', function($join) use ($activeEnrollment) {
-                $join->on('s.id', '=', 'e.student_id')
-                    ->where('e.enrollment_date', '>=', date('Y-m-d', strtotime($activeEnrollment->created_at ?? 'now')));
-            })
+            ->leftJoin('enrollments as e', 's.id', '=', 'e.student_id')
             ->leftJoin('subjects as sub', 'e.subject_id', '=', 'sub.id')
             ->where('er.status', 'Approved')
-            ->where('er.processed_date', '>=', date('Y-m-d', strtotime($activeEnrollment->created_at ?? 'now')))
             ->select(
                 's.id as student_id',
                 's.id_no',
@@ -3107,6 +3559,116 @@ class AdminController extends Controller
         $pdf->setOption('isRemoteEnabled', true);
 
         return $pdf->download('enrolled-students-list-' . date('Y-m-d') . '.pdf');
+    }
+
+    public function getFiles(Request $request)
+    {
+        try {
+            $files = DB::table('admin_files')
+                ->orderBy('created_at', 'desc')
+                ->get();
+            return response()->json(['success' => true, 'files' => $files]);
+        } catch (\Exception $e) {
+            Log::error('Failed to get files: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function uploadFile(Request $request)
+    {
+        try {
+            if (!$request->hasFile('file')) {
+                return response()->json(['success' => false, 'message' => 'No file uploaded']);
+            }
+
+            $file = $request->file('file');
+            $customName = $request->input('name') ?: $file->getClientOriginalName();
+            $description = $request->input('description');
+
+            // Capture file metadata BEFORE moving the temporary file!
+            $bytes = $file->getSize() ?: 0;
+            $mimeType = $file->getClientMimeType() ?? 'application/octet-stream';
+
+            // Generate a secure unique filename
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            
+            // Ensure folder exists
+            $uploadFolder = storage_path('app/public/admin_uploads');
+            if (!file_exists($uploadFolder)) {
+                mkdir($uploadFolder, 0777, true);
+            }
+
+            // Move the file
+            $file->move($uploadFolder, $filename);
+            $filePath = 'admin_uploads/' . $filename;
+
+            // Format size
+            $units = ['B', 'KB', 'MB', 'GB'];
+            $factor = floor((strlen($bytes) - 1) / 3);
+            $fileSize = sprintf("%.1f", $bytes / pow(1024, $factor)) . ' ' . $units[$factor];
+
+            // Insert into DB
+            DB::table('admin_files')->insert([
+                'name' => $customName,
+                'filename' => $file->getClientOriginalName(),
+                'file_path' => $filePath,
+                'description' => $description,
+                'file_size' => $fileSize,
+                'mime_type' => $mimeType,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'File uploaded successfully']);
+        } catch (\Exception $e) {
+            Log::error('Failed to upload file: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function deleteFile(Request $request)
+    {
+        try {
+            $id = $request->input('file_id');
+            $fileRecord = DB::table('admin_files')->where('id', $id)->first();
+            if (!$fileRecord) {
+                return response()->json(['success' => false, 'message' => 'File record not found']);
+            }
+
+            // Remove actual file
+            $fullPath = storage_path('app/public/' . $fileRecord->file_path);
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+
+            // Delete database record
+            DB::table('admin_files')->where('id', $id)->delete();
+
+            return response()->json(['success' => true, 'message' => 'File deleted successfully']);
+        } catch (\Exception $e) {
+            Log::error('Failed to delete file: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function downloadFile($id)
+    {
+        try {
+            $fileRecord = DB::table('admin_files')->where('id', $id)->first();
+            if (!$fileRecord) {
+                abort(404, 'File not found');
+            }
+
+            $fullPath = storage_path('app/public/' . $fileRecord->file_path);
+            if (!file_exists($fullPath)) {
+                abort(404, 'Physical file not found on disk');
+            }
+
+            return response()->download($fullPath, $fileRecord->name);
+        } catch (\Exception $e) {
+            Log::error('Failed to download file: ' . $e->getMessage());
+            abort(500, 'Internal Server Error during download');
+        }
     }
     
 }

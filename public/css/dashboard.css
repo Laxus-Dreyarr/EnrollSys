@@ -1311,6 +1311,40 @@
     text-align: center;
 }
 
+/* Dark Theme Overrides for Subjects Section */
+.dark-theme .subject-group {
+    background-color: var(--card-dark) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark-theme .subject-group h5 {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    color: #0dcaf0 !important; /* Vibrant cyan header */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark-theme .subject-group table {
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark-theme .subject-group table thead th {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+    color: var(--text-dark) !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark-theme .subject-group table tbody td {
+    background-color: var(--card-dark) !important;
+    color: var(--text-dark) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.dark-theme .subject-group .total-units {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    color: var(--text-dark) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
 
         /* Responsive */
         @media (max-width: 1200px) {

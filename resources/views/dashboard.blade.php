@@ -103,5 +103,6 @@
     <script src="{{ asset('js/bootstrap5.bundle.min.js') }}"></script>
     <!-- Custom JS -->
     <script src="{{ asset('js/dashboard.js') }}"></script>
+    <script src="{{asset('js/sweetalert3.js')}}"></script>
 </body>
 </html>
