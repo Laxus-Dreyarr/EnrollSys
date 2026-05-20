@@ -429,11 +429,11 @@
                     <p>Track payment transactions</p>
                 </div>
                 
-                <div class="top-bar-actions">
+                {{-- <div class="top-bar-actions">
                     <button class="btn btn-primary d-flex align-items-center justify-content-center">
                         <i class="fas fa-plus me-2"></i> <span>Record Payment</span>
                     </button>
-                </div>
+                </div> --}}
             </header>
 
             <div class="stats-grid">
