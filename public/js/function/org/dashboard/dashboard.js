@@ -128,6 +128,7 @@ let currentFilters = {
     status: '',
     month: ''
 };
+let activeYearFilter = 'all'; // Track currently selected year pill
 
 // Load payments data
 function loadPayments() {
@@ -179,7 +180,7 @@ function loadAllStudents() {
     const tableBody = $('#all-students-list');
     tableBody.html(`
         <tr>
-            <td colspan="6" class="text-center py-4">
+            <td colspan="5" class="text-center py-4">
                 <div class="d-flex flex-column align-items-center justify-content-center gap-2">
                     <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
                     <p class="text-muted mb-0">Loading students data...</p>
@@ -195,7 +196,7 @@ function loadAllStudents() {
         success: function(response) {
             if (response.success && response.students) {
                 allStudentsList = response.students;
-                renderAllStudents(allStudentsList);
+                applyStudentFilters();
             } else {
                 showStudentEmptyState('Failed to load students data');
             }
@@ -212,7 +213,7 @@ function showStudentEmptyState(message) {
     const tableBody = $('#all-students-list');
     tableBody.html(`
         <tr>
-            <td colspan="6" class="text-center py-5">
+            <td colspan="5" class="text-center py-5">
                 <div class="d-flex flex-column align-items-center justify-content-center p-4">
                     <i class="fas fa-users-slash fa-3x text-muted mb-3" style="opacity: 0.5;"></i>
                     <p class="text-muted mb-0" style="font-weight: 500;">${message}</p>
@@ -222,47 +223,80 @@ function showStudentEmptyState(message) {
     `);
 }
 
-// Render student table rows with premium UI styling
+// Apply both search text and year filter together
+function applyStudentFilters() {
+    const query = ($('#search-students').val() || '').toLowerCase().trim();
+    let filtered = allStudentsList;
+
+    // Year filter
+    if (activeYearFilter !== 'all') {
+        filtered = filtered.filter(s => (s.year_level || '').trim() === activeYearFilter);
+    }
+
+    // Text search
+    if (query) {
+        filtered = filtered.filter(s => {
+            return (s.name || '').toLowerCase().includes(query) ||
+                   (s.student_id || '').toLowerCase().includes(query) ||
+                   (s.email || '').toLowerCase().includes(query) ||
+                   (s.year_level || '').toLowerCase().includes(query) ||
+                   (s.status || '').toLowerCase().includes(query);
+        });
+    }
+
+    renderAllStudents(filtered);
+}
+
+// Render student table rows with new 5-column layout
 function renderAllStudents(students) {
     const tableBody = $('#all-students-list');
     tableBody.empty();
-    
+
     // Update students count badge
     $('#students-count').text(students.length);
-    
+
     if (students.length === 0) {
         showStudentEmptyState('No students found matching the criteria.');
         return;
     }
-    
+
     students.forEach(student => {
         // Initials avatar
-        const initials = student.name
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .substring(0, 2);
-            
-        // Map status to badge style matching org styling
-        let statusBadge = '';
-        const statusClean = (student.status || '').toLowerCase().trim();
-        
-        if (statusClean === 'paid' || statusClean === 'approved' || statusClean === 'enrolled') {
-            statusBadge = '<span class="status-badge status-paid">Paid</span>';
-        } else if (statusClean === 'pending') {
-            statusBadge = '<span class="status-badge status-pending">Pending</span>';
-        } else if (statusClean === 'overdue') {
-            statusBadge = '<span class="status-badge" style="background: #fee2e2; color: #991b1b; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; display: inline-block;">Overdue</span>';
+        const nameParts = (student.name || 'S').split(' ').filter(Boolean);
+        const initials = nameParts.map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+        // --- PAYMENT STATUS badge ---
+        let paymentBadge = '';
+        if (student.has_payment) {
+            paymentBadge = `<span style="display:inline-flex;align-items:center;gap:5px;background:#dcfce7;color:#166534;padding:0.28rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600;">
+                <i class="fas fa-check-circle" style="font-size:0.7rem;"></i> Already Paid
+            </span>`;
         } else {
-            statusBadge = `<span class="status-badge" style="background: #e2e8f0; color: #475569; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; display: inline-block;">${student.status || 'Pending'}</span>`;
+            paymentBadge = `<span style="display:inline-flex;align-items:center;gap:5px;background:#f1f5f9;color:#64748b;padding:0.28rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600;">
+                <i class="fas fa-clock" style="font-size:0.7rem;"></i> Payment will be made later
+            </span>`;
         }
-        
+
+        // --- ENROLLMENT STATUS badge ---
+        const enrollmentClean = (student.status || 'None').toLowerCase().trim();
+        let enrollmentBadge = '';
+        if (enrollmentClean === 'officially enrolled') {
+            enrollmentBadge = `<span style="background:#dcfce7;color:#166534;padding:0.28rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600;display:inline-block;">Officially Enrolled</span>`;
+        } else if (enrollmentClean === 'pending') {
+            enrollmentBadge = `<span style="background:#fef9c3;color:#854d0e;padding:0.28rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600;display:inline-block;">Pending</span>`;
+        } else if (enrollmentClean === 'rejected') {
+            enrollmentBadge = `<span style="background:#fee2e2;color:#991b1b;padding:0.28rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600;display:inline-block;">Rejected</span>`;
+        } else if (enrollmentClean === 'not enrolled') {
+            enrollmentBadge = `<span style="background:#e2e8f0;color:#475569;padding:0.28rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600;display:inline-block;">Not Enrolled</span>`;
+        } else {
+            enrollmentBadge = `<span style="background:#e2e8f0;color:#475569;padding:0.28rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600;display:inline-block;">${student.status || 'None'}</span>`;
+        }
+
         const row = `
             <tr>
                 <td>
                     <div class="student-info">
-                        <div class="student-avatar" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; margin-right: 12px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);">
+                        <div class="student-avatar" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; margin-right: 12px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2); flex-shrink:0;">
                             ${initials}
                         </div>
                         <div class="student-details">
@@ -274,9 +308,8 @@ function renderAllStudents(students) {
                 <td>
                     <span style="font-family: monospace; font-size: 13px; color: #475569; font-weight: 500;">${student.student_id}</span>
                 </td>
-                <td>${student.year_level}</td>
-                <td>${student.program || 'BS Information Technology'}</td>
-                <td>${statusBadge}</td>
+                <td>${paymentBadge}</td>
+                <td>${enrollmentBadge}</td>
                 <td>
                     <button class="view-btn view-student-btn" data-student='${JSON.stringify(student).replace(/'/g, "&apos;")}'>
                         <i class="fas fa-eye"></i> View
@@ -920,31 +953,27 @@ $(document).on('click', '.approve-payment', function(e) {
         }
     });
 
-    // Search input handler for students
+    // Search input handler for students — respects active year filter
     $(document).on('input keyup', '#search-students', function() {
-        const query = $(this).val().toLowerCase().trim();
-        if (!query) {
-            renderAllStudents(allStudentsList);
-            return;
-        }
-        
-        const filtered = allStudentsList.filter(student => {
-            const name = (student.name || '').toLowerCase();
-            const studentId = (student.student_id || '').toLowerCase();
-            const email = (student.email || '').toLowerCase();
-            const program = (student.program || '').toLowerCase();
-            const yearLevel = (student.year_level || '').toLowerCase();
-            const status = (student.status || '').toLowerCase();
-            
-            return name.includes(query) || 
-                   studentId.includes(query) || 
-                   email.includes(query) || 
-                   program.includes(query) || 
-                   yearLevel.includes(query) ||
-                   status.includes(query);
+        applyStudentFilters();
+    });
+
+    // Year filter pill click handler
+    $(document).on('click', '.year-pill', function() {
+        // Update active pill styles
+        $('.year-pill').css({
+            background: 'white',
+            color: '#475569',
+            'border-color': '#e2e8f0'
         });
-        
-        renderAllStudents(filtered);
+        $(this).css({
+            background: '#3b82f6',
+            color: 'white',
+            'border-color': '#3b82f6'
+        });
+
+        activeYearFilter = $(this).data('year');
+        applyStudentFilters();
     });
 
     // Export button handler for students (CSV format)
@@ -1036,60 +1065,108 @@ $(document).on('click', '.approve-payment', function(e) {
     // View details button handler for students
     $(document).on('click', '.view-student-btn', function() {
         const student = $(this).data('student');
-        
-        let statusBadgeClass = 'bg-secondary text-white';
-        const statusClean = (student.status || '').toLowerCase().trim();
-        if (statusClean === 'paid' || statusClean === 'approved' || statusClean === 'enrolled') {
-            statusBadgeClass = 'bg-success text-white';
-        } else if (statusClean === 'pending') {
-            statusBadgeClass = 'bg-warning text-dark';
-        } else if (statusClean === 'overdue') {
-            statusBadgeClass = 'bg-danger text-white';
+
+        // --- Enrollment Status badge ---
+        const enrollClean = (student.status || 'None').toLowerCase().trim();
+        let enrollBadgeStyle = 'background:#e2e8f0;color:#475569;';
+        let enrollLabel = student.status || 'None';
+        if (enrollClean === 'officially enrolled') {
+            enrollBadgeStyle = 'background:#dcfce7;color:#166534;';
+        } else if (enrollClean === 'pending') {
+            enrollBadgeStyle = 'background:#fef9c3;color:#854d0e;';
+        } else if (enrollClean === 'rejected') {
+            enrollBadgeStyle = 'background:#fee2e2;color:#991b1b;';
+        } else if (enrollClean === 'not enrolled') {
+            enrollBadgeStyle = 'background:#e2e8f0;color:#475569;';
         }
-        
-        Swal.fire({
-            title: `<span style="font-family: inherit; font-weight: 700; color: #1e293b;">Student Details</span>`,
-            html: `
-                <div class="text-start p-2" style="font-family: inherit; color: #334155; line-height: 1.6;">
-                    <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
-                        <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; margin-right: 12px; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);">
-                            ${student.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+
+        // --- Payment receipt section ---
+        let paymentSection = '';
+        if (student.has_payment) {
+            const pDate = student.payment_date ? new Date(student.payment_date).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : 'Unknown date';
+            const pAmount = student.payment_amount ? '₱' + parseFloat(student.payment_amount).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2}) : 'N/A';
+            const pStatus = student.payment_status || 'Pending';
+            const pStatusStyle = pStatus === 'Approved' ? 'background:#dcfce7;color:#166534;' : (pStatus === 'Rejected' ? 'background:#fee2e2;color:#991b1b;' : 'background:#fef9c3;color:#854d0e;');
+            const fileLink = student.payment_file_url
+                ? `<a href="${student.payment_file_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:0.4rem 0.9rem;border-radius:8px;background:#eff6ff;color:#2563eb;font-size:12px;font-weight:600;text-decoration:none;border:1px solid #bfdbfe;"><i class="fas fa-external-link-alt" style="font-size:10px;"></i> View Receipt File</a>`
+                : '';
+
+            paymentSection = `
+                <div style="margin-top:14px;padding:12px 14px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;">
+                    <div style="font-size:10px;text-transform:uppercase;font-weight:700;color:#15803d;letter-spacing:0.5px;margin-bottom:8px;"><i class="fas fa-receipt me-1"></i> Payment Receipt</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div>
+                            <small style="font-size:10px;text-transform:uppercase;font-weight:600;color:#6b7280;">Amount</small>
+                            <div style="font-size:13px;font-weight:700;color:#1e293b;">${pAmount}</div>
                         </div>
                         <div>
-                            <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">${student.name}</h4>
-                            <p style="margin: 0; font-size: 12px; color: #64748b;">${student.email || 'No email provided'}</p>
+                            <small style="font-size:10px;text-transform:uppercase;font-weight:600;color:#6b7280;">Status</small>
+                            <div><span style="${pStatusStyle}padding:0.2rem 0.6rem;border-radius:9999px;font-size:11px;font-weight:600;">${pStatus}</span></div>
+                        </div>
+                        <div style="grid-column:1/-1;">
+                            <small style="font-size:10px;text-transform:uppercase;font-weight:600;color:#6b7280;">Uploaded</small>
+                            <div style="font-size:12px;color:#475569;">${pDate}</div>
                         </div>
                     </div>
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <small class="text-muted d-block mb-1" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Student ID</small>
-                            <span style="font-family: monospace; font-size: 13px; font-weight: 600; color: #1e293b;">${student.student_id}</span>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block mb-1" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Status</small>
-                            <span class="badge ${statusBadgeClass} px-2 py-1" style="font-size: 11px; font-weight: 600; border-radius: 4px;">${student.status}</span>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block mb-1" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Year Level</small>
-                            <span style="font-size: 13px; font-weight: 600; color: #1e293b;">${student.year_level}</span>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block mb-1" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Program</small>
-                            <span style="font-size: 13px; font-weight: 600; color: #1e293b;">${student.program}</span>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block mb-1" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Curriculum</small>
-                            <span style="font-size: 13px; color: #1e293b;">${student.curriculum || 'N/A'}</span>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block mb-1" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Enrollment Type</small>
-                            <span style="font-size: 13px; color: #1e293b;">${student.is_regular}</span>
+                    ${fileLink}
+                </div>`;
+        } else {
+            paymentSection = `
+                <div style="margin-top:14px;padding:12px 14px;border-radius:10px;background:#f8fafc;border:1px dashed #cbd5e1;display:flex;align-items:center;gap:10px;">
+                    <i class="fas fa-clock" style="color:#94a3b8;font-size:16px;"></i>
+                    <div>
+                        <div style="font-size:12px;font-weight:600;color:#64748b;">No Receipt Uploaded</div>
+                        <div style="font-size:11px;color:#94a3b8;">Payment will be made later</div>
+                    </div>
+                </div>`;
+        }
+
+        const nameParts = (student.name || 'S').split(' ').filter(Boolean);
+        const initials2 = nameParts.map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+        Swal.fire({
+            title: `<span style="font-family:inherit;font-weight:700;color:#1e293b;">Student Details</span>`,
+            html: `
+                <div class="text-start p-1" style="font-family:inherit;color:#334155;line-height:1.6;">
+                    <!-- Student header -->
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #e2e8f0;">
+                        <div style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0;box-shadow:0 4px 10px rgba(59,130,246,0.25);">${initials2}</div>
+                        <div>
+                            <div style="font-size:15px;font-weight:700;color:#1e293b;">${student.name}</div>
+                            <div style="font-size:12px;color:#64748b;">${student.email || 'No email provided'}</div>
                         </div>
                     </div>
+
+                    <!-- Info grid -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div>
+                            <small style="font-size:10px;text-transform:uppercase;font-weight:700;color:#94a3b8;letter-spacing:0.5px;">Student ID</small>
+                            <div style="font-family:monospace;font-size:13px;font-weight:600;color:#1e293b;">${student.student_id}</div>
+                        </div>
+                        <div>
+                            <small style="font-size:10px;text-transform:uppercase;font-weight:700;color:#94a3b8;letter-spacing:0.5px;">Year Level</small>
+                            <div style="font-size:13px;font-weight:600;color:#1e293b;">${student.year_level}</div>
+                        </div>
+                        <div>
+                            <small style="font-size:10px;text-transform:uppercase;font-weight:700;color:#94a3b8;letter-spacing:0.5px;">Enrollment Status</small>
+                            <div><span style="${enrollBadgeStyle}padding:0.22rem 0.65rem;border-radius:9999px;font-size:11px;font-weight:600;">${enrollLabel}</span></div>
+                        </div>
+                        <div>
+                            <small style="font-size:10px;text-transform:uppercase;font-weight:700;color:#94a3b8;letter-spacing:0.5px;">Enrollment Type</small>
+                            <div style="font-size:13px;color:#1e293b;">${student.is_regular}</div>
+                        </div>
+                        <div style="grid-column:1/-1;">
+                            <small style="font-size:10px;text-transform:uppercase;font-weight:700;color:#94a3b8;letter-spacing:0.5px;">Curriculum</small>
+                            <div style="font-size:13px;color:#1e293b;">${student.curriculum || 'N/A'}</div>
+                        </div>
+                    </div>
+
+                    ${paymentSection}
                 </div>
             `,
             confirmButtonText: 'Close',
             confirmButtonColor: '#3b82f6',
+            width: '480px',
             customClass: {
                 popup: 'border-0 rounded-3 shadow-lg',
                 confirmButton: 'btn btn-primary px-4 py-2'

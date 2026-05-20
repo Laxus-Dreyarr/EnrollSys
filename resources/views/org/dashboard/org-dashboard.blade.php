@@ -378,16 +378,24 @@
                         </button>
                     </div>
                 </div>
-                
+
+                {{-- Year Filter Pills --}}
+                <div id="year-filter-pills" style="padding: 0.75rem 1.25rem; display: flex; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid #e2e8f0;">
+                    <button class="year-pill active" data-year="all" style="padding: 0.35rem 1rem; border-radius: 9999px; border: 1.5px solid #3b82f6; background: #3b82f6; color: white; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">All Years</button>
+                    <button class="year-pill" data-year="1st Year" style="padding: 0.35rem 1rem; border-radius: 9999px; border: 1.5px solid #e2e8f0; background: white; color: #475569; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">1st Year</button>
+                    <button class="year-pill" data-year="2nd Year" style="padding: 0.35rem 1rem; border-radius: 9999px; border: 1.5px solid #e2e8f0; background: white; color: #475569; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">2nd Year</button>
+                    <button class="year-pill" data-year="3rd Year" style="padding: 0.35rem 1rem; border-radius: 9999px; border: 1.5px solid #e2e8f0; background: white; color: #475569; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">3rd Year</button>
+                    <button class="year-pill" data-year="4th Year" style="padding: 0.35rem 1rem; border-radius: 9999px; border: 1.5px solid #e2e8f0; background: white; color: #475569; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">4th Year</button>
+                </div>
+
                 <div class="student-table-container">
                     <table class="student-table">
                         <thead>
                             <tr>
                                 <th>Student</th>
                                 <th>Student ID</th>
-                                <th>Year</th>
-                                <th>Program</th>
-                                <th>Status</th>
+                                <th>Payment Status</th>
+                                <th>Enrollment Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>

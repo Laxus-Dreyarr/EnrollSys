@@ -1202,10 +1202,14 @@ class OrgController extends Controller
         }
 
         try {
-            // Fetch students with their basic information and personal details
+            // Fetch students with their basic information, personal details, and payment receipt info
             $students = DB::table('students')
                 ->leftJoin('user_info', 'students.student_id', '=', 'user_info.id')
                 ->leftJoin('users', 'user_info.user_id', '=', 'users.id')
+                ->leftJoin('payments', function($join) {
+                    $join->on('payments.student_id', '=', 'students.id')
+                         ->where('payments.type', '=', 'PAYMENT_RECEIPT');
+                })
                 ->select(
                     'students.id',
                     'students.id_no',
@@ -1216,7 +1220,12 @@ class OrgController extends Controller
                     'user_info.firstname',
                     'user_info.lastname',
                     'user_info.middlename',
-                    'users.email2 as email'
+                    'users.email2 as email',
+                    'payments.id as payment_id',
+                    'payments.file_path as payment_file_path',
+                    'payments.amount as payment_amount',
+                    'payments.status as payment_status',
+                    'payments.created_at as payment_date'
                 )
                 ->where('students.id_no', '!=', 'None') // Exclude invalid student records
                 ->orderBy('students.id_no', 'asc')
@@ -1226,6 +1235,14 @@ class OrgController extends Controller
                     if (empty($fullName)) {
                         $fullName = 'Student ' . $student->id_no;
                     }
+
+                    $hasPayment = !empty($student->payment_file_path);
+                    $paymentFileUrl = null;
+                    if ($hasPayment) {
+                        $filename = basename($student->payment_file_path);
+                        $paymentFileUrl = "/documents/payment_receipts/{$filename}";
+                    }
+
                     return [
                         'id' => $student->id,
                         'student_id' => $student->id_no,
@@ -1233,11 +1250,17 @@ class OrgController extends Controller
                         'status' => $student->status,
                         'curriculum' => $student->curriculum,
                         'is_regular' => $student->is_regular ? 'Regular' : 'Irregular',
-                        'program' => 'BS Information Technology', // Default program
+                        'program' => 'BS Information Technology',
                         'firstname' => $student->firstname,
                         'lastname' => $student->lastname,
                         'name' => $fullName,
-                        'email' => $student->email ?? ''
+                        'email' => $student->email ?? '',
+                        'has_payment' => $hasPayment,
+                        'payment_id' => $student->payment_id,
+                        'payment_file_url' => $paymentFileUrl,
+                        'payment_amount' => $student->payment_amount,
+                        'payment_status' => $student->payment_status,
+                        'payment_date' => $student->payment_date,
                     ];
                 });
 
