@@ -18,13 +18,11 @@ A web-based online enrollment system designed specifically for the Computer Stud
 -   **User Authentication** - Secure login and registration for students.
 -   **Course Catalog** - View available courses/subjects for the semester.
 -   **Online Enrollment** - Select and enroll in desired subjects.
--   **Class Schedule** - View and manage personal class schedule.
 
 ### For Administrators/Faculty
 -   **Dashboard** - Overview of enrollment statistics.
 -   **Student Management** - View, add, edit, and manage student records.
 -   **Course/Subject Management** - CRUD operations for courses/subjects.
--   **Section Management** - Create and assign class sections.
 -   **Enrollment Approval** - Process and approve student enrollment requests.
 -   **Report Generation** - Generate reports for enrollment data.
 
@@ -60,14 +58,15 @@ To run this project locally, follow these steps:
 
 4.  **Database:**
     -   Open phpMyAdmin (`http://localhost/phpmyadmin`).
-    -   Create a new database named `enrollsys_db`.
-    -   Import the SQL file located in the project's `database/` folder (if provided).
+    -   Create a new database named `enrollsys`.
+    -   Import the SQL file located in the project's `database/` folder.
 
 5.  **Configuration:**
-    -   Update the database connection settings in `/includes/config.php` with your credentials.
+    -   Update the database connection settings in `.env` with your credentials.
 
 6.  **Run:**
-    -   Open your browser and go to `http://localhost/EnrollSys`.
+    -   run this in the vscode terminal 'C:\xampp\php\php.exe artisan serve' 
+    -   Open your browser and go to `http://127.0.0.1:8000`.
 
 ---
 
