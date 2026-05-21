@@ -17,6 +17,6 @@
 database/u290529906_enrollsys.sql
 readme.html
 retention/
-public/js/psgc/
-public/js/sweetalert3.js
-check_payments.php
+# public/js/psgc/
+# public/js/sweetalert3.js
+# check_payments.php
