@@ -14,6 +14,8 @@
 # /.idea
 # /.vscode
 # .env
+vendor/
+.continue/
 .env.example
 database/u290529906_enrollsys.sql
 readme.html
